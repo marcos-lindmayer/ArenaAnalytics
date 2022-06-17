@@ -1,0 +1,278 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+
+    <Script file="arenaTable.lua"/>
+
+    <Frame name="ArenaAnalyticsScrollListItem" virtual="true">
+        <Size x="0" y="28"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="Background" setAllPoints="true">
+                    <Color r="0" g="0" b="0" a="0.2"/>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <FontString parentKey="Date" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size x="130"/>
+                    <Anchors>
+                        <Anchor point="LEFT"  x="24" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Map" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size x="40"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.Date" relativePoint="RIGHT" x="15" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Duration" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size x="120"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.Map" relativePoint="RIGHT" x="15" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Rating" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size x="75"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.Duration" relativePoint="RIGHT" x="130" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="MMR" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size x="70"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.Rating" relativePoint="RIGHT" x="15" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="EnemyRating" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size x="110"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.MMR" relativePoint="RIGHT" x="140" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="EnemyMMR" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size x="110"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeKey="$parent.EnemyRating" relativePoint="RIGHT" x="15" y="0"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+            <Layer level="HIGHLIGHT">
+                <Texture parentKey="Highlight" setAllPoints="true" alphaMode="ADD">
+                    <Color r="1" g="0.75" b="0" a="0.2"/>
+                </Texture>
+            </Layer>
+        </Layers>
+       <!-- <Frames>
+            <Button parentKey="DeleteButton">
+                <Size x="16" y="16"/>
+                <Anchors>
+                    <Anchor point="RIGHT" x="-4" y="0"/>
+                </Anchors>
+                <NormalTexture setAllPoints="true" atlas="transmog-icon-remove"/>
+                <HighlightTexture setAllPoints="true" atlas="transmog-icon-remove" alphaMode="ADD"/>
+                <Scripts>
+                    <OnClick>
+                        CallMethodOnNearestAncestor(self, "RemoveItem", self:GetParent():GetID());
+                    </OnClick>
+                </Scripts>
+            </Button>
+        </Frames> -->
+
+        <Frames>
+            <Frame parentKey="Team1">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.Duration" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="Team2">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT"  relativeKey="$parent.Team1" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="Team3">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT"   relativeKey="$parent.Team2" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="Team4">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT"   relativeKey="$parent.Team3" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="Team5">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.Team4" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="EnemyTeam1">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.MMR" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="EnemyTeam2">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.EnemyTeam1" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="EnemyTeam3">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.EnemyTeam2" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="EnemyTeam4">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.EnemyTeam3" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+            <Frame parentKey="EnemyTeam5">
+                <Size x="24" y="24"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.EnemyTeam4" relativePoint="RIGHT" x="0" y="0"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if (self.tooltip) then
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide();
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+        </Frames>
+
+    </Frame>
+
+    <Frame name="ArenaAnalyticsScrollFrame" parent="UIParent" inherits="BasicFrameTemplate" mixin="HybridScrollMixin">
+        <Size x="1000" y="550"/>
+        <Anchors>
+            <Anchor point="CENTER" x="0" y="0"/>
+        </Anchors>
+        <Frames>
+            <ScrollFrame parentKey="ListScrollFrame" inherits="HybridScrollFrameTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="4" y="-90"/>
+                    <Anchor point="BOTTOMRIGHT" x="-25" y="47"/>
+                </Anchors>
+                <Frames>
+                    <Slider parentKey="scrollBar" inherits="HybridScrollBarTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="1" y="-16"/>
+                            <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="1" y="12"/>
+                        </Anchors>
+                    </Slider>
+                </Frames>
+            </ScrollFrame>
+        </Frames>
+    </Frame>
+</Ui>
