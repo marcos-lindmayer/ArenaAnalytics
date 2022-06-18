@@ -68,7 +68,7 @@ local function createDropdown(opts, dropdownCounter)
     dropdownTable.dd_title = dd_title;
 
 
-    -- Custom dropdown settings
+    -- Custom dropdown settings --TODO create own template
     dropdown.Left:SetTexture(nil);
     dropdown.Middle:SetTexture(nil);
     dropdown.Right:SetTexture(nil);
@@ -196,6 +196,7 @@ function core.arenaTable:OnLoad()
             currentFilters["bracket"] = dropdown_val;
             print("Filtering by " .. dropdown_val)
             if (dropdown_val == "All") then
+                -- TODO tidy this up
                 UIDropDownMenu_DisableDropDown(ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame);
                 ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame:Show()
                 ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.Text:Hide();
@@ -465,24 +466,24 @@ local function applyFilters(unfilteredDB)
     end
 
     -- Get arenas from each bracket and sort by date 
-    local reverseDB = {}; 
+    local sortedDB = {}; 
 
     for b = 1, #filteredDB["2v2"] do
-        table.insert(reverseDB, filteredDB["2v2"][b]);
+        table.insert(sortedDB, filteredDB["2v2"][b]);
     end
     for n = 1, #filteredDB["3v3"] do
-        table.insert(reverseDB, filteredDB["3v3"][n]);
+        table.insert(sortedDB, filteredDB["3v3"][n]);
     end
     for m = 1, #filteredDB["5v5"] do
-        table.insert(reverseDB, filteredDB["5v5"][m]);
+        table.insert(sortedDB, filteredDB["5v5"][m]);
     end
     
-    table.sort(reverseDB, function (k1,k2)
+    table.sort(sortedDB, function (k1,k2)
         return k1["date"] > k2["date"];
     end
     )
 
-    return reverseDB;
+    return sortedDB;
 end
 
 function core.arenaTable:RefreshLayout()
@@ -549,23 +550,13 @@ function core.arenaTable:RefreshLayout()
                 core.arenaTable:RefreshLayout();
             end
         }
+
+        -- TODO: make custom tailored dropdowns for comp filter
         ArenaAnalyticsScrollFrame.filterComps2v2 = createDropdown(filterComps2v2_opts, dropdownCounter, ArenaAnalyticsScrollFrame)
         
---[[         local dropDownButtons = { ArenaAnalyticsScrollFrame.filterComps2v2.DropDownList1:GetChildren() } 
-        
-        for dropDownButton = 2, #dropDownButtons do
-            --dropDownButtons[dropDownButton]:SetHeight(25);
-            local buttonFrames = { dropDownButtons[dropDownButton]:GetChildren() } 
-            local highlight = dropDownButtons[dropDownButton].Highlight and dropDownButtons[dropDownButton].Highlight or false;
-            if (highlight) then ]]
-                --dropDownButtons[dropDownButton].Highlight:SetTexture([[Interface\ClassTrainerFrame\TrainerTextures]]);
---[[                 dropDownButtons[dropDownButton].Highlight:SetTexCoord(0.00195313, 0.57421875, 0.75390625, 0.84570313);
-            end
-            
-        end ]]
+    
             
         -- Set tooltip when comp is disabled
-
         UIDropDownMenu_DisableDropDown(ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame);
         ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.Text:Hide();
         ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame);
