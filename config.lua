@@ -268,6 +268,7 @@ local function detectSpec(sourceGUID, spellID, spellName)
 				if (arenaParty[partyNumber]["spec"] == "-") then
 					-- Adding spec to party member
 					arenaParty[partyNumber]["spec"] = specSpells[spellID];
+					print("added party spec " .. specSpells[spellID])
 				end
 				unitIsParty = true;
 				break;
@@ -280,6 +281,7 @@ local function detectSpec(sourceGUID, spellID, spellName)
 					if (arenaEnemy[enemyNumber]["spec"] == "-") then
 						-- Adding spec to enemy member
 						arenaEnemy[enemyNumber]["spec"] = specSpells[spellID];
+						print("added enemy spec " .. specSpells[spellID])
 					end
 					unitIsEnemy = true;
 					break;
@@ -298,6 +300,7 @@ local function detectSpec(sourceGUID, spellID, spellName)
 			if (unitGroup == nil) then
 				unitGroup = "arena";
 			end
+			print("added spec " .. specSpells[spellID])
 			fillGroupsByUnitReference(unitGroup, specSpells[spellID], sourceGUID);
 		end
 	end
@@ -315,7 +318,6 @@ local function getAllAvailableInfo(eventType, ...)
 			detectSpec(sourceGUID, spellID, spellName)
 		end
 	else
-		-- TODO FIX ON RELOAD
 		if (#arenaParty < arenaSize) then
 			fillGroupsByUnitReference("party");
 		end
@@ -362,7 +364,6 @@ local function quitsArena(self, ...)
 		arenaPartyMMR = "-";
 		arenaEnemyMMR = "-";
 	end
-	core.Print("Player left arena. Inserting available info on ArenaAnalytics")
 	insertArenaOnTable();
 end
 
@@ -426,6 +427,8 @@ end
 -- Matches obtained info with previously collected player values
 -- Triggers insertArenaOnTable with (hopefully) all the information
 local function handleArenaEnd()
+	
+	print("handleArenaEnd")
 	arenaEndedProperly = true;
 	arenaEnded = true;
 	local winner =  GetBattlefieldWinner();
@@ -498,7 +501,6 @@ local function handleArenaEnd()
 			arenaEnemyRating = newTeam1Rating .. team1RatingDif;
 		end
 	end
-	core.Print("Arena ended. Inserting available info on ArenaAnalytics")
 	insertArenaOnTable();
 end
 

@@ -6,8 +6,12 @@
 local _, core = ...;
 
 local currentFilters = {
-    ["map"] = "All", ["bracket"] = "All", ["comps"] = "All",
-    ["comps2v2"] = "All", ["comps3v3"] = "All", ["comps5v5"] = "All",
+    ["map"] = "All", 
+    ["bracket"] = "All", 
+    ["comps"] = "All",
+    ["comps2v2"] = "All", 
+    ["comps3v3"] = "All", 
+    ["comps5v5"] = "All",
     ["skirmishIsChecked"] = true
 };
 
@@ -336,7 +340,7 @@ local function checkForFilterUpdate(bracket)
         ["5v5"] = ArenaAnalyticsScrollFrame.filterComps5v5,
     }
     if(#getPlayerPlayedComps(bracket) > #filterByBracketTable[bracket]['items']) then
-        core.Print("<known bug> Played new comp, reload to add on filter.")
+        --core.Config.Print("<known bug> Played new comp, reload to add on filter.")
         -- TODO FIX DYNAMIC COMP FILTER UPDATE
         --[[ dropdownCounter = dropdownCounter + 1;
         frameByBracketTable[bracket].dropdownFrame:Hide();

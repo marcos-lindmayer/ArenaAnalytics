@@ -6,7 +6,7 @@ local _, core = ...; -- Namespace
 core.commands = {	
 	["help"] = function()
 		print(" ");
-		core:Print("List of slash commands:")
+		core:Print("List of slash commands:");
 		core:Print("|cff00cc66/aa|r");
 		core:Print("|cff00cc66/aa more|r");
 		print(" ");
@@ -132,8 +132,8 @@ function core:init(event, name)
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
-	core:Print("Test version!");
-    core:Print("Tracking arena games, gl hf", UnitName("player").."!!");
+	core:Print("Testing version");
+    core:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	core.Config.EventRegister();
 	core.arenaTable.OnLoad();
 	createMinimapButton();

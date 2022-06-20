@@ -1,5 +1,5 @@
 --[[ 
-	Thanks to Gladdy for spec detection logic 
+	Thanks to Gladdy for spec detection db 
 ]]
 
 local _, core = ...; -- Namespace
