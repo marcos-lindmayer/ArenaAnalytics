@@ -268,7 +268,6 @@ local function detectSpec(sourceGUID, spellID, spellName)
 				if (arenaParty[partyNumber]["spec"] == "-") then
 					-- Adding spec to party member
 					arenaParty[partyNumber]["spec"] = specSpells[spellID];
-					print("added party spec " .. specSpells[spellID])
 				end
 				unitIsParty = true;
 				break;
@@ -281,7 +280,6 @@ local function detectSpec(sourceGUID, spellID, spellName)
 					if (arenaEnemy[enemyNumber]["spec"] == "-") then
 						-- Adding spec to enemy member
 						arenaEnemy[enemyNumber]["spec"] = specSpells[spellID];
-						print("added enemy spec " .. specSpells[spellID])
 					end
 					unitIsEnemy = true;
 					break;
@@ -300,7 +298,6 @@ local function detectSpec(sourceGUID, spellID, spellName)
 			if (unitGroup == nil) then
 				unitGroup = "arena";
 			end
-			print("added spec " .. specSpells[spellID])
 			fillGroupsByUnitReference(unitGroup, specSpells[spellID], sourceGUID);
 		end
 	end
@@ -427,8 +424,6 @@ end
 -- Matches obtained info with previously collected player values
 -- Triggers insertArenaOnTable with (hopefully) all the information
 local function handleArenaEnd()
-	
-	print("handleArenaEnd")
 	arenaEndedProperly = true;
 	arenaEnded = true;
 	local winner =  GetBattlefieldWinner();

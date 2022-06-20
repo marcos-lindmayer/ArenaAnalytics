@@ -198,7 +198,6 @@ function core.arenaTable:OnLoad()
         ['defaultVal'] ='All', 
         ['changeFunc'] = function (dropdown_frame, dropdown_val)
             currentFilters["bracket"] = dropdown_val;
-            print("Filtering by " .. dropdown_val)
             if (dropdown_val == "All") then
                 -- TODO tidy this up
                 UIDropDownMenu_DisableDropDown(ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame);
