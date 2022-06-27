@@ -145,13 +145,19 @@ end
 -- and triggers a layout refresh on core.arenaTable
 local function insertArenaOnTable()
 	-- Calculate arena duration
-	arenaTimeEnd = time();
-	local arenaDurationMS = ((arenaTimeEnd - arenaTimeStartInt) * 1000);
-	arenaDurationMS = arenaDurationMS < 0 and 0 or arenaDurationMS;
-	local minutes = arenaDurationMS >= 60000 and (SecondsToTime(arenaDurationMS/1000, true) .. " ") or "";
-	local seconds = math.floor((arenaDurationMS % 60000) / 1000);
-	arenaDuration = minutes .. seconds .. "sec";
-	arenaTimeStart = date("%d/%m/%y %H:%M:%S", time() - seconds);
+	if (arenaTimeStartInt == 0) then
+		arenaDuration = 0;
+		arenaTimeStart = date("%d/%m/%y %H:%M:%S");
+	else
+		arenaTimeEnd = time();
+		local arenaDurationMS = ((arenaTimeEnd - arenaTimeStartInt) * 1000);
+		arenaDurationMS = arenaDurationMS < 0 and 0 or arenaDurationMS;
+		local minutes = arenaDurationMS >= 60000 and (SecondsToTime(arenaDurationMS/1000, true) .. " ") or "";
+		local seconds = math.floor((arenaDurationMS % 60000) / 1000);
+		arenaDuration = minutes .. seconds .. "sec";
+		arenaTimeStart = date("%d/%m/%y %H:%M:%S", time() - seconds);
+	end
+
 
 	-- Set data for skirmish
 	if (not arenaIsRanked) then
@@ -159,15 +165,6 @@ local function insertArenaOnTable()
 		arenaEnemyRating = arenaEnemyRating ~= nil and arenaEnemyRating or "SKIRMISH";
 		arenaPartyMMR = arenaPartyMMR ~= nil and arenaPartyMMR or "-";
 		arenaEnemyMMR = arenaEnemyMMR ~= nil and arenaEnemyMMR or "-";
-	end
-
-	-- Paint winner green, loser red -- TODO do this on arenaTable
-	if (arenaWonByPlayer) then
-		arenaPartyRating =  "|cff00cc66" .. arenaPartyRating .. "|r";
-		arenaEnemyRating =  "|cffff0000" .. arenaEnemyRating .. "|r";
-	else
-		arenaPartyRating =  "|cffff0000" .. arenaPartyRating .. "|r";
-		arenaEnemyRating =  "|cff00cc66" .. arenaEnemyRating .. "|r";
 	end
 
 	-- Friendly name for arenaSize
@@ -179,9 +176,11 @@ local function insertArenaOnTable()
 		arenaSize = "5v5";
 	end;
 
-	-- Place player first in the arena party group
-	table.sort(arenaParty, function(k)
-		return k["name"] == arenaPlayerName;
+	-- Place player first in the arena party group, sort rest 
+	table.sort(arenaParty, function(a, b)
+		local prioA = a["name"] == arenaPlayerName and 1 or 2
+		local prioB = b["name"] == arenaPlayerName and 1 or 2
+		return prioA < prioB or (prioA == prioB and a["class"] < b["class"])
 	end
 	);
 
@@ -307,6 +306,12 @@ end
 -- been collected. Attempts to get initial data on arena players:
 -- GUID, name, race, class, spec
 local function getAllAvailableInfo(eventType, ...)
+
+	-- Start tracking time again in case of disconnect
+	if (arenaTimeStartInt == 0) then
+		arenaTimeStartInt = time();
+	end
+
 	-- Tracking teams for spec/race and in case arena is quitted
 	local gotAllSpecs = false;
 	if (eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
@@ -337,7 +342,7 @@ local function getAllAvailableInfo(eventType, ...)
 	end
 	
 	gotAllSpecs = arenaSize * 2 == specCount;
-	
+
 	return gotAllSpecs;
 end
 
@@ -436,23 +441,19 @@ local function handleArenaEnd()
 	if (arenaIsRanked) then
 		team1Name, oldTeam1Rating, newTeam1Rating, team1Rating = GetBattlefieldTeamInfo(1);
 		team0Name, oldTeam0Rating, newTeam0Rating, team0Rating = GetBattlefieldTeamInfo(0);
-		--[[ print("Arena team 1 ranked info")
-		print(team1Name, oldTeam1Rating, newTeam1Rating, team1Rating)
-		print("Arena team 2 ranked info")
-		print(team0Name, oldTeam0Rating, newTeam0Rating, team0Rating) ]]
 		oldTeam0Rating = tonumber(oldTeam0Rating);
 		oldTeam1Rating = tonumber(oldTeam1Rating);
 		newTeam1Rating = tonumber(newTeam1Rating);
 		newTeam0Rating = tonumber(newTeam0Rating);
 		if ((newTeam1Rating - oldTeam1Rating) > 0) then
-			team1RatingDif = " (+" .. tostring(newTeam1Rating - oldTeam1Rating) .. ")";
+			team1RatingDif = (newTeam1Rating - oldTeam1Rating ~= 0) and " (+" .. tostring(newTeam1Rating - oldTeam1Rating) .. ")" or "";
 		else
-			team1RatingDif = " (-" .. tostring(oldTeam1Rating - newTeam1Rating) .. ")";
+			team1RatingDif = (oldTeam1Rating - newTeam1Rating ~= 0) and " (-" .. tostring(oldTeam1Rating - newTeam1Rating) .. ")" or "";
 		end
 		if ((newTeam0Rating - oldTeam0Rating) > 0) then
-			team0RatingDif = " (+" .. tostring(newTeam0Rating - oldTeam0Rating) .. ")";
+			team0RatingDif = (newTeam0Rating - oldTeam0Rating ~= 0) and " (+" .. tostring(newTeam0Rating - oldTeam0Rating) .. ")" or "";
 		else
-			team0RatingDif = " (-" .. tostring(oldTeam0Rating - newTeam0Rating) .. ")";
+			team0RatingDif = (oldTeam0Rating - newTeam0Rating ~= 0) and " (-" .. tostring(oldTeam0Rating - newTeam0Rating) .. ")" or "";
 		end
 	end
 	
