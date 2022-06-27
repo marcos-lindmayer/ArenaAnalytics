@@ -64,7 +64,7 @@ local function createMinimapButton()
 	-- Create minimap button -- Credit to Leatrix
 	local minibtn = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap)
 	minibtn:SetFrameLevel(8)
-	minibtn:SetSize(16,16)
+	minibtn:SetSize(24,24)
 	minibtn:SetMovable(true)
 	
 	minibtn:SetNormalTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmicon")
@@ -73,7 +73,7 @@ local function createMinimapButton()
 	minibtn:SetHighlightTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmiconH")
 
 	local minibtnBorder = CreateFrame("Frame", nil, minibtn)
-	minibtnBorder:SetSize(16,16)
+	minibtnBorder:SetSize(50,50)
 	minibtnBorder:SetPoint("TOPLEFT");
 	local minibtnBorderT = minibtnBorder:CreateTexture()
 	minibtnBorderT:SetSize(50,50)
