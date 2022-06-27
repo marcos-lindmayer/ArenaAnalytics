@@ -8,7 +8,7 @@
 ## SavedVariablesPerCharacter: ArenaAnalyticsDB
 
 arenaConstants.lua
-config.lua
+arenaAnalytics.lua
 iconClass.lua
 arenaTable.lua
 HybridScroll.xml
