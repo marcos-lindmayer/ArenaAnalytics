@@ -62,21 +62,6 @@
                 </Texture>
             </Layer>
         </Layers>
-       <!-- <Frames>
-            <Button parentKey="DeleteButton">
-                <Size x="16" y="16"/>
-                <Anchors>
-                    <Anchor point="RIGHT" x="-4" y="0"/>
-                </Anchors>
-                <NormalTexture setAllPoints="true" atlas="transmog-icon-remove"/>
-                <HighlightTexture setAllPoints="true" atlas="transmog-icon-remove" alphaMode="ADD"/>
-                <Scripts>
-                    <OnClick>
-                        CallMethodOnNearestAncestor(self, "RemoveItem", self:GetParent():GetID());
-                    </OnClick>
-                </Scripts>
-            </Button>
-        </Frames> -->
 
         <Frames>
             <Frame parentKey="Team1">
