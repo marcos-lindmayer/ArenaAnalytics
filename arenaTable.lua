@@ -60,7 +60,7 @@ local function createDropdown(opts, dropdownCounter)
 
     for _, item in pairs(menu_items) do -- Sets the dropdown width to the largest item string width.
         dd_title:SetText(item)
-        local text_width = dd_title:GetStringWidth() + 20
+        local text_width = dd_title:GetStringWidth() + 30
         if text_width > dropdown_width then
             dropdown_width = text_width
         end
@@ -234,17 +234,17 @@ end
 
 local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrameContainer = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
-	ArenaAnalyticsScrollFrame.exportFrameContainer:SetPoint("TOP", ArenaAnalyticsScrollFrame, "TOP", 0, 200);
+    ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameStrata("HIGH");
+	ArenaAnalyticsScrollFrame.exportFrameContainer:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
 	ArenaAnalyticsScrollFrame.exportFrameContainer:SetSize(510, 150);
-    ArenaAnalyticsScrollFrame.exportFrameScrollBg = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateTexture()
-	ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetSize(500, 100);
-	ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameScroll, "CENTER");
     ArenaAnalyticsScrollFrame.exportFrameScroll = CreateFrame("ScrollFrame", "exportFrameScroll", ArenaAnalyticsScrollFrame.exportFrameContainer, "UIPanelScrollFrameTemplate");
 	ArenaAnalyticsScrollFrame.exportFrameScroll:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameContainer, "CENTER");
 	ArenaAnalyticsScrollFrame.exportFrameScroll:SetSize(500, 100);
     ArenaAnalyticsScrollFrame.exportFrameScroll.ScrollBar:Hide();
+    ArenaAnalyticsScrollFrame.exportFrameScrollBg = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateTexture()
+	ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetSize(500, 100);
+	ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameScroll, "CENTER");
     ArenaAnalyticsScrollFrame.exportFrame = CreateFrame("EditBox", "exportFrameScroll", nil, "BackdropTemplate");
-    ArenaAnalyticsScrollFrame.exportFrame:SetFrameStrata("TOOLTIP");
     ArenaAnalyticsScrollFrame.exportFrameScroll:SetScrollChild(ArenaAnalyticsScrollFrame.exportFrame);
     ArenaAnalyticsScrollFrame.exportFrame:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18);
     ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(true);
@@ -255,6 +255,13 @@ local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrame:SetJustifyV("CENTER");
     ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
     ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+    
+    -- Make frame draggable
+    ArenaAnalyticsScrollFrame.exportFrameContainer:SetMovable(true)
+    ArenaAnalyticsScrollFrame.exportFrameContainer:EnableMouse(true)
+    ArenaAnalyticsScrollFrame.exportFrameContainer:RegisterForDrag("LeftButton")
+    ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.exportFrameContainer.StartMoving)
+    ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.exportFrameContainer.StopMovingOrSizing)
 end
 
 function core.arenaTable:OnLoad()
@@ -751,9 +758,8 @@ function core.arenaTable:RefreshLayout()
     local totalArenas = #ArenaAnalyticsScrollFrame.items;
     local winrate = totalArenas > 0 and math.floor(wins * 100 / totalArenas) or 0;
     local winsColoured =  "|cff00cc66" .. wins .. "|r";
-    local totalArenasColoured =  "|cffff0000" .. totalArenas .. "|r";
     ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arenas");
-    ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. "/" .. totalArenasColoured .. " | " .. winrate .. "% Winrate");
+    ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. "/" .. (totalArenas - wins) .. " | " .. winrate .. "% Winrate");
 
 
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;
