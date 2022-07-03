@@ -108,6 +108,7 @@ local function resetLastArenaValues()
 	arenaEnemy = {};
 	arenaComp = {};
 	arenaEnemyComp = {};
+	gotAllArenaInfo = false;
 end
 
 -- Returns a table with unit information to be placed inside either arenaParty or arenaEnemy
@@ -128,7 +129,6 @@ local function createPlayerTable(GUID, name, deaths, faction, race, class, filen
 		["classIcon"] = classIcon,
 		["spec"] = spec
 	};
-	--DevTools_Dump(playerTable)
 	return 	playerTable;
 end
 
@@ -191,6 +191,7 @@ local function insertArenaOnTable()
 	-- Insert arena data as a new ArenaAnalyticsDB row
 	table.insert(ArenaAnalyticsDB[arenaSize], {
 		["date"] = arenaTimeStart, 
+		["dateInt"] = arenaTimeStartInt,
 		["map"] = arenaMapName, 
 		["duration"] = arenaDuration, 
 		["team"] = arenaParty,
