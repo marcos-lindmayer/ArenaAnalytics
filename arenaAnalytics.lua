@@ -23,7 +23,7 @@ local arenaMapName, arenaMapId, arenaPlayerName,
 arenaDuration, arenaTimeEnd, arenaTimeStart,
 arenaEnemyMMR, arenaPatyMMR, arenaPartyRating, 
 arenaEnemyRating, arenaSize, arenaIsRanked, 
-arenaPlayerTeam, arenaWonByPlayer;
+arenaPlayerTeam, arenaWonByPlayer, prevRating;
 local arenaTimeStartInt = 0;
 local arenaComp = {}; 
 local arenaEnemyComp = {}
@@ -362,10 +362,12 @@ local function quitsArena(self, ...)
 			arenaTeamId = 3;
 		end
 		local teamName, teamSize, teamRating, weekPlayed, weekWins, seasonPlayed, seasonWins, playerPlayed, seasonPlayerPlayed, teamRank, playerRating = GetArenaTeam(arenaTeamId)
-		arenaPartyRating = teamRating ~= nil and teamRating or "-";
+		local ratingDiff = prevRating ~= nil and " (-" .. prevRating - teamRating .. ")" or "";
+		arenaPartyRating = teamRating ~= nil and teamRating .. ratingDiff  or "-";
 		arenaEnemyRating = "-";
 		arenaPartyMMR = "-";
 		arenaEnemyMMR = "-";
+		prevRating = nil;
 	end
 	insertArenaOnTable();
 end
@@ -385,6 +387,19 @@ local function trackArena(...)
 	arenaPlayerName = UnitName("player");
 	arenaIsRanked = isRankedArena;
 	arenaSize = teamSize;
+	if (arenaIsRanked) then
+		local arenaTeamId;
+		if (arenaSize == 2) then
+			arenaTeamId = 1;
+		elseif (arenaSize == 3) then
+			arenaTeamId = 2;
+		else
+			arenaTeamId = 3;
+		end
+		local _, _, teamRating, _, _, _, _, _, _, _, _ = GetArenaTeam(arenaTeamId)
+		prevRating = teamRating;
+	end
+
 	if (#arenaParty == 0) then
 		-- Add player
 		local killingBlows, faction, filename, damageDone, healingDone, spec;
