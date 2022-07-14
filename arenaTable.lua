@@ -103,7 +103,6 @@ local function changeFilter(args)
         local compIcons = selectedFilter:sub(1, indexOfSeparator - 1);
         currentFilter.selected:SetText(compIcons)
         selectedFilter = args:GetAttribute("tooltip")
-        print("selectedFilter " ..  selectedFilter)
     end
 
     currentFilters[string.lower(filterName)] = selectedFilter;
@@ -155,7 +154,6 @@ local function changeFilter(args)
     end
     
     if (currentFilters["bracket"] ~= "All" and currentFilters["comps" .. currentFilters["bracket"]] ~= "All") then 
-        print(currentFilters["comps" .. currentFilters["bracket"]])
         isCompFilterOn = true;
     else
         isCompFilterOn = false;
@@ -651,8 +649,6 @@ local function checkForFilterUpdate(bracket)
                 local compIcons = oldButtonValue:sub(1, indexOfSeparator - 1);
                 local newButtonValue = compIcons .. "- " .. updatedWinrate
                 frameByBracketTable[bracket].buttons[i]:SetText(newButtonValue)
-                print("Updating button to " .. newButtonValue)
-                print(frameByBracketTable[bracket].buttons[i]:GetText())
                 break
             end
         end
