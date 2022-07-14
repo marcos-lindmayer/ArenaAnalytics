@@ -18,18 +18,24 @@ local currentFilters = {
 local isCompFilterOn;
 local dropdownCounter = 1;
 local filterComps2v2_opts, filterComps3v3_opts, filterComps5v5_opts
+local totalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #ArenaAnalyticsDB["5v5"] 
+
+local selectedGames = {}
 
 HybridScrollMixin = {};
 core.arenaTable = HybridScrollMixin;
 
+-- Toggles addOn view/hide
 function core.arenaTable:Toggle()
-    if not ArenaAnalyticsScrollFrame:IsShown() then   
+    if not ArenaAnalyticsScrollFrame:IsShown() then  
+        core.arenaTable:ClearSelectedMatches() 
         ArenaAnalyticsScrollFrame:Show();
     else
         ArenaAnalyticsScrollFrame:Hide();
     end
 end
 
+-- Returns button based on params
 function core.arenaTable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOffset, text)
 	local btn = CreateFrame("Button", nil, relativeFrame, "UIServiceButtonTemplate");
 	btn:SetPoint(point, relativeFrame, relativePoint, xOffset, yOffset);
@@ -41,113 +47,248 @@ function core.arenaTable:CreateButton(point, relativeFrame, relativePoint, xOffs
 	return btn;
 end
 
-local function createDropdown(opts, dropdownCounter)
+-- Return specific comp's winrate
+-- comp is a string of space-separated classes
+local function getCompWinrate(comp)
+    local _, bracket = string.gsub(comp, " ", " ")
+    local bracketSize = bracket + 1;
+    bracket = bracketSize .. "v" .. bracketSize;
+    local arenasWithComp = {}
+    for i = 1, #ArenaAnalyticsDB[bracket] do
+        if (#ArenaAnalyticsDB[bracket][i]["comp"] == bracketSize) then
+            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i]["comp"], " ")
+            if (comp == currentComp) then
+                table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
+            end
+        end
+    end
+
+    local arenasWon = 0
+    for c = 1,  #arenasWithComp do
+        if (arenasWithComp[c]["won"]) then
+            arenasWon = arenasWon + 1
+        end
+    end
+    local winrate = math.floor(arenasWon * 100 / #arenasWithComp)
+    if (#tostring(winrate) < 2) then
+        winrate = winrate .. "%" .. "   "
+    elseif (#tostring(winrate) < 3) then
+        winrate = winrate .. "%" .. " "
+    else
+        winrate = winrate .. "%"
+    end
+    
+    return winrate
+end
+
+function core.arenaTable:ClearSelectedMatches()
+    for timestamp in pairs(selectedGames) do
+        selectedGames[timestamp]:SetAttribute("clicked", false)
+        selectedGames[timestamp].Tooltip:Hide();
+    end
+    selectedGames = {}
+    core.arenaTable:UpdateSelected()
+end
+
+-- Changes the current filter upon selecting one from its dropdown
+local function changeFilter(args)
+    core.arenaTable:ClearSelectedMatches()
+    local selectedFilter = args:GetAttribute("value")
+    local currentFilter = args:GetAttribute("dropdownTable")
+    local filterName = currentFilter.filterName
+    currentFilter.selected:SetText(selectedFilter)
+
+    if (args:GetAttribute("tooltip") ~= nil) then
+        local indexOfSeparator, _ = string.find(selectedFilter, "-")
+        local compIcons = selectedFilter:sub(1, indexOfSeparator - 1);
+        currentFilter.selected:SetText(compIcons)
+        selectedFilter = args:GetAttribute("tooltip")
+        print("selectedFilter " ..  selectedFilter)
+    end
+
+    currentFilters[string.lower(filterName)] = selectedFilter;
+    if not currentFilter.dropdownList:IsShown() then   
+        currentFilter.dropdownList:Show();
+    else
+        currentFilter.dropdownList:Hide();
+    end
+
+
+
+    if (selectedFilter == "2v2") then
+        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetText("All");
+        currentFilters["comps3v3"] = "All"
+        currentFilters["comps5v5"] = "All"
+        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
+    elseif (selectedFilter == "3v3") then
+        ArenaAnalyticsScrollFrame.filterComps3v3.selected:SetText("All");
+        currentFilters["comps2v2"] = "All"
+        currentFilters["comps5v5"] = "All"
+        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
+    elseif (selectedFilter == "5v5") then
+        ArenaAnalyticsScrollFrame.filterComps5v5.selected:SetText("All");
+        currentFilters["comps2v2"] = "All"
+        currentFilters["comps3v3"] = "All"
+        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Show();
+    end
+
+    if (filterName == "Bracket" and selectedFilter ~= "All") then
+        ArenaAnalyticsScrollFrame.filterComps2v2.selected:Enable();
+        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetText("All");
+    elseif (filterName == "Bracket") then
+        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterComps2v2.selected:Disable();
+        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetText("Select bracket");
+        ArenaAnalyticsScrollFrame.filterComps3v3.selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterComps5v5.selected:SetText("All");
+        currentFilters["comps2v2"] = "All";
+        currentFilters["comps3v3"] = "All";
+        currentFilters["comps5v5"] = "All";
+    end
+    
+    if (currentFilters["bracket"] ~= "All" and currentFilters["comps" .. currentFilters["bracket"]] ~= "All") then 
+        print(currentFilters["comps" .. currentFilters["bracket"]])
+        isCompFilterOn = true;
+    else
+        isCompFilterOn = false;
+    end
+
+    core.arenaTable:RefreshLayout();
+end
+
+-- Returns buttons for filter lists
+local function createDropdownButton(info, dropdownTable, filter, dropdown_width)
+    local button = CreateFrame("Button", filter .. "_" .. info.text, dropdownTable.dropdownList, "UIServiceButtonTemplate");
+    button.money:Hide();
+	button:SetPoint("LEFT", dropdownTable.dropdownList);
+	button:SetSize(dropdown_width, 25);
+	button:SetText(info.text);
+	button:SetNormalFontObject("GameFontHighlight");
+	button:SetHighlightFontObject("GameFontHighlight");
+    if (info.tooltip ~= "") then
+        button:SetAttribute("tooltip", info.tooltip);
+        button:SetHeight(30)
+    end
+    button:SetAttribute("value", info.text);
+    button:SetAttribute("dropdownTable", dropdownTable);
+    button:SetScript("OnClick", function (args)changeFilter(args)end);
+    return button;
+end
+
+-- Returns a dropdown frame
+-- Used for match filters
+local function createDropdown(opts)
     local dropdownTable = {};
-    dropdownCounter = dropdownCounter and dropdownCounter or ""
-    local dropdown_name = dropdownCounter ~= nil and '$parent_' .. opts['name'] .. '_dropdown' .. dropdownCounter 
-    or '$parent_' .. opts['name'] .. '_dropdown';
+    local dropdown_name ='$parent_' .. opts['name'] .. '_dropdown';
     local menu_items = opts['items'] or {};
     local hasIcon = opts["hasIcon"];
     local title_text = opts['title'] or '';
-    local dropdown_width = 0;
+    local dropdown_width = title_text == "Comp" and 100 or 0;
     local default_val = opts['defaultVal'] or '';
     local change_func = opts['changeFunc'] or function (dropdown_val) end;
 
-    local dropdown = CreateFrame("Frame", dropdown_name, opts['parent'], 'UIDropDownMenuTemplate')
-    local dd_title = dropdown:CreateFontString(dropdown, 'OVERLAY', 'GameFontNormal')
-    dd_title:SetPoint("TOPLEFT", 0, 10)
+    local dropdown = CreateFrame("Frame", dropdown_name, opts['parent'])
+    dropdownTable.dropdownFrame = dropdown;
+    local dropdownList = CreateFrame("Frame", dropdown_name .. "_list", dropdownTable.dropdownFrame)
+    dropdownTable.dropdownList = dropdownList
+    dropdownTable.dropdownFrame:SetSize(500, 25);
+    dropdownTable.dropdownList:SetPoint("TOPLEFT", dropdownTable.dropdownFrame, "BOTTOMLEFT")
+    local dd_title = dropdownTable.dropdownFrame:CreateFontString(dropdownTable.dropdownFrame, 'OVERLAY', 'GameFontNormal')
+    dropdownTable.dd_title = dd_title;
+    if (hasIcon) then
+        is2v2, _ = string.find(opts['name'], "2v2")
+        if (is2v2) then
+            dropdownTable.filterName = "comps2v2"
+        else
+            is3v3, _ = string.find(opts['name'], "3v3")
+            if (is3v3) then
+                dropdownTable.filterName = "comps3v3"
+            else
+                dropdownTable.filterName = "comps5v5"
+            end
+        end
+        
+    else 
+        dropdownTable.filterName = title_text;
+    end
+    
+    dropdownTable.dd_title:SetPoint("TOPLEFT", 0, 13)
 
-
-    for _, item in pairs(menu_items) do -- Sets the dropdown width to the largest item string width.
-        dd_title:SetText(item)
-        local text_width = dd_title:GetStringWidth() + 30
+    dropdownTable.buttons = {}
+    -- Sets the dropdown width to the largest item string width.
+    for _, item in pairs(menu_items) do 
+        dropdownTable.dd_title:SetText(item)
+        local text_width = dropdownTable.dd_title:GetStringWidth() + 30
         if text_width > dropdown_width then
             dropdown_width = text_width
         end
+        local info = {}
+        info.text = item;
+        info.tooltip = "";
+        if(hasIcon and info.text ~= "All") then
+            local classInlineIcons = ""
+            for arenaClass in string.gmatch(info.text, "([^%s]+)") do
+                local arenaIconPath = ArenaAnalyticsGetClassIcon(arenaClass);
+                local singleIcon = IconClass(arenaIconPath, 0, 0, 0, 0, 0, 0, 25, 25);
+                classInlineIcons = classInlineIcons .. singleIcon:GetIconString() .. " ";
+                info.tooltip = info.tooltip .. arenaClass .. " "
+            end
+            info.tooltip = info.tooltip:sub(1, -2)
+            info.text = classInlineIcons .. " - " .. getCompWinrate(info.text);
+        end
+        table.insert(dropdownTable.buttons, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
     end
-    UIDropDownMenu_SetWidth(dropdown, dropdown_width)
-    UIDropDownMenu_SetText(dropdown, default_val)
-    dd_title:SetText(title_text)
+    dropdownTable.dd_title:SetText(title_text)
+    dropdownTable.dropdownList:SetSize(dropdown_width, (#dropdownTable.buttons * 25));
+    dropdownTable.dropdownFrame:SetWidth(dropdown_width)
     
-    dropdownTable.dd_title = dd_title;
+    for i = 1, #dropdownTable.buttons do
+        dropdownTable.buttons[i]:SetPoint("TOPLEFT", 0, -(i - 1) * 25)
+        dropdownTable.buttons[i]:SetWidth(dropdown_width)
+    end
+    
+    local dropdownBg = dropdownTable.dropdownFrame:CreateTexture();
+    dropdownBg:SetPoint("CENTER")
+    dropdownBg:SetSize(dropdown_width, 25);
+    dropdownBg:SetColorTexture(0, 0, 0, 0.5);
+    
+    local dropdownListBg = dropdownTable.dropdownList:CreateTexture();
+    dropdownListBg:SetPoint("CENTER")
+    dropdownListBg:SetSize(dropdown_width, (#dropdownTable.buttons * 25));
+    dropdownListBg:SetColorTexture(0, 0, 0, 0.9);
 
-
-    -- Custom dropdown settings --TODO create own template
-    dropdown.Left:SetTexture(nil);
-    dropdown.Middle:SetTexture(nil);
-    dropdown.Right:SetTexture(nil);
-    dropdown.Left:SetColorTexture(0, 0, 0, 0);
-    dropdown.Left:SetSize(dropdown_width, 25)
-    dropdown.Left:ClearAllPoints();
-    dropdown.Left:SetPoint("TOPLEFT", dropdown, "LEFT", 0, 15)
-    dropdown.Button:ClearAllPoints();
-    dropdown.Button:SetPoint("TOPLEFT", dropdown, "LEFT", 0, 15);
-    dropdown.Button:SetSize(dropdown_width,25);
-    dropdown.Button.NormalTexture:SetTexture([[Interface\AddOns\ArenaAnalytics\icon\btnborder]]);
-    dropdown.Button.NormalTexture:SetTexCoord(0.00195313, 0.57421875, 0.75390625, 0.84570313);
-    dropdown.Button.NormalTexture:SetSize(dropdown_width,25);
-    dropdown.Button.NormalTexture:ClearAllPoints();
-    dropdown.Button.NormalTexture:SetPoint("TOPLEFT", dropdown, "LEFT", 0, 15);
-    dropdown.Button.DisabledTexture:SetTexture([[Interface\AddOns\ArenaAnalytics\icon\btnborder]]);
-    dropdown.Button.DisabledTexture:SetTexCoord(0.00195313, 0.57421875, 0.75390625, 0.84570313);
-    dropdown.Button.DisabledTexture:SetSize(dropdown_width, 25);
-    dropdown.Button.DisabledTexture:ClearAllPoints();
-    dropdown.Button.DisabledTexture:SetPoint("TOPLEFT", dropdown, "LEFT", 0, 15);
-    dropdown.Button.HighlightTexture:SetTexture([[Interface\ClassTrainerFrame\TrainerTextures]]);
-    dropdown.Button.HighlightTexture:SetTexCoord(0.00195313, 0.57421875, 0.75390625, 0.84570313);
-    dropdown.Button.HighlightTexture:SetSize(dropdown_width, 25);
-    dropdown.Button.HighlightTexture:ClearAllPoints();
-    dropdown.Button.HighlightTexture:SetPoint("TOPLEFT", dropdown, "LEFT", 0, 15);
-    dropdown.Button.PushedTexture:SetTexture([[Interface\ClassTrainerFrame\TrainerTextures]]);
-    dropdown.Button.PushedTexture:SetTexCoord(0.00195313, 0.57421875, 0.84960938, 0.94140625);
-    dropdown.Button.PushedTexture:SetSize(dropdown_width, 25);
-    dropdown.Button.PushedTexture:ClearAllPoints();
-    dropdown.Button.PushedTexture:SetPoint("TOPLEFT", dropdown, "LEFT", 0, 15);
-    dropdown.Text:ClearAllPoints();
-    dropdown.Text:SetJustifyH("CENTER")
-    local textWidth = dropdown.Text:GetWidth()
-    dropdown.Text:SetPoint("LEFT", dropdown, "LEFT", ((dropdown_width / 2) - (textWidth / 2)), 2)
-
-    UIDropDownMenu_Initialize(dropdown, function(self, level, _)
-        local info = UIDropDownMenu_CreateInfo()
-        for key, val in pairs(menu_items) do
-
-            info.text = val
-            info.tooltipTitle = "";
-
-            if(hasIcon and info.text ~= "All") then
-                local classInlineIcons = ""
-                for arenaClass in string.gmatch(info.text, "([^%s]+)") do
-                    local arenaIconPath = ArenaAnalyticsGetClassIcon(arenaClass);
-                    local singleIcon = IconClass(arenaIconPath, 0, 0, 0, 0, 0, 0, 25, 25);
-                    classInlineIcons = classInlineIcons .. singleIcon:GetIconString() .. " ";
-                    info.tooltipTitle = info.tooltipTitle .. arenaClass .. " "
-                end
-                info.tooltipTitle = info.tooltipTitle:sub(1, -2)
-                info.text = classInlineIcons;
-                info.tooltipOnButton = {nil, 1};
-                info.justifyH = "CENTER";
-            end
-
-            info.checked = false
-            info.menuList= key
-            info.hasArrow = false
-            info.func = function(b)
-                UIDropDownMenu_SetSelectedValue(dropdown, b.value, b.value)
-                UIDropDownMenu_SetText(dropdown, b.value)
-                b.checked = true
-                change_func(dropdown, (hasIcon and b.value ~= "All") and b.tooltipTitle or b.value)
-            end
-
-            UIDropDownMenu_AddButton(info)
+    dropdownTable.selected = CreateFrame("Button", dropdown_name .. "_selected", dropdownTable.dropdownFrame, "UIServiceButtonTemplate")
+    dropdownTable.selected.money:Hide();
+    dropdownTable.selected:SetPoint("CENTER")
+    dropdownTable.selected:SetSize(dropdown_width, 25)
+    dropdownTable.selected:SetText(default_val);
+	dropdownTable.selected:SetNormalFontObject("GameFontHighlight");
+	dropdownTable.selected:SetHighlightFontObject("GameFontHighlight");
+    dropdownTable.selected:SetAttribute("name", dropdownTable)
+    dropdownTable.selected:SetScript("OnClick", function (args)
+        local dropdownList = args:GetAttribute("name").dropdownList
+        if not dropdownList:IsShown() then   
+            dropdownList:Show();
+        else
+            dropdownList:Hide();
         end
     end)
 
-    dropdownTable.dropdownFrame = dropdown;
+    dropdownTable.dropdownList:Hide();
 
     return dropdownTable
 end
 
+
+-- Returns a CSV-formatted string using ArenaAnalyticsDB info
 local function getCsvFromDB()
     local CSVString = "date,map,duration,won,isRanked,team1Name,team2Name,team3Name,team4Name,team5Name,rating,mmr," .. 
     "enemyTeam1Name,enemyTeam2Name,enemyTeam3Name,enemyTeam4Name,enemyTeam5Name,enemyRating, enemyMMR" .. "\n";
@@ -192,6 +333,7 @@ local function getCsvFromDB()
     return CSVString;
 end
 
+-- Toggle Export DB frame
 local function exportDB() 
     if not ArenaAnalyticsScrollFrame.exportFrameContainer:IsShown() then   
         ArenaAnalyticsScrollFrame.exportFrameContainer:Show();
@@ -202,6 +344,8 @@ local function exportDB()
     end
 end
 
+-- Returns array with all unique played comps based on bracket
+-- param received. Ignores incomplete comps
 local function getPlayerPlayedComps(bracket)
     local playedComps = {"All"};
     local arenaSize = tonumber(string.sub(bracket, 1, 1))
@@ -216,6 +360,7 @@ local function getPlayerPlayedComps(bracket)
                     return prioA < prioB or (prioA == prioB and a < b)
                 end)
                 local compString = table.concat(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], " ");
+
                 if (not tContains(playedComps, compString)) then
                     table.insert(playedComps, compString)
                 end
@@ -225,13 +370,15 @@ local function getPlayerPlayedComps(bracket)
     return playedComps;
 end
 
-local function createText(anchor, refFrame, relPoint, xOff, yOff, text)
-    local fontString = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+-- Returns string frame
+local function createText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text)
+    local fontString = relativeFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
     fontString:SetPoint(anchor, refFrame, relPoint, xOff, yOff);
     fontString:SetText(text);
     return fontString
 end
 
+-- Creates the Export DB frame
 local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrameContainer = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
     ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameStrata("HIGH");
@@ -264,36 +411,53 @@ local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.exportFrameContainer.StopMovingOrSizing)
 end
 
+function core.arenaTable:UpdateSelected()
+    local newSelectedText = ""
+    local selectedGamesCount = 0;
+    local selectedWins = 0;
+    for timestamp in pairs(selectedGames) do 
+        selectedGamesCount = selectedGamesCount + 1 
+        if (selectedGames[timestamp]:GetAttribute("won")) then
+            selectedWins = selectedWins + 1;
+        end 
+    end
+    if (selectedGamesCount > 0) then
+        local winrate = math.floor(selectedWins * 100 / selectedGamesCount)
+        newSelectedText = "Selected:" .. selectedGamesCount .. " arenas " .. selectedWins .. "/" .. (selectedGamesCount - selectedWins) .. " | " .. winrate .. "% Winrate"
+        ArenaAnalyticsScrollFrame.clearSelected:Show();
+    else
+        newSelectedText = "Selected: (click matches to select)"
+        ArenaAnalyticsScrollFrame.clearSelected:Hide();
+    end
+    ArenaAnalyticsScrollFrame.selectedWinrate:SetText(newSelectedText)
+end
+
+-- Creates addOn text, filters, table headers
 function core.arenaTable:OnLoad()
 
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() core.arenaTable:RefreshLayout(); end
 
-
     HybridScrollFrame_SetDoNotHideScrollBar(ArenaAnalyticsScrollFrame.ListScrollFrame, true);
     ArenaAnalyticsScrollFrame.Bg:SetTexture(nil)
     ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.5)
-
 	ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
 	ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, 0);
 	ArenaAnalyticsScrollFrame.title:SetText("Arena Analytics");
     ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8)
-
     ArenaAnalyticsScrollFrame.teamBg = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame)
 	ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 340, -90);
     ArenaAnalyticsScrollFrame.teamBg:SetFrameStrata("LOW");
     ArenaAnalyticsScrollFrame.teamBgT = ArenaAnalyticsScrollFrame.teamBg:CreateTexture()
     ArenaAnalyticsScrollFrame.teamBgT:SetColorTexture(0, 0, 0, 0.3)
-	ArenaAnalyticsScrollFrame.teamBgT:SetSize(270, 420);
-	ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 420);
+	ArenaAnalyticsScrollFrame.teamBgT:SetSize(270, 413);
+	ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 413);
 	ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
-
 
     ArenaAnalyticsScrollFrame.export = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 20, -35, "Export");
     ArenaAnalyticsScrollFrame.export:SetScript("OnClick", exportDB);
 
     -- Set export DB CSV frame layout
     createExportFrame();
-
 
     local arenaBracket_opts = {
         ['name']='Arena_Bracket',
@@ -302,45 +466,10 @@ function core.arenaTable:OnLoad()
         ['icon']= false,
         ['items'] = {'All' ,'2v2', '3v3', '5v5' },
         ['defaultVal'] ='All', 
-        ['changeFunc'] = function (dropdown_frame, dropdown_val)
-            currentFilters["bracket"] = dropdown_val;
-            if (dropdown_val == "All") then
-                -- TODO tidy this up
-                UIDropDownMenu_DisableDropDown(ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame);
-                ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame:Show()
-                ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.Text:Hide();
-                ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame.Text:Hide();
-                ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame.Text:Hide();
-                ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Show();
-                ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
-                ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
-            else
-                UIDropDownMenu_EnableDropDown(ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame);
-                ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame:Hide()
-            end
-            if (dropdown_val == "2v2") then
-                ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.Text:Show();
-                ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Show();
-                ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
-                ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
-            elseif(dropdown_val == "3v3") then
-                ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame.Text:Show();
-                ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Hide();
-                ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Show();
-                ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
-            elseif(dropdown_val == "5v5") then
-                ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame.Text:Show();
-                ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Hide();
-                ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
-                ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Show();
-
-            end
-            core.arenaTable:RefreshLayout();
-        end
     }
 
-    ArenaAnalyticsScrollFrame.arenaTypeMenu = createDropdown(arenaBracket_opts, nil)
-    ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.export, "RIGHT", 15, -3);
+    ArenaAnalyticsScrollFrame.arenaTypeMenu = createDropdown(arenaBracket_opts)
+    ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.export, "RIGHT", 15, 0);
 
     local filterMap_opts = {
         ['name']='Filter_Map',
@@ -348,15 +477,11 @@ function core.arenaTable:OnLoad()
         ['title']='Map',
         ['icon']= false,
         ['items'] = {'All' ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena'},
-        ['defaultVal'] ='All', 
-        ['changeFunc'] = function (dropdown_frame, dropdown_val)
-            currentFilters["map"] = dropdown_val;
-            core.arenaTable:RefreshLayout();
-        end
+        ['defaultVal'] ='All'
     }
     
     ArenaAnalyticsScrollFrame.filterMap = createDropdown(filterMap_opts)
-    ArenaAnalyticsScrollFrame.filterMap.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame, "RIGHT", 0, 0);
+    ArenaAnalyticsScrollFrame.filterMap.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame, "RIGHT", 15, 0);
 
     
 
@@ -372,30 +497,51 @@ function core.arenaTable:OnLoad()
         end
     );
 
+    ArenaAnalyticsScrollFrame.settingsButton = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -45, -3, [[|TInterface\Buttons\UI-OptionsButton:0|t]])
+    ArenaAnalyticsScrollFrame.settingsButton:SetSize(15, 15);
+    ArenaAnalyticsScrollFrame.settingsButton:SetScript("OnClick", function ()
+        if not  ArenaAnalyticsScrollFrame.settingsFrame:IsShown() then  
+            ArenaAnalyticsScrollFrame.settingsFrame:Show();
+        else
+            ArenaAnalyticsScrollFrame.settingsFrame:Hide();
+        end
+    end
+    )
+    ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
+    ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
+    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(250, 100)
+    ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame.settingsFrame:Hide();
 
-    ArenaAnalyticsScrollFrame.resetBtn = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 0, 50, "Reset");
+    ArenaAnalyticsScrollFrame.resetWarning = createText(ArenaAnalyticsScrollFrame.settingsFrame, "TOP", ArenaAnalyticsScrollFrame.settingsFrame, "TOP", 0, -30, "Warning! \n This will reset all match history");
+    ArenaAnalyticsScrollFrame.resetBtn = core.arenaTable:CreateButton("CENTER", ArenaAnalyticsScrollFrame.settingsFrame, "CENTER", 0, -25, "Reset");
     ArenaAnalyticsScrollFrame.resetBtn:SetScript("OnClick", function (i) 
         ArenaAnalyticsDB = {}; 
-        print("DB reset");
+        print("ArenaAnalytics match history deleted!");
         core.arenaTable:RefreshLayout(); 
     end);
     
 
     -- Table headers
-    ArenaAnalyticsScrollFrame.dateTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.export, "TOPLEFT", 5, -40, "Date");
-    ArenaAnalyticsScrollFrame.mapTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
-    ArenaAnalyticsScrollFrame.durationTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
-    ArenaAnalyticsScrollFrame.teamTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 120, 0, "Team");
-    ArenaAnalyticsScrollFrame.ratingTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 130, 0, "Rating");
-    ArenaAnalyticsScrollFrame.mmrTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 85, 0, "MMR");
-    ArenaAnalyticsScrollFrame.enemyTeamTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 70, 0, "Enemy Team");
-    ArenaAnalyticsScrollFrame.enemyRatingTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 140, 0, "Enemy Rating");
-    ArenaAnalyticsScrollFrame.enemyMmrTitle = createText("TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 125, 0, "Enemy MMR");
+    ArenaAnalyticsScrollFrame.dateTitle = createText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.export, "TOPLEFT", 5, -40, "Date");
+    ArenaAnalyticsScrollFrame.mapTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
+    ArenaAnalyticsScrollFrame.durationTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
+    ArenaAnalyticsScrollFrame.teamTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 120, 0, "Team");
+    ArenaAnalyticsScrollFrame.ratingTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 130, 0, "Rating");
+    ArenaAnalyticsScrollFrame.mmrTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 85, 0, "MMR");
+    ArenaAnalyticsScrollFrame.enemyTeamTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 70, 0, "Enemy Team");
+    ArenaAnalyticsScrollFrame.enemyRatingTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 140, 0, "Enemy Rating");
+    ArenaAnalyticsScrollFrame.enemyMmrTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 125, 0, "Enemy MMR");
 
 
     -- Recorded arena number and winrate
-    ArenaAnalyticsScrollFrame.totalArenaNumber = createText("TOPLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 15, 30, "");
-    ArenaAnalyticsScrollFrame.winrate = createText("TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 20, 0, "");
+    ArenaAnalyticsScrollFrame.totalArenaNumber = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 15, 30, "");
+    ArenaAnalyticsScrollFrame.winrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 20, 0, "");
+    ArenaAnalyticsScrollFrame.selectedWinrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.winrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
+    ArenaAnalyticsScrollFrame.clearSelected = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear selection");
+    ArenaAnalyticsScrollFrame.clearSelected:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.selectedWinrate, "TOPRIGHT", 20, 5);
+    ArenaAnalyticsScrollFrame.clearSelected:Hide();
+    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () core.arenaTable:ClearSelectedMatches()end)
 
 
     -- Add esc to close frame
@@ -409,9 +555,7 @@ function core.arenaTable:OnLoad()
     ArenaAnalyticsScrollFrame:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.StartMoving)
     ArenaAnalyticsScrollFrame:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.StopMovingOrSizing)
 
-
     core.arenaTable:OnShow();
- 
 end
 
 function core.arenaTable:OnShow()
@@ -420,14 +564,8 @@ function core.arenaTable:OnShow()
     ArenaAnalyticsScrollFrame:Hide();
 end
 
-function core.arenaTable:RemoveItem(index)
-    table.remove(ArenaAnalyticsScrollFrame.items, index);
-    core.arenaTable:RefreshLayout();
-end
-
+-- Creates a icon-based string with the match's comp with name and spec tooltips
 local function setClassTextureWithTooltip(teamIconsFrames, item, itemKey, button)
-    --DevTools_Dump(teamIconsFrames)
-
     for teamIconIndex = 1, #teamIconsFrames do
         -- Reset textures
         if (teamIconsFrames[teamIconIndex].texture) then
@@ -450,6 +588,8 @@ local function setClassTextureWithTooltip(teamIconsFrames, item, itemKey, button
     return teamIconsFrames[#teamIconsFrames];
 end
 
+-- Updates comp filter if there's a new comp registered
+-- and updates winrate
 local function checkForFilterUpdate(bracket)
     local filterByBracketTable = {
         ["2v2"] = filterComps2v2_opts,
@@ -461,17 +601,65 @@ local function checkForFilterUpdate(bracket)
         ["3v3"] = ArenaAnalyticsScrollFrame.filterComps3v3,
         ["5v5"] = ArenaAnalyticsScrollFrame.filterComps5v5,
     }
-    if(#getPlayerPlayedComps(bracket) > #filterByBracketTable[bracket]['items']) then
-        -- TODO FIX DYNAMIC COMP FILTER UPDATE
-        --[[ dropdownCounter = dropdownCounter + 1;
-        frameByBracketTable[bracket].dropdownFrame:Hide();
-        frameByBracketTable[bracket] = {}
-        frameByBracketTable[bracket] = createDropdown(filterByBracketTable[bracket], dropdownCounter);
-        frameByBracketTable[bracket].dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 0, 0);
-        print("dropdownCounter: " .. dropdownCounter) ]]
+    local totalPlayedComps = #getPlayerPlayedComps(bracket)
+    local totalCompsInFilter = #filterByBracketTable[bracket]['items']
+    if (totalPlayedComps > totalCompsInFilter) then
+        local info = {}
+        local newComp = getPlayerPlayedComps(bracket)[totalPlayedComps];
+        table.insert(filterByBracketTable[bracket]['items'], newComp)
+        info.text = newComp;
+        info.tooltip = ""
+
+        local classInlineIcons = ""
+        for arenaClass in string.gmatch(info.text, "([^%s]+)") do
+            local arenaIconPath = ArenaAnalyticsGetClassIcon(arenaClass);
+            local singleIcon = IconClass(arenaIconPath, 0, 0, 0, 0, 0, 0, 25, 25);
+            classInlineIcons = classInlineIcons .. singleIcon:GetIconString() .. " ";
+            info.tooltip = info.tooltip .. arenaClass .. " "
+        end
+        info.tooltip = info.tooltip:sub(1, -2)
+        info.text = classInlineIcons .. " - " .. getCompWinrate(info.text);
+        local filter = "comps" .. bracket;
+        local dropdownTable = frameByBracketTable[bracket]
+        local selectedWidth = frameByBracketTable[bracket].selected:GetWidth()
+        local newCompButton = createDropdownButton(info, dropdownTable, filter, selectedWidth)
+        table.insert(frameByBracketTable[bracket].buttons, newCompButton)
+        local totalButtons = #frameByBracketTable[bracket].buttons;
+        frameByBracketTable[bracket].buttons[totalButtons]:SetPoint("TOPLEFT", 0, -(totalButtons - 1) * 25)
+    elseif (totalPlayedComps < totalCompsInFilter) then
+         local amountToRemove = totalCompsInFilter - totalPlayedComps;
+         for b = 1, amountToRemove do
+            table.remove(filterByBracketTable[bracket]['items'], totalCompsInFilter - (b - 1))
+            frameByBracketTable[bracket].buttons[totalCompsInFilter - (b - 1)]:Hide();
+            table.remove(frameByBracketTable[bracket].buttons, totalCompsInFilter - (b - 1))
+         end
+    end
+
+    -- Update winrates
+    -- Check last game
+    if (ArenaAnalyticsScrollFrame.items[1]) then
+        local lastGame = ArenaAnalyticsScrollFrame.items[1];
+        --DevTools_Dump(ArenaAnalyticsScrollFrame.items[#ArenaAnalyticsScrollFrame.items])
+        local lastGameBracket = #lastGame["team"] .. "v" .. #lastGame["team"];
+        local lastGameComp = table.concat(lastGame["comp"], " ");
+        local updatedWinrate = getCompWinrate(lastGameComp);
+    
+        for i = 1, #frameByBracketTable[bracket].buttons do
+            if(frameByBracketTable[bracket].buttons[i]:GetAttribute("tooltip") == lastGameComp) then
+                local oldButtonValue = frameByBracketTable[bracket].buttons[i]:GetText()
+                local indexOfSeparator, _ = string.find(oldButtonValue, "-")
+                local compIcons = oldButtonValue:sub(1, indexOfSeparator - 1);
+                local newButtonValue = compIcons .. "- " .. updatedWinrate
+                frameByBracketTable[bracket].buttons[i]:SetText(newButtonValue)
+                print("Updating button to " .. newButtonValue)
+                print(frameByBracketTable[bracket].buttons[i]:GetText())
+                break
+            end
+        end
     end
 end
 
+-- Returns matches applying current match filters
 local function applyFilters(unfilteredDB)
 
     local filteredDB = {
@@ -632,13 +820,20 @@ local function applyFilters(unfilteredDB)
     return sortedDB;
 end
 
+-- Refreshes matches table
 function core.arenaTable:RefreshLayout()
     ArenaAnalyticsDB = ArenaAnalyticsDB["2v2"] ~= nil and ArenaAnalyticsDB or {
         ["2v2"] = {},
         ["3v3"] = {},
         ["5v5"] = {},
     };
-    
+    local newArenaPlayed = false;
+    local currentTotalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #ArenaAnalyticsDB["5v5"]
+    if (currentTotalArenas > totalArenas) then
+        newArenaPlayed = true;
+        totalArenas = currentTotalArenas;
+    end
+
     local filteredDB = applyFilters(ArenaAnalyticsDB);
     ArenaAnalyticsScrollFrame.items = filteredDB;
 
@@ -650,6 +845,7 @@ function core.arenaTable:RefreshLayout()
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
         local itemIndex = buttonIndex + offset;
+
 
         if itemIndex <= #items then
             local item = items[itemIndex];
@@ -676,7 +872,32 @@ function core.arenaTable:RefreshLayout()
             
             button.EnemyRating:SetText(item["enemyRating"] or "");
             button.EnemyMMR:SetText(item["enemyMmr"] or "");
+
             
+            button:SetAttribute("won", item["won"]);
+
+            if (selectedGames[button.Date:GetText()]) then
+                button:SetAttribute("clicked", true)
+                button.Tooltip:Show()
+            else
+                button:SetAttribute("clicked", false)
+                button.Tooltip:Hide()
+            end
+
+            button:SetScript("OnClick", function (args)
+                if (not args:GetAttribute("clicked")) then
+                    args:SetAttribute("clicked", true)
+                    args.Tooltip:Show();
+                    selectedGames[args.Date:GetText()] = args;
+                    core.arenaTable:UpdateSelected();
+                else
+                    args:SetAttribute("clicked", false)
+                    selectedGames[args.Date:GetText()] = nil;
+                    args.Tooltip:Hide();
+                    core.arenaTable:UpdateSelected();
+                end
+            end
+            )
 
             button:SetWidth(ArenaAnalyticsScrollFrame.ListScrollFrame.scrollChild:GetWidth());
             button:Show();
@@ -694,30 +915,18 @@ function core.arenaTable:RefreshLayout()
             ['title']='Comp',
             ['hasIcon']= true,
             ['items'] = getPlayerPlayedComps("2v2"),
-            ['defaultVal'] ='All', 
-            ['changeFunc'] = function (dropdown_frame, dropdown_val)
-                currentFilters["comps2v2"] = dropdown_val;
-                isCompFilterOn = dropdown_val ~= "All" and true or false
-                core.arenaTable:RefreshLayout();
-            end
+            ['defaultVal'] ='All'
         }
 
         -- TODO: make custom tailored dropdowns for comp filter
-        ArenaAnalyticsScrollFrame.filterComps2v2 = createDropdown(filterComps2v2_opts, dropdownCounter, ArenaAnalyticsScrollFrame)
+        ArenaAnalyticsScrollFrame.filterComps2v2 = createDropdown(filterComps2v2_opts)
         
         -- Set tooltip when comp is disabled
-        UIDropDownMenu_DisableDropDown(ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame);
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.Text:Hide();
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame);
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame, "LEFT", 0, 0);
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame:SetSize(120, 20)
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame.title = ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame:CreateFontString(nil, nil, "GameFontHighlight");
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.Button, "CENTER", 0, 0);
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame.title:SetText("Select a Bracket first");
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame.tooltipFrame.title:SetTextScale(.7)
-
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 0, 0);
-    else
+        ArenaAnalyticsScrollFrame.filterComps2v2.selected:Disable();
+        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetDisabledFontObject("GameFontDisableSmall")
+        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetText("Select bracket");
+        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
+    elseif (newArenaPlayed) then
         checkForFilterUpdate("2v2");
     end
     if (ArenaAnalyticsScrollFrame.filterComps3v3 == nil) then
@@ -727,17 +936,12 @@ function core.arenaTable:RefreshLayout()
             ['title']='Comp',
             ['hasIcon']= true,
             ['items'] = getPlayerPlayedComps("3v3"),
-            ['defaultVal'] ='All', 
-            ['changeFunc'] = function (dropdown_frame, dropdown_val)
-                currentFilters["comps3v3"] = dropdown_val;
-                isCompFilterOn = dropdown_val ~= "All" and true or false
-                core.arenaTable:RefreshLayout();
-            end
+            ['defaultVal'] ='All'
         }
-        ArenaAnalyticsScrollFrame.filterComps3v3 = createDropdown(filterComps3v3_opts, dropdownCounter, ArenaAnalyticsScrollFrame)
-        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 0, 0);
+        ArenaAnalyticsScrollFrame.filterComps3v3 = createDropdown(filterComps3v3_opts)
+        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
         ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
-    else
+    elseif (newArenaPlayed) then
         checkForFilterUpdate("3v3");
     end
     if (ArenaAnalyticsScrollFrame.filterComps5v5 == nil) then
@@ -747,17 +951,12 @@ function core.arenaTable:RefreshLayout()
             ['title']='Comp',
             ['hasIcon']= true,
             ['items'] = getPlayerPlayedComps("5v5"),
-            ['defaultVal'] ='All', 
-            ['changeFunc'] = function (dropdown_frame, dropdown_val)
-                currentFilters["comps5v5"] = dropdown_val;
-                isCompFilterOn = dropdown_val ~= "All" and true or false
-                core.arenaTable:RefreshLayout();
-            end
+            ['defaultVal'] ='All'
         }
-        ArenaAnalyticsScrollFrame.filterComps5v5 = createDropdown(filterComps5v5_opts, dropdownCounter, ArenaAnalyticsScrollFrame)
-        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 0, 0);
+        ArenaAnalyticsScrollFrame.filterComps5v5 = createDropdown(filterComps5v5_opts)
+        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
         ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
-    else
+    elseif (newArenaPlayed) then
         checkForFilterUpdate("5v5");
     end
 
@@ -768,7 +967,6 @@ function core.arenaTable:RefreshLayout()
         ArenaAnalyticsScrollFrame.teamBg:SetHeight(newHeight);
     end
     
-
     -- Update arena count & winrate
 
     for n = 1, #items do
