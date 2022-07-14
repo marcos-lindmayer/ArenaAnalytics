@@ -352,7 +352,7 @@ end
 local function quitsArena(self, ...)
 	arenaEnded = true;
 	arenaWonByPlayer = false;	
-	if (arenaIsRanked) then -- TODO get ranked info on quit (capture prev rate, compare with rate after)
+	if (arenaIsRanked) then
 		local arenaTeamId;
 		if (arenaSize == 2) then
 			arenaTeamId = 1;
