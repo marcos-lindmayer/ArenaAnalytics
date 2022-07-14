@@ -61,6 +61,11 @@
                     <Color r="1" g="0.75" b="0" a="0.2"/>
                 </Texture>
             </Layer>
+            <Layer level="TOOLTIP">
+                <Texture parentKey="Tooltip" setAllPoints="true" alphaMode="ADD">
+                    <Color r="1" g="0.75" b="0" a="0.2"/>
+                </Texture>
+            </Layer>
         </Layers>
 
         <Frames>
