@@ -494,9 +494,12 @@ function core.arenaTable:OnLoad()
             core.arenaTable:RefreshLayout();
         end
     );
-
-    ArenaAnalyticsScrollFrame.settingsButton = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -45, -3, [[|TInterface\Buttons\UI-OptionsButton:0|t]])
-    ArenaAnalyticsScrollFrame.settingsButton:SetSize(15, 15);
+    ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
+	ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
+	ArenaAnalyticsScrollFrame.settingsButton:SetText([[|TInterface\Buttons\UI-OptionsButton:0|t]]);
+	ArenaAnalyticsScrollFrame.settingsButton:SetNormalFontObject("GameFontHighlight");
+	ArenaAnalyticsScrollFrame.settingsButton:SetHighlightFontObject("GameFontHighlight");
+    ArenaAnalyticsScrollFrame.settingsButton:SetSize(24, 19);
     ArenaAnalyticsScrollFrame.settingsButton:SetScript("OnClick", function ()
         if not  ArenaAnalyticsScrollFrame.settingsFrame:IsShown() then  
             ArenaAnalyticsScrollFrame.settingsFrame:Show();
