@@ -344,6 +344,23 @@ local function quitsArena(self, ...)
 	insertArenaOnTable();
 end
 
+-- Returns the player's spec
+local function getPlayerSpec(class)
+	local currentSpecNumber = 0
+	local spec
+	for i = 1, GetNumTalentTabs() do
+		local name,_ ,pointsSpent = GetTalentTabInfo(i)
+		DevTools_Dump({GetTalentTabInfo(i)})
+		if (pointsSpent > currentSpecNumber) then
+			currentSpecNumber = pointsSpent;
+			spec = name;
+		end
+ 	end
+	spec = spec == "Feral Combat" and "Feral" or spec
+	return spec
+end
+
+
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
 local function trackArena(...)
@@ -379,6 +396,7 @@ local function trackArena(...)
 		local race = UnitRace("player");
 		local GUID = UnitGUID("player");
 		local name = arenaPlayerName;
+		local spec = getPlayerSpec(class);
 		local player = createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec);
 		table.insert(arenaParty, player);
 	end
