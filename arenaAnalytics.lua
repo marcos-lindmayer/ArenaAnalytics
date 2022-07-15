@@ -61,34 +61,6 @@ function Config:GetThemeColor()
 	return c.r, c.g, c.b, c.hex;
 end
 
--- Returns class icon path string
-function ArenaAnalyticsGetClassIcon(className)
-	local currentClassName = className;
-	local classString;
-	if (currentClassName == "Mage") then
-		classString = [[Interface\Icons\classicon_mage]];
-	elseif (currentClassName == "Rogue") then
-		classString = [[Interface\Icons\classicon_rogue]];
-	elseif (currentClassName == "Priest") then
-		classString = [[Interface\Icons\classicon_priest]];
-	elseif (currentClassName == "Druid") then
-		classString = [[Interface\Icons\classicon_druid]];
-	elseif (currentClassName == "Paladin") then
-		classString = [[Interface\Icons\classicon_paladin]];
-	elseif (currentClassName == "Shaman") then
-		classString = [[Interface\Icons\classicon_shaman]];
-	elseif (currentClassName == "Hunter") then
-		classString = [[Interface\Icons\classicon_hunter]];
-	elseif (currentClassName == "Warrior") then
-		classString = [[Interface\Icons\classicon_warrior]];
-	elseif (currentClassName == "Warlock") then
-		classString = [[Interface\Icons\classicon_warlock]];
-	elseif (currentClassName == "Deathknight") then
-		classString = [[Interface\Icons\spell_deathknight_classicon]];
-	end
-	return classString;
-end
-
 -- Reset current arena values
 local function resetLastArenaValues()
 	arenaMapName = "";
