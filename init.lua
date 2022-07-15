@@ -71,6 +71,15 @@ local function createMinimapButton()
 	minibtn:SetPushedTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmicon")
 	minibtn:SetPushedTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmiconP")
 	minibtn:SetHighlightTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmiconH")
+	minibtn:SetScript("OnEnter", function ()
+		GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
+		local hex = select(4, core.Config:GetThemeColor());
+		local tooltip = string.format("|cff%s%s|r", hex:upper(), "ArenaAnalytics") .. " \nClick to open";	
+		GameTooltip:SetText(tooltip, nil, nil, nil, nil, (ArenaAnalyticsMinimapButton.tooltipStyle or true));
+	end);
+	minibtn:SetScript("OnLeave", function ()
+		GameTooltip:Hide();
+	end);
 
 	local minibtnBorder = CreateFrame("Frame", nil, minibtn)
 	minibtnBorder:SetSize(50,50)
