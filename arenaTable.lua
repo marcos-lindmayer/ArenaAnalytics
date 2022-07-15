@@ -421,7 +421,7 @@ function core.arenaTable:UpdateSelected()
     end
     if (selectedGamesCount > 0) then
         local winrate = math.floor(selectedWins * 100 / selectedGamesCount)
-        newSelectedText = "Selected:" .. selectedGamesCount .. " arenas " .. selectedWins .. "/" .. (selectedGamesCount - selectedWins) .. " | " .. winrate .. "% Winrate"
+        newSelectedText = "Selected: " .. selectedGamesCount .. " arenas " .. selectedWins .. "/" .. (selectedGamesCount - selectedWins) .. " | " .. winrate .. "% Winrate"
         ArenaAnalyticsScrollFrame.clearSelected:Show();
     else
         newSelectedText = "Selected: (click matches to select)"
