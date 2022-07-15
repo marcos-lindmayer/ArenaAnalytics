@@ -68,6 +68,14 @@
             </Layer>
         </Layers>
 
+        <Scripts>
+            <OnEnter>
+                ArenaAnalyticsToggleSpecs(self, true)
+            </OnEnter>
+            <OnLeave>
+                ArenaAnalyticsToggleSpecs(self, false)
+            </OnLeave>
+        </Scripts>
         <Frames>
             <Frame parentKey="Team1">
                 <Size x="24" y="24"/>

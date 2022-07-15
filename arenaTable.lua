@@ -81,11 +81,22 @@ local function getCompWinrate(comp)
     return winrate
 end
 
+local function hideSpecIcons()
+    for specIconNumber = 1, #ArenaAnalyticsScrollFrame.specFrames do
+        if (not ArenaAnalyticsScrollFrame.specFrames[specIconNumber][2]:GetAttribute("clicked")) then
+            ArenaAnalyticsScrollFrame.specFrames[specIconNumber][1]:Hide()
+        else
+            ArenaAnalyticsScrollFrame.specFrames[specIconNumber][1]:Show()
+        end
+    end
+end
+
 function core.arenaTable:ClearSelectedMatches()
     for timestamp in pairs(selectedGames) do
         selectedGames[timestamp]:SetAttribute("clicked", false)
         selectedGames[timestamp].Tooltip:Hide();
     end
+    hideSpecIcons()
     selectedGames = {}
     core.arenaTable:UpdateSelected()
 end
@@ -441,6 +452,9 @@ function core.arenaTable:OnLoad()
 	ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
 	ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, 0);
 	ArenaAnalyticsScrollFrame.title:SetText("Arena Analytics");
+
+    ArenaAnalyticsScrollFrame.ListScrollFrame.scrollBar:SetPoint("RIGHT", ArenaAnalyticsScrollFrame.ListScrollFrame, "RIGHT", 1, 0)
+
     ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8)
     ArenaAnalyticsScrollFrame.teamBg = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame)
 	ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 340, -90);
@@ -556,6 +570,8 @@ function core.arenaTable:OnLoad()
     ArenaAnalyticsScrollFrame:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.StartMoving)
     ArenaAnalyticsScrollFrame:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.StopMovingOrSizing)
 
+    ArenaAnalyticsScrollFrame.specFrames = {}
+
     core.arenaTable:OnShow();
 end
 
@@ -565,24 +581,56 @@ function core.arenaTable:OnShow()
     ArenaAnalyticsScrollFrame:Hide();
 end
 
+local function addSpecFrame(button, classIconFrame, spec, class)
+    if (classIconFrame.spec) then
+        classIconFrame.spec.texture:SetTexture(nil)
+    else
+        local specFrame = CreateFrame("Frame", nil, classIconFrame)
+        classIconFrame.spec = specFrame;
+        classIconFrame.spec:SetPoint("BOTTOMRIGHT", classIconFrame, "BOTTOMRIGHT")
+        classIconFrame.spec:SetSize(12,12)
+        local specTexture = classIconFrame.spec:CreateTexture()
+        classIconFrame.spec.texture = specTexture;
+        classIconFrame.spec.texture:SetPoint("CENTER")
+        classIconFrame.spec.texture:SetSize(12,12)
+    end
+    local specIconString = ArenaAnalyticsGetSpecIcon(spec, class)
+    classIconFrame.spec.texture:SetTexture(specIconString and specIconString or nil)
+    classIconFrame.spec:Hide();
+    table.insert(ArenaAnalyticsScrollFrame.specFrames, {classIconFrame.spec, button})    
+end
+
 -- Creates a icon-based string with the match's comp with name and spec tooltips
 local function setClassTextureWithTooltip(teamIconsFrames, item, itemKey, button)
     for teamIconIndex = 1, #teamIconsFrames do
-        -- Reset textures
-        if (teamIconsFrames[teamIconIndex].texture) then
-            teamIconsFrames[teamIconIndex].texture:SetTexture(nil)
-        else
-            local teamTexture = teamIconsFrames[teamIconIndex]:CreateTexture();
-            teamIconsFrames[teamIconIndex].texture = teamTexture
-        end
-        teamIconsFrames[teamIconIndex].texture:SetPoint("LEFT", teamIconsFrames[teamIconIndex] ,"RIGHT", -26, 0);
-        teamIconsFrames[teamIconIndex].texture:SetTexture(item[itemKey][teamIconIndex] and item[itemKey][teamIconIndex]["classIcon"] or nil);
-        teamIconsFrames[teamIconIndex].texture:SetSize(26,26)
-
-        teamIconsFrames[teamIconIndex].tooltip = ""
         if (item[itemKey][teamIconIndex]) then
-            local spec = string.len(item[itemKey][teamIconIndex]["spec"]) > 3 and " | " .. item[itemKey][teamIconIndex]["spec"] or ""
-            teamIconsFrames[teamIconIndex].tooltip = item[itemKey][teamIconIndex]["name"] .. spec;
+            -- Reset textures
+            if (teamIconsFrames[teamIconIndex].texture) then
+                teamIconsFrames[teamIconIndex].texture:SetTexture(nil)
+            else
+                local teamTexture = teamIconsFrames[teamIconIndex]:CreateTexture();
+                teamIconsFrames[teamIconIndex].texture = teamTexture
+                teamIconsFrames[teamIconIndex].texture:SetPoint("LEFT", teamIconsFrames[teamIconIndex] ,"RIGHT", -26, 0);
+                teamIconsFrames[teamIconIndex].texture:SetSize(26,26)
+            end
+            teamIconsFrames[teamIconIndex].texture:SetTexture(item[itemKey][teamIconIndex] and item[itemKey][teamIconIndex]["classIcon"] or nil);
+    
+            teamIconsFrames[teamIconIndex].tooltip = ""
+
+            local spec = item[itemKey][teamIconIndex]["spec"]
+            -- Check for spec
+            if (spec ~= "-") then
+                addSpecFrame(button, teamIconsFrames[teamIconIndex], spec, item[itemKey][teamIconIndex]["class"])
+                teamIconsFrames[teamIconIndex].tooltip = item[itemKey][teamIconIndex]["name"] .. " | " .. spec;
+            else
+                if (teamIconsFrames[teamIconIndex].spec) then
+                    teamIconsFrames[teamIconIndex].spec = nil;
+                end
+                teamIconsFrames[teamIconIndex].tooltip = item[itemKey][teamIconIndex]["name"];
+            end
+            teamIconsFrames[teamIconIndex]:Show()
+        else
+            teamIconsFrames[teamIconIndex]:Hide()
         end
 
     end
@@ -819,6 +867,22 @@ local function applyFilters(unfilteredDB)
     return sortedDB;
 end
 
+function ArenaAnalyticsToggleSpecs(match, visible)
+    local matchData = { match:GetChildren() };
+    for i = 1, #matchData do
+        if (matchData[i].spec) then
+            if (visible) then
+                matchData[i].spec:Show();
+            elseif (match:GetAttribute("clicked")) then
+                matchData[i].spec:Show();
+            else
+                matchData[i].spec:Hide();
+            end
+        end
+    end
+end
+
+
 -- Refreshes matches table
 function core.arenaTable:RefreshLayout()
     ArenaAnalyticsDB = ArenaAnalyticsDB["2v2"] ~= nil and ArenaAnalyticsDB or {
@@ -889,11 +953,13 @@ function core.arenaTable:RefreshLayout()
                     args.Tooltip:Show();
                     selectedGames[args.Date:GetText()] = args;
                     core.arenaTable:UpdateSelected();
+                    ArenaAnalyticsToggleSpecs(args, true)
                 else
                     args:SetAttribute("clicked", false)
                     selectedGames[args.Date:GetText()] = nil;
                     args.Tooltip:Hide();
                     core.arenaTable:UpdateSelected();
+                    ArenaAnalyticsToggleSpecs(args, false)
                 end
             end
             )
@@ -964,10 +1030,12 @@ function core.arenaTable:RefreshLayout()
         local newHeight = (#items * 28) - 1;
         ArenaAnalyticsScrollFrame.teamBgT:SetHeight(newHeight);
         ArenaAnalyticsScrollFrame.teamBg:SetHeight(newHeight);
+    else
+        ArenaAnalyticsScrollFrame.teamBgT:SetHeight(413);
+        ArenaAnalyticsScrollFrame.teamBg:SetHeight(413);
     end
     
     -- Update arena count & winrate
-
     for n = 1, #items do
         if(items[n]["won"]) then wins = wins + 1; end
     end
@@ -982,6 +1050,9 @@ function core.arenaTable:RefreshLayout()
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;
     local totalHeight = #items * buttonHeight;
     local shownHeight = #buttons * buttonHeight;
+
+    -- Hide spec icons
+    hideSpecIcons()
 
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
     
