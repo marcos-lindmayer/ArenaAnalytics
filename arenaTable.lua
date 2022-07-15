@@ -92,9 +92,10 @@ local function hideSpecIcons()
 end
 
 function core.arenaTable:ClearSelectedMatches()
-    for timestamp in pairs(selectedGames) do
-        selectedGames[timestamp]:SetAttribute("clicked", false)
-        selectedGames[timestamp].Tooltip:Hide();
+    local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame)
+    for i = 1, #buttons do
+        buttons[i]:SetAttribute("clicked", false)
+        buttons[i].Tooltip:Hide();
     end
     hideSpecIcons()
     selectedGames = {}
@@ -581,6 +582,8 @@ function core.arenaTable:OnShow()
     ArenaAnalyticsScrollFrame:Hide();
 end
 
+-- Creates a frame and a texture with the class' spec
+-- and places it on the bottom right corner of the class icon
 local function addSpecFrame(button, classIconFrame, spec, class)
     if (classIconFrame.spec) then
         classIconFrame.spec.texture:SetTexture(nil)
