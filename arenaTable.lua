@@ -454,8 +454,6 @@ function core.arenaTable:OnLoad()
 	ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, 0);
 	ArenaAnalyticsScrollFrame.title:SetText("Arena Analytics");
 
-    ArenaAnalyticsScrollFrame.ListScrollFrame.scrollBar:SetPoint("RIGHT", ArenaAnalyticsScrollFrame.ListScrollFrame, "RIGHT", 1, 0)
-
     ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8)
     ArenaAnalyticsScrollFrame.teamBg = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame)
 	ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 340, -90);
