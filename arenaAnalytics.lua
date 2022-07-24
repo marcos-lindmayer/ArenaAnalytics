@@ -350,7 +350,6 @@ local function getPlayerSpec(class)
 	local spec
 	for i = 1, GetNumTalentTabs() do
 		local name,_ ,pointsSpent = GetTalentTabInfo(i)
-		DevTools_Dump({GetTalentTabInfo(i)})
 		if (pointsSpent > currentSpecNumber) then
 			currentSpecNumber = pointsSpent;
 			spec = name;
