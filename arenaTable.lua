@@ -557,24 +557,6 @@ function core.arenaTable:OnLoad()
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () core.arenaTable:ClearSelectedMatches()end)
 
-    -- CTRL click select
-    ArenaAnalyticsScrollFrame:EnableKeyboard(true)
-    ArenaAnalyticsScrollFrame:SetPropagateKeyboardInput(true)
-    ArenaAnalyticsScrollFrame:SetScript("OnKeyDown", function (_, key)
-        if (key == "LCTRL" or key == "RCTRL") then
-            keyIsDown = true;
-            ArenaAnalyticsScrollFrame:SetPropagateKeyboardInput(false)
-            ArenaAnalyticsScrollFrame:SetScript("OnKeyUp", function (_, key)
-                if (key == "LCTRL" or key == "RCTRL") then
-                    keyIsDown = false;
-                    ArenaAnalyticsScrollFrame:SetScript("OnKeyUp", nil)
-                    ArenaAnalyticsScrollFrame:SetPropagateKeyboardInput(true)
-                end
-                
-            end)
-        end
-    end)
-
 
     -- Add esc to close frame
     _G["ArenaAnalyticsScrollFrame"] = ArenaAnalyticsScrollFrame 
@@ -633,14 +615,14 @@ local function setClassTextureWithTooltip(teamIconsFrames, item, itemKey, button
                 teamIconsFrames[teamIconIndex].texture:SetSize(26,26)
             end
             teamIconsFrames[teamIconIndex].texture:SetTexture(item[itemKey][teamIconIndex] and item[itemKey][teamIconIndex]["classIcon"] or nil);
-            
+    
+            teamIconsFrames[teamIconIndex].tooltip = ""
 
             local spec = item[itemKey][teamIconIndex]["spec"]
             -- Check for spec
             if (spec ~= "-") then
                 addSpecFrame(button, teamIconsFrames[teamIconIndex], spec, item[itemKey][teamIconIndex]["class"])
-                spec = "|cff967c00" .. spec .. "|r"
-                teamIconsFrames[teamIconIndex].tooltip = item[itemKey][teamIconIndex]["name"] .. "\n" .. spec;
+                teamIconsFrames[teamIconIndex].tooltip = item[itemKey][teamIconIndex]["name"] .. " | " .. spec;
             else
                 if (teamIconsFrames[teamIconIndex].spec) then
                     teamIconsFrames[teamIconIndex].spec = nil;
@@ -723,22 +705,6 @@ local function checkForFilterUpdate(bracket)
             end
         end
     end
-end
-
--- Recieves a arena table arenaDB = {"2v2"={...}, "3v3={...}, "5v5"={...}}
--- and returns a table allArenas = {[0] = {"date" = "..."}, [1]...}
-local function getArenasFromEveryBracket(arenaDB)
-    local allArenas = {}
-    for b = 1, #arenaDB["2v2"] do
-        table.insert(allArenas, arenaDB["2v2"][b]);
-    end
-    for n = 1, #arenaDB["3v3"] do
-        table.insert(allArenas, arenaDB["3v3"][n]);
-    end
-    for m = 1, #arenaDB["5v5"] do
-        table.insert(allArenas, arenaDB["5v5"][m]);
-    end
-    return allArenas;
 end
 
 -- Returns matches applying current match filters
@@ -859,8 +825,18 @@ local function applyFilters(unfilteredDB)
     end
 
     -- Get arenas from each bracket and sort by date 
-    local sortedDB = getArenasFromEveryBracket(filteredDB);
+    local sortedDB = {}; 
 
+    for b = 1, #filteredDB["2v2"] do
+        table.insert(sortedDB, filteredDB["2v2"][b]);
+    end
+    for n = 1, #filteredDB["3v3"] do
+        table.insert(sortedDB, filteredDB["3v3"][n]);
+    end
+    for m = 1, #filteredDB["5v5"] do
+        table.insert(sortedDB, filteredDB["5v5"][m]);
+    end
+    
     table.sort(sortedDB, function (k1,k2)
         if (k1["dateInt"] and k2["dateInt"]) then
             return k1["dateInt"] > k2["dateInt"];
@@ -892,7 +868,6 @@ local function applyFilters(unfilteredDB)
     return sortedDB;
 end
 
--- Hide/Shows Spec icons on the class' bottom-right corner
 function ArenaAnalyticsToggleSpecs(match, visible)
     local matchData = { match:GetChildren() };
     for i = 1, #matchData do
@@ -908,23 +883,6 @@ function ArenaAnalyticsToggleSpecs(match, visible)
     end
 end
 
--- Adds CTRL click select to current match selection
-local function addToSelected(fromIntVal, toIntVal) 
-    local selectedButtons = {}
-    local fromInt = fromIntVal;
-    local toInt = toIntVal;
-    if (fromInt > toInt) then
-        toInt = fromIntVal;
-        fromInt = toIntVal; 
-    end
-    for i = 1, #ArenaAnalyticsScrollFrame.items do
-        local item = ArenaAnalyticsScrollFrame.items[i]
-        if (item["dateInt"] >= fromInt and item["dateInt"] <= toInt) then
-            selectedGames[item["date"]] = true;
-        end
-    end
-    core.arenaTable:RefreshLayout()
-end
 
 -- Refreshes matches table
 function core.arenaTable:RefreshLayout()
@@ -951,10 +909,11 @@ function core.arenaTable:RefreshLayout()
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
         local itemIndex = buttonIndex + offset;
+
+
         if itemIndex <= #items then
-
             local item = items[itemIndex];
-
+            --button:SetID(itemIndex);
             button.Date:SetText(item["date"] or "");
             button.Map:SetText(item["map"] or "");
             button.Duration:SetText(item["duration"] or "");
@@ -980,40 +939,29 @@ function core.arenaTable:RefreshLayout()
 
             
             button:SetAttribute("won", item["won"]);
-            button:SetAttribute("dateInt", item["dateInt"]);
 
             if (selectedGames[button.Date:GetText()]) then
-                selectedGames[button.Date:GetText()] = button;
                 button:SetAttribute("clicked", true)
                 button.Tooltip:Show()
-                ArenaAnalyticsToggleSpecs(button, true)
             else
                 button:SetAttribute("clicked", false)
                 button.Tooltip:Hide()
             end
 
-            button:SetScript("OnClick", function (button)
-                if (not button:GetAttribute("clicked")) then
-                    if (keyIsDown and highlightFrom ~= nil) then
-                        highlightTo = button:GetAttribute("dateInt")
-                        print("highlightTo " .. highlightTo)
-                        print("--------")
-                        addToSelected(highlightFrom, highlightTo)
-                        highlightFrom = nil
-                        highlightTo = nil
-                    else
-                        highlightFrom = button:GetAttribute("dateInt")
-                        print("highlightFrom " .. highlightFrom)
-                    end
-                    if (highlightFrom == nil) then
-                        highlightFrom = button:GetAttribute("dateInt")
-                        print("highlightFrom " .. highlightFrom)
-                    end
-                    selectedGames[button.Date:GetText()] = button;
+            button:SetScript("OnClick", function (args)
+                if (not args:GetAttribute("clicked")) then
+                    args:SetAttribute("clicked", true)
+                    args.Tooltip:Show();
+                    selectedGames[args.Date:GetText()] = args;
+                    core.arenaTable:UpdateSelected();
+                    ArenaAnalyticsToggleSpecs(args, true)
                 else
-                    selectedGames[button.Date:GetText()] = nil;
+                    args:SetAttribute("clicked", false)
+                    selectedGames[args.Date:GetText()] = nil;
+                    args.Tooltip:Hide();
+                    core.arenaTable:UpdateSelected();
+                    ArenaAnalyticsToggleSpecs(args, false)
                 end
-                core.arenaTable:RefreshLayout();
             end
             )
 
@@ -1099,8 +1047,6 @@ function core.arenaTable:RefreshLayout()
     ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arenas");
     ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. "/" .. (totalArenas - wins) .. " | " .. winrate .. "% Winrate");
 
-    -- Update selected
-    core.arenaTable:UpdateSelected();
 
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;
     local totalHeight = #items * buttonHeight;
