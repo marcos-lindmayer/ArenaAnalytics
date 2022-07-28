@@ -544,14 +544,15 @@ function core.arenaTable:OnLoad()
     ArenaAnalyticsScrollFrame.ratingTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 130, 0, "Rating");
     ArenaAnalyticsScrollFrame.mmrTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 85, 0, "MMR");
     ArenaAnalyticsScrollFrame.enemyTeamTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 70, 0, "Enemy Team");
-    ArenaAnalyticsScrollFrame.enemyRatingTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 140, 0, "Enemy Rating");
-    ArenaAnalyticsScrollFrame.enemyMmrTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 125, 0, "Enemy MMR");
+    ArenaAnalyticsScrollFrame.enemyRatingTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 140, 0, "Enemy MMR");
+    ArenaAnalyticsScrollFrame.enemyMmrTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 125, 0, "Enemy Rating");
 
 
     -- Recorded arena number and winrate
     ArenaAnalyticsScrollFrame.totalArenaNumber = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 15, 30, "");
-    ArenaAnalyticsScrollFrame.winrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 20, 0, "");
-    ArenaAnalyticsScrollFrame.selectedWinrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.winrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
+    ArenaAnalyticsScrollFrame.winrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
+    ArenaAnalyticsScrollFrame.sessionWinrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.winrate, "TOPRIGHT", 20, 0, "");
+    ArenaAnalyticsScrollFrame.selectedWinrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.sessionWinrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
     ArenaAnalyticsScrollFrame.clearSelected = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear selection");
     ArenaAnalyticsScrollFrame.clearSelected:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.selectedWinrate, "TOPRIGHT", 20, 5);
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
@@ -868,6 +869,7 @@ local function applyFilters(unfilteredDB)
     return sortedDB;
 end
 
+-- Hide/Shows Spec icons on the class' bottom-right corner
 function ArenaAnalyticsToggleSpecs(match, visible)
     local matchData = { match:GetChildren() };
     for i = 1, #matchData do
@@ -883,6 +885,37 @@ function ArenaAnalyticsToggleSpecs(match, visible)
     end
 end
 
+-- Checks if 2 arenas have the same party members
+local function arenasHaveSameParty(arena, prevArena)
+    for i = 1, #arena["team"] do
+        if (prevArena["team"][i] and arena["team"][i]["name"] ~= prevArena["team"][i]["name"]) then
+            return false;
+        end
+    end
+    return true;
+end
+
+-- Adds value(int) ["session"] to each item
+-- If the previous match was more than 1h ago, or
+-- with different teammates (ranked only) then a new session is assigned
+local function setSessions(items)
+    local session = 1
+    for i = 1, #items do
+        local prev = items[i - 1]
+        if (prev and (items[i]["dateInt"] + 3600 < prev["dateInt"] or (not arenasHaveSameParty(items[i], prev) and (items[i]["isRanked"] or prev["isRanked"])))) then
+            session = session + 1
+        end
+        items[i]["session"] = session;
+    end
+    
+end
+
+--
+local function setColorForSession(button, session)
+    local c = session%2/10;
+    local a = 0.5;
+    button.Background:SetColorTexture(c, c, c, a)
+end
 
 -- Refreshes matches table
 function core.arenaTable:RefreshLayout()
@@ -902,18 +935,20 @@ function core.arenaTable:RefreshLayout()
     ArenaAnalyticsScrollFrame.items = filteredDB;
 
     local items = ArenaAnalyticsScrollFrame.items;
+    setSessions(items)
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local offset = HybridScrollFrame_GetOffset(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local wins = 0;
 
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
-        local itemIndex = buttonIndex + offset;
 
+
+        local itemIndex = buttonIndex + offset;
 
         if itemIndex <= #items then
             local item = items[itemIndex];
-            --button:SetID(itemIndex);
+            setColorForSession(button, item["session"])
             button.Date:SetText(item["date"] or "");
             button.Map:SetText(item["map"] or "");
             button.Duration:SetText(item["duration"] or "");
@@ -1036,9 +1071,18 @@ function core.arenaTable:RefreshLayout()
         ArenaAnalyticsScrollFrame.teamBg:SetHeight(413);
     end
     
+    local sessionWins = 0;
+    local sessionGames = 0;
+
     -- Update arena count & winrate
     for n = 1, #items do
         if(items[n]["won"]) then wins = wins + 1; end
+        if (items[n]["session"] == 1 ) then
+            sessionGames = sessionGames + 1;
+            if (items[n]["won"]) then
+                sessionWins = sessionWins + 1;
+            end
+        end
     end
 
     local totalArenas = #ArenaAnalyticsScrollFrame.items;
@@ -1046,6 +1090,10 @@ function core.arenaTable:RefreshLayout()
     local winsColoured =  "|cff00cc66" .. wins .. "|r";
     ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arenas");
     ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. "/" .. (totalArenas - wins) .. " | " .. winrate .. "% Winrate");
+
+    local sessionWinrate = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
+    local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
+    ArenaAnalyticsScrollFrame.sessionWinrate:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionWinrate .. "% Winrate");
 
 
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;
