@@ -46,13 +46,13 @@
                 <FontString parentKey="EnemyMMR" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="110"/>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.MMR" relativePoint="RIGHT" x="15" y="0"/>
+                        <Anchor point="LEFT" relativeKey="$parent.MMR" relativePoint="RIGHT" x="140" y="0"/>
                     </Anchors>
                 </FontString>
                 <FontString parentKey="EnemyRating" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="110"/>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.EnemyMMR" relativePoint="RIGHT" x="140" y="0"/>
+                        <Anchor point="LEFT" relativeKey="$parent.EnemyMMR" relativePoint="RIGHT" x="15" y="0"/>
                     </Anchors>
                 </FontString>
             </Layer>
