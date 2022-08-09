@@ -67,17 +67,8 @@
                 </Texture>
             </Layer>
         </Layers>
-
-        <Scripts>
-            <OnEnter>
-                ArenaAnalyticsToggleSpecs(self, true)
-            </OnEnter>
-            <OnLeave>
-                ArenaAnalyticsToggleSpecs(self, false)
-            </OnLeave>
-        </Scripts>
         <Frames>
-            <Frame parentKey="Team1">
+            <Button parentKey="Team1">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.Duration" relativePoint="RIGHT" x="0" y="0"/>
@@ -93,8 +84,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="Team2">
+            </Button>
+            <Button parentKey="Team2">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT"  relativeKey="$parent.Team1" relativePoint="RIGHT" x="0" y="0"/>
@@ -110,8 +101,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="Team3">
+            </Button>
+            <Button parentKey="Team3">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT"   relativeKey="$parent.Team2" relativePoint="RIGHT" x="0" y="0"/>
@@ -127,8 +118,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="Team4">
+            </Button>
+            <Button parentKey="Team4">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT"   relativeKey="$parent.Team3" relativePoint="RIGHT" x="0" y="0"/>
@@ -144,8 +135,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="Team5">
+            </Button>
+            <Button parentKey="Team5">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.Team4" relativePoint="RIGHT" x="0" y="0"/>
@@ -161,8 +152,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="EnemyTeam1">
+            </Button>
+            <Button parentKey="EnemyTeam1">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.MMR" relativePoint="RIGHT" x="0" y="0"/>
@@ -178,8 +169,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="EnemyTeam2">
+            </Button>
+            <Button parentKey="EnemyTeam2">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.EnemyTeam1" relativePoint="RIGHT" x="0" y="0"/>
@@ -195,8 +186,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="EnemyTeam3">
+            </Button>
+            <Button parentKey="EnemyTeam3">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.EnemyTeam2" relativePoint="RIGHT" x="0" y="0"/>
@@ -212,8 +203,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="EnemyTeam4">
+            </Button>
+            <Button parentKey="EnemyTeam4">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.EnemyTeam3" relativePoint="RIGHT" x="0" y="0"/>
@@ -229,8 +220,8 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
-            <Frame parentKey="EnemyTeam5">
+            </Button>
+            <Button parentKey="EnemyTeam5">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.EnemyTeam4" relativePoint="RIGHT" x="0" y="0"/>
@@ -246,7 +237,7 @@
                         GameTooltip:Hide();
                     </OnLeave>
                 </Scripts>
-            </Frame>
+            </Button>
         </Frames>
 
     </Frame>

@@ -17,7 +17,11 @@ local currentFilters = {
 
 local isCompFilterOn;
 local dropdownCounter = 1;
-local filterComps2v2_opts, filterComps3v3_opts, filterComps5v5_opts
+local filterCompsOpts = {
+    ["2v2"] = "",
+    ["3v3"] = "",
+    ["5v5"] = ""
+}
 local totalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #ArenaAnalyticsDB["5v5"] 
 
 local selectedGames = {}
@@ -127,39 +131,39 @@ local function changeFilter(args)
 
 
     if (selectedFilter == "2v2") then
-        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:SetText("All");
         currentFilters["comps3v3"] = "All"
         currentFilters["comps5v5"] = "All"
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Show();
-        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
-        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterComps["3v3"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps["5v5"].dropdownFrame:Hide();
     elseif (selectedFilter == "3v3") then
-        ArenaAnalyticsScrollFrame.filterComps3v3.selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterComps["3v3"].selected:SetText("All");
         currentFilters["comps2v2"] = "All"
         currentFilters["comps5v5"] = "All"
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Hide();
-        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Show();
-        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps["3v3"].dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterComps["5v5"].dropdownFrame:Hide();
     elseif (selectedFilter == "5v5") then
-        ArenaAnalyticsScrollFrame.filterComps5v5.selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterComps["5v5"].selected:SetText("All");
         currentFilters["comps2v2"] = "All"
         currentFilters["comps3v3"] = "All"
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Hide();
-        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
-        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps["3v3"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps["5v5"].dropdownFrame:Show();
     end
 
     if (filterName == "Bracket" and selectedFilter ~= "All") then
-        ArenaAnalyticsScrollFrame.filterComps2v2.selected:Enable();
-        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:Enable();
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:SetText("All");
     elseif (filterName == "Bracket") then
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:Show();
-        ArenaAnalyticsScrollFrame.filterComps2v2.selected:Disable();
-        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
-        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
-        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetText("Select bracket");
-        ArenaAnalyticsScrollFrame.filterComps3v3.selected:SetText("All");
-        ArenaAnalyticsScrollFrame.filterComps5v5.selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:Disable();
+        ArenaAnalyticsScrollFrame.filterComps["3v3"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps["5v5"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:SetText("Select bracket");
+        ArenaAnalyticsScrollFrame.filterComps["3v3"].selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterComps["5v5"].selected:SetText("All");
         currentFilters["comps2v2"] = "All";
         currentFilters["comps3v3"] = "All";
         currentFilters["comps5v5"] = "All";
@@ -406,7 +410,6 @@ local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrame:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18);
     ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(true);
     ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(false);
-    ArenaAnalyticsScrollFrame.exportFrame:SetCursorPosition(0);
     ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10);
     ArenaAnalyticsScrollFrame.exportFrame:SetJustifyH("LEFT");
     ArenaAnalyticsScrollFrame.exportFrame:SetJustifyV("CENTER");
@@ -446,6 +449,8 @@ end
 function core.arenaTable:OnLoad()
 
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() core.arenaTable:RefreshLayout(); end
+
+    ArenaAnalyticsScrollFrame.filterComps = {}
 
     HybridScrollFrame_SetDoNotHideScrollBar(ArenaAnalyticsScrollFrame.ListScrollFrame, true);
     ArenaAnalyticsScrollFrame.Bg:SetTexture(nil)
@@ -602,22 +607,60 @@ local function addSpecFrame(button, classIconFrame, spec, class)
     table.insert(ArenaAnalyticsScrollFrame.specFrames, {classIconFrame.spec, button})    
 end
 
+-- Displayes a small window with the clicked player's name
+-- for easy copy/paste
+function showClickedName(classFrame)
+    local name = classFrame:GetAttribute("name");
+    if (not ArenaAnalyticsScrollFrame.clickedNameFrame) then
+        ArenaAnalyticsScrollFrame.clickedNameFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
+        ArenaAnalyticsScrollFrame.clickedNameFrame:SetFrameStrata("HIGH");
+        ArenaAnalyticsScrollFrame.clickedNameFrame:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
+        ArenaAnalyticsScrollFrame.clickedNameFrame:SetSize(150, 60);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text = CreateFrame("EditBox", nil, ArenaAnalyticsScrollFrame.clickedNameFrame, "BackdropTemplate");
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetFrameStrata("HIGH");
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetPoint("TOP", ArenaAnalyticsScrollFrame.clickedNameFrame, "TOP", 15, -35);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetWidth(150);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetMultiLine(true);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetAutoFocus(false);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetFont("Fonts\\FRIZQT__.TTF", 10);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetJustifyH("LEFT");
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetJustifyV("CENTER");
+    end
+    ArenaAnalyticsScrollFrame.clickedNameFrame:SetPoint("TOPRIGHT", classFrame, "CENTER", 0, 0);
+    ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetText(name)
+    ArenaAnalyticsScrollFrame.clickedNameFrame.text:HighlightText();
+    ArenaAnalyticsScrollFrame.clickedNameFrame:Show()
+end
+
+
 -- Creates a icon-based string with the match's comp with name and spec tooltips
 local function setClassTextureWithTooltip(teamIconsFrames, item, itemKey, button)
     for teamIconIndex = 1, #teamIconsFrames do
         if (item[itemKey][teamIconIndex]) then
-            -- Reset textures
             if (teamIconsFrames[teamIconIndex].texture) then
+                -- Reset textures
                 teamIconsFrames[teamIconIndex].texture:SetTexture(nil)
             else
+                -- No textures? Set them
                 local teamTexture = teamIconsFrames[teamIconIndex]:CreateTexture();
                 teamIconsFrames[teamIconIndex].texture = teamTexture
                 teamIconsFrames[teamIconIndex].texture:SetPoint("LEFT", teamIconsFrames[teamIconIndex] ,"RIGHT", -26, 0);
                 teamIconsFrames[teamIconIndex].texture:SetSize(26,26)
             end
+
+            -- Set texture (if classicon available)
             teamIconsFrames[teamIconIndex].texture:SetTexture(item[itemKey][teamIconIndex] and item[itemKey][teamIconIndex]["classIcon"] or nil);
-    
             teamIconsFrames[teamIconIndex].tooltip = ""
+
+            teamIconsFrames[teamIconIndex]:SetAttribute("name", item[itemKey][teamIconIndex] and item[itemKey][teamIconIndex]["name"] or "")
+
+            -- Set click to copy name
+            if (teamIconsFrames[teamIconIndex]) then
+                teamIconsFrames[teamIconIndex]:SetScript("OnClick", function (args)
+                    showClickedName(args);
+                end
+                )
+            end
 
             local spec = item[itemKey][teamIconIndex]["spec"]
             -- Check for spec
@@ -643,14 +686,14 @@ end
 -- and updates winrate
 local function checkForFilterUpdate(bracket)
     local filterByBracketTable = {
-        ["2v2"] = filterComps2v2_opts,
-        ["3v3"] = filterComps3v3_opts,
-        ["5v5"] = filterComps5v5_opts,
+        ["2v2"] = filterCompsOpts["2v2"],
+        ["3v3"] = filterCompsOpts["3v3"],
+        ["5v5"] = filterCompsOpts["5v5"],
     }
     local frameByBracketTable = {
-        ["2v2"] = ArenaAnalyticsScrollFrame.filterComps2v2,
-        ["3v3"] = ArenaAnalyticsScrollFrame.filterComps3v3,
-        ["5v5"] = ArenaAnalyticsScrollFrame.filterComps5v5,
+        ["2v2"] = ArenaAnalyticsScrollFrame.filterComps["2v2"],
+        ["3v3"] = ArenaAnalyticsScrollFrame.filterComps["3v3"],
+        ["5v5"] = ArenaAnalyticsScrollFrame.filterComps["5v5"],
     }
     local totalPlayedComps = #getPlayerPlayedComps(bracket)
     local totalCompsInFilter = #filterByBracketTable[bracket]['items']
@@ -870,7 +913,7 @@ local function applyFilters(unfilteredDB)
 end
 
 -- Hide/Shows Spec icons on the class' bottom-right corner
-function ArenaAnalyticsToggleSpecs(match, visible)
+function core.arenaTable:ToggleSpecs(match, visible)
     local matchData = { match:GetChildren() };
     for i = 1, #matchData do
         if (matchData[i].spec) then
@@ -910,12 +953,38 @@ local function setSessions(items)
     
 end
 
---
+-- Sets button row's background according to session
 local function setColorForSession(button, session)
     local c = session%2/10;
     local a = 0.5;
     button.Background:SetColorTexture(c, c, c, a)
 end
+
+-- Create dropdowns for the Comp filters
+local function createDropdownForFilterComps(bracket)
+    filterCompsOpts[bracket] = {
+        ['name']='Filter' .. bracket .. '_Comps',
+        ['parent'] = ArenaAnalyticsScrollFrame,
+        ['title']='Comp',
+        ['hasIcon']= true,
+        ['items'] = getPlayerPlayedComps(bracket),
+        ['defaultVal'] ='All'
+    }
+
+    -- TODO: make custom tailored dropdowns for comp filter
+    ArenaAnalyticsScrollFrame.filterComps[bracket] = createDropdown(filterCompsOpts[bracket])
+    ArenaAnalyticsScrollFrame.filterComps[bracket].dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
+
+    if(bracket == "2v2") then
+        -- Set tooltip when comp is disabled
+        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:Disable();
+        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:SetDisabledFontObject("GameFontDisableSmall")
+        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:SetText("Select bracket");
+    else
+        ArenaAnalyticsScrollFrame.filterComps[bracket].dropdownFrame:Hide();
+    end
+end
+
 
 -- Refreshes matches table
 function core.arenaTable:RefreshLayout()
@@ -935,15 +1004,14 @@ function core.arenaTable:RefreshLayout()
     ArenaAnalyticsScrollFrame.items = filteredDB;
 
     local items = ArenaAnalyticsScrollFrame.items;
-    setSessions(items)
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local offset = HybridScrollFrame_GetOffset(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local wins = 0;
 
+    setSessions(items)
+
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
-
-
         local itemIndex = buttonIndex + offset;
 
         if itemIndex <= #items then
@@ -953,6 +1021,12 @@ function core.arenaTable:RefreshLayout()
             button.Map:SetText(item["map"] or "");
             button.Duration:SetText(item["duration"] or "");
 
+            button:SetScript("OnEnter", function (args)
+             core.arenaTable:ToggleSpecs(args, true)
+            end)
+            button:SetScript("OnLeave", function (args)
+                core.arenaTable:ToggleSpecs(args, false)
+            end)
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
             
@@ -989,13 +1063,13 @@ function core.arenaTable:RefreshLayout()
                     args.Tooltip:Show();
                     selectedGames[args.Date:GetText()] = args;
                     core.arenaTable:UpdateSelected();
-                    ArenaAnalyticsToggleSpecs(args, true)
+                    core.arenaTable:ToggleSpecs(args, true)
                 else
                     args:SetAttribute("clicked", false)
                     selectedGames[args.Date:GetText()] = nil;
                     args.Tooltip:Hide();
                     core.arenaTable:UpdateSelected();
-                    ArenaAnalyticsToggleSpecs(args, false)
+                    core.arenaTable:ToggleSpecs(args, false)
                 end
             end
             )
@@ -1008,55 +1082,18 @@ function core.arenaTable:RefreshLayout()
     end
     
 
-    if (ArenaAnalyticsScrollFrame.filterComps2v2 == nil) then
-        
-        filterComps2v2_opts = {
-            ['name']='Filter2v2_Comps',
-            ['parent'] = ArenaAnalyticsScrollFrame,
-            ['title']='Comp',
-            ['hasIcon']= true,
-            ['items'] = getPlayerPlayedComps("2v2"),
-            ['defaultVal'] ='All'
-        }
-
-        -- TODO: make custom tailored dropdowns for comp filter
-        ArenaAnalyticsScrollFrame.filterComps2v2 = createDropdown(filterComps2v2_opts)
-        
-        -- Set tooltip when comp is disabled
-        ArenaAnalyticsScrollFrame.filterComps2v2.selected:Disable();
-        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetDisabledFontObject("GameFontDisableSmall")
-        ArenaAnalyticsScrollFrame.filterComps2v2.selected:SetText("Select bracket");
-        ArenaAnalyticsScrollFrame.filterComps2v2.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
+    if (ArenaAnalyticsScrollFrame.filterComps["2v2"] == nil) then
+        createDropdownForFilterComps("2v2")
     elseif (newArenaPlayed) then
         checkForFilterUpdate("2v2");
     end
-    if (ArenaAnalyticsScrollFrame.filterComps3v3 == nil) then
-        filterComps3v3_opts = {
-            ['name']='Filter3v3_Comps',
-            ['parent'] = ArenaAnalyticsScrollFrame,
-            ['title']='Comp',
-            ['hasIcon']= true,
-            ['items'] = getPlayerPlayedComps("3v3"),
-            ['defaultVal'] ='All'
-        }
-        ArenaAnalyticsScrollFrame.filterComps3v3 = createDropdown(filterComps3v3_opts)
-        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
-        ArenaAnalyticsScrollFrame.filterComps3v3.dropdownFrame:Hide();
+    if (ArenaAnalyticsScrollFrame.filterComps["3v3"] == nil) then
+        createDropdownForFilterComps("3v3")
     elseif (newArenaPlayed) then
         checkForFilterUpdate("3v3");
     end
-    if (ArenaAnalyticsScrollFrame.filterComps5v5 == nil) then
-        filterComps5v5_opts = {
-            ['name']='Filter5v5_Comps',
-            ['parent'] = ArenaAnalyticsScrollFrame,
-            ['title']='Comp',
-            ['hasIcon']= true,
-            ['items'] = getPlayerPlayedComps("5v5"),
-            ['defaultVal'] ='All'
-        }
-        ArenaAnalyticsScrollFrame.filterComps5v5 = createDropdown(filterComps5v5_opts)
-        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
-        ArenaAnalyticsScrollFrame.filterComps5v5.dropdownFrame:Hide();
+    if (ArenaAnalyticsScrollFrame.filterComps["5v5"] == nil) then
+        createDropdownForFilterComps("5v5")
     elseif (newArenaPlayed) then
         checkForFilterUpdate("5v5");
     end
