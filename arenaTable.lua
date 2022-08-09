@@ -409,7 +409,7 @@ local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrameScroll:SetScrollChild(ArenaAnalyticsScrollFrame.exportFrame);
     ArenaAnalyticsScrollFrame.exportFrame:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18);
     ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(true);
-    ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(false);
+    ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(true);
     ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10);
     ArenaAnalyticsScrollFrame.exportFrame:SetJustifyH("LEFT");
     ArenaAnalyticsScrollFrame.exportFrame:SetJustifyV("CENTER");
@@ -614,15 +614,14 @@ function showClickedName(classFrame)
     if (not ArenaAnalyticsScrollFrame.clickedNameFrame) then
         ArenaAnalyticsScrollFrame.clickedNameFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
         ArenaAnalyticsScrollFrame.clickedNameFrame:SetFrameStrata("HIGH");
-        ArenaAnalyticsScrollFrame.clickedNameFrame:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
-        ArenaAnalyticsScrollFrame.clickedNameFrame:SetSize(150, 60);
+        ArenaAnalyticsScrollFrame.clickedNameFrame:SetSize(160, 60);
         ArenaAnalyticsScrollFrame.clickedNameFrame.text = CreateFrame("EditBox", nil, ArenaAnalyticsScrollFrame.clickedNameFrame, "BackdropTemplate");
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetFrameStrata("HIGH");
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetPoint("TOP", ArenaAnalyticsScrollFrame.clickedNameFrame, "TOP", 15, -35);
-        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetWidth(150);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetWidth(160);
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetMultiLine(true);
-        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetAutoFocus(false);
-        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetFont("Fonts\\FRIZQT__.TTF", 10);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetAutoFocus(true);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetFont("Fonts\\FRIZQT__.TTF", 12);
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetJustifyH("LEFT");
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetJustifyV("CENTER");
     end
