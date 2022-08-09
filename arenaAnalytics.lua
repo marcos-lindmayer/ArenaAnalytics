@@ -334,7 +334,10 @@ local function quitsArena(self, ...)
 			arenaTeamId = 3;
 		end
 		local teamName, teamSize, teamRating, weekPlayed, weekWins, seasonPlayed, seasonWins, playerPlayed, seasonPlayerPlayed, teamRank, playerRating = GetArenaTeam(arenaTeamId)
-		local ratingDiff = prevRating ~= nil and " (-" .. prevRating - teamRating .. ")" or "";
+		local ratingDiff = ""
+		if (prevRating and prevRating - teamRating > 0) then
+			ratingDiff = " (-" .. prevRating - teamRating .. ")";
+		end
 		arenaPartyRating = teamRating ~= nil and teamRating .. ratingDiff  or "-";
 		arenaEnemyRating = "-";
 		arenaPartyMMR = "-";
