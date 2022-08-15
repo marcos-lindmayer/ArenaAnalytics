@@ -85,6 +85,7 @@ local function getCompWinrate(comp)
     return winrate
 end
 
+-- Hides spec's icon on bottom-right class' icon
 local function hideSpecIcons()
     for specIconNumber = 1, #ArenaAnalyticsScrollFrame.specFrames do
         if (not ArenaAnalyticsScrollFrame.specFrames[specIconNumber][2]:GetAttribute("clicked")) then
@@ -95,6 +96,7 @@ local function hideSpecIcons()
     end
 end
 
+-- Clears current selection of matches
 function core.arenaTable:ClearSelectedMatches()
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame)
     for i = 1, #buttons do
@@ -884,28 +886,6 @@ local function applyFilters(unfilteredDB)
         if (k1["dateInt"] and k2["dateInt"]) then
             return k1["dateInt"] > k2["dateInt"];
         end
-        -- TODO: Remove on next version
-        local date1 = ""
-        local date2 = ""
-        for digitDate in string.gmatch(k1["date"], "([^%s]+)") do
-            if (string.find(digitDate, "/")) then
-                for subDigitDate in string.gmatch(digitDate, "[^%\/]+") do
-                    date1 = subDigitDate .. date1;
-                end
-            else
-                date1 = date1 .. " " .. digitDate
-            end
-        end
-        for digitDate2 in string.gmatch(k2["date"], "([^%s]+)") do
-            if (string.find(digitDate2, "/")) then
-                for subDigitDate2 in string.gmatch(digitDate2, "[^%\/]+") do
-                    date2 = subDigitDate2 .. date2;
-                end
-            else
-                date2 = date2 .. " " .. digitDate2
-            end
-        end
-        return date1 > date2;
     end)
 
     return sortedDB;
