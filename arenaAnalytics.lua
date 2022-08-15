@@ -152,7 +152,15 @@ local function insertArenaOnTable()
 	table.sort(arenaParty, function(a, b)
 		local prioA = a["name"] == arenaPlayerName and 1 or 2
 		local prioB = b["name"] == arenaPlayerName and 1 or 2
-		return prioA < prioB or (prioA == prioB and a["class"] < b["class"])
+		local sameClass = a["class"] == b["class"]
+		return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
+	end
+	);
+
+	--Sort arenaEnemy
+	table.sort(arenaEnemy, function(a, b)
+		local sameClass = a["class"] == b["class"]
+		return (sameClass and a["name"] < b["name"]) or a["class"] < b["class"]
 	end
 	);
 
