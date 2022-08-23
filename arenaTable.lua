@@ -16,6 +16,7 @@ local currentFilters = {
 };
 
 local isCompFilterOn;
+local filteredDB = nil;
 local dropdownCounter = 1;
 local filterCompsOpts = {
     ["2v2"] = "",
@@ -177,7 +178,7 @@ local function changeFilter(args)
         isCompFilterOn = false;
     end
 
-    core.arenaTable:RefreshLayout();
+    core.arenaTable:RefreshLayout(true);
 end
 
 -- Returns buttons for filter lists
@@ -511,7 +512,7 @@ function core.arenaTable:OnLoad()
     ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", 
         function()
             currentFilters["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
-            core.arenaTable:RefreshLayout();
+            core.arenaTable:RefreshLayout(true);
         end
     );
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
@@ -539,7 +540,7 @@ function core.arenaTable:OnLoad()
     ArenaAnalyticsScrollFrame.resetBtn:SetScript("OnClick", function (i) 
         ArenaAnalyticsDB = {}; 
         print("ArenaAnalytics match history deleted!");
-        core.arenaTable:RefreshLayout(); 
+        core.arenaTable:RefreshLayout(true); 
     end);
     
 
@@ -755,7 +756,7 @@ end
 -- Returns matches applying current match filters
 local function applyFilters(unfilteredDB)
 
-    local filteredDB = {
+    local holderDB = {
         ["2v2"] = {},
         ["3v3"] = {},
         ["5v5"] = {},
@@ -764,7 +765,7 @@ local function applyFilters(unfilteredDB)
     -- Filter map
     local arenaMaps = {{"Nagrand Arena","NA"}, {"Ruins of Lordaeron", "RoL"}, {"Blade Edge Arena", "BEA"}}
     if (currentFilters["map"] == "All") then
-        filteredDB = CopyTable(unfilteredDB);
+        holderDB = CopyTable(unfilteredDB);
     else
         for _,arenaMap in ipairs(arenaMaps) do
             if (currentFilters["map"] == arenaMap[1]) then
@@ -773,7 +774,7 @@ local function applyFilters(unfilteredDB)
                     if (#unfilteredDB[bracket] > 0) then
                         for arenaNumber = 1, #unfilteredDB[bracket] do
                             if (unfilteredDB[bracket][arenaNumber]["map"] == arenaMap[2]) then
-                                table.insert(filteredDB[bracket], unfilteredDB[bracket][arenaNumber]);
+                                table.insert(holderDB[bracket], unfilteredDB[bracket][arenaNumber]);
                             end
                         end
                     end
@@ -786,15 +787,15 @@ local function applyFilters(unfilteredDB)
     -- Filter comp
     if (currentFilters["bracket"] ~= "All" and isCompFilterOn) then
         local currentCompFilter = "comps" .. currentFilters["bracket"]
-        local n2v2 = #filteredDB["2v2"];
-        local n3v3 = #filteredDB["3v3"];
-        local n5v5 = #filteredDB["5v5"];
+        local n2v2 = #holderDB["2v2"];
+        local n3v3 = #holderDB["3v3"];
+        local n5v5 = #holderDB["5v5"];
         if (currentFilters["bracket"] == "2v2") then
             for arena2v2Number = n2v2, 1, - 1 do
-                if (filteredDB["2v2"][arena2v2Number]) then
-                    local DBCompAsString = table.concat(filteredDB["2v2"][arena2v2Number]["comp"], " ");
+                if (holderDB["2v2"][arena2v2Number]) then
+                    local DBCompAsString = table.concat(holderDB["2v2"][arena2v2Number]["comp"], " ");
                     if (DBCompAsString ~= currentFilters["comps2v2"]) then
-                        table.remove(filteredDB["2v2"], arena2v2Number)
+                        table.remove(holderDB["2v2"], arena2v2Number)
                         n2v2 = n2v2 - 1
                     end
                 end
@@ -802,10 +803,10 @@ local function applyFilters(unfilteredDB)
         end
         if (currentFilters["bracket"] == "3v3") then
         for arena3v3Number = n3v3, 1, -1 do
-                if (filteredDB["3v3"][arena3v3Number]) then
-                    local DBCompAsString = table.concat(filteredDB["3v3"][arena3v3Number]["comp"], " ");
+                if (holderDB["3v3"][arena3v3Number]) then
+                    local DBCompAsString = table.concat(holderDB["3v3"][arena3v3Number]["comp"], " ");
                     if (DBCompAsString ~= currentFilters["comps3v3"]) then
-                        table.remove(filteredDB["3v3"], arena3v3Number)
+                        table.remove(holderDB["3v3"], arena3v3Number)
                         n3v3 = n3v3 - 1
                     end
                 end
@@ -813,10 +814,10 @@ local function applyFilters(unfilteredDB)
         end
         if (currentFilters["bracket"] == "5v5") then
             for arena5v5Number = n5v5, 1, -1 do
-                if (filteredDB["5v5"][arena5v5Number]) then
-                    local DBCompAsString = table.concat(filteredDB["5v5"][arena5v5Number]["comp"], " ");
+                if (holderDB["5v5"][arena5v5Number]) then
+                    local DBCompAsString = table.concat(holderDB["5v5"][arena5v5Number]["comp"], " ");
                     if (DBCompAsString ~= currentFilters["comps5v5"]) then
-                        table.remove(filteredDB["5v5"], arena5v5Number)
+                        table.remove(holderDB["5v5"], arena5v5Number)
                         n5v5 = n5v5 - 1
                     end
                 end
@@ -827,42 +828,42 @@ local function applyFilters(unfilteredDB)
     
     -- Filter bracket
     if(currentFilters["bracket"] == "2v2") then
-        filteredDB["3v3"] = {}
-        filteredDB["5v5"] = {}
+        holderDB["3v3"] = {}
+        holderDB["5v5"] = {}
     elseif(currentFilters["bracket"] == "3v3") then
-        filteredDB["2v2"] = {}
-        filteredDB["5v5"] = {}
+        holderDB["2v2"] = {}
+        holderDB["5v5"] = {}
     elseif(currentFilters["bracket"] == "5v5") then
-        filteredDB["3v3"] = {}
-        filteredDB["2v2"] = {}
+        holderDB["3v3"] = {}
+        holderDB["2v2"] = {}
     end
 
     -- Filter Skirmish
     if (currentFilters["skirmishIsChecked"] == false) then
-        local n2v2 = #filteredDB["2v2"];
-        local n3v3 = #filteredDB["3v3"];
-        local n5v5 = #filteredDB["5v5"];
+        local n2v2 = #holderDB["2v2"];
+        local n3v3 = #holderDB["3v3"];
+        local n5v5 = #holderDB["5v5"];
 
         for arena2v2Number = n2v2, 1, -1 do
-            if (filteredDB["2v2"][arena2v2Number]) then
-                if (not filteredDB["2v2"][arena2v2Number]["isRanked"]) then
-                    table.remove(filteredDB["2v2"], arena2v2Number)
+            if (holderDB["2v2"][arena2v2Number]) then
+                if (not holderDB["2v2"][arena2v2Number]["isRanked"]) then
+                    table.remove(holderDB["2v2"], arena2v2Number)
                     n2v2 = n2v2 - 1
                 end
             end
         end
         for arena3v3Number = n3v3, 1, -1 do
-            if (filteredDB["3v3"][arena3v3Number]) then
-                if (not filteredDB["3v3"][arena3v3Number]["isRanked"]) then
-                    table.remove(filteredDB["3v3"], arena3v3Number)
+            if (holderDB["3v3"][arena3v3Number]) then
+                if (not holderDB["3v3"][arena3v3Number]["isRanked"]) then
+                    table.remove(holderDB["3v3"], arena3v3Number)
                     n3v3 = n3v3 - 1
                 end
             end
         end
         for arena5v5Number = n5v5, 1, -1 do
-            if (filteredDB["5v5"][arena5v5Number]) then
-                if (not filteredDB["5v5"][arena5v5Number]["isRanked"]) then
-                    table.remove(filteredDB["5v5"], arena5v5Number)
+            if (holderDB["5v5"][arena5v5Number]) then
+                if (not holderDB["5v5"][arena5v5Number]["isRanked"]) then
+                    table.remove(holderDB["5v5"], arena5v5Number)
                     n5v5 = n5v5 - 1
                 end
             end
@@ -872,14 +873,14 @@ local function applyFilters(unfilteredDB)
     -- Get arenas from each bracket and sort by date 
     local sortedDB = {}; 
 
-    for b = 1, #filteredDB["2v2"] do
-        table.insert(sortedDB, filteredDB["2v2"][b]);
+    for b = 1, #holderDB["2v2"] do
+        table.insert(sortedDB, holderDB["2v2"][b]);
     end
-    for n = 1, #filteredDB["3v3"] do
-        table.insert(sortedDB, filteredDB["3v3"][n]);
+    for n = 1, #holderDB["3v3"] do
+        table.insert(sortedDB, holderDB["3v3"][n]);
     end
-    for m = 1, #filteredDB["5v5"] do
-        table.insert(sortedDB, filteredDB["5v5"][m]);
+    for m = 1, #holderDB["5v5"] do
+        table.insert(sortedDB, holderDB["5v5"][m]);
     end
     
     table.sort(sortedDB, function (k1,k2)
@@ -966,7 +967,7 @@ end
 
 
 -- Refreshes matches table
-function core.arenaTable:RefreshLayout()
+function core.arenaTable:RefreshLayout(filter)
     ArenaAnalyticsDB = ArenaAnalyticsDB["2v2"] ~= nil and ArenaAnalyticsDB or {
         ["2v2"] = {},
         ["3v3"] = {},
@@ -979,7 +980,10 @@ function core.arenaTable:RefreshLayout()
         totalArenas = currentTotalArenas;
     end
 
-    local filteredDB = applyFilters(ArenaAnalyticsDB);
+    if ((filter and filteredDB) or filteredDB == nil) then
+        filteredDB = applyFilters(ArenaAnalyticsDB)
+    end
+    
     ArenaAnalyticsScrollFrame.items = filteredDB;
 
     local items = ArenaAnalyticsScrollFrame.items;
