@@ -187,7 +187,7 @@ local function insertArenaOnTable()
 	});
 
 	-- Refresh and reset
-	core.arenaTable.RefreshLayout();
+	core.arenaTable.RefreshLayout(true);
 	resetLastArenaValues();
 end
 

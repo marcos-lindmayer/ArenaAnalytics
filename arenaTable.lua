@@ -585,7 +585,7 @@ end
 
 function core.arenaTable:OnShow()
     HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListItem");
-    core.arenaTable:RefreshLayout();
+    core.arenaTable:RefreshLayout(true);
     ArenaAnalyticsScrollFrame:Hide();
 end
 
@@ -980,7 +980,7 @@ function core.arenaTable:RefreshLayout(filter)
         totalArenas = currentTotalArenas;
     end
 
-    if ((filter and filteredDB) or filteredDB == nil) then
+    if (filter or filteredDB == nil or newArenaPlayed) then
         filteredDB = applyFilters(ArenaAnalyticsDB)
     end
     
