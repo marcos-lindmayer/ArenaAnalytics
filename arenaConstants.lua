@@ -79,6 +79,7 @@ local specSpells = {
     [ 44373 ] = "Subtlety", -- Shadowstep Speed
     [ 36563 ] = "Subtlety", -- Shadowstep DMG
     [ 14278 ] = "Subtlety", -- Ghostly Strike
+    [ 31665 ] = "Subtlety", -- Master of Subtlety
     [ 31233 ] = "Assassination", -- Find Weakness
 
     -- SHAMAN
@@ -105,6 +106,22 @@ local specSpells = {
     [ 12809 ] = "Protection", -- Concussion Blow
     [ 30022 ] = "Protection", -- Devastation
     [ 29838 ] = "Arms", -- Second Wind
+
+    -- DEATHKNIGHT
+    [ 50461 ] = "Unholy", -- Anti-magic Zone
+    [ 49222 ] = "Unholy", -- Bone Shield
+    [ 71488 ] = "Unholy", -- Scourge Strike
+    [ 49206 ] = "Unholy", -- Summon Gargoyle
+    [ 49796 ] = "Frost", -- Death Chill
+    [ 49203 ] = "Frost", -- Hungering Cold
+    [ 51271 ] = "Frost", -- Unbreakable Armor
+    [ 55268 ] = "Frost", -- Frost Strike
+    [ 51411 ] = "Frost", -- Howling Blast
+    [ 49005 ] = "Blood", -- Mark of Blood
+    [ 49016 ] = "Blood", -- Unholy Frenzy
+    [ 55233 ] = "Blood", -- Vampiric Blood
+    [ 55262 ] = "Blood", -- Heart Strike
+    [ 49028 ] = "Blood", -- Dancing Rune Weapon
 }
 function arenaConstants:GetSpecSpells()
     return specSpells
@@ -270,7 +287,7 @@ function ArenaAnalyticsGetClassIcon(className)
 		classString = [[Interface\Icons\classicon_warrior]];
 	elseif (currentClassName == "Warlock") then
 		classString = [[Interface\Icons\classicon_warlock]];
-	elseif (currentClassName == "Deathknight") then
+	elseif (currentClassName == "Death Knight") then
 		classString = [[Interface\Icons\spell_deathknight_classicon]];
 	end
 	return classString;
@@ -282,13 +299,13 @@ function ArenaAnalyticsGetSpecIcon(spec, class)
 	local specString;
 	if (currentSpecName == "Subtlety") then
 		specString = [[Interface\Icons\ability_stealth]];
-	elseif (currentSpecName == "Assassination") then
+	elseif (currentSpecName == "|") then
 		specString = [[Interface\Icons\ability_rogue_eviscerate]];
 	elseif (currentSpecName == "Combat") then
 		specString = [[Interface\Icons\ability_backstab]];
 	elseif (currentSpecName == "Blood") then
 		specString = [[Interface\Icons\spell_deathknight_bloodpresence]];
-	elseif (currentSpecName == "Frost" and class == "Deathknight") then
+	elseif (currentSpecName == "Frost" and class == "Death Knight") then
 		specString = [[Interface\Icons\spell_deathknight_frostpresence]];
 	elseif (currentSpecName == "Unholy") then
 		specString = [[Interface\Icons\spell_deathknight_unholypresence]];
