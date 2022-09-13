@@ -16,6 +16,13 @@ core.commands = {
 	["more"] = function()
 		core:Print("Wanna get more data? Web project coming soon...");
 	end,
+
+	["chat"] = function(...)
+		local prefix = "ArenaAnalytics"
+		C_ChatInfo.RegisterAddonMessagePrefix(prefix)
+		local addonMessage = strjoin(" ", ...)
+		C_ChatInfo.SendAddonMessage(prefix, addonMessage, "WHISPER", UnitName("player"))
+	end,
 };
 
 local function HandleSlashCommands(str)	
@@ -66,11 +73,10 @@ local function createMinimapButton()
 	minibtn:SetFrameLevel(8)
 	minibtn:SetSize(24,24)
 	minibtn:SetMovable(true)
-	
-	minibtn:SetNormalTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmicon")
-	minibtn:SetPushedTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmicon")
-	minibtn:SetPushedTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmiconP")
-	minibtn:SetHighlightTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmiconH")
+	minibtn:SetNormalTexture([[Interface\AddOns\ArenaAnalytics\icon\mmicon]])
+	minibtn:SetPushedTexture([[Interface\AddOns\ArenaAnalytics\icon\mmicon]])
+	minibtn:SetPushedTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconP]])
+	minibtn:SetHighlightTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconH]])
 	minibtn:SetScript("OnEnter", function ()
 		GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
 		local hex = select(4, core.Config:GetThemeColor());
@@ -125,8 +131,13 @@ local function createMinimapButton()
 
 end
 
-function core:init(event, name)
+function core:init(event, name, ...)
 	if (name ~= "ArenaAnalytics") then return end 
+	
+	if (event == "CHAT_MSG_ADDON") then
+		print(event, name, ...)
+		return;
+	end
 
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do
@@ -146,9 +157,12 @@ function core:init(event, name)
 	core.Config.EventRegister();
 	core.arenaTable.OnLoad();
 	createMinimapButton();
+
+
 end
 
 
 local events = CreateFrame("Frame");
 events:RegisterEvent("ADDON_LOADED");
+events:RegisterEvent("CHAT_MSG_ADDON");
 events:SetScript("OnEvent", core.init);
