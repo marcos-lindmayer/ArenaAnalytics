@@ -55,13 +55,13 @@ end
 -- Return specific comp's winrate
 -- comp is a string of space-separated classes
 local function getCompWinrate(comp)
-    local _, bracket = string.gsub(comp, " ", " ")
+    local _, bracket = string.gsub(comp, "-", "-")
     local bracketSize = bracket + 1;
     bracket = bracketSize .. "v" .. bracketSize;
     local arenasWithComp = {}
     for i = 1, #ArenaAnalyticsDB[bracket] do
         if (#ArenaAnalyticsDB[bracket][i]["comp"] == bracketSize) then
-            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i]["comp"], " ")
+            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i]["comp"], "-")
             if (comp == currentComp) then
                 table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
             end
@@ -131,8 +131,6 @@ local function changeFilter(args)
         currentFilter.dropdownList:Hide();
     end
 
-
-
     if (selectedFilter == "2v2") then
         ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:SetText("All");
         currentFilters["comps3v3"] = "All"
@@ -200,6 +198,28 @@ local function createDropdownButton(info, dropdownTable, filter, dropdown_width)
     return button;
 end
 
+-- Returns button string (icons) and tooltip for comp filter
+local function setIconsOnCompFilter(itext, itooltip) 
+    local inlineIcons = ""
+    local infoText = itext;
+    local infoTooltip = itooltip;
+    if (string.find(infoText, "-") == nil) then
+        return "","";
+    end
+    for arenaClassSpec in string.gmatch(infoText, "([^%-]+)") do
+        local indexOfSeparator = string.find(arenaClassSpec, "|")
+        local arenaClass = arenaClassSpec:sub(1, indexOfSeparator - 1)
+        local arenaSpec = arenaClassSpec:sub(indexOfSeparator + 1)
+        local iconPath = "Interface\\AddOns\\ArenaAnalytics\\icon\\" .. arenaClass .. "\\" .. arenaSpec;
+        local singleClassSpecIcon = IconClass(iconPath, 0, 0, 0, 0, 0, 0, 25, 25);
+        inlineIcons = inlineIcons .. singleClassSpecIcon:GetIconString() .. " ";
+        infoTooltip = infoTooltip .. arenaClass .. "|" .. arenaSpec .."-"
+    end
+    infoTooltip = infoTooltip:sub(1, -2)
+    infoText = inlineIcons .. " - " .. getCompWinrate(infoText);
+    return infoText, infoTooltip;
+end
+
 -- Returns a dropdown frame
 -- Used for match filters
 local function createDropdown(opts)
@@ -251,15 +271,7 @@ local function createDropdown(opts)
         info.text = item;
         info.tooltip = "";
         if(hasIcon and info.text ~= "All") then
-            local classInlineIcons = ""
-            for arenaClass in string.gmatch(info.text, "([^%s]+)") do
-                local arenaIconPath = ArenaAnalyticsGetClassIcon(arenaClass);
-                local singleIcon = IconClass(arenaIconPath, 0, 0, 0, 0, 0, 0, 25, 25);
-                classInlineIcons = classInlineIcons .. singleIcon:GetIconString() .. " ";
-                info.tooltip = info.tooltip .. arenaClass .. " "
-            end
-            info.tooltip = info.tooltip:sub(1, -2)
-            info.text = classInlineIcons .. " - " .. getCompWinrate(info.text);
+            info.text, info.tooltip = setIconsOnCompFilter(info.text, info.tooltip)
         end
         table.insert(dropdownTable.buttons, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
     end
@@ -372,13 +384,14 @@ local function getPlayerPlayedComps(bracket)
         for arenaNumber = 1, #ArenaAnalyticsDB[bracket] do   
             if (#ArenaAnalyticsDB[bracket][arenaNumber]["comp"] == arenaSize) then
                 table.sort(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], function(a,b)
-                    local prioA = a == UnitClass("player") and 1 or 2
-                    local prioB = b == UnitClass("player") and 1 or 2
+                    local playerClassSpec = UnitClass("player") .. "|" .. ArenaAnalyticsGetPlayerSpec()
+                    local prioA = a == playerClassSpec and 1 or 2
+                    local prioB = b == playerClassSpec and 1 or 2
                     return prioA < prioB or (prioA == prioB and a < b)
                 end)
-                local compString = table.concat(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], " ");
+                local compString = table.concat(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], "-");
 
-                if (not tContains(playedComps, compString)) then
+                if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil) then
                     table.insert(playedComps, compString)
                 end
             end
@@ -495,7 +508,7 @@ function core.arenaTable:OnLoad()
         ['parent'] = ArenaAnalyticsScrollFrame,
         ['title']='Map',
         ['icon']= false,
-        ['items'] = {'All' ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena'},
+        ['items'] = {'All' ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena', 'Dalaran Arena', 'Ring of Valor'},
         ['defaultVal'] ='All'
     }
     
@@ -703,18 +716,7 @@ local function checkForFilterUpdate(bracket)
         local info = {}
         local newComp = getPlayerPlayedComps(bracket)[totalPlayedComps];
         table.insert(filterByBracketTable[bracket]['items'], newComp)
-        info.text = newComp;
-        info.tooltip = ""
-
-        local classInlineIcons = ""
-        for arenaClass in string.gmatch(info.text, "([^%s]+)") do
-            local arenaIconPath = ArenaAnalyticsGetClassIcon(arenaClass);
-            local singleIcon = IconClass(arenaIconPath, 0, 0, 0, 0, 0, 0, 25, 25);
-            classInlineIcons = classInlineIcons .. singleIcon:GetIconString() .. " ";
-            info.tooltip = info.tooltip .. arenaClass .. " "
-        end
-        info.tooltip = info.tooltip:sub(1, -2)
-        info.text = classInlineIcons .. " - " .. getCompWinrate(info.text);
+        info.text, info.tooltip = setIconsOnCompFilter(newComp, "")
         local filter = "comps" .. bracket;
         local dropdownTable = frameByBracketTable[bracket]
         local selectedWidth = frameByBracketTable[bracket].selected:GetWidth()
@@ -737,7 +739,7 @@ local function checkForFilterUpdate(bracket)
         local lastGame = ArenaAnalyticsScrollFrame.items[1];
         --DevTools_Dump(ArenaAnalyticsScrollFrame.items[#ArenaAnalyticsScrollFrame.items])
         local lastGameBracket = #lastGame["team"] .. "v" .. #lastGame["team"];
-        local lastGameComp = table.concat(lastGame["comp"], " ");
+        local lastGameComp = table.concat(lastGame["comp"], "-");
         local updatedWinrate = getCompWinrate(lastGameComp);
     
         for i = 1, #frameByBracketTable[bracket].buttons do
@@ -763,7 +765,7 @@ local function applyFilters(unfilteredDB)
     };
 
     -- Filter map
-    local arenaMaps = {{"Nagrand Arena","NA"}, {"Ruins of Lordaeron", "RoL"}, {"Blade Edge Arena", "BEA"}}
+    local arenaMaps = {{"Nagrand Arena","NA"}, {"Ruins of Lordaeron", "RoL"}, {"Blade Edge Arena", "BEA"}, {"Dalaran Arena", "DA"}, {"Ring of Valor", "RoV"}}
     if (currentFilters["map"] == "All") then
         holderDB = CopyTable(unfilteredDB);
     else
@@ -793,7 +795,7 @@ local function applyFilters(unfilteredDB)
         if (currentFilters["bracket"] == "2v2") then
             for arena2v2Number = n2v2, 1, - 1 do
                 if (holderDB["2v2"][arena2v2Number]) then
-                    local DBCompAsString = table.concat(holderDB["2v2"][arena2v2Number]["comp"], " ");
+                    local DBCompAsString = table.concat(holderDB["2v2"][arena2v2Number]["comp"], "-");
                     if (DBCompAsString ~= currentFilters["comps2v2"]) then
                         table.remove(holderDB["2v2"], arena2v2Number)
                         n2v2 = n2v2 - 1
@@ -804,7 +806,7 @@ local function applyFilters(unfilteredDB)
         if (currentFilters["bracket"] == "3v3") then
         for arena3v3Number = n3v3, 1, -1 do
                 if (holderDB["3v3"][arena3v3Number]) then
-                    local DBCompAsString = table.concat(holderDB["3v3"][arena3v3Number]["comp"], " ");
+                    local DBCompAsString = table.concat(holderDB["3v3"][arena3v3Number]["comp"], "-");
                     if (DBCompAsString ~= currentFilters["comps3v3"]) then
                         table.remove(holderDB["3v3"], arena3v3Number)
                         n3v3 = n3v3 - 1
@@ -815,7 +817,7 @@ local function applyFilters(unfilteredDB)
         if (currentFilters["bracket"] == "5v5") then
             for arena5v5Number = n5v5, 1, -1 do
                 if (holderDB["5v5"][arena5v5Number]) then
-                    local DBCompAsString = table.concat(holderDB["5v5"][arena5v5Number]["comp"], " ");
+                    local DBCompAsString = table.concat(holderDB["5v5"][arena5v5Number]["comp"], "-");
                     if (DBCompAsString ~= currentFilters["comps5v5"]) then
                         table.remove(holderDB["5v5"], arena5v5Number)
                         n5v5 = n5v5 - 1
@@ -951,7 +953,6 @@ local function createDropdownForFilterComps(bracket)
         ['defaultVal'] ='All'
     }
 
-    -- TODO: make custom tailored dropdowns for comp filter
     ArenaAnalyticsScrollFrame.filterComps[bracket] = createDropdown(filterCompsOpts[bracket])
     ArenaAnalyticsScrollFrame.filterComps[bracket].dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
 
