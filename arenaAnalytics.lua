@@ -108,7 +108,7 @@ end
 local function getArenaComp(teamTable)
 	local comp = {}
 	for i = 1, #teamTable do
-		table.insert(comp, teamTable[i]["class"])
+		table.insert(comp, teamTable[i]["class"] .. "|" .. teamTable[i]["spec"])
 	end
 	return comp;
 end
@@ -167,7 +167,6 @@ local function insertArenaOnTable()
 	-- Get arena comp for each team
 	arenaComp = getArenaComp(arenaParty);
 	arenaEnemyComp = getArenaComp(arenaEnemy);
-
 	-- Insert arena data as a new ArenaAnalyticsDB row
 	table.insert(ArenaAnalyticsDB[arenaSize], {
 		["date"] = arenaTimeStart, 
@@ -356,7 +355,7 @@ local function quitsArena(self, ...)
 end
 
 -- Returns the player's spec
-local function getPlayerSpec(class)
+function ArenaAnalyticsGetPlayerSpec()
 	local currentSpecNumber = 0
 	local spec
 	for i = 1, GetNumTalentTabs() do
@@ -406,7 +405,7 @@ local function trackArena(...)
 		local race = UnitRace("player");
 		local GUID = UnitGUID("player");
 		local name = arenaPlayerName;
-		local spec = getPlayerSpec(class);
+		local spec = ArenaAnalyticsGetPlayerSpec();
 		local player = createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec);
 		table.insert(arenaParty, player);
 	end
@@ -420,6 +419,10 @@ local function trackArena(...)
 		arenaMapName = "RoL"
 	elseif (arenaMapId == 559) then
 		arenaMapName = "NA"
+	elseif (arenaMapId == 4406) then
+		arenaMapName = "RoV"
+	elseif (arenaMapId == 617) then
+		arenaMapName = "DA"
 	end
 
 end
