@@ -358,7 +358,7 @@ end
 function ArenaAnalyticsGetPlayerSpec()
 	local currentSpecNumber = 0
 	local spec
-	for i = 1, GetNumTalentTabs() do
+	for i = 1, 3 do
 		local name,_ ,pointsSpent = GetTalentTabInfo(i)
 		if (pointsSpent > currentSpecNumber) then
 			currentSpecNumber = pointsSpent;
@@ -366,6 +366,16 @@ function ArenaAnalyticsGetPlayerSpec()
 		end
  	end
 	spec = spec == "Feral Combat" and "Feral" or spec
+
+	if (spec == nil) then -- Workaround for when GetTalentTabInfo returns nil
+		if (#ArenaAnalyticsDB["2v2"] > 0) then
+			spec = ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]]["team"][1]["spec"]
+		elseif (#ArenaAnalyticsDB["3v3"] > 0) then
+			spec = ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]]["team"][1]["spec"]
+		elseif (#ArenaAnalyticsDB["5v5"] > 0) then
+			spec = ArenaAnalyticsDB["5v5"][#ArenaAnalyticsDB["5v5"]]["team"][1]["spec"]
+		end
+	end
 	return spec
 end
 
