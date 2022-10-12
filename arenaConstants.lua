@@ -14,19 +14,23 @@ local specSpells = {
     [ 18562 ] = "Restoration", -- Swiftmend
     [ 16188 ] = "Restoration", -- Nature's Swiftness
     [ 45283 ] = "Restoration", -- Natural Perfection
-    [ 16880 ] = "Restoration", -- Nature's Grace; Dreamstate spec in TBC equals Restoration
-    [ 24858 ] = "Restoration", -- Moonkin Form; Dreamstate spec in TBC equals Restoration
-    [ 17007 ] = "Feral", -- Leader of the Pack
+    [ 24858 ] = "Balance", -- Moonkin Form
+    [ 24932 ] = "Feral", -- Leader of the Pack
+    [ 49376 ] = "Feral", -- Feral Charge: Cat
+    [ 16979 ] = "Feral", -- Feral Charge: Bear
+    [ 24907 ] = "Balance", -- Moonkin Aura
+    [ 33891 ] = "Restoration", -- Tree of Life
 
     -- HUNTER
     [ 19577 ] = "Beast Mastery", -- Intimidation
     [ 34490 ] = "Marksmanship", -- Silencing Shot
     [ 27068 ] = "Survival", -- Wyvern Sting
     [ 19306 ] = "Survival", -- Counterattack
-    [ 27066 ] = "Marksmanship", -- Trueshot Aura
+    [ 19506 ] = "Marksmanship", -- Trueshot Aura
     [ 34692 ] = "Beast Mastery", -- The Beast Within
     [ 20895 ] = "Beast Mastery", -- Spirit Bond
     [ 34455 ] = "Beast Mastery", -- Ferocious Inspiration
+    [ 53209 ] = "Marksmanship",  -- Chimera Shot
 
     -- MAGE
     [ 12042 ] = "Arcane", -- Arcane Power
@@ -51,6 +55,7 @@ local specSpells = {
     [ 31836 ] = "Holy", -- Light's Grace
     [ 20375 ] = "Retribution", -- Seal of Command
     [ 20049 ] = "Retribution", -- Vengeance
+    [ 20178 ] = "Protection", -- Reckoning 
 
     -- PRIEST
     [ 10060 ] = "Discipline", -- Power Infusion
@@ -68,7 +73,6 @@ local specSpells = {
     [ 14893 ] = "Discipline", -- Inspiration
 
     -- ROGUE
-    [ 34413 ] = "Assassination", -- Mutilate
     [ 14177 ] = "Assassination", -- Cold Blood
     [ 13750 ] = "Combat", -- Adrenaline Rush
     [ 14185 ] = "Subtlety", -- Preparation
@@ -81,6 +85,7 @@ local specSpells = {
     [ 14278 ] = "Subtlety", -- Ghostly Strike
     [ 31665 ] = "Subtlety", -- Master of Subtlety
     [ 31233 ] = "Assassination", -- Find Weakness
+    [ 48666 ] = "Assassination", -- Mutilate
 
     -- SHAMAN
     [ 16166 ] = "Elemental", -- Elemental Mastery
@@ -92,19 +97,21 @@ local specSpells = {
     [ 30823 ] = "Enhancement", -- Shamanistic Rage
 
     -- WARLOCK
-    [ 30405 ] = "Affliction", -- Unstable Affliction
-    [ 30414 ] = "Destruction", -- Shadowfury
-    [ 19028 ] = "Demonology", -- Soul Link
-    [ 23759 ] = "Demonology", -- Master Demonologist
+    [ 47843 ] = "Affliction", -- Unstable Affliction
+    [ 47847 ] = "Destruction", -- Shadowfury
     [ 30302 ] = "Destruction", -- Nether Protection
     [ 34935 ] = "Destruction", -- Backlash
+    [ 59672 ] = "Demonology", -- Metamorphosis
+    [ 59164 ] = "Affliction", -- Haunt
 
     -- WARRIOR
+    [ 56638 ] = "Arms", -- Taste for Blood
+    [ 64976 ] = "Arms", -- Juggernaut
     [ 30330 ] = "Arms", -- Mortal Strike
     [ 12292 ] = "Arms", -- Death Wish
-    [ 30335 ] = "Fury", -- Bloodthirst
+    [ 23881 ] = "Fury", -- Bloodthirst
     [ 12809 ] = "Protection", -- Concussion Blow
-    [ 30022 ] = "Protection", -- Devastation
+    [ 47498 ] = "Protection", -- Devastate
     [ 29838 ] = "Arms", -- Second Wind
 
     -- DEATHKNIGHT
