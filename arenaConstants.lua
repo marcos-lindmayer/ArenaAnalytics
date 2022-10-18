@@ -71,6 +71,8 @@ local specSpells = {
     [ 14752 ] = "Discipline", -- Divine Spirit
     [ 27681 ] = "Discipline", -- Prayer of Spirit
     [ 14893 ] = "Discipline", -- Inspiration
+    [ 52800 ] = "Discipline", -- Borrowed Time
+    [ 53007 ] = "Discipline", -- Penance
 
     -- ROGUE
     [ 14177 ] = "Assassination", -- Cold Blood
@@ -86,6 +88,7 @@ local specSpells = {
     [ 31665 ] = "Subtlety", -- Master of Subtlety
     [ 31233 ] = "Assassination", -- Find Weakness
     [ 48666 ] = "Assassination", -- Mutilate
+    [ 57993 ] = "Assassination", -- Envenom
 
     -- SHAMAN
     [ 16166 ] = "Elemental", -- Elemental Mastery
@@ -95,6 +98,7 @@ local specSpells = {
     [ 32594 ] = "Restoration", -- Earth Shield
     [ 16190 ] = "Restoration", -- Mana Tide Totem
     [ 30823 ] = "Enhancement", -- Shamanistic Rage
+    [ 66053 ] = "Restoration", -- Riptide
 
     -- WARLOCK
     [ 47843 ] = "Affliction", -- Unstable Affliction
@@ -107,12 +111,13 @@ local specSpells = {
     -- WARRIOR
     [ 56638 ] = "Arms", -- Taste for Blood
     [ 64976 ] = "Arms", -- Juggernaut
-    [ 30330 ] = "Arms", -- Mortal Strike
+    [ 47486 ] = "Arms", -- Mortal Strike
     [ 12292 ] = "Arms", -- Death Wish
     [ 23881 ] = "Fury", -- Bloodthirst
     [ 12809 ] = "Protection", -- Concussion Blow
     [ 47498 ] = "Protection", -- Devastate
     [ 29838 ] = "Arms", -- Second Wind
+    [ 46924 ] = "Arms", -- Bladestorm
 
     -- DEATHKNIGHT
     [ 50461 ] = "Unholy", -- Anti-magic Zone
