@@ -508,7 +508,7 @@ function core.arenaTable:OnLoad()
         ['parent'] = ArenaAnalyticsScrollFrame,
         ['title']='Map',
         ['icon']= false,
-        ['items'] = {'All' ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena', 'Dalaran Arena', 'Ring of Valor'},
+        ['items'] = {'All' ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena', 'Dalaran Arena'},
         ['defaultVal'] ='All'
     }
     
@@ -765,7 +765,7 @@ local function applyFilters(unfilteredDB)
     };
 
     -- Filter map
-    local arenaMaps = {{"Nagrand Arena","NA"}, {"Ruins of Lordaeron", "RoL"}, {"Blade Edge Arena", "BEA"}, {"Dalaran Arena", "DA"}, {"Ring of Valor", "RoV"}}
+    local arenaMaps = {{"Nagrand Arena","NA"}, {"Ruins of Lordaeron", "RoL"}, {"Blade Edge Arena", "BEA"}, {"Dalaran Arena", "DA"}}
     if (currentFilters["map"] == "All") then
         holderDB = CopyTable(unfilteredDB);
     else
