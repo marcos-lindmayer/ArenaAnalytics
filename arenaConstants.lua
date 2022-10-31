@@ -99,6 +99,7 @@ local specSpells = {
     [ 16190 ] = "Restoration", -- Mana Tide Totem
     [ 30823 ] = "Enhancement", -- Shamanistic Rage
     [ 66053 ] = "Restoration", -- Riptide
+    [ 59159 ] = "Elemental", -- Thunderstorm
 
     -- WARLOCK
     [ 47843 ] = "Affliction", -- Unstable Affliction
