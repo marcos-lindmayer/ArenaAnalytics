@@ -130,9 +130,25 @@ local function insertArenaOnTable()
 		arenaTimeStart = date("%d/%m/%y %H:%M:%S", time() - seconds);
 	end
 
-
-	-- Set data for skirmish
-	if (not arenaIsRanked) then
+	-- Get your personal rating gain instead of the one from GetBattlefieldTeamInfo (which gives an average)
+	if (arenaIsRanked) then
+		local arenaTeamId;
+		if (arenaSize == 2) then
+			arenaTeamId = 1;
+		elseif (arenaSize == 3) then
+			arenaTeamId = 2;
+		else
+			arenaTeamId = 3;
+		end
+		local _, _, teamRating, _, _, _, _, _, _, _, _ = GetArenaTeam(arenaTeamId)
+		local ratingDiff = ""
+		if (prevRating and prevRating - teamRating > 0) then
+			ratingDiff = " (-" .. prevRating - teamRating .. ")";
+		end
+		arenaPartyRating = teamRating ~= nil and teamRating .. ratingDiff  or "-";
+		prevRating = nil;
+	else 
+		-- Set data for skirmish
 		arenaPartyRating = arenaPartyRating ~= nil and arenaPartyRating or "SKIRMISH";
 		arenaEnemyRating = arenaEnemyRating ~= nil and arenaEnemyRating or "SKIRMISH";
 		arenaPartyMMR = arenaPartyMMR ~= nil and arenaPartyMMR or "-";
@@ -331,26 +347,6 @@ end
 local function quitsArena(self, ...)
 	arenaEnded = true;
 	arenaWonByPlayer = false;	
-	if (arenaIsRanked) then
-		local arenaTeamId;
-		if (arenaSize == 2) then
-			arenaTeamId = 1;
-		elseif (arenaSize == 3) then
-			arenaTeamId = 2;
-		else
-			arenaTeamId = 3;
-		end
-		local teamName, teamSize, teamRating, weekPlayed, weekWins, seasonPlayed, seasonWins, playerPlayed, seasonPlayerPlayed, teamRank, playerRating = GetArenaTeam(arenaTeamId)
-		local ratingDiff = ""
-		if (prevRating and prevRating - teamRating > 0) then
-			ratingDiff = " (-" .. prevRating - teamRating .. ")";
-		end
-		arenaPartyRating = teamRating ~= nil and teamRating .. ratingDiff  or "-";
-		arenaEnemyRating = "-";
-		arenaPartyMMR = "-";
-		arenaEnemyMMR = "-";
-		prevRating = nil;
-	end
 	insertArenaOnTable();
 end
 
@@ -513,7 +509,6 @@ local function handleArenaEnd()
 		if (arenaIsRanked) then
 			arenaPartyMMR = team1Rating;
 			arenaEnemyMMR = team0Rating;
-			arenaPartyRating = newTeam1Rating .. team1RatingDif;
 			arenaEnemyRating = newTeam0Rating .. team0RatingDif;
 		end
 	else
@@ -522,7 +517,6 @@ local function handleArenaEnd()
 		if (arenaIsRanked) then
 			arenaPartyMMR = team0Rating;
 			arenaEnemyMMR = team1Rating;
-			arenaPartyRating = newTeam0Rating .. team0RatingDif;
 			arenaEnemyRating = newTeam1Rating .. team1RatingDif;
 		end
 	end
