@@ -76,9 +76,9 @@ local function getCompWinrate(comp)
     end
     local winrate = math.floor(arenasWon * 100 / #arenasWithComp)
     if (#tostring(winrate) < 2) then
-        winrate = winrate .. "%" .. "   "
+        winrate = winrate .. "%"
     elseif (#tostring(winrate) < 3) then
-        winrate = winrate .. "%" .. " "
+        winrate = winrate .. "%"
     else
         winrate = winrate .. "%"
     end
@@ -264,7 +264,6 @@ local function createDropdown(opts)
     for _, item in pairs(menu_items) do 
         dropdownTable.dd_title:SetText(item)
         local text_width = dropdownTable.dd_title:GetStringWidth() + 30
-        print(dropdownTable.dd_title:GetText())
         if text_width > dropdown_width and title_text ~= "Comp" then
             dropdown_width = text_width
         end
@@ -275,6 +274,21 @@ local function createDropdown(opts)
             info.text, info.tooltip = setIconsOnCompFilter(info.text, info.tooltip)
         end
         table.insert(dropdownTable.buttons, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
+    end
+    -- Order Comp filter by winrate
+    if(hasIcon) then
+        table.sort(dropdownTable.buttons, function (k1,k2)
+            if k1 and k1:GetText() == "All" then return true end;
+            if k2 and k2:GetText() == "All" then return false end;
+            if (k1:GetText() and k2:GetText()) then
+                local indexOfSeparatork1, _ = string.find(k1:GetText(), "-")
+                local winratek1 = k1:GetText():sub(indexOfSeparatork1 + 2, string.len(k1:GetText()) - 1);
+                local indexOfSeparatork2, _ = string.find(k2:GetText(), "-")
+                local winratek2 = k2:GetText():sub(indexOfSeparatork2 + 2, string.len(k2:GetText()) - 1);
+                return tonumber(winratek1) > tonumber(winratek2)
+            end
+            return true;
+        end)
     end
     dropdownTable.dd_title:SetText(title_text)
     dropdownTable.dropdownList:SetSize(dropdown_width, (#dropdownTable.buttons * 25));
