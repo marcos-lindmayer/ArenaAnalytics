@@ -142,10 +142,11 @@ local function insertArenaOnTable()
 		end
 		local teamRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
 		local ratingDiff = ""
-		if (prevRating and prevRating - teamRating > 0) then
+		if (arenaWonByPlayer and teamRating - prevRating > 0) then
+			ratingDiff = " (+" .. teamRating - prevRating .. ")";
+		elseif (arenaWonByPlayer == false and prevRating - teamRating > 0) then
 			ratingDiff = " (-" .. prevRating - teamRating .. ")";
 		end
-		print(prevRating, teamRating, ratingDiff)
 		arenaPartyRating = teamRating ~= nil and teamRating .. ratingDiff  or "-";
 		prevRating = nil;
 	else 
