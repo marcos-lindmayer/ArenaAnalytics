@@ -228,7 +228,7 @@ local function createDropdown(opts)
     local menu_items = opts['items'] or {};
     local hasIcon = opts["hasIcon"];
     local title_text = opts['title'] or '';
-    local dropdown_width = title_text == "Comp" and 100 or 0;
+    local dropdown_width = title_text == "Comp" and 200 or 0;
     local default_val = opts['defaultVal'] or '';
     local change_func = opts['changeFunc'] or function (dropdown_val) end;
 
@@ -264,7 +264,8 @@ local function createDropdown(opts)
     for _, item in pairs(menu_items) do 
         dropdownTable.dd_title:SetText(item)
         local text_width = dropdownTable.dd_title:GetStringWidth() + 30
-        if text_width > dropdown_width then
+        print(dropdownTable.dd_title:GetText())
+        if text_width > dropdown_width and title_text ~= "Comp" then
             dropdown_width = text_width
         end
         local info = {}
