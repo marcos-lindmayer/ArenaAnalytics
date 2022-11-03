@@ -312,7 +312,7 @@ function ArenaAnalyticsGetSpecIcon(spec, class)
 	local specString;
 	if (currentSpecName == "Subtlety") then
 		specString = [[Interface\Icons\ability_stealth]];
-	elseif (currentSpecName == "|") then
+	elseif (currentSpecName == "Assassination") then
 		specString = [[Interface\Icons\ability_rogue_eviscerate]];
 	elseif (currentSpecName == "Combat") then
 		specString = [[Interface\Icons\ability_backstab]];
