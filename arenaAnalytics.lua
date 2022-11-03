@@ -140,7 +140,7 @@ local function insertArenaOnTable()
 		else
 			arenaTeamId = 3;
 		end
-		local _, _, teamRating, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
+		local teamRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
 		local ratingDiff = ""
 		if (prevRating and prevRating - teamRating > 0) then
 			ratingDiff = " (-" .. prevRating - teamRating .. ")";
@@ -155,6 +155,8 @@ local function insertArenaOnTable()
 		arenaPartyMMR = arenaPartyMMR ~= nil and arenaPartyMMR or "-";
 		arenaEnemyMMR = arenaEnemyMMR ~= nil and arenaEnemyMMR or "-";
 	end
+
+	print(GetPersonalRatedInfo(2))
 
 	-- Friendly name for arenaSize
 	if arenaSize == 2 then
@@ -401,8 +403,10 @@ local function trackArena(...)
 		else
 			arenaTeamId = 3;
 		end
-		local _, _, teamRating, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
-		prevRating = prevRating == nil and teamRating;
+		local teamRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
+		if (prevRating == nil) then
+			prevRating = teamRating
+		end
 	end
 
 	if (#arenaParty == 0) then
