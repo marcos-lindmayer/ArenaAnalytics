@@ -34,7 +34,7 @@ local specSpells = {
 
     -- MAGE
     [ 12042 ] = "Arcane", -- Arcane Power
-    [ 33043 ] = "Fire", -- Dragon's Breath
+    [ 42950 ] = "Fire", -- Dragon's Breath
     [ 33933 ] = "Fire", -- Blast Wave
     [ 33405 ] = "Frost", -- Ice Barrier
     [ 31687 ] = "Frost", -- Summon Water Elemental
@@ -42,6 +42,8 @@ local specSpells = {
     [ 11958 ] = "Frost", -- Cold Snap
     [ 11129 ] = "Fire", -- Combustion
     [ 12043 ] = "Arcane", -- Presence of Mind
+    [ 55360 ] = "Fire", -- Living Bomb
+    [ 31642 ] = "Fire", -- Blazing Speed
 
     -- PALADIN
     [ 33072 ] = "Holy", -- Holy Shock
