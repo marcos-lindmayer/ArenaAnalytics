@@ -140,14 +140,43 @@ local function insertArenaOnTable()
 		else
 			arenaTeamId = 3;
 		end
-		local teamRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
-		local ratingDiff = ""
-		if (arenaWonByPlayer and teamRating - prevRating > 0) then
-			ratingDiff = " (+" .. teamRating - prevRating .. ")";
-		elseif (arenaWonByPlayer == false and prevRating - teamRating > 0) then
-			ratingDiff = " (-" .. prevRating - teamRating .. ")";
+		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
+
+
+		if (personalRating == prevRating or personalRating == 0) then
+			print("Failed to get new personal rating. Reattempting...")
+			local timeElapsed = 0
+			local attempts = 0
+			eventFrame:SetScript("OnUpdate", function(self, elapsed)
+				timeElapsed = timeElapsed + elapsed
+				if timeElapsed > 0.05 then
+					timeElapsed = 0
+					attempts = attempts + 1;
+					personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
+					print("Attempt number " .. attempts)
+					if (attempts > 10 and (personalRating == prevRating or personalRating == 0)) then
+						eventFrame:SetScript("OnUpdate", nil)
+						print("Could not reach new personal rating after " .. attempts .. " attempts.")
+					end
+					if (personalRating ~= prevRating and personalRating ~= 0) then
+						eventFrame:SetScript("OnUpdate", nil)
+						print("Got new personal rating after " .. attempts .. " attempts!")
+					end
+				end
+			end)
 		end
-		arenaPartyRating = teamRating ~= nil and teamRating .. ratingDiff  or "-";
+
+		local ratingDiff = ""
+		--[[ print("personal rating: " .. personalRating)
+		print("arena won by player")
+		print(arenaWonByPlayer)
+		print("rating dif: " .. personalRating - prevRating) ]]
+		if (arenaWonByPlayer and personalRating - prevRating > 0) then
+			ratingDiff = " (+" .. personalRating - prevRating .. ")";
+		elseif (arenaWonByPlayer == false and prevRating - personalRating > 0) then
+			ratingDiff = " (-" .. prevRating - personalRating .. ")";
+		end
+		arenaPartyRating = personalRating ~= nil and personalRating .. ratingDiff  or "-";
 		prevRating = nil;
 	else 
 		-- Set data for skirmish
@@ -156,8 +185,6 @@ local function insertArenaOnTable()
 		arenaPartyMMR = arenaPartyMMR ~= nil and arenaPartyMMR or "-";
 		arenaEnemyMMR = arenaEnemyMMR ~= nil and arenaEnemyMMR or "-";
 	end
-
-	print(GetPersonalRatedInfo(2))
 
 	-- Friendly name for arenaSize
 	if arenaSize == 2 then
@@ -404,9 +431,10 @@ local function trackArena(...)
 		else
 			arenaTeamId = 3;
 		end
-		local teamRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
+		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
 		if (prevRating == nil) then
-			prevRating = teamRating
+			prevRating = personalRating
+			print("prev rating is: " .. prevRating)
 		end
 	end
 
@@ -609,4 +637,5 @@ function Config:EventRegister()
 	eventTracker["UPDATE_BATTLEFIELD_STATUS"] = eventFrame:RegisterEvent("UPDATE_BATTLEFIELD_STATUS");
 	eventTracker["ZONE_CHANGED_NEW_AREA"] = eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA");
 	eventFrame:SetScript("OnEvent", handleEvents);
+	
 end
