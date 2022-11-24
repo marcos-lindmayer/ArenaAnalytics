@@ -144,7 +144,6 @@ local function insertArenaOnTable()
 
 
 		if (personalRating == prevRating or personalRating == 0) then
-			print("Failed to get new personal rating. Reattempting...")
 			local timeElapsed = 0
 			local attempts = 0
 			eventFrame:SetScript("OnUpdate", function(self, elapsed)
@@ -153,24 +152,17 @@ local function insertArenaOnTable()
 					timeElapsed = 0
 					attempts = attempts + 1;
 					personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
-					print("Attempt number " .. attempts)
 					if (attempts > 10 and (personalRating == prevRating or personalRating == 0)) then
 						eventFrame:SetScript("OnUpdate", nil)
-						print("Could not reach new personal rating after " .. attempts .. " attempts.")
 					end
 					if (personalRating ~= prevRating and personalRating ~= 0) then
 						eventFrame:SetScript("OnUpdate", nil)
-						print("Got new personal rating after " .. attempts .. " attempts!")
 					end
 				end
 			end)
 		end
 
 		local ratingDiff = ""
-		--[[ print("personal rating: " .. personalRating)
-		print("arena won by player")
-		print(arenaWonByPlayer)
-		print("rating dif: " .. personalRating - prevRating) ]]
 		if (arenaWonByPlayer and personalRating - prevRating > 0) then
 			ratingDiff = " (+" .. personalRating - prevRating .. ")";
 		elseif (arenaWonByPlayer == false and prevRating - personalRating > 0) then
@@ -434,7 +426,6 @@ local function trackArena(...)
 		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
 		if (prevRating == nil) then
 			prevRating = personalRating
-			print("prev rating is: " .. prevRating)
 		end
 	end
 
