@@ -86,6 +86,24 @@ local function getCompWinrate(comp)
     return winrate
 end
 
+-- Return specific comp's total games
+-- comp is a string of space-separated classes
+local function getCompTotalGames(comp)
+    local _, bracket = string.gsub(comp, "-", "-")
+    local bracketSize = bracket + 1;
+    bracket = bracketSize .. "v" .. bracketSize;
+    local arenasWithComp = {}
+    for i = 1, #ArenaAnalyticsDB[bracket] do
+        if (#ArenaAnalyticsDB[bracket][i]["comp"] == bracketSize) then
+            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i]["comp"], "-")
+            if (comp == currentComp) then
+                table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
+            end
+        end
+    end
+    return #arenasWithComp
+end
+
 -- Hides spec's icon on bottom-right class' icon
 local function hideSpecIcons()
     for specIconNumber = 1, #ArenaAnalyticsScrollFrame.specFrames do
@@ -216,7 +234,7 @@ local function setIconsOnCompFilter(itext, itooltip)
         infoTooltip = infoTooltip .. arenaClass .. "|" .. arenaSpec .."-"
     end
     infoTooltip = infoTooltip:sub(1, -2)
-    infoText = inlineIcons .. " - " .. getCompWinrate(infoText);
+    infoText = getCompTotalGames(infoText) .. " " .. inlineIcons .. " - " .. getCompWinrate(infoText);
     return infoText, infoTooltip;
 end
 
@@ -228,7 +246,7 @@ local function createDropdown(opts)
     local menu_items = opts['items'] or {};
     local hasIcon = opts["hasIcon"];
     local title_text = opts['title'] or '';
-    local dropdown_width = title_text == "Comp" and 200 or 0;
+    local dropdown_width = title_text == "Comp: Games | Comp | Winrate" and 200 or 0;
     local default_val = opts['defaultVal'] or '';
     local change_func = opts['changeFunc'] or function (dropdown_val) end;
 
@@ -264,7 +282,7 @@ local function createDropdown(opts)
     for _, item in pairs(menu_items) do 
         dropdownTable.dd_title:SetText(item)
         local text_width = dropdownTable.dd_title:GetStringWidth() + 30
-        if text_width > dropdown_width and title_text ~= "Comp" then
+        if text_width > dropdown_width and title_text ~= "Comp: Games | Comp | Winrate" then
             dropdown_width = text_width
         end
         local info = {}
@@ -962,7 +980,7 @@ local function createDropdownForFilterComps(bracket)
     filterCompsOpts[bracket] = {
         ['name']='Filter' .. bracket .. '_Comps',
         ['parent'] = ArenaAnalyticsScrollFrame,
-        ['title']='Comp',
+        ['title']='Comp: Games | Comp | Winrate',
         ['hasIcon']= true,
         ['items'] = getPlayerPlayedComps(bracket),
         ['defaultVal'] ='All'
