@@ -256,7 +256,8 @@ local function createDropdown(opts)
     dropdownTable.dropdownList = dropdownList
     dropdownTable.dropdownFrame:SetSize(500, 25);
     dropdownTable.dropdownList:SetPoint("TOPLEFT", dropdownTable.dropdownFrame, "BOTTOMLEFT")
-    local dd_title = dropdownTable.dropdownFrame:CreateFontString(dropdownTable.dropdownFrame, 'OVERLAY', 'GameFontNormal')
+    local dd_title = dropdownTable.dropdownFrame:CreateFontString(nil, 'OVERLAY')
+    dd_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
     dropdownTable.dd_title = dd_title;
     if (hasIcon) then
         is2v2, _ = string.find(opts['name'], "2v2")
@@ -435,7 +436,8 @@ end
 
 -- Returns string frame
 local function createText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text)
-    local fontString = relativeFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+    local fontString = relativeFrame:CreateFontString(nil, "OVERLAY");
+    fontString:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
     fontString:SetPoint(anchor, refFrame, relPoint, xOff, yOff);
     fontString:SetText(text);
     return fontString
@@ -459,7 +461,7 @@ local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrame:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18);
     ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(true);
     ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(true);
-    ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10);
+    ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
     ArenaAnalyticsScrollFrame.exportFrame:SetJustifyH("LEFT");
     ArenaAnalyticsScrollFrame.exportFrame:SetJustifyV("CENTER");
     ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
@@ -504,8 +506,9 @@ function core.arenaTable:OnLoad()
     HybridScrollFrame_SetDoNotHideScrollBar(ArenaAnalyticsScrollFrame.ListScrollFrame, true);
     ArenaAnalyticsScrollFrame.Bg:SetTexture(nil)
     ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.5)
-	ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+	ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
 	ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, 0);
+    ArenaAnalyticsScrollFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
 	ArenaAnalyticsScrollFrame.title:SetText("Arena Analytics");
 
     ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8)
@@ -670,7 +673,7 @@ function showClickedName(classFrame)
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetWidth(160);
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetMultiLine(true);
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetAutoFocus(true);
-        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetFont("Fonts\\FRIZQT__.TTF", 12);
+        ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetJustifyH("LEFT");
         ArenaAnalyticsScrollFrame.clickedNameFrame.text:SetJustifyV("CENTER");
     end
