@@ -499,6 +499,8 @@ end
 -- Creates addOn text, filters, table headers
 function core.arenaTable:OnLoad()
 
+    ArenaAnalyticsCheckLastArenaRates();
+
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() core.arenaTable:RefreshLayout(); end
 
     ArenaAnalyticsScrollFrame.filterComps = {}
@@ -610,7 +612,7 @@ function core.arenaTable:OnLoad()
     ArenaAnalyticsScrollFrame.winrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
     ArenaAnalyticsScrollFrame.sessionWinrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.winrate, "TOPRIGHT", 20, 0, "");
     ArenaAnalyticsScrollFrame.selectedWinrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.sessionWinrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
-    ArenaAnalyticsScrollFrame.clearSelected = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear selection");
+    ArenaAnalyticsScrollFrame.clearSelected = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear");
     ArenaAnalyticsScrollFrame.clearSelected:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.selectedWinrate, "TOPRIGHT", 20, 5);
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () core.arenaTable:ClearSelectedMatches()end)
@@ -1161,5 +1163,26 @@ function core.arenaTable:RefreshLayout(filter)
     hideSpecIcons()
 
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
+    
+end
+
+function ArenaAnalyticsCheckLastArenaRates()
+    local brackets = {"2v2", "3v3", "5v5"}
+    for i = 1, #brackets do
+        totalArenasOnBracket = #ArenaAnalyticsDB[brackets[i]]
+        if (string.len(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"]) < 6) then
+            lastMatchRating = tonumber(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"])
+            local rating,_ = GetPersonalRatedInfo(i);
+            if(rating ~= lastMatchRating) then
+                local newRating
+                if (rating < lastMatchRating) then
+                    newRating = lastMatchRating .. " (-" .. lastMatchRating - rating .. ")"
+                else
+                    newRating = lastMatchRating .. " (+" .. rating - lastMatchRating .. ")"
+                end
+                print("Rating in " .. brackets[i] .. " should be " .. newRating)
+            end
+        end
+    end
     
 end
