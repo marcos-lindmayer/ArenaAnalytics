@@ -1180,7 +1180,7 @@ function ArenaAnalyticsCheckLastArenaRates()
                 else
                     newRating = lastMatchRating .. " (+" .. rating - lastMatchRating .. ")"
                 end
-                print("Rating in " .. brackets[i] .. " should be " .. newRating)
+                ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"] = newRating
             end
         end
     end
