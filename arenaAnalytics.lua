@@ -142,26 +142,6 @@ local function insertArenaOnTable()
 		end
 		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
 
-
-		if (personalRating == prevRating or personalRating == 0) then
-			local timeElapsed = 0
-			local attempts = 0
-			eventFrame:SetScript("OnUpdate", function(self, elapsed)
-				timeElapsed = timeElapsed + elapsed
-				if timeElapsed > 0.05 then
-					timeElapsed = 0
-					attempts = attempts + 1;
-					personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
-					if (attempts > 10 and (personalRating == prevRating or personalRating == 0)) then
-						eventFrame:SetScript("OnUpdate", nil)
-					end
-					if (personalRating ~= prevRating and personalRating ~= 0) then
-						eventFrame:SetScript("OnUpdate", nil)
-					end
-				end
-			end)
-		end
-
 		local ratingDiff = ""
 		if (arenaWonByPlayer and personalRating - prevRating > 0) then
 			ratingDiff = " (+" .. personalRating - prevRating .. ")";
@@ -629,4 +609,94 @@ function Config:EventRegister()
 	eventTracker["ZONE_CHANGED_NEW_AREA"] = eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA");
 	eventFrame:SetScript("OnEvent", handleEvents);
 	
+end
+
+function fixAllRatingGains()
+	for i = 1, #ArenaAnalyticsDB["3v3"] - 1, 1 do
+		if (ArenaAnalyticsDB["3v3"][i]["isRanked"] == false or string.len(ArenaAnalyticsDB["3v3"][i]["rating"]) > 6) then
+			
+		else
+			gameRating = tonumber(ArenaAnalyticsDB["3v3"][i]["rating"])
+			if(string.len(ArenaAnalyticsDB["3v3"][i + 1]["rating"]) > 6) then
+				print("following arena has correct rating")
+				print(ArenaAnalyticsDB["3v3"][i]["rating"])
+				print(ArenaAnalyticsDB["3v3"][i + 1]["rating"])
+				print("-------------------")
+			else
+				nextGameRating = tonumber(ArenaAnalyticsDB["3v3"][i + 1]["rating"])
+				fixedArenaDiff = ""
+				if (nextGameRating ~= gameRating) then
+					if (ArenaAnalyticsDB["3v3"][i]["won"] == true) then
+						fixedArenaDiff = "+" .. nextGameRating - gameRating
+					else
+						fixedArenaDiff = "-" .. gameRating - nextGameRating
+					end
+					print("rating is " .. gameRating)
+					print("next rating is " .. nextGameRating)
+					print("so first rating should be " .. gameRating .. " (" .. fixedArenaDiff .. ")")
+					print("-------------------")
+					ArenaAnalyticsDB["3v3"][i]["rating"] = gameRating .. " (" .. fixedArenaDiff .. ")";
+				end
+			end
+		end
+    end
+
+	for i = 1, #ArenaAnalyticsDB["2v2"] - 1, 1 do
+		if (ArenaAnalyticsDB["2v2"][i]["isRanked"] == false or string.len(ArenaAnalyticsDB["2v2"][i]["rating"]) > 6) then
+			
+		else
+			gameRating = tonumber(ArenaAnalyticsDB["2v2"][i]["rating"])
+			if(string.len(ArenaAnalyticsDB["2v2"][i + 1]["rating"]) > 6) then
+				print("following arena has correct rating")
+				print(ArenaAnalyticsDB["2v2"][i]["rating"])
+				print(ArenaAnalyticsDB["2v2"][i + 1]["rating"])
+				print("-------------------")
+			else
+				nextGameRating = tonumber(ArenaAnalyticsDB["2v2"][i + 1]["rating"])
+				fixedArenaDiff = ""
+				if (nextGameRating ~= gameRating) then
+					if (ArenaAnalyticsDB["2v2"][i]["won"] == true) then
+						fixedArenaDiff = "+" .. nextGameRating - gameRating
+					else
+						fixedArenaDiff = "-" .. gameRating - nextGameRating
+					end
+					print("rating is " .. gameRating)
+					print("next rating is " .. nextGameRating)
+					print("so first rating should be " .. gameRating .. " (" .. fixedArenaDiff .. ")")
+					print("-------------------")
+					ArenaAnalyticsDB["2v2"][i]["rating"] = gameRating .. " (" .. fixedArenaDiff .. ")";
+				end
+			end
+		end
+    end
+
+	for i = 1, #ArenaAnalyticsDB["5v5"] - 1, 1 do
+		if (ArenaAnalyticsDB["5v5"][i]["isRanked"] == false or string.len(ArenaAnalyticsDB["5v5"][i]["rating"]) > 6) then
+			
+		else
+			gameRating = tonumber(ArenaAnalyticsDB["5v5"][i]["rating"])
+			if(string.len(ArenaAnalyticsDB["5v5"][i + 1]["rating"]) > 6) then
+				print("following arena has correct rating")
+				print(ArenaAnalyticsDB["5v5"][i]["rating"])
+				print(ArenaAnalyticsDB["5v5"][i + 1]["rating"])
+				print("-------------------")
+			else
+				nextGameRating = tonumber(ArenaAnalyticsDB["5v5"][i + 1]["rating"])
+				fixedArenaDiff = ""
+				if (nextGameRating ~= gameRating) then
+					if (ArenaAnalyticsDB["5v5"][i]["won"] == true) then
+						fixedArenaDiff = "+" .. nextGameRating - gameRating
+					else
+						fixedArenaDiff = "-" .. gameRating - nextGameRating
+					end
+					print("rating is " .. gameRating)
+					print("next rating is " .. nextGameRating)
+					print("so first rating should be " .. gameRating .. " (" .. fixedArenaDiff .. ")")
+					print("-------------------")
+					ArenaAnalyticsDB["5v5"][i]["rating"] = gameRating .. " (" .. fixedArenaDiff .. ")";
+					ReloadUI();
+				end
+			end
+		end
+    end
 end
