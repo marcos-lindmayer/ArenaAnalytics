@@ -12,7 +12,8 @@ local currentFilters = {
     ["comps2v2"] = "All", 
     ["comps3v3"] = "All", 
     ["comps5v5"] = "All",
-    ["skirmishIsChecked"] = true
+    ["skirmishIsChecked"] = true,
+    ["seasonIsChecked"] = true
 };
 
 local isCompFilterOn;
@@ -566,6 +567,19 @@ function core.arenaTable:OnLoad()
             core.arenaTable:RefreshLayout(true);
         end
     );
+
+    ArenaAnalyticsScrollFrame.seasonToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_seasonToggle", ArenaAnalyticsScrollFrame, "OptionsSmallCheckButtonTemplate");
+    ArenaAnalyticsScrollFrame.seasonToggle:SetPoint("TOPRIGHT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -270, -40);
+    ArenaAnalyticsScrollFrame_seasonToggleText:SetText("Hide Previous Seasons");
+    ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(true);
+
+    ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", 
+        function()
+            currentFilters["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
+            core.arenaTable:RefreshLayout(true);
+        end
+    );
+
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
 	ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
 	ArenaAnalyticsScrollFrame.settingsButton:SetText([[|TInterface\Buttons\UI-OptionsButton:0|t]]);
@@ -910,6 +924,39 @@ local function applyFilters(unfilteredDB)
         end
     end
 
+
+    -- Filter Season (only show current season)
+    if (currentFilters["seasonIsChecked"] == true) then
+        local currentSeasonStartInt = 1673916461
+        local n2v2 = #holderDB["2v2"];
+        local n3v3 = #holderDB["3v3"];
+        local n5v5 = #holderDB["5v5"];
+        for arena2v2Number = n2v2, 1, -1 do
+            if (holderDB["2v2"][arena2v2Number]) then
+                if (holderDB["2v2"][arena2v2Number]["dateInt"] < currentSeasonStartInt) then
+                    table.remove(holderDB["2v2"], arena2v2Number)
+                    n2v2 = n2v2 - 1
+                end
+            end
+        end
+        for arena3v3Number = n3v3, 1, -1 do
+            if (holderDB["3v3"][arena3v3Number]) then
+                if (holderDB["3v3"][arena3v3Number]["dateInt"] < currentSeasonStartInt) then
+                    table.remove(holderDB["3v3"], arena3v3Number)
+                    n3v3 = n3v3 - 1
+                end
+            end
+        end
+        for arena5v5Number = n5v5, 1, -1 do
+            if (holderDB["5v5"][arena5v5Number]) then
+                if (holderDB["5v5"][arena5v5Number]["dateInt"] < currentSeasonStartInt) then
+                    table.remove(holderDB["5v5"], arena5v5Number)
+                    n5v5 = n5v5 - 1
+                end
+            end
+        end
+    end
+
     -- Get arenas from each bracket and sort by date 
     local sortedDB = {}; 
 
@@ -1170,9 +1217,10 @@ function ArenaAnalyticsCheckLastArenaRates()
     local brackets = {"2v2", "3v3", "5v5"}
     for i = 1, #brackets do
         totalArenasOnBracket = #ArenaAnalyticsDB[brackets[i]]
-        if (string.len(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"]) < 6) then
-            lastMatchRating = tonumber(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"])
+        if (#ArenaAnalyticsDB[brackets[i]] > 0 and string.len(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"]) < 6) then
+            lastMatchRating = tonumber(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket - 1]["rating"])
             local rating,_ = GetPersonalRatedInfo(i);
+            print(lastMatchRating, rating)
             if(rating ~= lastMatchRating) then
                 local newRating
                 if (rating < lastMatchRating) then
