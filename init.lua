@@ -1,5 +1,9 @@
 local _, core = ...; -- Namespace
 
+ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
+	["outliers"] = 0,
+}; 
+
 --------------------------------------
 -- Custom Slash Command
 --------------------------------------

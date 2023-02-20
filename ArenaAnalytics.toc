@@ -4,7 +4,7 @@
 ## Author: Lingo
 ## Version: 0.0.1
 ## DefaultState: enabled
-## SavedVariables: ArenaAnalyticsMapIconPos
+## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSettings
 ## SavedVariablesPerCharacter: ArenaAnalyticsDB
 
 arenaConstants.lua

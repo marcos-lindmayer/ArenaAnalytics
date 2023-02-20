@@ -409,7 +409,7 @@ local function exportDB()
 end
 
 -- Returns array with all unique played comps based on bracket
--- param received. Ignores incomplete comps
+-- param received. Ignores incomplete comps. Removes outliers (settings param)
 local function getPlayerPlayedComps(bracket)
     local playedComps = {"All"};
     local arenaSize = tonumber(string.sub(bracket, 1, 1))
@@ -427,7 +427,15 @@ local function getPlayerPlayedComps(bracket)
                 local compString = table.concat(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], "-");
 
                 if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil) then
-                    table.insert(playedComps, compString)
+                    local result = {}
+                    for i,v in ipairs(ArenaAnalyticsDB[bracket]) do
+                        if table.concat(v["comp"], "-") == compString then
+                            table.insert(result, v)
+                        end
+                    end
+                    if (#result > tonumber(ArenaAnalyticsSettings["outliers"])) then
+                        table.insert(playedComps, compString)
+                    end
                 end
             end
         end
@@ -556,30 +564,6 @@ function core.arenaTable:OnLoad()
 
     
 
-    ArenaAnalyticsScrollFrame.skirmishToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_skirmishToggle", ArenaAnalyticsScrollFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.skirmishToggle:SetPoint("TOPRIGHT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -120, -40);
-    ArenaAnalyticsScrollFrame_skirmishToggleText:SetText("Show Skirmish");
-    ArenaAnalyticsScrollFrame.skirmishToggle:SetChecked(true);
-
-    ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", 
-        function()
-            currentFilters["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
-            core.arenaTable:RefreshLayout(true);
-        end
-    );
-
-    ArenaAnalyticsScrollFrame.seasonToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_seasonToggle", ArenaAnalyticsScrollFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.seasonToggle:SetPoint("TOPRIGHT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -270, -40);
-    ArenaAnalyticsScrollFrame_seasonToggleText:SetText("Hide Previous Seasons");
-    ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(true);
-
-    ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", 
-        function()
-            currentFilters["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
-            core.arenaTable:RefreshLayout(true);
-        end
-    );
-
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
 	ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
 	ArenaAnalyticsScrollFrame.settingsButton:SetText([[|TInterface\Buttons\UI-OptionsButton:0|t]]);
@@ -596,12 +580,67 @@ function core.arenaTable:OnLoad()
     )
     ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
     ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
-    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(250, 100)
+    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 300)
     ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("HIGH");
     ArenaAnalyticsScrollFrame.settingsFrame:Hide();
 
-    ArenaAnalyticsScrollFrame.resetWarning = createText(ArenaAnalyticsScrollFrame.settingsFrame, "TOP", ArenaAnalyticsScrollFrame.settingsFrame, "TOP", 0, -30, "Warning! \n This will reset all match history");
-    ArenaAnalyticsScrollFrame.resetBtn = core.arenaTable:CreateButton("CENTER", ArenaAnalyticsScrollFrame.settingsFrame, "CENTER", 0, -25, "Reset");
+    
+
+    ArenaAnalyticsScrollFrame.skirmishToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_skirmishToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
+    ArenaAnalyticsScrollFrame.skirmishToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -30);
+    ArenaAnalyticsScrollFrame_skirmishToggleText:SetText("Show Skirmish");
+    ArenaAnalyticsScrollFrame.skirmishToggle:SetChecked(true);
+
+    ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", 
+        function()
+            currentFilters["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
+            core.arenaTable:RefreshLayout(true);
+        end
+    );
+
+    ArenaAnalyticsScrollFrame.seasonToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_seasonToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
+    ArenaAnalyticsScrollFrame.seasonToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -50);
+    ArenaAnalyticsScrollFrame_seasonToggleText:SetText("Hide Previous Seasons");
+    ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(true);
+
+    ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", 
+        function()
+            currentFilters["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
+            core.arenaTable:RefreshLayout(true);
+        end
+    );
+
+    ArenaAnalyticsScrollFrame.outliers = createText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -75, "Outliers threshold (remove games from comp filter)[# of games]");
+    ArenaAnalyticsScrollFrame.outliersInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
+    ArenaAnalyticsScrollFrame.outliersInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -85);
+    ArenaAnalyticsScrollFrame.outliersInput:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame.outliersInput:SetWidth(100);
+    ArenaAnalyticsScrollFrame.outliersInput:SetHeight(20);
+    ArenaAnalyticsScrollFrame.outliersInput:SetNumeric();
+    ArenaAnalyticsScrollFrame.outliersInput:SetAutoFocus(false);
+    ArenaAnalyticsScrollFrame.outliersInput:SetMaxLetters(3);
+    ArenaAnalyticsScrollFrame.outliersInput:SetText(ArenaAnalyticsSettings["outliers"])
+    
+    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus();
+        checkForFilterUpdate("2v2")
+        checkForFilterUpdate("3v3")
+        checkForFilterUpdate("5v5")
+    end);
+    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus();
+        checkForFilterUpdate("2v2")
+        checkForFilterUpdate("3v3")
+        checkForFilterUpdate("5v5")
+    end);
+
+    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnTextChanged", function(self)
+        ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsScrollFrame.outliersInput:GetText()
+    end);
+
+
+    ArenaAnalyticsScrollFrame.resetBtn = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -125, "Reset ALL DATA");
+    ArenaAnalyticsScrollFrame.resetWarning = createText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.resetBtn, "TOPRIGHT", 5, -5, "Warning! This will reset all match history");
     ArenaAnalyticsScrollFrame.resetBtn:SetScript("OnClick", function (i) 
         ArenaAnalyticsDB = {}; 
         print("ArenaAnalytics match history deleted!");
@@ -764,7 +803,7 @@ local function checkForFilterUpdate(bracket)
     }
     local totalPlayedComps = #getPlayerPlayedComps(bracket)
     local totalCompsInFilter = #filterByBracketTable[bracket]['items']
-    if (totalPlayedComps > totalCompsInFilter) then
+    if (totalPlayedComps ~= totalCompsInFilter) then
         local info = {}
         local newComp = getPlayerPlayedComps(bracket)[totalPlayedComps];
         table.insert(filterByBracketTable[bracket]['items'], newComp)
