@@ -1260,7 +1260,7 @@ function ArenaAnalyticsCheckLastArenaRates()
             lastMatchRating = tonumber(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket - 1]["rating"])
             local rating,_ = GetPersonalRatedInfo(i);
             print(lastMatchRating, rating)
-            if(rating ~= lastMatchRating) then
+            if(rating ~= lastMatchRating and lastMatchRating ~= nil) then
                 local newRating
                 if (rating < lastMatchRating) then
                     newRating = lastMatchRating .. " (-" .. lastMatchRating - rating .. ")"
