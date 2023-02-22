@@ -1256,7 +1256,7 @@ function ArenaAnalyticsCheckLastArenaRates()
     local brackets = {"2v2", "3v3", "5v5"}
     for i = 1, #brackets do
         totalArenasOnBracket = #ArenaAnalyticsDB[brackets[i]]
-        if (#ArenaAnalyticsDB[brackets[i]] > 0 and string.len(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"]) < 6) then
+        if (#ArenaAnalyticsDB[brackets[i]] > 0 and string.len(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"]) < 6 and ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket - 1]) then
             lastMatchRating = tonumber(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket - 1]["rating"])
             local rating,_ = GetPersonalRatedInfo(i);
             print(lastMatchRating, rating)
