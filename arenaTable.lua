@@ -12,13 +12,12 @@ local currentFilters = {
     ["comps2v2"] = "All", 
     ["comps3v3"] = "All", 
     ["comps5v5"] = "All",
-    ["skirmishIsChecked"] = true,
-    ["seasonIsChecked"] = true
 };
 
 local isCompFilterOn;
 local filteredDB = nil;
 local dropdownCounter = 1;
+local currentSeasonStartInt = 1673916461;
 local filterCompsOpts = {
     ["2v2"] = "",
     ["3v3"] = "",
@@ -417,24 +416,27 @@ local function getPlayerPlayedComps(bracket)
         return playedComps;
     else
         for arenaNumber = 1, #ArenaAnalyticsDB[bracket] do   
-            if (#ArenaAnalyticsDB[bracket][arenaNumber]["comp"] == arenaSize) then
-                table.sort(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], function(a,b)
-                    local playerClassSpec = UnitClass("player") .. "|" .. ArenaAnalyticsGetPlayerSpec()
-                    local prioA = a == playerClassSpec and 1 or 2
-                    local prioB = b == playerClassSpec and 1 or 2
-                    return prioA < prioB or (prioA == prioB and a < b)
-                end)
-                local compString = table.concat(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], "-");
-
-                if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil) then
-                    local result = {}
-                    for i,v in ipairs(ArenaAnalyticsDB[bracket]) do
-                        if table.concat(v["comp"], "-") == compString then
-                            table.insert(result, v)
+            if (#ArenaAnalyticsDB[bracket][arenaNumber]["comp"] == arenaSize and ArenaAnalyticsDB[bracket][arenaNumber]["dateInt"]) then
+                if ((ArenaAnalyticsSettings["seasonIsChecked"] == false and ArenaAnalyticsDB[bracket][arenaNumber]["dateInt"] < currentSeasonStartInt) or (ArenaAnalyticsSettings["skirmishIsChecked"] == false and ArenaAnalyticsDB[bracket][arenaNumber]["isRanked"] == false)) then
+                else
+                    table.sort(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], function(a,b)
+                        local playerClassSpec = UnitClass("player") .. "|" .. ArenaAnalyticsGetPlayerSpec()
+                        local prioA = a == playerClassSpec and 1 or 2
+                        local prioB = b == playerClassSpec and 1 or 2
+                        return prioA < prioB or (prioA == prioB and a < b)
+                    end)
+                    local compString = table.concat(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], "-");
+                    local lastLetter = compString:sub(-#"%|" + 1)
+                    if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil and lastLetter ~= "|") then
+                        local result = {}
+                        for i,v in ipairs(ArenaAnalyticsDB[bracket]) do
+                            if table.concat(v["comp"], "-") == compString then
+                                table.insert(result, v)
+                            end
                         end
-                    end
-                    if (#result > tonumber(ArenaAnalyticsSettings["outliers"])) then
-                        table.insert(playedComps, compString)
+                        if (#result > tonumber(ArenaAnalyticsSettings["outliers"])) then
+                            table.insert(playedComps, compString)
+                        end
                     end
                 end
             end
@@ -444,7 +446,7 @@ local function getPlayerPlayedComps(bracket)
 end
 
 -- Returns string frame
-local function createText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text)
+function ArenaAnalyticsCreateText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text)
     local fontString = relativeFrame:CreateFontString(nil, "OVERLAY");
     fontString:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
     fontString:SetPoint(anchor, refFrame, relPoint, xOff, yOff);
@@ -508,7 +510,6 @@ end
 -- Creates addOn text, filters, table headers
 function core.arenaTable:OnLoad()
 
-    ArenaAnalyticsCheckLastArenaRates();
 
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() core.arenaTable:RefreshLayout(); end
 
@@ -578,93 +579,27 @@ function core.arenaTable:OnLoad()
         end
     end
     )
-    ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
-    ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
-    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 300)
-    ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("HIGH");
-    ArenaAnalyticsScrollFrame.settingsFrame:Hide();
 
-    
-
-    ArenaAnalyticsScrollFrame.skirmishToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_skirmishToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.skirmishToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -30);
-    ArenaAnalyticsScrollFrame_skirmishToggleText:SetText("Show Skirmish");
-    ArenaAnalyticsScrollFrame.skirmishToggle:SetChecked(true);
-
-    ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", 
-        function()
-            currentFilters["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
-            core.arenaTable:RefreshLayout(true);
-        end
-    );
-
-    ArenaAnalyticsScrollFrame.seasonToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_seasonToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.seasonToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -50);
-    ArenaAnalyticsScrollFrame_seasonToggleText:SetText("Hide Previous Seasons");
-    ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(true);
-
-    ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", 
-        function()
-            currentFilters["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
-            core.arenaTable:RefreshLayout(true);
-        end
-    );
-
-    ArenaAnalyticsScrollFrame.outliers = createText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -75, "Outliers threshold (remove games from comp filter)[# of games]");
-    ArenaAnalyticsScrollFrame.outliersInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
-    ArenaAnalyticsScrollFrame.outliersInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -85);
-    ArenaAnalyticsScrollFrame.outliersInput:SetFrameStrata("HIGH");
-    ArenaAnalyticsScrollFrame.outliersInput:SetWidth(100);
-    ArenaAnalyticsScrollFrame.outliersInput:SetHeight(20);
-    ArenaAnalyticsScrollFrame.outliersInput:SetNumeric();
-    ArenaAnalyticsScrollFrame.outliersInput:SetAutoFocus(false);
-    ArenaAnalyticsScrollFrame.outliersInput:SetMaxLetters(3);
-    ArenaAnalyticsScrollFrame.outliersInput:SetText(ArenaAnalyticsSettings["outliers"])
-    
-    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEnterPressed", function(self)
-        self:ClearFocus();
-        checkForFilterUpdate("2v2")
-        checkForFilterUpdate("3v3")
-        checkForFilterUpdate("5v5")
-    end);
-    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEscapePressed", function(self)
-        self:ClearFocus();
-        checkForFilterUpdate("2v2")
-        checkForFilterUpdate("3v3")
-        checkForFilterUpdate("5v5")
-    end);
-
-    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnTextChanged", function(self)
-        ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsScrollFrame.outliersInput:GetText()
-    end);
-
-
-    ArenaAnalyticsScrollFrame.resetBtn = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 25, -125, "Reset ALL DATA");
-    ArenaAnalyticsScrollFrame.resetWarning = createText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.resetBtn, "TOPRIGHT", 5, -5, "Warning! This will reset all match history");
-    ArenaAnalyticsScrollFrame.resetBtn:SetScript("OnClick", function (i) 
-        ArenaAnalyticsDB = {}; 
-        print("ArenaAnalytics match history deleted!");
-        core.arenaTable:RefreshLayout(true); 
-    end);
-    
+    -- Settings window
+    ArenaAnalyticsSettingsFrame()    
 
     -- Table headers
-    ArenaAnalyticsScrollFrame.dateTitle = createText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.export, "TOPLEFT", 5, -40, "Date");
-    ArenaAnalyticsScrollFrame.mapTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
-    ArenaAnalyticsScrollFrame.durationTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
-    ArenaAnalyticsScrollFrame.teamTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 120, 0, "Team");
-    ArenaAnalyticsScrollFrame.ratingTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 130, 0, "Rating");
-    ArenaAnalyticsScrollFrame.mmrTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 85, 0, "MMR");
-    ArenaAnalyticsScrollFrame.enemyTeamTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 70, 0, "Enemy Team");
-    ArenaAnalyticsScrollFrame.enemyRatingTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 140, 0, "Enemy MMR");
-    ArenaAnalyticsScrollFrame.enemyMmrTitle = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 125, 0, "Enemy Rating");
+    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.export, "TOPLEFT", 5, -40, "Date");
+    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
+    ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
+    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 120, 0, "Team");
+    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 130, 0, "Rating");
+    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 85, 0, "MMR");
+    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 70, 0, "Enemy Team");
+    ArenaAnalyticsScrollFrame.enemyRatingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 140, 0, "Enemy MMR");
+    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 125, 0, "Enemy Rating");
 
 
     -- Recorded arena number and winrate
-    ArenaAnalyticsScrollFrame.totalArenaNumber = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 15, 30, "");
-    ArenaAnalyticsScrollFrame.winrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
-    ArenaAnalyticsScrollFrame.sessionWinrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.winrate, "TOPRIGHT", 20, 0, "");
-    ArenaAnalyticsScrollFrame.selectedWinrate = createText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.sessionWinrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
+    ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 15, 30, "");
+    ArenaAnalyticsScrollFrame.winrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
+    ArenaAnalyticsScrollFrame.sessionWinrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.winrate, "TOPRIGHT", 20, 0, "");
+    ArenaAnalyticsScrollFrame.selectedWinrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.sessionWinrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
     ArenaAnalyticsScrollFrame.clearSelected = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear");
     ArenaAnalyticsScrollFrame.clearSelected:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.selectedWinrate, "TOPRIGHT", 20, 5);
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
@@ -790,7 +725,7 @@ end
 
 -- Updates comp filter if there's a new comp registered
 -- and updates winrate
-local function checkForFilterUpdate(bracket)
+function ArenaAnalyticsCheckForFilterUpdate(bracket)
     local filterByBracketTable = {
         ["2v2"] = filterCompsOpts["2v2"],
         ["3v3"] = filterCompsOpts["3v3"],
@@ -801,48 +736,17 @@ local function checkForFilterUpdate(bracket)
         ["3v3"] = ArenaAnalyticsScrollFrame.filterComps["3v3"],
         ["5v5"] = ArenaAnalyticsScrollFrame.filterComps["5v5"],
     }
-    local totalPlayedComps = #getPlayerPlayedComps(bracket)
-    local totalCompsInFilter = #filterByBracketTable[bracket]['items']
-    if (totalPlayedComps ~= totalCompsInFilter) then
-        local info = {}
-        local newComp = getPlayerPlayedComps(bracket)[totalPlayedComps];
-        table.insert(filterByBracketTable[bracket]['items'], newComp)
-        info.text, info.tooltip = setIconsOnCompFilter(newComp, "")
-        local filter = "comps" .. bracket;
-        local dropdownTable = frameByBracketTable[bracket]
-        local selectedWidth = frameByBracketTable[bracket].selected:GetWidth()
-        local newCompButton = createDropdownButton(info, dropdownTable, filter, selectedWidth)
-        table.insert(frameByBracketTable[bracket].buttons, newCompButton)
-        local totalButtons = #frameByBracketTable[bracket].buttons;
-        frameByBracketTable[bracket].buttons[totalButtons]:SetPoint("TOPLEFT", 0, -(totalButtons - 1) * 25)
-    elseif (totalPlayedComps < totalCompsInFilter) then
-         local amountToRemove = totalCompsInFilter - totalPlayedComps;
-         for b = 1, amountToRemove do
-            table.remove(filterByBracketTable[bracket]['items'], totalCompsInFilter - (b - 1))
-            frameByBracketTable[bracket].buttons[totalCompsInFilter - (b - 1)]:Hide();
-            table.remove(frameByBracketTable[bracket].buttons, totalCompsInFilter - (b - 1))
-         end
-    end
-
-    -- Update winrates
-    -- Check last game
-    if (ArenaAnalyticsScrollFrame.items[1]) then
-        local lastGame = ArenaAnalyticsScrollFrame.items[1];
-        --DevTools_Dump(ArenaAnalyticsScrollFrame.items[#ArenaAnalyticsScrollFrame.items])
-        local lastGameBracket = #lastGame["team"] .. "v" .. #lastGame["team"];
-        local lastGameComp = table.concat(lastGame["comp"], "-");
-        local updatedWinrate = getCompWinrate(lastGameComp);
+    local playedComps = getPlayerPlayedComps(bracket)
+    local compsInFilter = filterByBracketTable[bracket]['items']
     
-        for i = 1, #frameByBracketTable[bracket].buttons do
-            if(frameByBracketTable[bracket].buttons[i]:GetAttribute("tooltip") == lastGameComp) then
-                local oldButtonValue = frameByBracketTable[bracket].buttons[i]:GetText()
-                local indexOfSeparator, _ = string.find(oldButtonValue, "-")
-                local compIcons = oldButtonValue:sub(1, indexOfSeparator - 1);
-                local newButtonValue = compIcons .. "- " .. updatedWinrate
-                frameByBracketTable[bracket].buttons[i]:SetText(newButtonValue)
-                break
-            end
-        end
+
+    if (#playedComps ~= #compsInFilter) then
+        frameByBracketTable[bracket].dropdownFrame:Hide();
+        frameByBracketTable[bracket].dropdownFrame = nil;
+        frameByBracketTable[bracket] = nil
+        ArenaAnalyticsCreateDropdownForFilterComps(bracket)
+        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:Enable();
+        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:SetText("All");
     end
 end
 
@@ -932,7 +836,7 @@ local function applyFilters(unfilteredDB)
     end
 
     -- Filter Skirmish
-    if (currentFilters["skirmishIsChecked"] == false) then
+    if (ArenaAnalyticsSettings["skirmishIsChecked"] == false) then
         local n2v2 = #holderDB["2v2"];
         local n3v3 = #holderDB["3v3"];
         local n5v5 = #holderDB["5v5"];
@@ -965,8 +869,7 @@ local function applyFilters(unfilteredDB)
 
 
     -- Filter Season (only show current season)
-    if (currentFilters["seasonIsChecked"] == true) then
-        local currentSeasonStartInt = 1673916461
+    if (ArenaAnalyticsSettings["seasonIsChecked"] == false) then
         local n2v2 = #holderDB["2v2"];
         local n3v3 = #holderDB["3v3"];
         local n5v5 = #holderDB["5v5"];
@@ -1067,7 +970,7 @@ local function setColorForSession(button, session)
 end
 
 -- Create dropdowns for the Comp filters
-local function createDropdownForFilterComps(bracket)
+function ArenaAnalyticsCreateDropdownForFilterComps(bracket)
     filterCompsOpts[bracket] = {
         ['name']='Filter' .. bracket .. '_Comps',
         ['parent'] = ArenaAnalyticsScrollFrame,
@@ -1140,11 +1043,13 @@ function core.arenaTable:RefreshLayout(filter)
             
             local ratingPrevFrame = setClassTextureWithTooltip(teamIconsFrames, item, "team", button)
             
-            -- Paint winner green, loser red
+            -- Paint winner green, loser red 
             if (item["won"]) then
-                button.Rating:SetText("|cff00cc66" .. item["rating"] .. "|r");
+                local delta = (item["ratingDelta"] and item["ratingDelta"] ~= "") and "(+" .. item["ratingDelta"] .. ")" or ""
+                button.Rating:SetText("|cff00cc66" .. item["rating"] .. delta .. "|r");
             else
-                button.Rating:SetText("|cffff0000" .. item["rating"] .. "|r");
+                local delta = (item["ratingDelta"] and item["ratingDelta"] ~= "") and "(-" .. item["ratingDelta"] .. ")" or ""
+                button.Rating:SetText("|cffff0000" .. item["rating"] .. delta .."|r");
             end
 
             button.MMR:SetText(item["mmr"] or "");
@@ -1188,22 +1093,21 @@ function core.arenaTable:RefreshLayout(filter)
             button:Hide();
         end
     end
-    
 
     if (ArenaAnalyticsScrollFrame.filterComps["2v2"] == nil) then
-        createDropdownForFilterComps("2v2")
+        ArenaAnalyticsCreateDropdownForFilterComps("2v2")
     elseif (newArenaPlayed) then
-        checkForFilterUpdate("2v2");
+        ArenaAnalyticsCheckForFilterUpdate("2v2");
     end
     if (ArenaAnalyticsScrollFrame.filterComps["3v3"] == nil) then
-        createDropdownForFilterComps("3v3")
+        ArenaAnalyticsCreateDropdownForFilterComps("3v3")
     elseif (newArenaPlayed) then
-        checkForFilterUpdate("3v3");
+        ArenaAnalyticsCheckForFilterUpdate("3v3");
     end
     if (ArenaAnalyticsScrollFrame.filterComps["5v5"] == nil) then
-        createDropdownForFilterComps("5v5")
+        ArenaAnalyticsCreateDropdownForFilterComps("5v5")
     elseif (newArenaPlayed) then
-        checkForFilterUpdate("5v5");
+        ArenaAnalyticsCheckForFilterUpdate("5v5");
     end
 
     -- Adjust Team bg
@@ -1249,27 +1153,5 @@ function core.arenaTable:RefreshLayout(filter)
     hideSpecIcons()
 
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
-    
-end
-
-function ArenaAnalyticsCheckLastArenaRates()
-    local brackets = {"2v2", "3v3", "5v5"}
-    for i = 1, #brackets do
-        totalArenasOnBracket = #ArenaAnalyticsDB[brackets[i]]
-        if (#ArenaAnalyticsDB[brackets[i]] > 0 and string.len(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"]) < 6 and ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket - 1]) then
-            lastMatchRating = tonumber(ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket - 1]["rating"])
-            local rating,_ = GetPersonalRatedInfo(i);
-            print(lastMatchRating, rating)
-            if(rating ~= lastMatchRating and lastMatchRating ~= nil) then
-                local newRating
-                if (rating < lastMatchRating) then
-                    newRating = lastMatchRating .. " (-" .. lastMatchRating - rating .. ")"
-                else
-                    newRating = lastMatchRating .. " (+" .. rating - lastMatchRating .. ")"
-                end
-                ArenaAnalyticsDB[brackets[i]][totalArenasOnBracket]["rating"] = newRating
-            end
-        end
-    end
     
 end
