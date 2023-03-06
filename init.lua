@@ -260,7 +260,7 @@ function ArenaAnalyticsSettingsFrame()
     
     ArenaAnalyticsScrollFrame.allowReset = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_allowReset", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.allowReset:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -180);
-    ArenaAnalyticsScrollFrame_allowResetText:SetText("Check to enable data reset");
+    ArenaAnalyticsScrollFrame_allowResetText:SetText("Check to enable data reset (big scary button ^)");
     ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
 
     ArenaAnalyticsScrollFrame.allowReset:SetScript("OnClick", 
@@ -272,6 +272,28 @@ function ArenaAnalyticsSettingsFrame()
             end
         end
     );
+
+	
+    ArenaAnalyticsScrollFrame.importData = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -215, "Import");
+    ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 5, -5, "Paste the ArenaStats export on the text box below");
+    ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 5, -15, "Note: ArenaStats data won't be available for comp filters");
+    ArenaAnalyticsScrollFrame.importData:SetScript("OnClick", function (i) 
+        print("Not yet implemented");
+    end);
+	ArenaAnalyticsScrollFrame.importDataBox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
+    ArenaAnalyticsScrollFrame.importDataBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -225);
+    ArenaAnalyticsScrollFrame.importDataBox:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame.importDataBox:SetWidth(100);
+    ArenaAnalyticsScrollFrame.importDataBox:SetHeight(50);
+    ArenaAnalyticsScrollFrame.importDataBox:SetAutoFocus(false);
+    
+    ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus();
+    end);
+    ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus();
+    end);
+
 end
 
 
