@@ -195,6 +195,8 @@ function ArenaAnalyticsSettingsFrame()
             ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
             core.arenaTable:RefreshLayout(true);
             ArenaAnalyticsCheckForFilterUpdate("2v2")
+			ArenaAnalyticsCheckForFilterUpdate("3v3")
+			ArenaAnalyticsCheckForFilterUpdate("5v5")
         end
     );
 
@@ -208,6 +210,8 @@ function ArenaAnalyticsSettingsFrame()
             ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
             core.arenaTable:RefreshLayout(true);
             ArenaAnalyticsCheckForFilterUpdate("2v2")
+			ArenaAnalyticsCheckForFilterUpdate("3v3")
+			ArenaAnalyticsCheckForFilterUpdate("5v5")
         end
     );
 
