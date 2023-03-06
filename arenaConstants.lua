@@ -12,7 +12,7 @@ local specSpells = {
     [ 33983 ] = "Feral", -- Mangle (Cat)
     [ 33987 ] = "Feral", -- Mangle (Bear)
     [ 18562 ] = "Restoration", -- Swiftmend
-    [ 16188 ] = "Restoration", -- Nature's Swiftness
+    [ 17116 ] = "Restoration", -- Nature's Swiftness
     [ 45283 ] = "Restoration", -- Natural Perfection
     [ 24858 ] = "Balance", -- Moonkin Form
     [ 24932 ] = "Feral", -- Leader of the Pack
@@ -46,7 +46,10 @@ local specSpells = {
     [ 31642 ] = "Fire", -- Blazing Speed
 
     -- PALADIN
-    [ 33072 ] = "Holy", -- Holy Shock
+    [ 48821 ] = "Holy", -- Holy Shock
+    [ 53652 ] = "Holy", -- Beacon of Light
+    [ 53653 ] = "Holy", -- Beacon of Light
+    [ 53654 ] = "Holy", -- Beacon of Light
     [ 20216 ] = "Holy", -- Divine Favor
     [ 31842 ] = "Holy", -- Divine Illumination
     [ 32700 ] = "Protection", -- Avenger's Shield
