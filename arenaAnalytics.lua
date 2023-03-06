@@ -501,14 +501,14 @@ local function handleArenaEnd()
 		newTeam1Rating = tonumber(newTeam1Rating);
 		newTeam0Rating = tonumber(newTeam0Rating);
 		if ((newTeam1Rating - oldTeam1Rating) > 0) then
-			team1RatingDif = (newTeam1Rating - oldTeam1Rating ~= 0) and " (+" .. tostring(newTeam1Rating - oldTeam1Rating) .. ")" or "";
+			team1RatingDif = (newTeam1Rating - oldTeam1Rating ~= 0) and tostring(newTeam1Rating - oldTeam1Rating) or "";
 		else
-			team1RatingDif = (oldTeam1Rating - newTeam1Rating ~= 0) and " (-" .. tostring(oldTeam1Rating - newTeam1Rating) .. ")" or "";
+			team1RatingDif = (oldTeam1Rating - newTeam1Rating ~= 0) and tostring(oldTeam1Rating - newTeam1Rating) or "";
 		end
 		if ((newTeam0Rating - oldTeam0Rating) > 0) then
-			team0RatingDif = (newTeam0Rating - oldTeam0Rating ~= 0) and " (+" .. tostring(newTeam0Rating - oldTeam0Rating) .. ")" or "";
+			team0RatingDif = (newTeam0Rating - oldTeam0Rating ~= 0) and tostring(newTeam0Rating - oldTeam0Rating) or "";
 		else
-			team0RatingDif = (oldTeam0Rating - newTeam0Rating ~= 0) and " (-" .. tostring(oldTeam0Rating - newTeam0Rating) .. ")" or "";
+			team0RatingDif = (oldTeam0Rating - newTeam0Rating ~= 0) and tostring(oldTeam0Rating - newTeam0Rating) or "";
 		end
 	end
 	
