@@ -1,9 +1,5 @@
 local _, core = ...; -- Namespace
 
-ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
-	["outliers"] = 0,
-}; 
-
 --------------------------------------
 -- Custom Slash Command
 --------------------------------------
@@ -163,6 +159,115 @@ function core:init(event, name, ...)
 	createMinimapButton();
 
 
+end
+
+function ArenaAnalyticsSettingsFrame()
+
+	local paddingLeft = 25;
+	ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
+    ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
+    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 300)
+    ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame.settingsFrame:Hide();
+
+    -- Make frame draggable
+    ArenaAnalyticsScrollFrame.settingsFrame:SetMovable(true)
+    ArenaAnalyticsScrollFrame.settingsFrame:EnableMouse(true)
+    ArenaAnalyticsScrollFrame.settingsFrame:RegisterForDrag("LeftButton")
+    ArenaAnalyticsScrollFrame.settingsFrame:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.settingsFrame.StartMoving)
+    ArenaAnalyticsScrollFrame.settingsFrame:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.settingsFrame.StopMovingOrSizing)
+    
+	ArenaAnalyticsScrollFrame.settingsFrametitle = ArenaAnalyticsScrollFrame.settingsFrame:CreateFontString(nil, "OVERLAY");
+	ArenaAnalyticsScrollFrame.settingsFrametitle:SetPoint("TOP", ArenaAnalyticsScrollFrame.settingsFrame, "TOP", -10, -5);
+    ArenaAnalyticsScrollFrame.settingsFrametitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
+	ArenaAnalyticsScrollFrame.settingsFrametitle:SetText("Settings");
+
+    
+	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -35, "Filter settings");
+
+    ArenaAnalyticsScrollFrame.skirmishToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_skirmishToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
+    ArenaAnalyticsScrollFrame.skirmishToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -50);
+    ArenaAnalyticsScrollFrame_skirmishToggleText:SetText("Show Skirmish");
+    ArenaAnalyticsScrollFrame.skirmishToggle:SetChecked(ArenaAnalyticsSettings["skirmishIsChecked"]);
+
+    ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", 
+        function()
+            ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
+            core.arenaTable:RefreshLayout(true);
+            ArenaAnalyticsCheckForFilterUpdate("2v2")
+        end
+    );
+
+    ArenaAnalyticsScrollFrame.seasonToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_seasonToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
+    ArenaAnalyticsScrollFrame.seasonToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -70);
+    ArenaAnalyticsScrollFrame_seasonToggleText:SetText("Show Previous Seasons");
+    ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(ArenaAnalyticsSettings["seasonIsChecked"]);
+
+    ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", 
+        function()
+            ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
+            core.arenaTable:RefreshLayout(true);
+            ArenaAnalyticsCheckForFilterUpdate("2v2")
+        end
+    );
+
+    ArenaAnalyticsScrollFrame.outliers = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -100, "Min games required to appear on comp filter");
+    ArenaAnalyticsScrollFrame.outliersInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
+    ArenaAnalyticsScrollFrame.outliersInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -95);
+    ArenaAnalyticsScrollFrame.outliersInput:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame.outliersInput:SetWidth(30);
+    ArenaAnalyticsScrollFrame.outliersInput:SetHeight(20);
+    ArenaAnalyticsScrollFrame.outliersInput:SetNumeric();
+    ArenaAnalyticsScrollFrame.outliersInput:SetAutoFocus(false);
+    ArenaAnalyticsScrollFrame.outliersInput:SetMaxLetters(3);
+    ArenaAnalyticsScrollFrame.outliersInput:SetText(ArenaAnalyticsSettings["outliers"])
+    
+    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus();
+        core.arenaTable:RefreshLayout(true);
+        ArenaAnalyticsCheckForFilterUpdate("2v2")
+        ArenaAnalyticsCheckForFilterUpdate("3v3")
+        ArenaAnalyticsCheckForFilterUpdate("5v5")
+    end);
+    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus();
+        core.arenaTable:RefreshLayout(true);
+        ArenaAnalyticsCheckForFilterUpdate("2v2")
+        ArenaAnalyticsCheckForFilterUpdate("3v3")
+        ArenaAnalyticsCheckForFilterUpdate("5v5")
+    end);
+
+    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnTextChanged", function(self)
+        ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsScrollFrame.outliersInput:GetText()
+    end);
+
+	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -135, "Data settings");
+
+
+    ArenaAnalyticsScrollFrame.resetBtn = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -155, "Reset ALL DATA");
+    ArenaAnalyticsScrollFrame.resetWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.resetBtn, "TOPRIGHT", 5, -5, "Warning! This will reset all match history");
+    ArenaAnalyticsScrollFrame.resetBtn:Disable()
+    ArenaAnalyticsScrollFrame.resetBtn:SetDisabledFontObject("GameFontDisableSmall")
+    ArenaAnalyticsScrollFrame.resetBtn:SetScript("OnClick", function (i) 
+        ArenaAnalyticsDB = {}; 
+        print("ArenaAnalytics match history deleted!");
+        core.arenaTable:RefreshLayout(true); 
+    end);
+    
+    ArenaAnalyticsScrollFrame.allowReset = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_allowReset", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
+    ArenaAnalyticsScrollFrame.allowReset:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -180);
+    ArenaAnalyticsScrollFrame_allowResetText:SetText("Check to enable data reset");
+    ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
+
+    ArenaAnalyticsScrollFrame.allowReset:SetScript("OnClick", 
+        function()
+            if (ArenaAnalyticsScrollFrame.allowReset:GetChecked() == true) then 
+                ArenaAnalyticsScrollFrame.resetBtn:Enable()
+            else
+                ArenaAnalyticsScrollFrame.resetBtn:Disable()
+            end
+        end
+    );
 end
 
 
