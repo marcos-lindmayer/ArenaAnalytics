@@ -3,6 +3,12 @@ core.Config = {};
 
 local Config = core.Config;
 
+ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
+	["outliers"] = 0,
+	["seasonIsChecked"] = false,
+	["skirmishIshChecked"] = false
+}; 
+
 local eventFrame = CreateFrame("Frame");
 local arenaEventFrame = CreateFrame("Frame");
 local eventTracker = {
@@ -24,6 +30,7 @@ arenaDuration, arenaTimeEnd, arenaTimeStart,
 arenaEnemyMMR, arenaPatyMMR, arenaPartyRating, 
 arenaEnemyRating, arenaSize, arenaIsRanked, 
 arenaPlayerTeam, arenaWonByPlayer, prevRating;
+local arenaPartyRatingDelta = "";
 local arenaTimeStartInt = 0;
 local arenaComp = {}; 
 local arenaEnemyComp = {}
@@ -81,6 +88,7 @@ local function resetLastArenaValues()
 	arenaComp = {};
 	arenaEnemyComp = {};
 	gotAllArenaInfo = false;
+	arenaPartyRatingDelta = "";
 end
 
 -- Returns a table with unit information to be placed inside either arenaParty or arenaEnemy
@@ -142,13 +150,26 @@ local function insertArenaOnTable()
 		end
 		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
 
+
+		print("personal rating from GetPersonalRatedInfo: " .. personalRating)
+
 		local ratingDiff = ""
 		if (arenaWonByPlayer and personalRating - prevRating > 0) then
-			ratingDiff = " (+" .. personalRating - prevRating .. ")";
+			arenaPartyRatingDelta = personalRating - prevRating
 		elseif (arenaWonByPlayer == false and prevRating - personalRating > 0) then
-			ratingDiff = " (-" .. prevRating - personalRating .. ")";
+			arenaPartyRatingDelta = prevRating - personalRating
 		end
-		arenaPartyRating = personalRating ~= nil and personalRating .. ratingDiff  or "-";
+		arenaPartyRating = personalRating ~= nil and personalRating or "-";
+		if (personalRating == nil) then
+			local winnerIndex = GetBattlefieldWinner()
+			local loserIndex = winnerIndex == 1 and 0 or 1
+			local index = arenaWonByPlayer and winnerIndex or loserIndex
+			local teamName, oldTeamRating, newTeamRating, teamRating = GetBattlefieldTeamInfo(index);
+			DevTools_Dump(GetBattlefieldTeamInfo(index))
+			arenaPartyRating = "~" .. newTeamRating;
+		else 
+			arenaPartyRating = personalRating
+		end
 		prevRating = nil;
 	else 
 		-- Set data for skirmish
@@ -186,14 +207,16 @@ local function insertArenaOnTable()
 	-- Get arena comp for each team
 	arenaComp = getArenaComp(arenaParty);
 	arenaEnemyComp = getArenaComp(arenaEnemy);
-	-- Insert arena data as a new ArenaAnalyticsDB row
-	table.insert(ArenaAnalyticsDB[arenaSize], {
+
+	-- Setup table data to insert into ArenaAnalyticsDB
+	local arenaData = {
 		["date"] = arenaTimeStart, 
 		["dateInt"] = arenaTimeStartInt,
 		["map"] = arenaMapName, 
 		["duration"] = arenaDuration, 
 		["team"] = arenaParty,
 		["rating"] = arenaPartyRating, 
+		["ratingDelta"] = arenaPartyRatingDelta,
 		["mmr"] = arenaPartyMMR, 
 		["enemyTeam"] = arenaEnemy, 
 		["enemyRating"] = arenaEnemyRating, 
@@ -202,7 +225,10 @@ local function insertArenaOnTable()
 		["enemyComp"] = arenaEnemyComp,
 		["won"] = arenaWonByPlayer,
 		["isRanked"] = arenaIsRanked
-	});
+	}
+
+	-- Insert arena data as a new ArenaAnalyticsDB row
+	table.insert(ArenaAnalyticsDB[arenaSize], arenaData);
 
 	-- Refresh and reset
 	core.arenaTable.RefreshLayout(true);
@@ -263,7 +289,7 @@ local function detectSpec(sourceGUID, spellID, spellName)
 		-- Check if spell was casted by party
 		for partyNumber = 1, #arenaParty do
 			if (arenaParty[partyNumber]["GUID"] == sourceGUID ) then
-				if (arenaParty[partyNumber]["spec"] == "-") then
+				if (#arenaParty[partyNumber]["spec"] < 2) then
 					-- Adding spec to party member
 					arenaParty[partyNumber]["spec"] = specSpells[spellID];
 				end
@@ -618,10 +644,6 @@ function fixAllRatingGains()
 		else
 			gameRating = tonumber(ArenaAnalyticsDB["3v3"][i]["rating"])
 			if(string.len(ArenaAnalyticsDB["3v3"][i + 1]["rating"]) > 6) then
-				print("following arena has correct rating")
-				print(ArenaAnalyticsDB["3v3"][i]["rating"])
-				print(ArenaAnalyticsDB["3v3"][i + 1]["rating"])
-				print("-------------------")
 			else
 				nextGameRating = tonumber(ArenaAnalyticsDB["3v3"][i + 1]["rating"])
 				fixedArenaDiff = ""
@@ -631,10 +653,6 @@ function fixAllRatingGains()
 					else
 						fixedArenaDiff = "-" .. gameRating - nextGameRating
 					end
-					print("rating is " .. gameRating)
-					print("next rating is " .. nextGameRating)
-					print("so first rating should be " .. gameRating .. " (" .. fixedArenaDiff .. ")")
-					print("-------------------")
 					ArenaAnalyticsDB["3v3"][i]["rating"] = gameRating .. " (" .. fixedArenaDiff .. ")";
 				end
 			end
@@ -676,10 +694,6 @@ function fixAllRatingGains()
 		else
 			gameRating = tonumber(ArenaAnalyticsDB["5v5"][i]["rating"])
 			if(string.len(ArenaAnalyticsDB["5v5"][i + 1]["rating"]) > 6) then
-				print("following arena has correct rating")
-				print(ArenaAnalyticsDB["5v5"][i]["rating"])
-				print(ArenaAnalyticsDB["5v5"][i + 1]["rating"])
-				print("-------------------")
 			else
 				nextGameRating = tonumber(ArenaAnalyticsDB["5v5"][i + 1]["rating"])
 				fixedArenaDiff = ""
@@ -689,12 +703,7 @@ function fixAllRatingGains()
 					else
 						fixedArenaDiff = "-" .. gameRating - nextGameRating
 					end
-					print("rating is " .. gameRating)
-					print("next rating is " .. nextGameRating)
-					print("so first rating should be " .. gameRating .. " (" .. fixedArenaDiff .. ")")
-					print("-------------------")
 					ArenaAnalyticsDB["5v5"][i]["rating"] = gameRating .. " (" .. fixedArenaDiff .. ")";
-					ReloadUI();
 				end
 			end
 		end
