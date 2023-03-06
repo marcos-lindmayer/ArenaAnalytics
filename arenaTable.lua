@@ -745,8 +745,7 @@ function ArenaAnalyticsCheckForFilterUpdate(bracket)
         frameByBracketTable[bracket].dropdownFrame = nil;
         frameByBracketTable[bracket] = nil
         ArenaAnalyticsCreateDropdownForFilterComps(bracket)
-        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:Enable();
-        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:SetText("All");
+        ArenaAnalyticsScrollFrame.arenaTypeMenu.buttons[1]:Click()
     end
 end
 
