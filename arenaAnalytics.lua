@@ -165,7 +165,6 @@ local function insertArenaOnTable()
 			local loserIndex = winnerIndex == 1 and 0 or 1
 			local index = arenaWonByPlayer and winnerIndex or loserIndex
 			local teamName, oldTeamRating, newTeamRating, teamRating = GetBattlefieldTeamInfo(index);
-			DevTools_Dump(GetBattlefieldTeamInfo(index))
 			arenaPartyRating = "~" .. newTeamRating;
 		else 
 			arenaPartyRating = personalRating
@@ -541,6 +540,8 @@ local function handleArenaEnd()
 			arenaPartyMMR = team1Rating;
 			arenaEnemyMMR = team0Rating;
 			arenaEnemyRating = newTeam0Rating .. team0RatingDif;
+			arenaPartyRatingDelta = team1RatingDif
+			arenaPartyRating = newTeam1Rating
 		end
 	else
 		arenaParty = team0;
@@ -549,6 +550,8 @@ local function handleArenaEnd()
 			arenaPartyMMR = team0Rating;
 			arenaEnemyMMR = team1Rating;
 			arenaEnemyRating = newTeam1Rating .. team1RatingDif;
+			arenaPartyRatingDelta = team0RatingDif
+			arenaPartyRating = newTeam0Rating
 		end
 	end
 	insertArenaOnTable();
