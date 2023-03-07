@@ -89,6 +89,7 @@ local function resetLastArenaValues()
 	arenaEnemyComp = {};
 	gotAllArenaInfo = false;
 	arenaPartyRatingDelta = "";
+	arenaEnemyRatingDelta = "";
 end
 
 -- Returns a table with unit information to be placed inside either arenaParty or arenaEnemy
@@ -152,6 +153,7 @@ local function insertArenaOnTable()
 
 
 		print("personal rating from GetPersonalRatedInfo: " .. personalRating)
+		print("prev rating: " .. prevRating)
 
 		local ratingDiff = ""
 		if (arenaWonByPlayer and personalRating - prevRating > 0) then
@@ -219,6 +221,7 @@ local function insertArenaOnTable()
 		["mmr"] = arenaPartyMMR, 
 		["enemyTeam"] = arenaEnemy, 
 		["enemyRating"] = arenaEnemyRating, 
+		["enemyRatingDelta"] = arenaEnemyRatingDelta,
 		["enemyMmr"] = arenaEnemyMMR,
 		["comp"] = arenaComp,
 		["enemyComp"] = arenaEnemyComp,
@@ -501,14 +504,14 @@ local function handleArenaEnd()
 		newTeam1Rating = tonumber(newTeam1Rating);
 		newTeam0Rating = tonumber(newTeam0Rating);
 		if ((newTeam1Rating - oldTeam1Rating) > 0) then
-			team1RatingDif = (newTeam1Rating - oldTeam1Rating ~= 0) and tostring(newTeam1Rating - oldTeam1Rating) or "";
+			team1RatingDif = (newTeam1Rating - oldTeam1Rating ~= 0) and (newTeam1Rating - oldTeam1Rating) or "";
 		else
-			team1RatingDif = (oldTeam1Rating - newTeam1Rating ~= 0) and tostring(oldTeam1Rating - newTeam1Rating) or "";
+			team1RatingDif = (oldTeam1Rating - newTeam1Rating ~= 0) and (oldTeam1Rating - newTeam1Rating) or "";
 		end
 		if ((newTeam0Rating - oldTeam0Rating) > 0) then
-			team0RatingDif = (newTeam0Rating - oldTeam0Rating ~= 0) and tostring(newTeam0Rating - oldTeam0Rating) or "";
+			team0RatingDif = (newTeam0Rating - oldTeam0Rating ~= 0) and (newTeam0Rating - oldTeam0Rating) or "";
 		else
-			team0RatingDif = (oldTeam0Rating - newTeam0Rating ~= 0) and tostring(oldTeam0Rating - newTeam0Rating) or "";
+			team0RatingDif = (oldTeam0Rating - newTeam0Rating ~= 0) and (oldTeam0Rating - newTeam0Rating) or "";
 		end
 	end
 	
@@ -539,7 +542,8 @@ local function handleArenaEnd()
 		if (arenaIsRanked) then
 			arenaPartyMMR = team1Rating;
 			arenaEnemyMMR = team0Rating;
-			arenaEnemyRating = newTeam0Rating .. team0RatingDif;
+			arenaEnemyRating = newTeam0Rating;
+			arenaEnemyRatingDelta = team0RatingDif;
 			arenaPartyRatingDelta = team1RatingDif
 			arenaPartyRating = newTeam1Rating
 		end
@@ -549,7 +553,8 @@ local function handleArenaEnd()
 		if (arenaIsRanked) then
 			arenaPartyMMR = team0Rating;
 			arenaEnemyMMR = team1Rating;
-			arenaEnemyRating = newTeam1Rating .. team1RatingDif;
+			arenaEnemyRating = newTeam1Rating;
+			arenaEnemyRatingDelta = team1RatingDif;
 			arenaPartyRatingDelta = team0RatingDif
 			arenaPartyRating = newTeam0Rating
 		end
