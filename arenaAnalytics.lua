@@ -434,6 +434,8 @@ local function trackArena(...)
 		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
 		if (prevRating == nil) then
 			prevRating = personalRating
+			
+			print("prev rating PRE: " .. prevRating)
 		end
 	end
 
