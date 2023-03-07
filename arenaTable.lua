@@ -1056,8 +1056,8 @@ function core.arenaTable:RefreshLayout(filter)
             button.MMR:SetText(item["mmr"] or "");
 
             local enemyRatingPrevFrame = setClassTextureWithTooltip(enemyTeamIconsFrames, item, "enemyTeam", button)
-            
-            button.EnemyRating:SetText(item["enemyRating"] .. enemyDelta or "");
+            local enemyRating = item["enemyRating"] and item["enemyRating"] or ""
+            button.EnemyRating:SetText(enemyRating .. enemyDelta or "");
             button.EnemyMMR:SetText(item["enemyMmr"] or "");
 
             
