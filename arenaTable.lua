@@ -1041,13 +1041,15 @@ function core.arenaTable:RefreshLayout(filter)
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
             
             local ratingPrevFrame = setClassTextureWithTooltip(teamIconsFrames, item, "team", button)
-            
+            local enemyDelta
             -- Paint winner green, loser red 
             if (item["won"]) then
                 local delta = (item["ratingDelta"] and item["ratingDelta"] ~= "") and "(+" .. item["ratingDelta"] .. ")" or ""
+                enemyDelta = (item["arenaEnemyRatingDelta"] and item["arenaEnemyRatingDelta"] ~= "") and "(-" .. item["arenaEnemyRatingDelta"] .. ")" or ""
                 button.Rating:SetText("|cff00cc66" .. item["rating"] .. delta .. "|r");
             else
                 local delta = (item["ratingDelta"] and item["ratingDelta"] ~= "") and "(-" .. item["ratingDelta"] .. ")" or ""
+                enemyDelta = (item["arenaEnemyRatingDelta"] and item["arenaEnemyRatingDelta"] ~= "") and "(+" .. item["arenaEnemyRatingDelta"] .. ")" or ""
                 button.Rating:SetText("|cffff0000" .. item["rating"] .. delta .."|r");
             end
 
@@ -1055,7 +1057,7 @@ function core.arenaTable:RefreshLayout(filter)
 
             local enemyRatingPrevFrame = setClassTextureWithTooltip(enemyTeamIconsFrames, item, "enemyTeam", button)
             
-            button.EnemyRating:SetText(item["enemyRating"] or "");
+            button.EnemyRating:SetText(item["enemyRating"] .. enemyDelta or "");
             button.EnemyMMR:SetText(item["enemyMmr"] or "");
 
             
