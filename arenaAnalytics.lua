@@ -14,6 +14,7 @@ local arenaEventFrame = CreateFrame("Frame");
 local eventTracker = {
 	["UPDATE_BATTLEFIELD_STATUS"] = false, 
 	["ZONE_CHANGED_NEW_AREA"] = false, 
+	["CHAT_MSG_ADDON"] = false,
 	["ArenaEvents"] = {
 		["UPDATE_BATTLEFIELD_SCORE"] = false, 
 		["UNIT_AURA"] = false, 
@@ -117,6 +118,8 @@ end
 local function getArenaComp(teamTable)
 	local comp = {}
 	for i = 1, #teamTable do
+		print(#teamTable[i]["spec"]<3 and "Could not detect spec for " .. teamTable[i]["name"] or "")
+		local success = C_ChatInfo.SendAddonMessage("ArenaAnalytics", "request " .. teamTable[i]["name"], "GUILD")
 		table.insert(comp, teamTable[i]["class"] .. "|" .. teamTable[i]["spec"])
 	end
 	return comp;
@@ -617,7 +620,7 @@ end
 -- Assigns behaviour for "global" events
 -- UPDATE_BATTLEFIELD_STATUS: Begins arena tracking and arena events if inside arena
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
-local function handleEvents(_, eventType, ...)
+local function handleEvents(prefix, eventType, ...)
 	if (IsActiveBattlefieldArena()) then 
 		if (not arenaEnded) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
@@ -633,6 +636,10 @@ local function handleEvents(_, eventType, ...)
 		quitsArena();
 		removeArenaEvents();
 	end
+	if (eventType == "CHAT_MSG_ADDON" and prefix == "ArenaAnalytics") then
+		print(event, name, ...)
+		return;
+	end
 
 end
 
@@ -640,6 +647,6 @@ end
 function Config:EventRegister()
 	eventTracker["UPDATE_BATTLEFIELD_STATUS"] = eventFrame:RegisterEvent("UPDATE_BATTLEFIELD_STATUS");
 	eventTracker["ZONE_CHANGED_NEW_AREA"] = eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA");
+	eventTracker["CHAT_MSG_ADDON"] = eventFrame:RegisterEvent("CHAT_MSG_ADDON");
 	eventFrame:SetScript("OnEvent", handleEvents);
-	
 end

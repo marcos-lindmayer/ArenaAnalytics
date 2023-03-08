@@ -134,11 +134,6 @@ end
 function core:init(event, name, ...)
 	if (name ~= "ArenaAnalytics") then return end 
 	
-	if (event == "CHAT_MSG_ADDON") then
-		print(event, name, ...)
-		return;
-	end
-
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
@@ -157,6 +152,7 @@ function core:init(event, name, ...)
 	core.Config.EventRegister();
 	core.arenaTable.OnLoad();
 	createMinimapButton();
+	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 
 
 end
@@ -299,5 +295,4 @@ end
 
 local events = CreateFrame("Frame");
 events:RegisterEvent("ADDON_LOADED");
-events:RegisterEvent("CHAT_MSG_ADDON");
 events:SetScript("OnEvent", core.init);
