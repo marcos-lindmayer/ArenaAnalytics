@@ -26,6 +26,7 @@ local specSpells = {
     [ 34490 ] = "Marksmanship", -- Silencing Shot
     [ 27068 ] = "Survival", -- Wyvern Sting
     [ 19306 ] = "Survival", -- Counterattack
+    [ 60053 ] = "Survival", -- Explosive Shot
     [ 19506 ] = "Marksmanship", -- Trueshot Aura
     [ 34692 ] = "Beast Mastery", -- The Beast Within
     [ 20895 ] = "Beast Mastery", -- Spirit Bond
