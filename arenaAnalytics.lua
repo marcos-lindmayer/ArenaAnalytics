@@ -26,7 +26,7 @@ local eventTracker = {
 
 -- Arena variables
 local arenaMapName, arenaMapId, arenaPlayerName, 
-arenaDuration, arenaTimeEnd, arenaTimeStart,
+arenaDuration, arenaTimeEnd, 
 arenaEnemyMMR, arenaPatyMMR, arenaPartyRating, 
 arenaEnemyRating, arenaSize, arenaIsRanked, 
 arenaPlayerTeam, arenaWonByPlayer, prevRating;
@@ -128,7 +128,6 @@ local function insertArenaOnTable()
 	-- Calculate arena duration
 	if (arenaTimeStartInt == 0) then
 		arenaDuration = 0;
-		arenaTimeStart = date("%d/%m/%y %H:%M:%S");
 	else
 		arenaTimeEnd = time();
 		local arenaDurationMS = ((arenaTimeEnd - arenaTimeStartInt) * 1000);
@@ -136,7 +135,6 @@ local function insertArenaOnTable()
 		local minutes = arenaDurationMS >= 60000 and (SecondsToTime(arenaDurationMS/1000, true) .. " ") or "";
 		local seconds = math.floor((arenaDurationMS % 60000) / 1000);
 		arenaDuration = minutes .. seconds .. "sec";
-		arenaTimeStart = date("%d/%m/%y %H:%M:%S", time() - seconds);
 	end
 
 	-- Get your personal rating gain instead of the one from GetBattlefieldTeamInfo (which gives an average)

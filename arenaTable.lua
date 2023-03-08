@@ -1027,7 +1027,7 @@ function core.arenaTable:RefreshLayout(filter)
         if itemIndex <= #items then
             local item = items[itemIndex];
             setColorForSession(button, item["session"])
-            button.Date:SetText(item["date"] or "");
+            button.Date:SetText(date("%d/%m/%y %H:%M:%S", item["dateInt"]) or "");
             button.Map:SetText(item["map"] or "");
             button.Duration:SetText(item["duration"] or "");
 
