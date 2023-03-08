@@ -367,12 +367,13 @@ local function getCsvFromDB()
         table.insert(allArenas, ArenaAnalyticsDB["5v5"][arenaN5v5]);
     end
     table.sort(allArenas, function (k1,k2)
-        return k1["date"] > k2["date"];
+        return k1["dateInt"] > k2["dateInt"];
     end)
 
     for arenaN = 1, #allArenas do
+        local arenaDateString = date("%d/%m/%y %H:%M:%S", item["dateInt"]);
         CSVString = CSVString 
-        .. allArenas[arenaN]["date"] .. ","
+        .. arenaDateString .. ","
         .. allArenas[arenaN]["map"] .. ","
         .. allArenas[arenaN]["duration"] .. ","
         .. (allArenas[arenaN]["won"] and "yes" or "no") .. ","

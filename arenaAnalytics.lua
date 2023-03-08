@@ -209,7 +209,6 @@ local function insertArenaOnTable()
 
 	-- Setup table data to insert into ArenaAnalyticsDB
 	local arenaData = {
-		["date"] = arenaTimeStart, 
 		["dateInt"] = arenaTimeStartInt,
 		["map"] = arenaMapName, 
 		["duration"] = arenaDuration, 
