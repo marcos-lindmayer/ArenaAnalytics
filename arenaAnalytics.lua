@@ -595,12 +595,11 @@ local function hasArenaStarted(msg)
     end
 end
 
--- Handles both requests and delivers for specs and enemy MMR/Rating
+-- Handles both requests and delivers for specs, enemy MMR/Rating, and version
 local function handleSync(...)
 	local _, msg = ...
 
-	if (not string.find(msg, "|") or not string.find(msg, "_") or not string.find(msg, "#")) then return end
-
+	if (not string.find(msg, "|") or not string.find(msg, "_") or not string.find(msg, "%#")) then return end
 	local indexOfSeparator, _ = string.find(msg, "_")
 	local  sender = msg:sub(1, indexOfSeparator - 1);
 	-- Only read if you're not the sender
@@ -728,6 +727,16 @@ local function handleSync(...)
 					core:Print("Spec(" .. deliveredSpec .. ") for " .. deliveredName .. " has been added!")
 				else
 					core:Print("Error! Name could not be found or already has a spec assigned for latest match!")
+				end
+			elseif (dataType == "version") then
+				indexOfSeparator, _ = string.find(dataValue, "=")
+				local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 9999;
+				local deliveredVersion = dataValue:sub(indexOfSeparator + 1, #dataValue);
+				deliveredVersion = deliveredVersion:gsub("%.","")
+				version = version:gsub("%.","")
+				print(tonumber(deliveredVersion), tonumber(version))
+				if (tonumber(deliveredVersion) > tonumber(version)) then
+					core:Print("There is an update available. Please download the latest release from TBD") --TODO: Add curseforge page
 				end
 			end
 		end

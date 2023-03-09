@@ -144,9 +144,21 @@ function core:init(event, name, ...)
 	core:Print("Testing version");
     core:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
+
 	core.Config.EventRegister();
 	core.arenaTable.OnLoad();
 	createMinimapButton();
+	
+	
+	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 9999;
+	
+	local messageSuccess
+	if (IsInInstance()) then
+		messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, "INSTANCE_CHAT")
+	elseif (IsInGroup(1)) then
+		messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, "PARTY")
+	end
+	
 end
 
 function ArenaAnalyticsSettingsFrame()
