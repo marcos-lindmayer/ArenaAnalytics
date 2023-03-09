@@ -118,8 +118,6 @@ end
 local function getArenaComp(teamTable)
 	local comp = {}
 	for i = 1, #teamTable do
-		print(#teamTable[i]["spec"]<3 and "Could not detect spec for " .. teamTable[i]["name"] or "")
-		local success = C_ChatInfo.SendAddonMessage("ArenaAnalytics", "request " .. teamTable[i]["name"], "GUILD")
 		table.insert(comp, teamTable[i]["class"] .. "|" .. teamTable[i]["spec"])
 	end
 	return comp;
@@ -205,6 +203,31 @@ local function insertArenaOnTable()
 		return (sameClass and a["name"] < b["name"]) or a["class"] < b["class"]
 	end
 	);
+
+	if (gotAllArenaInfo == false) then 
+		print("Missing specs. Requesting data")
+		for i = 1, #arenaParty do
+			if (#arenaParty[i]["spec"]<3) then
+				local messageSuccess
+				if (IsInInstance()) then
+					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. arenaParty[i]["name"], "INSTANCE_CHAT")
+				elseif (IsInGroup(1)) then
+					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. arenaParty[i]["name"], "PARTY")
+				end
+			end
+		end
+		for j = 1, #arenaEnemy do
+			if (#arenaEnemy[j]["spec"]<3) then
+				local messageSuccess
+				if (IsInInstance()) then
+					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. arenaEnemy[j]["name"], "INSTANCE_CHAT")
+				elseif (IsInGroup(1)) then
+					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. arenaEnemy[j]["name"], "PARTY")
+				end
+			end
+		end
+		
+	end
 
 	-- Get arena comp for each team
 	arenaComp = getArenaComp(arenaParty);
@@ -576,6 +599,145 @@ local function hasArenaStarted(msg)
     end
 end
 
+-- Handles both requests and delivers for specs and enemy MMR/Rating
+local function handleSync(...)
+	local _, msg = ...
+
+	if (not string.find(msg, "|") or not string.find(msg, "_") or not string.find(msg, "#")) then return end
+
+	local indexOfSeparator, _ = string.find(msg, "_")
+	local  sender = msg:sub(1, indexOfSeparator - 1);
+	-- Only read if you're not the sender
+	if (sender ~= tostring(UnitGUID("player"))) then
+		local msgString = msg:sub(indexOfSeparator + 1, #msg);
+		indexOfSeparator, _ = string.find(msgString, "|")
+		local messageType = msgString:sub(1, indexOfSeparator - 1);
+		local messageData = msgString:sub(indexOfSeparator + 1, #msgString);
+		indexOfSeparator, _ = string.find(messageData, "#")
+		local dataType = messageData:sub(1, indexOfSeparator - 1);
+		local dataValue = messageData:sub(indexOfSeparator + 1, #messageData);
+		core:Print("|cff00cc66" .. sender .. "|r " .. messageType .. "ed: " .. messageData)
+		if (messageType == "request") then
+			if (dataType == "spec") then
+				-- Check if arena in progress, else need to get data from saved game
+				local foundSpec = false;
+				local spec
+				if (arenaMapId ~= nil) then
+					for i = 1, #arenaParty do
+						if (arenaParty[i]["name"] == dataValue and #arenaParty[i]["spec"]>2) then
+							foundSpec = true;
+							spec = arenaParty[i]["spec"]
+							break;
+						end
+					end
+					if (foundSpec == false) then
+						for i = 1, #arenaEnemy do
+							if (arenaEnemy[i]["name"] == dataValue and #arenaEnemy[i]["spec"]>2) then
+								spec = arenaEnemy[i]["spec"]
+								foundSpec = true
+								break;
+							end
+						end
+					end
+					
+				else
+					local lastGame
+					local lastGamePerBracket = {
+						#ArenaAnalyticsDB["2v2"] > 0 and ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] or 0,
+						#ArenaAnalyticsDB["3v3"] > 0 and ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]] or 0,
+						#ArenaAnalyticsDB["5v5"] > 0 and ArenaAnalyticsDB["5v5"][#ArenaAnalyticsDB["5v5"]] or 0,
+					}
+					table.sort(lastGamePerBracket, function (k1,k2)
+						if (k1["dateInt"] and k2["dateInt"]) then
+							return k1["dateInt"] < k2["dateInt"];
+						end
+					end)
+					local lastGame = lastGamePerBracket[3]
+
+					if (lastGame["team"]) then 
+						for i = 1, #lastGame["team"] do
+							if (lastGame["team"][i]["name"] == dataValue and #lastGame["team"][i]["spec"] > 2) then
+								foundSpec = true;
+								spec = lastGame["team"][i]["spec"];
+								break;
+							end
+						end
+						if (lastGame["enemyTeam"]) then 
+						for j = 1, #lastGame["enemyTeam"] do
+								if (lastGame["enemyTeam"][j]["name"] == dataValue and #lastGame["enemyTeam"][j]["spec"] > 2) then
+									foundSpec = true;
+									spec = lastGame["enemyTeam"][j]["spec"];
+									break;
+								end
+							end
+						end
+					end
+				end
+				
+				if (foundSpec) then
+					local messageSuccess
+					if (IsInInstance()) then
+						messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|spec#" .. sender .. "?" .. dataValue .. "=" .. spec, "INSTANCE_CHAT")
+					elseif (IsInGroup(1)) then
+						messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|spec#" .. sender .. "?" .. dataValue .. "=" .. spec, "PARTY")
+					end
+				end
+			elseif (dataType == "enemyRateMMR") then
+
+			end
+		elseif (messageType == "deliver") then
+			if (dataType == "spec") then
+				indexOfSeparator, _ = string.find(dataValue, "?")
+				local nameAndSpec = dataValue:sub(indexOfSeparator + 1, #dataValue);
+				indexOfSeparator, _ = string.find(nameAndSpec, "=")
+				local deliveredName = nameAndSpec:sub(1, indexOfSeparator - 1);
+				local deliveredSpec = nameAndSpec:sub(indexOfSeparator + 1, #nameAndSpec);
+				
+
+				local lastGame
+				local lastGamePerBracket = {
+					#ArenaAnalyticsDB["2v2"] > 0 and ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] or 0,
+					#ArenaAnalyticsDB["3v3"] > 0 and ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]] or 0,
+					#ArenaAnalyticsDB["5v5"] > 0 and ArenaAnalyticsDB["5v5"][#ArenaAnalyticsDB["5v5"]] or 0,
+				}
+				
+				table.sort(lastGamePerBracket, function (k1,k2)
+					if (k1["dateInt"] and k2["dateInt"]) then
+						return k1["dateInt"] < k2["dateInt"];
+					end
+				end)
+				local lastGame = lastGamePerBracket[3]
+				
+				local foundName = false;
+
+				if (lastGame["team"]) then 
+					for i = 1, #lastGame["team"] do
+						if (lastGame["team"][i]["name"] == dataValue and #lastGame["team"][i]["spec"] < 2) then
+							foundName = true;
+							lastGame["team"][i]["spec"] = deliveredSpec
+							break;
+						end
+					end
+					if (lastGame["enemyTeam"]) then 
+					for j = 1, #lastGame["enemyTeam"] do
+							if (lastGame["enemyTeam"][j]["name"] == dataValue and #lastGame["enemyTeam"][j]["spec"] < 2) then
+								foundName = true;
+								lastGame["team"][j]["spec"] = deliveredSpec
+								break;
+							end
+						end
+					end
+				end
+				if (foundName) then
+					core:Print("Spec(" .. deliveredSpec .. ") for " .. deliveredName .. " has been added!")
+				else
+					core:Print("Error! Name could not be found or already has a spec assigned for latest match!")
+				end
+			end
+		end
+	end
+end
+
 -- Removes events used inside arenas
 local function removeArenaEvents()
 	eventTracker["ArenaEvents"]["UPDATE_BATTLEFIELD_SCORE"] = arenaEventFrame:UnregisterEvent("UPDATE_BATTLEFIELD_SCORE");
@@ -636,9 +798,8 @@ local function handleEvents(prefix, eventType, ...)
 		quitsArena();
 		removeArenaEvents();
 	end
-	if (eventType == "CHAT_MSG_ADDON" and prefix == "ArenaAnalytics") then
-		print(event, name, ...)
-		return;
+	if (eventType == "CHAT_MSG_ADDON" and ... == "ArenaAnalytics") then
+		handleSync(...)
 	end
 
 end
