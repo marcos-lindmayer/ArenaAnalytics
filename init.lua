@@ -17,12 +17,6 @@ core.commands = {
 		core:Print("Wanna get more data? Web project coming soon...");
 	end,
 
-	["chat"] = function(...)
-		local prefix = "ArenaAnalytics"
-		C_ChatInfo.RegisterAddonMessagePrefix(prefix)
-		local addonMessage = strjoin(" ", ...)
-		C_ChatInfo.SendAddonMessage(prefix, addonMessage, "WHISPER", UnitName("player"))
-	end,
 };
 
 local function HandleSlashCommands(str)	
@@ -149,12 +143,10 @@ function core:init(event, name, ...)
 
 	core:Print("Testing version");
     core:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
+	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 	core.Config.EventRegister();
 	core.arenaTable.OnLoad();
 	createMinimapButton();
-	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
-
-
 end
 
 function ArenaAnalyticsSettingsFrame()
