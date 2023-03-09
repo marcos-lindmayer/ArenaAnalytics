@@ -569,8 +569,6 @@ local function handleArenaEnd()
 			arenaEnemyMMR = team0Rating;
 			arenaEnemyRating = newTeam0Rating;
 			arenaEnemyRatingDelta = team0RatingDif;
-			arenaPartyRatingDelta = team1RatingDif
-			arenaPartyRating = newTeam1Rating
 		end
 	else
 		arenaParty = team0;
@@ -580,8 +578,6 @@ local function handleArenaEnd()
 			arenaEnemyMMR = team1Rating;
 			arenaEnemyRating = newTeam1Rating;
 			arenaEnemyRatingDelta = team1RatingDif;
-			arenaPartyRatingDelta = team0RatingDif
-			arenaPartyRating = newTeam0Rating
 		end
 	end
 	insertArenaOnTable();
