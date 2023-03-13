@@ -161,15 +161,6 @@ local function insertArenaOnTable()
 			arenaPartyRatingDelta = prevRating - personalRating
 		end
 		arenaPartyRating = personalRating ~= nil and personalRating or "-";
-		if (personalRating == nil) then
-			local winnerIndex = GetBattlefieldWinner()
-			local loserIndex = winnerIndex == 1 and 0 or 1
-			local index = arenaWonByPlayer and winnerIndex or loserIndex
-			local teamName, oldTeamRating, newTeamRating, teamRating = GetBattlefieldTeamInfo(index);
-			arenaPartyRating = "~" .. newTeamRating;
-		else 
-			arenaPartyRating = personalRating
-		end
 		prevRating = nil;
 	else 
 		-- Set data for skirmish
