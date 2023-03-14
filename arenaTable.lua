@@ -12,6 +12,9 @@ local currentFilters = {
     ["comps2v2"] = "All", 
     ["comps3v3"] = "All", 
     ["comps5v5"] = "All",
+    ["enemycomps2v2"] = "All",
+    ["enemycomps3v3"] = "All",
+    ["enemycomps5v5"] = "All"
 };
 
 local isCompFilterOn;
@@ -19,6 +22,11 @@ local filteredDB = nil;
 local dropdownCounter = 1;
 local currentSeasonStartInt = 1673916461;
 local filterCompsOpts = {
+    ["2v2"] = "",
+    ["3v3"] = "",
+    ["5v5"] = ""
+}
+local filterEnemyCompsOpts = {
     ["2v2"] = "",
     ["3v3"] = "",
     ["5v5"] = ""
@@ -52,16 +60,21 @@ function core.arenaTable:CreateButton(point, relativeFrame, relativePoint, xOffs
 	return btn;
 end
 
+local function doesGameMatchSettings(arenaGame)
+    return ((ArenaAnalyticsSettings["seasonIsChecked"] == false and arenaGame["dateInt"] > currentSeasonStartInt) and (ArenaAnalyticsSettings["skirmishIsChecked"] == false and arenaGame["isRanked"] == true))
+end
+
 -- Return specific comp's winrate
 -- comp is a string of space-separated classes
-local function getCompWinrate(comp)
+local function getCompWinrate(comp, isEnemyComp)
+    local compType = isEnemyComp and "enemyComp" or "comp"
     local _, bracket = string.gsub(comp, "-", "-")
     local bracketSize = bracket + 1;
     bracket = bracketSize .. "v" .. bracketSize;
     local arenasWithComp = {}
     for i = 1, #ArenaAnalyticsDB[bracket] do
-        if (#ArenaAnalyticsDB[bracket][i]["comp"] == bracketSize) then
-            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i]["comp"], "-")
+        if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGameMatchSettings(ArenaAnalyticsDB[bracket][i])) then
+            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i][compType], "-")
             if (comp == currentComp) then
                 table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
             end
@@ -88,14 +101,15 @@ end
 
 -- Return specific comp's total games
 -- comp is a string of space-separated classes
-local function getCompTotalGames(comp)
+local function getCompTotalGames(comp, isEnemyComp)
     local _, bracket = string.gsub(comp, "-", "-")
     local bracketSize = bracket + 1;
     bracket = bracketSize .. "v" .. bracketSize;
+    local compType = isEnemyComp and "enemyComp" or "comp"
     local arenasWithComp = {}
     for i = 1, #ArenaAnalyticsDB[bracket] do
-        if (#ArenaAnalyticsDB[bracket][i]["comp"] == bracketSize) then
-            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i]["comp"], "-")
+        if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGameMatchSettings(ArenaAnalyticsDB[bracket][i])) then
+            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i][compType], "-")
             if (comp == currentComp) then
                 table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
             end
@@ -103,7 +117,6 @@ local function getCompTotalGames(comp)
     end
     return #arenasWithComp
 end
-
 -- Hides spec's icon on bottom-right class' icon
 local function hideSpecIcons()
     for specIconNumber = 1, #ArenaAnalyticsScrollFrame.specFrames do
@@ -156,6 +169,13 @@ local function changeFilter(args)
         ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame:Show();
         ArenaAnalyticsScrollFrame.filterComps["3v3"].dropdownFrame:Hide();
         ArenaAnalyticsScrollFrame.filterComps["5v5"].dropdownFrame:Hide();
+
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].selected:SetText("All");
+        currentFilters["enemycomps3v3"] = "All"
+        currentFilters["enemycomps5v5"] = "All"
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"].dropdownFrame:Hide();
     elseif (selectedFilter == "3v3") then
         ArenaAnalyticsScrollFrame.filterComps["3v3"].selected:SetText("All");
         currentFilters["comps2v2"] = "All"
@@ -163,6 +183,13 @@ local function changeFilter(args)
         ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame:Hide();
         ArenaAnalyticsScrollFrame.filterComps["3v3"].dropdownFrame:Show();
         ArenaAnalyticsScrollFrame.filterComps["5v5"].dropdownFrame:Hide();
+        
+        ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"].selected:SetText("All");
+        currentFilters["enemycomps2v2"] = "All"
+        currentFilters["enemycomps5v5"] = "All"
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"].dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"].dropdownFrame:Hide();
     elseif (selectedFilter == "5v5") then
         ArenaAnalyticsScrollFrame.filterComps["5v5"].selected:SetText("All");
         currentFilters["comps2v2"] = "All"
@@ -170,11 +197,20 @@ local function changeFilter(args)
         ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame:Hide();
         ArenaAnalyticsScrollFrame.filterComps["3v3"].dropdownFrame:Hide();
         ArenaAnalyticsScrollFrame.filterComps["5v5"].dropdownFrame:Show();
+        
+        ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"].selected:SetText("All");
+        currentFilters["enemycomps2v2"] = "All"
+        currentFilters["enemycomps3v3"] = "All"
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"].dropdownFrame:Show();
     end
 
     if (filterName == "Bracket" and selectedFilter ~= "All") then
         ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:Enable();
         ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].selected:Enable();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].selected:SetText("All");
     elseif (filterName == "Bracket") then
         ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame:Show();
         ArenaAnalyticsScrollFrame.filterComps["2v2"].selected:Disable();
@@ -186,12 +222,29 @@ local function changeFilter(args)
         currentFilters["comps2v2"] = "All";
         currentFilters["comps3v3"] = "All";
         currentFilters["comps5v5"] = "All";
+        
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].dropdownFrame:Show();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].selected:Disable();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"].dropdownFrame:Hide();
+        ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"].selected:SetText("Select bracket");
+        ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"].selected:SetText("All");
+        ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"].selected:SetText("All");
+        currentFilters["enemycomps2v2"] = "All";
+        currentFilters["enemycomps3v3"] = "All";
+        currentFilters["enemycomps5v5"] = "All";
     end
     
     if (currentFilters["bracket"] ~= "All" and currentFilters["comps" .. currentFilters["bracket"]] ~= "All") then 
         isCompFilterOn = true;
     else
         isCompFilterOn = false;
+    end
+    
+    if (currentFilters["bracket"] ~= "All" and currentFilters["enemycomps" .. currentFilters["bracket"]] ~= "All") then 
+        isEnemyCompFilterOn = true;
+    else
+        isEnemyCompFilterOn = false;
     end
 
     core.arenaTable:RefreshLayout(true);
@@ -217,7 +270,7 @@ local function createDropdownButton(info, dropdownTable, filter, dropdown_width)
 end
 
 -- Returns button string (icons) and tooltip for comp filter
-local function setIconsOnCompFilter(itext, itooltip) 
+local function setIconsOnCompFilter(itext, itooltip, isEnemyComp) 
     local inlineIcons = ""
     local infoText = itext;
     local infoTooltip = itooltip;
@@ -234,7 +287,7 @@ local function setIconsOnCompFilter(itext, itooltip)
         infoTooltip = infoTooltip .. arenaClass .. "|" .. arenaSpec .."-"
     end
     infoTooltip = infoTooltip:sub(1, -2)
-    infoText = getCompTotalGames(infoText) .. " " .. inlineIcons .. " - " .. getCompWinrate(infoText);
+    infoText = getCompTotalGames(infoText, isEnemyComp) .. " " .. inlineIcons .. " - " .. getCompWinrate(infoText, isEnemyComp);
     return infoText, infoTooltip;
 end
 
@@ -246,7 +299,7 @@ local function createDropdown(opts)
     local menu_items = opts['items'] or {};
     local hasIcon = opts["hasIcon"];
     local title_text = opts['title'] or '';
-    local dropdown_width = title_text == "Comp: Games | Comp | Winrate" and 250 or 0;
+    local dropdown_width = (title_text == "Comp: Games | Comp | Winrate" or title_text == "Enemy Comp: Games | Comp | Winrate") and 250 or 0;
     local default_val = opts['defaultVal'] or '';
     local change_func = opts['changeFunc'] or function (dropdown_val) end;
 
@@ -259,16 +312,17 @@ local function createDropdown(opts)
     local dd_title = dropdownTable.dropdownFrame:CreateFontString(nil, 'OVERLAY')
     dd_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
     dropdownTable.dd_title = dd_title;
+    isEnemyComp, _ = string.find(opts['name'], "Enemy")
     if (hasIcon) then
         is2v2, _ = string.find(opts['name'], "2v2")
         if (is2v2) then
-            dropdownTable.filterName = "comps2v2"
+            dropdownTable.filterName = isEnemyComp and "enemycomps2v2" or "comps2v2"
         else
             is3v3, _ = string.find(opts['name'], "3v3")
             if (is3v3) then
-                dropdownTable.filterName = "comps3v3"
+                dropdownTable.filterName = isEnemyComp and "enemycomps3v3" or "comps3v3"
             else
-                dropdownTable.filterName = "comps5v5"
+                dropdownTable.filterName = isEnemyComp and "enemycomps5v5" or "comps5v5"
             end
         end
         
@@ -279,18 +333,18 @@ local function createDropdown(opts)
     dropdownTable.dd_title:SetPoint("TOPLEFT", 0, 13)
 
     dropdownTable.buttons = {}
-    -- Sets the dropdown width to the largest item string width.
+    
     for _, item in pairs(menu_items) do 
         dropdownTable.dd_title:SetText(item)
         local text_width = dropdownTable.dd_title:GetStringWidth() + 50
-        if text_width > dropdown_width and title_text ~= "Comp: Games | Comp | Winrate" then
+        if (text_width > dropdown_width and title_text ~= "Comp: Games | Comp | Winrate" and title_text ~= "Enemy Comp: Games | Comp | Winrate") then
             dropdown_width = text_width
         end
         local info = {}
         info.text = item;
         info.tooltip = "";
         if(hasIcon and info.text ~= "All") then
-            info.text, info.tooltip = setIconsOnCompFilter(info.text, info.tooltip)
+            info.text, info.tooltip = setIconsOnCompFilter(info.text, info.tooltip, isEnemyComp)
         end
         table.insert(dropdownTable.buttons, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
     end
@@ -418,7 +472,7 @@ local function getPlayerPlayedComps(bracket)
     else
         for arenaNumber = 1, #ArenaAnalyticsDB[bracket] do   
             if (#ArenaAnalyticsDB[bracket][arenaNumber]["comp"] == arenaSize and ArenaAnalyticsDB[bracket][arenaNumber]["dateInt"]) then
-                if ((ArenaAnalyticsSettings["seasonIsChecked"] == false and ArenaAnalyticsDB[bracket][arenaNumber]["dateInt"] < currentSeasonStartInt) or (ArenaAnalyticsSettings["skirmishIsChecked"] == false and ArenaAnalyticsDB[bracket][arenaNumber]["isRanked"] == false)) then
+                if (doesGameMatchSettings(ArenaAnalyticsDB[bracket][arenaNumber]) == false) then
                 else
                     table.sort(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], function(a,b)
                         local playerClassSpec = UnitClass("player") .. "|" .. ArenaAnalyticsGetPlayerSpec()
@@ -431,7 +485,41 @@ local function getPlayerPlayedComps(bracket)
                     if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil and lastLetter ~= "|") then
                         local result = {}
                         for i,v in ipairs(ArenaAnalyticsDB[bracket]) do
-                            if table.concat(v["comp"], "-") == compString then
+                            if (table.concat(v["comp"], "-") == compString and doesGameMatchSettings(v)) then
+                                table.insert(result, v)
+                            end
+                        end
+                        if (#result > tonumber(ArenaAnalyticsSettings["outliers"])) then
+                            table.insert(playedComps, compString)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return playedComps;
+end
+-- Returns array with all unique enemy played comps based on bracket
+-- param received. Ignores incomplete comps. Removes outliers (settings param)
+local function getEnemyPlayedComps(bracket)
+    local playedComps = {"All"};
+    local arenaSize = tonumber(string.sub(bracket, 1, 1))
+    if (bracket == nil) then
+        return playedComps;
+    else
+        for arenaNumber = 1, #ArenaAnalyticsDB[bracket] do   
+            if (#ArenaAnalyticsDB[bracket][arenaNumber]["enemyComp"] == arenaSize and ArenaAnalyticsDB[bracket][arenaNumber]["dateInt"]) then
+                if (doesGameMatchSettings(ArenaAnalyticsDB[bracket][arenaNumber]) == false) then
+                else
+                    table.sort(ArenaAnalyticsDB[bracket][arenaNumber]["enemyComp"], function(a,b)
+                        return (a < b)
+                    end)
+                    local compString = table.concat(ArenaAnalyticsDB[bracket][arenaNumber]["enemyComp"], "-");
+                    local lastLetter = compString:sub(-#"%|" + 1)
+                    if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil and lastLetter ~= "|") then
+                        local result = {}
+                        for i,v in ipairs(ArenaAnalyticsDB[bracket]) do
+                            if (table.concat(v["enemyComp"], "-") == compString and doesGameMatchSettings(v)) then
                                 table.insert(result, v)
                             end
                         end
@@ -510,11 +598,10 @@ end
 
 -- Creates addOn text, filters, table headers
 function core.arenaTable:OnLoad()
-
-
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() core.arenaTable:RefreshLayout(); end
 
     ArenaAnalyticsScrollFrame.filterComps = {}
+    ArenaAnalyticsScrollFrame.filterEnemyComps = {}
 
     HybridScrollFrame_SetDoNotHideScrollBar(ArenaAnalyticsScrollFrame.ListScrollFrame, true);
     ArenaAnalyticsScrollFrame.Bg:SetTexture(nil)
@@ -822,6 +909,47 @@ local function applyFilters(unfilteredDB)
         end
     end
 
+    -- Filter enemy comp
+    if (currentFilters["bracket"] ~= "All" and isEnemyCompFilterOn) then
+        local currentCompFilter = "enemycomps" .. currentFilters["bracket"]
+        local n2v2 = #holderDB["2v2"];
+        local n3v3 = #holderDB["3v3"];
+        local n5v5 = #holderDB["5v5"];
+        if (currentFilters["bracket"] == "2v2") then
+            for arena2v2Number = n2v2, 1, - 1 do
+                if (holderDB["2v2"][arena2v2Number]) then
+                    local DBCompAsString = table.concat(holderDB["2v2"][arena2v2Number]["enemyComp"], "-");
+                    if (DBCompAsString ~= currentFilters["enemycomps2v2"]) then
+                        table.remove(holderDB["2v2"], arena2v2Number)
+                        n2v2 = n2v2 - 1
+                    end
+                end
+            end
+        end
+        if (currentFilters["bracket"] == "3v3") then
+        for arena3v3Number = n3v3, 1, -1 do
+                if (holderDB["3v3"][arena3v3Number]) then
+                    local DBCompAsString = table.concat(holderDB["3v3"][arena3v3Number]["enemyComp"], "-");
+                    if (DBCompAsString ~= currentFilters["enemycomps3v3"]) then
+                        table.remove(holderDB["3v3"], arena3v3Number)
+                        n3v3 = n3v3 - 1
+                    end
+                end
+            end
+        end
+        if (currentFilters["bracket"] == "5v5") then
+            for arena5v5Number = n5v5, 1, -1 do
+                if (holderDB["5v5"][arena5v5Number]) then
+                    local DBCompAsString = table.concat(holderDB["5v5"][arena5v5Number]["enemyComp"], "-");
+                    if (DBCompAsString ~= currentFilters["enemycomps5v5"]) then
+                        table.remove(holderDB["5v5"], arena5v5Number)
+                        n5v5 = n5v5 - 1
+                    end
+                end
+            end
+        end
+    end
+
     
     -- Filter bracket
     if(currentFilters["bracket"] == "2v2") then
@@ -992,6 +1120,31 @@ function ArenaAnalyticsCreateDropdownForFilterComps(bracket)
         ArenaAnalyticsScrollFrame.filterComps[bracket].dropdownFrame:Hide();
     end
 end
+-- Create dropdowns for the Comp Enemy filters
+function ArenaAnalyticsCreateDropdownForFilterEnemyComps(bracket)
+    filterEnemyCompsOpts[bracket] = {
+        ['name']='Filter' .. bracket .. '_EnemyComps',
+        ['parent'] = ArenaAnalyticsScrollFrame,
+        ['title']='Enemy Comp: Games | Comp | Winrate',
+        ['hasIcon']= true,
+        ['items'] = getEnemyPlayedComps(bracket),
+        ['defaultVal'] ='All'
+    }
+
+
+    ArenaAnalyticsScrollFrame.filterEnemyComps[bracket] = createDropdown(filterEnemyCompsOpts[bracket])
+    ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame, "RIGHT", 15, 0);
+    
+    if(bracket == "2v2") then
+        -- Set tooltip when comp is disabled
+        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].selected:Disable();
+        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].selected:SetDisabledFontObject("GameFontDisableSmall")
+        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].selected:SetText("Select bracket");
+        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].dropdownFrame:Show()
+    else
+        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].dropdownFrame:Hide();
+    end
+end
 
 
 -- Refreshes matches table
@@ -1110,6 +1263,16 @@ function core.arenaTable:RefreshLayout(filter)
         ArenaAnalyticsCreateDropdownForFilterComps("5v5")
     elseif (newArenaPlayed) then
         ArenaAnalyticsCheckForFilterUpdate("5v5");
+    end
+
+    if (ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"] == nil) then
+        ArenaAnalyticsCreateDropdownForFilterEnemyComps("2v2")
+    end
+    if (ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"] == nil) then
+        ArenaAnalyticsCreateDropdownForFilterEnemyComps("3v3")
+    end
+    if (ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"] == nil) then
+        ArenaAnalyticsCreateDropdownForFilterEnemyComps("5v5")
     end
 
     -- Adjust Team bg
