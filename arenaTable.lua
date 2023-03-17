@@ -3,7 +3,7 @@
     (sorry)
  ]]
 
-local _, core = ...;
+local _, ArenaAnalytics = ...;
 
 local currentFilters = {
     ["map"] = "All", 
@@ -36,12 +36,14 @@ local totalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #Arena
 local selectedGames = {}
 
 HybridScrollMixin = {};
-core.arenaTable = HybridScrollMixin;
+ArenaAnalytics.arenaTable = HybridScrollMixin;
+local AAtable = ArenaAnalytics.arenaTable
+
 
 -- Toggles addOn view/hide
-function core.arenaTable:Toggle()
+function AAtable:Toggle()
     if not ArenaAnalyticsScrollFrame:IsShown() then  
-        core.arenaTable:ClearSelectedMatches() 
+        AAtable:ClearSelectedMatches() 
         ArenaAnalyticsScrollFrame:Show();
     else
         ArenaAnalyticsScrollFrame:Hide();
@@ -49,7 +51,7 @@ function core.arenaTable:Toggle()
 end
 
 -- Returns button based on params
-function core.arenaTable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOffset, text)
+function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOffset, text)
 	local btn = CreateFrame("Button", nil, relativeFrame, "UIServiceButtonTemplate");
 	btn:SetPoint(point, relativeFrame, relativePoint, xOffset, yOffset);
 	btn:SetSize(120, 25);
@@ -129,7 +131,7 @@ local function hideSpecIcons()
 end
 
 -- Clears current selection of matches
-function core.arenaTable:ClearSelectedMatches()
+function AAtable:ClearSelectedMatches()
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame)
     for i = 1, #buttons do
         buttons[i]:SetAttribute("clicked", false)
@@ -137,12 +139,12 @@ function core.arenaTable:ClearSelectedMatches()
     end
     hideSpecIcons()
     selectedGames = {}
-    core.arenaTable:UpdateSelected()
+    AAtable:UpdateSelected()
 end
 
 -- Changes the current filter upon selecting one from its dropdown
 local function changeFilter(args)
-    core.arenaTable:ClearSelectedMatches()
+    AAtable:ClearSelectedMatches()
     local selectedFilter = args:GetAttribute("value")
     local currentFilter = args:GetAttribute("dropdownTable")
     local filterName = currentFilter.filterName
@@ -247,7 +249,7 @@ local function changeFilter(args)
         isEnemyCompFilterOn = false;
     end
 
-    core.arenaTable:RefreshLayout(true);
+    AAtable:RefreshLayout(true);
 end
 
 -- Returns buttons for filter lists
@@ -475,7 +477,7 @@ local function getPlayerPlayedComps(bracket)
                 if (doesGameMatchSettings(ArenaAnalyticsDB[bracket][arenaNumber]) == false) then
                 else
                     table.sort(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], function(a,b)
-                        local playerClassSpec = UnitClass("player") .. "|" .. ArenaAnalyticsGetPlayerSpec()
+                        local playerClassSpec = UnitClass("player") .. "|" .. ArenaAnalytics.AAmatch:getPlayerSpec()
                         local prioA = a == playerClassSpec and 1 or 2
                         local prioB = b == playerClassSpec and 1 or 2
                         return prioA < prioB or (prioA == prioB and a < b)
@@ -575,7 +577,7 @@ local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.exportFrameContainer.StopMovingOrSizing)
 end
 
-function core.arenaTable:UpdateSelected()
+function AAtable:UpdateSelected()
     local newSelectedText = ""
     local selectedGamesCount = 0;
     local selectedWins = 0;
@@ -597,8 +599,8 @@ function core.arenaTable:UpdateSelected()
 end
 
 -- Creates addOn text, filters, table headers
-function core.arenaTable:OnLoad()
-    ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() core.arenaTable:RefreshLayout(); end
+function AAtable:OnLoad()
+    ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
 
     ArenaAnalyticsScrollFrame.filterComps = {}
     ArenaAnalyticsScrollFrame.filterEnemyComps = {}
@@ -621,7 +623,7 @@ function core.arenaTable:OnLoad()
 	ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 413);
 	ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
 
-    ArenaAnalyticsScrollFrame.export = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 20, -35, "Export");
+    ArenaAnalyticsScrollFrame.export = AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 20, -35, "Export");
     ArenaAnalyticsScrollFrame.export:SetScript("OnClick", exportDB);
 
     -- Set export DB CSV frame layout
@@ -688,10 +690,10 @@ function core.arenaTable:OnLoad()
     ArenaAnalyticsScrollFrame.winrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
     ArenaAnalyticsScrollFrame.sessionWinrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.winrate, "TOPRIGHT", 20, 0, "");
     ArenaAnalyticsScrollFrame.selectedWinrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.sessionWinrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
-    ArenaAnalyticsScrollFrame.clearSelected = core.arenaTable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear");
+    ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear");
     ArenaAnalyticsScrollFrame.clearSelected:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.selectedWinrate, "TOPRIGHT", 20, 5);
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
-    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () core.arenaTable:ClearSelectedMatches()end)
+    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () AAtable:ClearSelectedMatches()end)
 
 
     -- Add esc to close frame
@@ -707,12 +709,12 @@ function core.arenaTable:OnLoad()
 
     ArenaAnalyticsScrollFrame.specFrames = {}
 
-    core.arenaTable:OnShow();
+    AAtable:OnShow();
 end
 
-function core.arenaTable:OnShow()
+function AAtable:OnShow()
     HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListItem");
-    core.arenaTable:RefreshLayout(true);
+    AAtable:RefreshLayout(true);
     ArenaAnalyticsScrollFrame:Hide();
 end
 
@@ -813,7 +815,7 @@ end
 
 -- Updates comp filter if there's a new comp registered
 -- and updates winrate
-function ArenaAnalyticsCheckForFilterUpdate(bracket)
+function AAtable:checkForFilterUpdate(bracket)
     local filterByBracketTable = {
         ["2v2"] = filterCompsOpts["2v2"],
         ["3v3"] = filterCompsOpts["3v3"],
@@ -832,7 +834,7 @@ function ArenaAnalyticsCheckForFilterUpdate(bracket)
         frameByBracketTable[bracket].dropdownFrame:Hide();
         frameByBracketTable[bracket].dropdownFrame = nil;
         frameByBracketTable[bracket] = nil
-        ArenaAnalyticsCreateDropdownForFilterComps(bracket)
+        AAtable:createDropdownForFilterComps(bracket)
         ArenaAnalyticsScrollFrame.arenaTypeMenu.buttons[1]:Click()
     end
 end
@@ -1050,7 +1052,7 @@ local function applyFilters(unfilteredDB)
 end
 
 -- Hide/Shows Spec icons on the class' bottom-right corner
-function core.arenaTable:ToggleSpecs(match, visible)
+function AAtable:ToggleSpecs(match, visible)
     local matchData = { match:GetChildren() };
     for i = 1, #matchData do
         if (matchData[i].spec) then
@@ -1098,7 +1100,7 @@ local function setColorForSession(button, session)
 end
 
 -- Create dropdowns for the Comp filters
-function ArenaAnalyticsCreateDropdownForFilterComps(bracket)
+function AAtable:createDropdownForFilterComps(bracket)
     filterCompsOpts[bracket] = {
         ['name']='Filter' .. bracket .. '_Comps',
         ['parent'] = ArenaAnalyticsScrollFrame,
@@ -1121,7 +1123,7 @@ function ArenaAnalyticsCreateDropdownForFilterComps(bracket)
     end
 end
 -- Create dropdowns for the Comp Enemy filters
-function ArenaAnalyticsCreateDropdownForFilterEnemyComps(bracket)
+function AAtable:createDropdownForFilterEnemyComps(bracket)
     filterEnemyCompsOpts[bracket] = {
         ['name']='Filter' .. bracket .. '_EnemyComps',
         ['parent'] = ArenaAnalyticsScrollFrame,
@@ -1148,7 +1150,7 @@ end
 
 
 -- Refreshes matches table
-function core.arenaTable:RefreshLayout(filter)
+function AAtable:RefreshLayout(filter)
     ArenaAnalyticsDB = ArenaAnalyticsDB["2v2"] ~= nil and ArenaAnalyticsDB or {
         ["2v2"] = {},
         ["3v3"] = {},
@@ -1186,10 +1188,10 @@ function core.arenaTable:RefreshLayout(filter)
             button.Duration:SetText(item["duration"] or "");
 
             button:SetScript("OnEnter", function (args)
-             core.arenaTable:ToggleSpecs(args, true)
+             AAtable:ToggleSpecs(args, true)
             end)
             button:SetScript("OnLeave", function (args)
-                core.arenaTable:ToggleSpecs(args, false)
+                AAtable:ToggleSpecs(args, false)
             end)
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
@@ -1230,14 +1232,14 @@ function core.arenaTable:RefreshLayout(filter)
                     args:SetAttribute("clicked", true)
                     args.Tooltip:Show();
                     selectedGames[args.Date:GetText()] = args;
-                    core.arenaTable:UpdateSelected();
-                    core.arenaTable:ToggleSpecs(args, true)
+                    AAtable:UpdateSelected();
+                    AAtable:ToggleSpecs(args, true)
                 else
                     args:SetAttribute("clicked", false)
                     selectedGames[args.Date:GetText()] = nil;
                     args.Tooltip:Hide();
-                    core.arenaTable:UpdateSelected();
-                    core.arenaTable:ToggleSpecs(args, false)
+                    AAtable:UpdateSelected();
+                    AAtable:ToggleSpecs(args, false)
                 end
             end
             )
@@ -1250,29 +1252,29 @@ function core.arenaTable:RefreshLayout(filter)
     end
 
     if (ArenaAnalyticsScrollFrame.filterComps["2v2"] == nil) then
-        ArenaAnalyticsCreateDropdownForFilterComps("2v2")
+        AAtable:createDropdownForFilterComps("2v2")
     elseif (newArenaPlayed) then
-        ArenaAnalyticsCheckForFilterUpdate("2v2");
+        AAtable:checkForFilterUpdate("2v2");
     end
     if (ArenaAnalyticsScrollFrame.filterComps["3v3"] == nil) then
-        ArenaAnalyticsCreateDropdownForFilterComps("3v3")
+        AAtable:createDropdownForFilterComps("3v3")
     elseif (newArenaPlayed) then
-        ArenaAnalyticsCheckForFilterUpdate("3v3");
+        AAtable:checkForFilterUpdate("3v3");
     end
     if (ArenaAnalyticsScrollFrame.filterComps["5v5"] == nil) then
-        ArenaAnalyticsCreateDropdownForFilterComps("5v5")
+        AAtable:createDropdownForFilterComps("5v5")
     elseif (newArenaPlayed) then
-        ArenaAnalyticsCheckForFilterUpdate("5v5");
+        AAtable:checkForFilterUpdate("5v5");
     end
 
     if (ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"] == nil) then
-        ArenaAnalyticsCreateDropdownForFilterEnemyComps("2v2")
+        AAtable:createDropdownForFilterEnemyComps("2v2")
     end
     if (ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"] == nil) then
-        ArenaAnalyticsCreateDropdownForFilterEnemyComps("3v3")
+        AAtable:createDropdownForFilterEnemyComps("3v3")
     end
     if (ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"] == nil) then
-        ArenaAnalyticsCreateDropdownForFilterEnemyComps("5v5")
+        AAtable:createDropdownForFilterEnemyComps("5v5")
     end
 
     -- Adjust Team bg
