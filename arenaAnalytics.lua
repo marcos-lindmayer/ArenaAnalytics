@@ -243,7 +243,7 @@ function AAmatch:insertArenaOnTable()
 	-- Insert arena data as a new ArenaAnalyticsDB row
 	table.insert(ArenaAnalyticsDB[arena["size"]], arenaData);
 	
-	if(arena["pendingSync"]) then
+	if (arena["pendingSync"]) then
 		AAmatch:handleSync(arena["pendingSyncData"])
 	end
 
@@ -609,7 +609,7 @@ function AAmatch:handleSync(...)
 				-- Check if arena in progress, else need to get data from saved game
 				local foundSpec = false;
 				local spec
-				if (arenaMapId ~= nil) then
+				if (arena["mapId"] ~= nil) then
 					for i = 1, #arenaParty do
 						if (arenaParty[i]["name"] == dataValue and #arenaParty[i]["spec"]>2) then
 							foundSpec = true;
@@ -675,10 +675,8 @@ function AAmatch:handleSync(...)
 		elseif (messageType == "deliver") then
 			if (dataType == "spec") then
 				
-				if (arenaMapId ~= nil) then
-					arena["pendingSync"] = true;
-					arena["pedingSyncData"] = ...;
-				else
+				if (arena["pendingSync"]) then
+					print("sending data")
 					indexOfSeparator, _ = string.find(dataValue, "?")
 					local nameAndSpec = dataValue:sub(indexOfSeparator + 1, #dataValue);
 					indexOfSeparator, _ = string.find(nameAndSpec, "=")
@@ -702,8 +700,6 @@ function AAmatch:handleSync(...)
 
 					if (lastGame["team"]) then 
 						for i = 1, #lastGame["team"] do
-							--[[ DevTools_Dump(lastGame["team"][i])
-							print(#lastGame["team"][i]["spec"], deliveredName) ]]
 							if (lastGame["team"][i]["name"] == deliveredName and #lastGame["team"][i]["spec"] < 2) then
 								foundName = true;
 								lastGame["team"][i]["spec"] = deliveredSpec
@@ -726,6 +722,10 @@ function AAmatch:handleSync(...)
 					else
 						ArenaAnalytics:Print("Error! Name could not be found or already has a spec assigned for latest match!")
 					end
+				else
+					arena["pendingSync"] = true;
+					arena["pedingSyncData"] = ...;
+					print("data got requested to me, storing and sending when arena is over for me")
 				end
 				
 			elseif (dataType == "version") then
