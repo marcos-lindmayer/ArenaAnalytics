@@ -702,8 +702,8 @@ function AAmatch:handleSync(...)
 
 					if (lastGame["team"]) then 
 						for i = 1, #lastGame["team"] do
-							DevTools_Dump(lastGame["team"][i])
-							print(#lastGame["team"][i]["spec"], deliveredName)
+							--[[ DevTools_Dump(lastGame["team"][i])
+							print(#lastGame["team"][i]["spec"], deliveredName) ]]
 							if (lastGame["team"][i]["name"] == deliveredName and #lastGame["team"][i]["spec"] < 2) then
 								foundName = true;
 								lastGame["team"][i]["spec"] = deliveredSpec
