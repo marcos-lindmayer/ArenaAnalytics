@@ -127,39 +127,15 @@ function AAmatch:insertArenaOnTable()
 		arena["duration"] = 0;
 	else
 		arena["timeEnd"] = time();
-		local arenaDurationMS = ((arena["timeEnd"] - arena["timeStartInt"]) * 1000);
-		arenaDurationMS = arenaDurationMS < 0 and 0 or arenaDurationMS;
-		local minutes = arenaDurationMS >= 60000 and (SecondsToTime(arenaDurationMS/1000, true) .. " ") or "";
-		local seconds = math.floor((arenaDurationMS % 60000) / 1000);
+		local durationMS = ((arena["timeEnd"] - arena["timeStartInt"]) * 1000);
+		durationMS = durationMS < 0 and 0 or durationMS;
+		local minutes = durationMS >= 60000 and (SecondsToTime(durationMS/1000, true) .. " ") or "";
+		local seconds = math.floor((durationMS % 60000) / 1000);
 		arena["duration"] = minutes .. seconds .. "sec";
 	end
 
-	-- Get your personal rating gain instead of the one from GetBattlefieldTeamInfo (which gives an average)
-	if (arena["isRanked"]) then
-		local arenaTeamId;
-		if (arena["size"] == 2) then
-			arenaTeamId = 1;
-		elseif (arena["size"] == 3) then
-			arenaTeamId = 2;
-		else
-			arenaTeamId = 3;
-		end
-		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
-
-
-		print("personal rating from GetPersonalRatedInfo: " .. personalRating)
-		print("prev rating: " .. arena["prevRating"])
-
-		local ratingDiff = ""
-		if (arena["wonByPlayer"] and personalRating - arena["prevRating"] > 0) then
-			arena["partyRatingDelta"] = personalRating - arena["prevRating"]
-		elseif (arena["wonByPlayer"] == false and arena["prevRating"] - personalRating > 0) then
-			arena["partyRatingDelta"] = arena["prevRating"] - personalRating
-		end
-		arena["partyRating"] = personalRating ~= nil and personalRating or "-";
-		arena["prevRating"] = nil;
-	else 
 		-- Set data for skirmish
+	if (arena["isRanked"] == false) then
 		arena["partyRating"] = arena["partyRating"] ~= nil and arena["partyRating"] or "SKIRMISH";
 		arena["enemyRating"] = arena["enemyRating"] ~= nil and arena["enemyRating"] or "SKIRMISH";
 		arena["partyMMR"] = arena["partyMMR"] ~= nil and arena["partyMMR"] or "-";
