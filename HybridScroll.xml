@@ -4,7 +4,7 @@
 
     <Script file="arenaTable.lua"/>
 
-    <Frame name="ArenaAnalyticsScrollListItem" virtual="true">
+    <Frame name="ArenaAnalyticsScrollListMatch" virtual="true">
         <Size x="0" y="28"/>
         <Layers>
             <Layer level="BACKGROUND">
