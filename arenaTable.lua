@@ -1282,7 +1282,7 @@ function AAtable:fixRatingGains(tableMatch)
         teamId = 3
     end
     local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(teamId)
-    if (personalRating ~= DBmatch["rating"]) then
+    if (DBmatch["rating"] and personalRating ~= DBmatch["rating"]) then
         if (DBmatch["won"]) then
             DBmatch["ratingDelta"] = personalRating - DBmatch["rating"]
             tableMatch["ratingDelta"] = personalRating - tableMatch["rating"]
@@ -1365,7 +1365,9 @@ function AAtable:RefreshLayout(filter)
             if (match["won"]) then
                 local delta = (match["ratingDelta"] and match["ratingDelta"] ~= "") and " (+" .. match["ratingDelta"] .. ")" or ""
                 enemyDelta = (match["enemyRatingDelta"] and match["enemyRatingDelta"] ~= "") and " (-" .. match["enemyRatingDelta"] .. ")" or ""
-                button.Rating:SetText("|cff00cc66" .. match["rating"] .. delta .. "|r");
+                if (match["rating"]) then
+                    button.Rating:SetText("|cff00cc66" .. match["rating"] .. delta .. "|r");
+                end
             else
                 local delta = (match["ratingDelta"] and match["ratingDelta"] ~= "") and " (-" .. match["ratingDelta"] .. ")" or ""
                 enemyDelta = (match["enemyRatingDelta"] and match["enemyRatingDelta"] ~= "") and " (+" .. match["enemyRatingDelta"] .. ")" or ""
