@@ -1286,9 +1286,13 @@ function AAtable:fixRatingGains(tableMatch)
         if (DBmatch["won"]) then
             DBmatch["ratingDelta"] = personalRating - DBmatch["rating"]
             tableMatch["ratingDelta"] = personalRating - tableMatch["rating"]
+            DBmatch["rating"] = DBmatch["rating"] + personalRating
+            tableMatch["rating"] = DBmatch["rating"] + personalRating
         else
             DBmatch["ratingDelta"] = DBmatch["rating"] - personalRating
             tableMatch["ratingDelta"] = tableMatch["rating"] - personalRating
+            DBmatch["rating"] = DBmatch["rating"] - personalRating
+            tableMatch["rating"] = DBmatch["rating"] - personalRating
         end
         DBmatch["check"] = true;
         tableMatch["check"] = true;
