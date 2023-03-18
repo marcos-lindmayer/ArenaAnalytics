@@ -202,7 +202,7 @@ function AAmatch:insertArenaOnTable()
 		["map"] = arena["mapName"], 
 		["duration"] = arena["duration"], 
 		["team"] = arena["party"],
-		["rating"] = arena["partyRating"], 
+		["rating"] = arena["prevRating"], 
 		["ratingDelta"] = arena["partyRatingDelta"],
 		["mmr"] = arena["partyMMR"], 
 		["enemyTeam"] = arena["enemy"], 
@@ -224,7 +224,7 @@ function AAmatch:insertArenaOnTable()
 	end
 
 	-- Refresh and reset
-	ArenaAnalytics.arenaTable.RefreshLayout(true);
+	ArenaAnalytics.AAtable:RefreshLayout(true);
 	AAmatch:resetLastArenaValues();
 end
 
@@ -694,7 +694,7 @@ function AAmatch:handleSync(...)
 					end
 					if (foundName) then
 						ArenaAnalytics:Print("Spec(" .. deliveredSpec .. ") for " .. deliveredName .. " has been added!")
-						ArenaAnalytics.arenaTable.RefreshLayout(true);
+						ArenaAnalytics.AAtable:RefreshLayout(true);
 					else
 						ArenaAnalytics:Print("Error! Name could not be found or already has a spec assigned for latest match!")
 					end
