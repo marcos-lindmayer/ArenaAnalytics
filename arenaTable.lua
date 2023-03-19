@@ -36,8 +36,8 @@ local totalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #Arena
 local selectedGames = {}
 
 HybridScrollMixin = {};
-ArenaAnalytics.AAtable = HybridScrollMixin;
-local AAtable = ArenaAnalytics.AAtable
+ArenaAnalytics.arenaTable = HybridScrollMixin;
+local AAtable = ArenaAnalytics.arenaTable
 
 
 -- Toggles addOn view/hide
@@ -62,16 +62,8 @@ function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOff
 	return btn;
 end
 
-local function doesGameMatchSettings(arenaGame)
-    local seasonCondition = false
-    if ((ArenaAnalyticsSettings["seasonIsChecked"] == false and arenaGame["dateInt"] > currentSeasonStartInt) or ArenaAnalyticsSettings["seasonIsChecked"]) then
-        seasonCondition = true
-    end
-    local skirmishCondition = false
-    if ((ArenaAnalyticsSettings["skirmishIsChecked"] == false and arenaGame["isRanked"]) or ArenaAnalyticsSettings["skirmishIsChecked"]) then
-        skirmishCondition = true
-    end
-    return seasonCondition and skirmishCondition
+local function doesGamematchesettings(arenaGame)
+    return ((ArenaAnalyticsSettings["seasonIsChecked"] == false and arenaGame["dateInt"] > currentSeasonStartInt) and (ArenaAnalyticsSettings["skirmishIsChecked"] == false and arenaGame["isRanked"] == true))
 end
 
 -- Return specific comp's winrate
@@ -83,7 +75,7 @@ local function getCompWinrate(comp, isEnemyComp)
     bracket = bracketSize .. "v" .. bracketSize;
     local arenasWithComp = {}
     for i = 1, #ArenaAnalyticsDB[bracket] do
-        if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGameMatchSettings(ArenaAnalyticsDB[bracket][i])) then
+        if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGamematchesettings(ArenaAnalyticsDB[bracket][i])) then
             local currentComp = table.concat(ArenaAnalyticsDB[bracket][i][compType], "-")
             if (comp == currentComp) then
                 table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
@@ -118,7 +110,7 @@ local function getCompTotalGames(comp, isEnemyComp)
     local compType = isEnemyComp and "enemyComp" or "comp"
     local arenasWithComp = {}
     for i = 1, #ArenaAnalyticsDB[bracket] do
-        if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGameMatchSettings(ArenaAnalyticsDB[bracket][i])) then
+        if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGamematchesettings(ArenaAnalyticsDB[bracket][i])) then
             local currentComp = table.concat(ArenaAnalyticsDB[bracket][i][compType], "-")
             if (comp == currentComp) then
                 table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
@@ -572,7 +564,8 @@ function AAtable:getPlayerPlayedComps(bracket, filterEnemyComp)
     else
         for arenaNumber = 1, #ArenaAnalyticsDB[bracket] do   
             if (#ArenaAnalyticsDB[bracket][arenaNumber]["comp"] == arenaSize and ArenaAnalyticsDB[bracket][arenaNumber]["dateInt"]) then
-                if (doesGameMatchSettings(ArenaAnalyticsDB[bracket][arenaNumber])) then
+                if (doesGamematchesettings(ArenaAnalyticsDB[bracket][arenaNumber]) == false) then
+                else
                     table.sort(ArenaAnalyticsDB[bracket][arenaNumber]["comp"], function(a,b)
                         local playerClassSpec = UnitClass("player") .. "|" .. ArenaAnalytics.AAmatch:getPlayerSpec()
                         local prioA = a == playerClassSpec and 1 or 2
@@ -584,12 +577,17 @@ function AAtable:getPlayerPlayedComps(bracket, filterEnemyComp)
                     if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil and lastLetter ~= "|") then
                         local result = {}
                         for i,v in ipairs(ArenaAnalyticsDB[bracket]) do
+<<<<<<< HEAD
                             if (table.concat(v["comp"], "-") == compString and doesGameMatchSettings(v)) then
                                 if (filterEnemyComp and table.concat(v["enemyComp"], "-") == filterEnemyComp) then
                                     table.insert(result, v)
                                 elseif (filterEnemyComp == nil) then
                                     table.insert(result, v)
                                 end
+=======
+                            if (table.concat(v["comp"], "-") == compString and doesGamematchesettings(v)) then
+                                table.insert(result, v)
+>>>>>>> parent of 809fb3f (Fixed settings check for games)
                             end
                         end
                         if (#result > tonumber(ArenaAnalyticsSettings["outliers"])) then
@@ -612,7 +610,8 @@ function AAtable:getEnemyPlayedComps(bracket, filterComp)
     else
         for arenaNumber = 1, #ArenaAnalyticsDB[bracket] do   
             if (#ArenaAnalyticsDB[bracket][arenaNumber]["enemyComp"] == arenaSize and ArenaAnalyticsDB[bracket][arenaNumber]["dateInt"]) then
-                if (doesGameMatchSettings(ArenaAnalyticsDB[bracket][arenaNumber])) then
+                if (doesGamematchesettings(ArenaAnalyticsDB[bracket][arenaNumber]) == false) then
+                else
                     table.sort(ArenaAnalyticsDB[bracket][arenaNumber]["enemyComp"], function(a,b)
                         return (a < b)
                     end)
@@ -621,12 +620,17 @@ function AAtable:getEnemyPlayedComps(bracket, filterComp)
                     if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil and lastLetter ~= "|") then
                         local result = {}
                         for i,v in ipairs(ArenaAnalyticsDB[bracket]) do
+<<<<<<< HEAD
                             if (table.concat(v["enemyComp"], "-") == compString and doesGameMatchSettings(v)) then
                                 if (filterComp and table.concat(v["comp"], "-") == filterComp) then
                                     table.insert(result, v)
                                 elseif (filterComp == nil) then
                                     table.insert(result, v)
                                 end
+=======
+                            if (table.concat(v["enemyComp"], "-") == compString and doesGamematchesettings(v)) then
+                                table.insert(result, v)
+>>>>>>> parent of 809fb3f (Fixed settings check for games)
                             end
                         end
                         if (#result > tonumber(ArenaAnalyticsSettings["outliers"])) then
@@ -925,6 +929,7 @@ function AAtable:checkForFilterUpdate(bracket)
         ["3v3"] = ArenaAnalyticsScrollFrame.filterComps["3v3"],
         ["5v5"] = ArenaAnalyticsScrollFrame.filterComps["5v5"],
     }
+<<<<<<< HEAD
     frameByBracketTable[bracket].dropdownFrame:Hide();
     frameByBracketTable[bracket].dropdownFrame = nil;
     frameByBracketTable[bracket] = nil
@@ -940,6 +945,19 @@ function AAtable:checkForFilterUpdate(bracket)
     frameByEnemyBracketTable[bracket] = nil
     AAtable:createDropdownForFilterEnemyComps(bracket)
     --[[ ArenaAnalyticsScrollFrame.arenaTypeMenu.buttons[1]:Click() ]]
+=======
+    local playedComps = getPlayerPlayedComps(bracket)
+    local compsInFilter = filterByBracketTable[bracket]['matches']
+    
+
+    if (#playedComps ~= #compsInFilter) then
+        frameByBracketTable[bracket].dropdownFrame:Hide();
+        frameByBracketTable[bracket].dropdownFrame = nil;
+        frameByBracketTable[bracket] = nil
+        AAtable:createDropdownForFilterComps(bracket)
+        ArenaAnalyticsScrollFrame.arenaTypeMenu.buttons[1]:Click()
+    end
+>>>>>>> parent of 809fb3f (Fixed settings check for games)
 end
 
 -- Returns matches applying current match filters
