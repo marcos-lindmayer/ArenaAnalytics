@@ -101,10 +101,10 @@ local specSpells = {
     [ 30823 ] = "Enhancement", -- Shamanistic Rage
     [ 17364 ] = "Enhancement", -- Stormstrike
     [ 16190 ] = "Restoration", -- Mana Tide Totem
-    [ 32594 ] = "Restoration", -- Earth Shield
+    [ 49284 ] = "Restoration", -- Earth Shield
     [ 16190 ] = "Restoration", -- Mana Tide Totem
     [ 30823 ] = "Enhancement", -- Shamanistic Rage
-    [ 66053 ] = "Restoration", -- Riptide
+    [ 61300 ] = "Restoration", -- Riptide
     [ 59159 ] = "Elemental", -- Thunderstorm
 
     -- WARLOCK
