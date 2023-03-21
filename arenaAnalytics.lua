@@ -224,7 +224,7 @@ function AAmatch:insertArenaOnTable()
 	end
 
 	-- Refresh and reset
-	ArenaAnalytics.AAtable:RefreshLayout(true);
+	ArenaAnalytics.AAtable.RefreshLayout(true);
 	AAmatch:resetLastArenaValues();
 end
 
@@ -556,7 +556,7 @@ function AAmatch:hasArenaStarted(msg)
 	local locale = ArenaAnalytics.arenaConstants.GetArenaTimer()
     for k,v in pairs(locale) do
         if string.find(msg, v) then
-            if k == 0 then
+            if (k == 0 and arena["timeStartInt"] == 0) then
 				arena["timeStartInt"] = time();
             end
         end
@@ -694,7 +694,7 @@ function AAmatch:handleSync(...)
 					end
 					if (foundName) then
 						ArenaAnalytics:Print("Spec(" .. deliveredSpec .. ") for " .. deliveredName .. " has been added!")
-						ArenaAnalytics.AAtable:RefreshLayout(true);
+						ArenaAnalytics.AAtable.RefreshLayout(true);
 					else
 						ArenaAnalytics:Print("Error! Name could not be found or already has a spec assigned for latest match!")
 					end
