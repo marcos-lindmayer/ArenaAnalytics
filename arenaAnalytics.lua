@@ -776,6 +776,7 @@ local function handleEvents(prefix, eventType, ...)
 		end
 	elseif (eventType == "UPDATE_BATTLEFIELD_STATUS") then
 		arena["ended"] = false; -- Player is out of arena, next arena hasn't ended yet
+		ArenaAnalytics.AAtable.RefreshLayout();
 	elseif (not IsActiveBattlefieldArena() and eventType == "ZONE_CHANGED_NEW_AREA" and arena["endedProperly"] ~= true and arena["mapId"] ~= nil) then
 		AAmatch:quitsArena();
 		AAmatch:removeArenaEvents();
