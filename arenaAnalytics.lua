@@ -87,6 +87,7 @@ function AAmatch:resetLastArenaValues()
 	arena["enemyRatingDelta"] = "";
 	arena["pendingSync"] = false;
 	arena["pedingSyncData"] = nil;
+	arena["prevRating"] = nil;
 end
 
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
