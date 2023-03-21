@@ -1282,8 +1282,8 @@ function AAtable:fixRatingGains(tableMatch)
         teamId = 3
     end
     local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(teamId)
-    if (DBmatch["rating"] and personalRating ~= DBmatch["rating"]) then
-        if (DBmatch["won"]) then
+    if (personalRating ~= DBmatch["rating"] and DBmatch["isRanked"] == true) then
+        if (DBmatch["won"] == true) then
             DBmatch["ratingDelta"] = personalRating - DBmatch["rating"]
             tableMatch["ratingDelta"] = personalRating - tableMatch["rating"]
             DBmatch["rating"] = DBmatch["rating"] + DBmatch["ratingDelta"]
