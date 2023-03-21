@@ -1286,15 +1286,12 @@ function AAtable:fixRatingGains(tableMatch)
     if (personalRating ~= DBmatch["rating"]) then
         if (DBmatch["won"] == true) then
             DBmatch["ratingDelta"] = personalRating - DBmatch["rating"]
-            tableMatch["ratingDelta"] = personalRating - tableMatch["rating"]
-            DBmatch["rating"] = DBmatch["rating"] + DBmatch["ratingDelta"]
-            tableMatch["rating"] = DBmatch["rating"] + DBmatch["ratingDelta"]
         else
             DBmatch["ratingDelta"] = DBmatch["rating"] - personalRating
-            tableMatch["ratingDelta"] = tableMatch["rating"] - personalRating
-            DBmatch["rating"] = DBmatch["rating"] - DBmatch["ratingDelta"]
-            tableMatch["rating"] = DBmatch["rating"] - DBmatch["ratingDelta"]
         end
+        DBmatch["rating"] = personalRating
+        tableMatch["rating"] = DBmatch["rating"]
+        tableMatch["ratingDelta"] =  DBmatch["ratingDelta"]
         DBmatch["check"] = true;
         tableMatch["check"] = true;
         print(tableMatch["ratingDelta"], DBmatch["ratingDelta"])
@@ -1353,6 +1350,14 @@ function AAtable:RefreshLayout(filter)
         newArenaPlayed = true;
         totalArenas = currentTotalArenas;
     end
+    
+
+    local lastGame = AAtable:getLastGame()
+    
+    if (lastGame and lastGame["check"] == false and lastGame["isRanked"] == true and not IsActiveBattlefieldArena()) then
+        print("fixing rating last game")
+        AAtable:fixRatingGains(lastGame);
+    end
 
     if (filter or filteredDB == nil or newArenaPlayed) then
         filteredDB = applyFilters(ArenaAnalyticsDB)
@@ -1366,13 +1371,6 @@ function AAtable:RefreshLayout(filter)
     local wins = 0;
 
     setSessions(matches)
-
-    local lastGame = AAtable:getLastGame()
-    
-    if (lastGame and lastGame["check"] == false and lastGame["isRanked"] == true and not IsActiveBattlefieldArena()) then
-        print("fixing rating last game")
-        AAtable:fixRatingGains(lastGame);
-    end
 
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
