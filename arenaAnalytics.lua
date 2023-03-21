@@ -169,7 +169,7 @@ function AAmatch:insertArenaOnTable()
 	);
 
 	if (arena["gotAllArenaInfo"] == false) then 
-		print("Missing specs. Requesting data")
+		-- print("Missing specs. Requesting data")
 		for i = 1, #arena["party"] do
 			if (#arena["party"][i]["spec"]<3) then
 				local messageSuccess
@@ -741,7 +741,7 @@ local function handleArenaEvents(_, eventType, ...)
 			if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil ) then
 				AAmatch:handleArenaEnd();
 				AAmatch:removeArenaEvents();
-				print("FIRED UPDATE_BATTLEFIELD_SCORE")
+				-- print("FIRED UPDATE_BATTLEFIELD_SCORE")
 			elseif (eventType == "UNIT_AURA" or eventType == "COMBAT_LOG_EVENT_UNFILTERED" or eventType == "ARENA_OPPONENT_UPDATE") then
 				arena["gotAllArenaInfo"] = arena["gotAllArenaInfo"] == false and AAmatch:getAllAvailableInfo(eventType, ...) or arena["gotAllArenaInfo"];
 			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL" and arena["timeStartInt"] == 0) then

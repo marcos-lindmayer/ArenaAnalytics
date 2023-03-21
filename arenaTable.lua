@@ -277,7 +277,6 @@ function AAtable:updateEnemyFilterByCompFilter(selectedFilter, filterName)
     else    
         filter = selectedFilter
     end
-    print(filter)
     if (string.find(filterName, "2v2")) then
         bracket = "2v2"
     elseif (string.find(filterName, "3v3")) then
@@ -318,7 +317,6 @@ function AAtable:updateCompFilterByEnemyFilter(selectedFilter, filterName)
     else    
         filter = selectedFilter
     end
-    print(filter)
     if (string.find(filterName, "2v2")) then
         bracket = "2v2"
     elseif (string.find(filterName, "3v3")) then
@@ -1282,7 +1280,6 @@ function AAtable:fixRatingGains(tableMatch)
         teamId = 3
     end
     local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(teamId)
-    print(personalRating, DBmatch["rating"])
     if (personalRating ~= DBmatch["rating"]) then
         if (DBmatch["won"] == true) then
             DBmatch["ratingDelta"] = personalRating - DBmatch["rating"]
@@ -1292,7 +1289,6 @@ function AAtable:fixRatingGains(tableMatch)
         DBmatch["rating"] = personalRating
         tableMatch["rating"] = DBmatch["rating"]
         tableMatch["ratingDelta"] =  DBmatch["ratingDelta"]
-        print(tableMatch["ratingDelta"], DBmatch["ratingDelta"])
     end
     DBmatch["check"] = true;
     tableMatch["check"] = true;
@@ -1354,7 +1350,6 @@ function AAtable:RefreshLayout(filter)
     local lastGame = AAtable:getLastGame()
     
     if (lastGame and lastGame["check"] == false and lastGame["isRanked"] == true and not IsActiveBattlefieldArena()) then
-        print("fixing rating last game")
         AAtable:fixRatingGains(lastGame);
     end
 
