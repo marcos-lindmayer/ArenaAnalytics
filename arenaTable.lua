@@ -1282,7 +1282,7 @@ function AAtable:fixRatingGains(tableMatch)
         teamId = 3
     end
     local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(teamId)
-    if (personalRating ~= DBmatch["rating"] and DBmatch["isRanked"] == true) then
+    if (personalRating ~= DBmatch["rating"]) then
         if (DBmatch["won"] == true) then
             DBmatch["ratingDelta"] = personalRating - DBmatch["rating"]
             tableMatch["ratingDelta"] = personalRating - tableMatch["rating"]
@@ -1367,8 +1367,9 @@ function AAtable:RefreshLayout(filter)
 
     local lastGame = AAtable:getLastGame()
     
-    if (lastGame and lastGame["check"] == false and lastGame["isRanked"]) then
-        AAtable:fixRatingGains(lastGame)
+    if (lastGame and lastGame["check"] == false and lastGame["isRanked"] == true) then
+        print("fixing rating last game")
+        AAtable:fixRatingGains(lastGame);
     end
 
     for buttonIndex = 1, #buttons do
