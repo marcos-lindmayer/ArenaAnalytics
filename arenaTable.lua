@@ -1292,11 +1292,10 @@ function AAtable:fixRatingGains(tableMatch)
         DBmatch["rating"] = personalRating
         tableMatch["rating"] = DBmatch["rating"]
         tableMatch["ratingDelta"] =  DBmatch["ratingDelta"]
-        DBmatch["check"] = true;
-        tableMatch["check"] = true;
         print(tableMatch["ratingDelta"], DBmatch["ratingDelta"])
-        AAtable:RefreshLayout()
     end
+    DBmatch["check"] = true;
+    tableMatch["check"] = true;
 end
 
 function AAtable:getLastGame()
