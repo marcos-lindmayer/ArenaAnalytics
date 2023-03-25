@@ -112,6 +112,7 @@ local specSpells = {
     [ 47847 ] = "Destruction", -- Shadowfury
     [ 30302 ] = "Destruction", -- Nether Protection
     [ 34935 ] = "Destruction", -- Backlash
+    [ 17962 ] = "Destruction", -- Conflagrate
     [ 59672 ] = "Demonology", -- Metamorphosis
     [ 59164 ] = "Affliction", -- Haunt
 
