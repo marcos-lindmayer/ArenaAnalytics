@@ -224,8 +224,23 @@ function AAmatch:insertArenaOnTable()
 		AAmatch:handleSync(arena["pendingSyncData"])
 	end
 
-	-- Refresh and reset
-	ArenaAnalytics.AAtable:RefreshLayout(true);
+	print("player is in combat", UnitAffectingCombat("player"))
+	if (UnitAffectingCombat("player")) then
+		local regenEvent = CreateFrame("Frame");
+		regenEvent:RegisterEvent("PLAYER_REGEN_ENABLED");
+		regenEvent:SetScript("OnEvent", AAmatch:resetAndRefresh(true, regenEvent));
+	else
+		-- Refresh and reset
+		AAmatch:resetAndRefresh(false, nil)
+	end
+end
+
+function AAmatch:resetAndRefresh(removeEvent, event)
+	if(removeEvent) then
+		print("player no longer in combat")
+		event:SetScript("OnEvent", nil);
+	end
+	ArenaAnalytics.AAtable:RefreshLayout(false);
 	AAmatch:resetLastArenaValues();
 end
 
@@ -777,7 +792,6 @@ local function handleEvents(prefix, eventType, ...)
 		end
 	elseif (eventType == "UPDATE_BATTLEFIELD_STATUS") then
 		arena["ended"] = false; -- Player is out of arena, next arena hasn't ended yet
-		ArenaAnalytics.AAtable.RefreshLayout();
 	elseif (not IsActiveBattlefieldArena() and eventType == "ZONE_CHANGED_NEW_AREA" and arena["endedProperly"] ~= true and arena["mapId"] ~= nil) then
 		AAmatch:quitsArena();
 		AAmatch:removeArenaEvents();
