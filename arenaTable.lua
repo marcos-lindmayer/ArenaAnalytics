@@ -81,23 +81,23 @@ local function getCompWinrate(comp, isEnemyComp)
     local _, bracket = string.gsub(comp, "-", "-")
     local bracketSize = bracket + 1;
     bracket = bracketSize .. "v" .. bracketSize;
-    local arenasWithComp = {}
+    local arenasWithCompIndex = {}
     for i = 1, #ArenaAnalyticsDB[bracket] do
         if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGameMatchSettings(ArenaAnalyticsDB[bracket][i])) then
             local currentComp = table.concat(ArenaAnalyticsDB[bracket][i][compType], "-")
             if (comp == currentComp) then
-                table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
+                table.insert(arenasWithCompIndex, i)
             end
         end
     end
 
     local arenasWon = 0
-    for c = 1,  #arenasWithComp do
-        if (arenasWithComp[c]["won"]) then
+    for c = 1,  #arenasWithCompIndex do
+        if (ArenaAnalyticsDB[bracket][arenasWithCompIndex[c]]["won"]) then
             arenasWon = arenasWon + 1
         end
     end
-    local winrate = math.floor(arenasWon * 100 / #arenasWithComp)
+    local winrate = math.floor(arenasWon * 100 / #arenasWithCompIndex)
     if (#tostring(winrate) < 2) then
         winrate = winrate .. "%"
     elseif (#tostring(winrate) < 3) then
@@ -116,16 +116,16 @@ local function getCompTotalGames(comp, isEnemyComp)
     local bracketSize = bracket + 1;
     bracket = bracketSize .. "v" .. bracketSize;
     local compType = isEnemyComp and "enemyComp" or "comp"
-    local arenasWithComp = {}
+    local arenasWithCompTotal = 0
     for i = 1, #ArenaAnalyticsDB[bracket] do
         if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGameMatchSettings(ArenaAnalyticsDB[bracket][i])) then
             local currentComp = table.concat(ArenaAnalyticsDB[bracket][i][compType], "-")
             if (comp == currentComp) then
-                table.insert(arenasWithComp, ArenaAnalyticsDB[bracket][i])
+                arenasWithCompTotal = arenasWithCompTotal + 1 
             end
         end
     end
-    return #arenasWithComp
+    return arenasWithCompTotal
 end
 -- Hides spec's icon on bottom-right class' icon
 local function hideSpecIcons()
