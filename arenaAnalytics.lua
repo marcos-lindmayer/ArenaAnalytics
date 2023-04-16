@@ -240,7 +240,6 @@ function AAmatch:resetAndRefresh(removeEvent, event)
 		print("player no longer in combat")
 		event:SetScript("OnEvent", nil);
 	end
-	ArenaAnalytics.AAtable:RefreshLayout(false);
 	AAmatch:resetLastArenaValues();
 end
 
@@ -710,7 +709,6 @@ function AAmatch:handleSync(...)
 					end
 					if (foundName) then
 						ArenaAnalytics:Print("Spec(" .. deliveredSpec .. ") for " .. deliveredName .. " has been added!")
-						ArenaAnalytics.AAtable.RefreshLayout(true);
 					else
 						ArenaAnalytics:Print("Error! Name could not be found or already has a spec assigned for latest match!")
 					end

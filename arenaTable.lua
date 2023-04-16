@@ -43,7 +43,8 @@ local AAtable = ArenaAnalytics.AAtable
 -- Toggles addOn view/hide
 function AAtable:Toggle()
     if not ArenaAnalyticsScrollFrame:IsShown() then  
-        AAtable:ClearSelectedMatches() 
+        AAtable:ClearSelectedMatches();
+        ArenaAnalytics.AAtable:RefreshLayout(true);
         ArenaAnalyticsScrollFrame:Show();
     else
         ArenaAnalyticsScrollFrame:Hide();
