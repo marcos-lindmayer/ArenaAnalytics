@@ -77,15 +77,15 @@ end
 
 -- Return specific comp's winrate
 -- comp is a string of space-separated classes
-local function getCompWinrate(comp, isEnemyComp)
+local function getCompWinrate(comp, isEnemyComp, games)
     local compType = isEnemyComp and "enemyComp" or "comp"
     local _, bracket = string.gsub(comp, "-", "-")
     local bracketSize = bracket + 1;
     bracket = bracketSize .. "v" .. bracketSize;
     local arenasWithCompIndex = {}
-    for i = 1, #ArenaAnalyticsDB[bracket] do
-        if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGameMatchSettings(ArenaAnalyticsDB[bracket][i])) then
-            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i][compType], "-")
+    for i = 1, #games do
+        if (#games[i][compType] == bracketSize and doesGameMatchSettings(games[i])) then
+            local currentComp = table.concat(games[i][compType], "-")
             if (comp == currentComp) then
                 table.insert(arenasWithCompIndex, i)
             end
@@ -94,7 +94,7 @@ local function getCompWinrate(comp, isEnemyComp)
 
     local arenasWon = 0
     for c = 1,  #arenasWithCompIndex do
-        if (ArenaAnalyticsDB[bracket][arenasWithCompIndex[c]]["won"]) then
+        if (games[arenasWithCompIndex[c]]["won"]) then
             arenasWon = arenasWon + 1
         end
     end
@@ -112,17 +112,34 @@ end
 
 -- Return specific comp's total games
 -- comp is a string of space-separated classes
-local function getCompTotalGames(comp, isEnemyComp)
+local function getCompTotalGames(comp, isEnemyComp, games) --asd
     local _, bracket = string.gsub(comp, "-", "-")
     local bracketSize = bracket + 1;
     bracket = bracketSize .. "v" .. bracketSize;
     local compType = isEnemyComp and "enemyComp" or "comp"
     local arenasWithCompTotal = 0
-    for i = 1, #ArenaAnalyticsDB[bracket] do
-        if (#ArenaAnalyticsDB[bracket][i][compType] == bracketSize and doesGameMatchSettings(ArenaAnalyticsDB[bracket][i])) then
-            local currentComp = table.concat(ArenaAnalyticsDB[bracket][i][compType], "-")
+    local compFilterVal, enemyCompFilterVal, opponentComp;
+    if (ArenaAnalyticsScrollFrame.filterComps[bracket]) then
+        compFilterVal = currentFilters["comps" .. bracket]
+    end
+    if (ArenaAnalyticsScrollFrame.filterEnemyComps[bracket]) then
+        enemyCompFilterVal = currentFilters["enemycomps" .. bracket]
+    end
+    if (compType == "enemyComp" and compFilterVal ~= "All" and compFilterVal ~= "Select bracket") then
+        opponentComp = {compFilterVal, "comp"};
+    end
+    if (compType == "comp" and enemyCompFilterVal ~= "All" and enemyCompFilterVal ~= "Select bracket") then
+        opponentComp = {enemyCompFilterVal, "enemyComp"};
+    end
+    for i = 1, #games do
+        if (#games[i][compType] == bracketSize and doesGameMatchSettings(games[i])) then
+            local currentComp = table.concat(games[i][compType], "-")
             if (comp == currentComp) then
-                arenasWithCompTotal = arenasWithCompTotal + 1 
+                if (opponentComp ~= nil and opponentComp[1] == table.concat(games[i][opponentComp[2]], "-")) then
+                    arenasWithCompTotal = arenasWithCompTotal + 1 
+                elseif (opponentComp == nil) then
+                    arenasWithCompTotal = arenasWithCompTotal + 1 
+                end
             end
         end
     end
@@ -291,21 +308,21 @@ function AAtable:updateEnemyFilterByCompFilter(selectedFilter, filterName)
         ["3v3"] = ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"],
         ["5v5"] = ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"],
     }
---asd
     
     frameByBracketTable[bracket].dropdownFrame:Hide();
     frameByBracketTable[bracket].dropdownFrame = nil;
     frameByBracketTable[bracket] = nil
 
-    local newFilterEnemyCompsOpts = {
+    filterEnemyCompsOpts = {
         ['name']='Filter' .. bracket .. '_EnemyComps',
         ['parent'] = ArenaAnalyticsScrollFrame,
         ['title']='Enemy Comp: Games | Comp | Winrate',
         ['hasIcon']= true,
-        ['matches'] = AAtable:getEnemyPlayedComps(bracket, filter),
+        ['matches'] = AAtable:getEnemyPlayedCompsAndGames(bracket, filter)[1],
+        ['games'] = AAtable:getEnemyPlayedCompsAndGames(bracket, filter)[2],
         ['defaultVal'] = ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].selected:GetText()
     }
-    ArenaAnalyticsScrollFrame.filterEnemyComps[bracket] = AAtable:createDropdown(newFilterEnemyCompsOpts)
+    ArenaAnalyticsScrollFrame.filterEnemyComps[bracket] = AAtable:createDropdown(filterEnemyCompsOpts)
     ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame, "RIGHT", 15, 0);
     AAtable:RefreshLayout(true)
 end
@@ -336,15 +353,16 @@ function AAtable:updateCompFilterByEnemyFilter(selectedFilter, filterName)
     frameByBracketTable[bracket].dropdownFrame = nil;
     frameByBracketTable[bracket] = nil
 
-    local newFilterCompsOpts = {
+    filterCompsOpts = {
         ['name']='Filter' .. bracket .. '_Comps',
         ['parent'] = ArenaAnalyticsScrollFrame,
         ['title']='Comp: Games | Comp | Winrate',
         ['hasIcon']= true,
-        ['matches'] = AAtable:getPlayerPlayedComps(bracket, filter),
+        ['matches'] = AAtable:getPlayerPlayedCompsAndGames(bracket, filter)[1],
+        ['games'] = AAtable:getPlayerPlayedCompsAndGames(bracket, filter)[2],
         ['defaultVal'] = ArenaAnalyticsScrollFrame.filterComps[bracket].selected:GetText()
     }
-    ArenaAnalyticsScrollFrame.filterComps[bracket] = AAtable:createDropdown(newFilterCompsOpts)
+    ArenaAnalyticsScrollFrame.filterComps[bracket] = AAtable:createDropdown(filterCompsOpts)
     ArenaAnalyticsScrollFrame.filterComps[bracket].dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
     AAtable:RefreshLayout(true)
 end
@@ -369,7 +387,7 @@ local function createDropdownButton(info, dropdownTable, filter, dropdown_width)
 end
 
 -- Returns button string (icons) and tooltip for comp filter
-local function setIconsOnCompFilter(itext, itooltip, isEnemyComp) 
+local function setIconsOnCompFilter(itext, itooltip, isEnemyComp, games) 
     local inlineIcons = ""
     local infoText = itext;
     local infoTooltip = itooltip;
@@ -386,7 +404,7 @@ local function setIconsOnCompFilter(itext, itooltip, isEnemyComp)
         infoTooltip = infoTooltip .. arenaClass .. "|" .. arenaSpec .."-"
     end
     infoTooltip = infoTooltip:sub(1, -2)
-    infoText = getCompTotalGames(infoText, isEnemyComp) .. " " .. inlineIcons .. " - " .. getCompWinrate(infoText, isEnemyComp);
+    infoText = getCompTotalGames(infoText, isEnemyComp, games) .. " " .. inlineIcons .. " - " .. getCompWinrate(infoText, isEnemyComp, games);
     return infoText, infoTooltip;
 end
 
@@ -396,6 +414,7 @@ function AAtable:createDropdown(opts)
     local dropdownTable = {};
     local dropdown_name ='$parent_' .. opts['name'] .. '_dropdown';
     local menu_matches = opts['matches'] or {};
+    local games = opts['games'] or {};
     local hasIcon = opts["hasIcon"];
     local title_text = opts['title'] or '';
     local dropdown_width = (title_text == "Comp: Games | Comp | Winrate" or title_text == "Enemy Comp: Games | Comp | Winrate") and 250 or 0;
@@ -443,7 +462,7 @@ function AAtable:createDropdown(opts)
         info.text = match;
         info.tooltip = "";
         if(hasIcon and info.text ~= "All") then
-            info.text, info.tooltip = setIconsOnCompFilter(info.text, info.tooltip, isEnemyComp)
+            info.text, info.tooltip = setIconsOnCompFilter(info.text, info.tooltip, isEnemyComp, games)
         end
         table.insert(dropdownTable.buttons, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
     end
@@ -563,8 +582,9 @@ end
 
 -- Returns array with all unique played comps based on bracket
 -- param received. Ignores incomplete comps. Removes outliers (settings param)
-function AAtable:getPlayerPlayedComps(bracket, filterEnemyComp)
+function AAtable:getPlayerPlayedCompsAndGames(bracket, filterEnemyComp)
     local playedComps = {"All"};
+    local games = {};
     local arenaSize = tonumber(string.sub(bracket, 1, 1))
     if (bracket == nil) then
         return playedComps;
@@ -586,8 +606,10 @@ function AAtable:getPlayerPlayedComps(bracket, filterEnemyComp)
                             if (table.concat(v["comp"], "-") == compString and doesGameMatchSettings(v)) then
                                 if (filterEnemyComp and table.concat(v["enemyComp"], "-") == filterEnemyComp) then
                                     table.insert(result, v)
+                                    table.insert(games, v)
                                 elseif (filterEnemyComp == nil) then
                                     table.insert(result, v)
+                                    table.insert(games, v)
                                 end
                             end
                         end
@@ -599,12 +621,13 @@ function AAtable:getPlayerPlayedComps(bracket, filterEnemyComp)
             end
         end
     end
-    return playedComps;
+    return {playedComps, games};
 end
 -- Returns array with all unique enemy played comps based on bracket
 -- param received. Ignores incomplete comps. Removes outliers (settings param)
-function AAtable:getEnemyPlayedComps(bracket, filterComp)
+function AAtable:getEnemyPlayedCompsAndGames(bracket, filterComp)
     local playedComps = {"All"};
+    local games = {};
     local arenaSize = tonumber(string.sub(bracket, 1, 1))
     if (bracket == nil) then
         return playedComps;
@@ -616,15 +639,17 @@ function AAtable:getEnemyPlayedComps(bracket, filterComp)
                         return (a < b)
                     end)
                     local compString = table.concat(ArenaAnalyticsDB[bracket][arenaNumber]["enemyComp"], "-");
-                    local lastLetter = compString:sub(-#"%|" + 1)
+                    local lastLetter = compString:sub(-#"%|" + 1) -- fix for corrupted matches
                     if (not tContains(playedComps, compString) and string.find(compString, "%|%-") == nil and lastLetter ~= "|") then
                         local result = {}
                         for i,v in ipairs(ArenaAnalyticsDB[bracket]) do
                             if (table.concat(v["enemyComp"], "-") == compString and doesGameMatchSettings(v)) then
                                 if (filterComp and table.concat(v["comp"], "-") == filterComp) then
                                     table.insert(result, v)
+                                    table.insert(games, v)
                                 elseif (filterComp == nil) then
                                     table.insert(result, v)
+                                    table.insert(games, v)
                                 end
                             end
                         end
@@ -636,7 +661,7 @@ function AAtable:getEnemyPlayedComps(bracket, filterComp)
             end
         end
     end
-    return playedComps;
+    return {playedComps, games};
 end
 
 -- Returns string frame
@@ -1208,7 +1233,8 @@ function AAtable:createDropdownForFilterComps(bracket)
         ['parent'] = ArenaAnalyticsScrollFrame,
         ['title']='Comp: Games | Comp | Winrate',
         ['hasIcon']= true,
-        ['matches'] = AAtable:getPlayerPlayedComps(bracket, nil),
+        ['matches'] = AAtable:getPlayerPlayedCompsAndGames(bracket, nil)[1],
+        ['games'] = AAtable:getPlayerPlayedCompsAndGames(bracket, nil)[2],
         ['defaultVal'] ='All'
     }
 
@@ -1224,6 +1250,7 @@ function AAtable:createDropdownForFilterComps(bracket)
         ArenaAnalyticsScrollFrame.filterComps[bracket].dropdownFrame:Hide();
     end
 end
+
 -- Create dropdowns for the Comp Enemy filters
 function AAtable:createDropdownForFilterEnemyComps(bracket)
     filterEnemyCompsOpts[bracket] = {
@@ -1231,7 +1258,8 @@ function AAtable:createDropdownForFilterEnemyComps(bracket)
         ['parent'] = ArenaAnalyticsScrollFrame,
         ['title']='Enemy Comp: Games | Comp | Winrate',
         ['hasIcon']= true,
-        ['matches'] = AAtable:getEnemyPlayedComps(bracket, nil),
+        ['matches'] = AAtable:getEnemyPlayedCompsAndGames(bracket, nil)[1],
+        ['games'] = AAtable:getEnemyPlayedCompsAndGames(bracket, nil)[2],
         ['defaultVal'] ='All'
     }
 
@@ -1295,6 +1323,7 @@ function AAtable:fixRatingGains(tableMatch)
     tableMatch["check"] = true;
 end
 
+-- Returns array of last game played
 function AAtable:getLastGame()
     local lastGame2v2 = ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] and ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] or nil
     local lastGame3v3 = ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]] and ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]] or nil
