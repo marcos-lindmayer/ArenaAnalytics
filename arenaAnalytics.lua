@@ -412,6 +412,17 @@ function AAmatch:getPlayerSpec()
 	return spec
 end
 
+-- Returns last saved rating on selected bracket (teamSize)
+function AAmatch:getLastRating(teamSize)
+	if (teamSize == 2 and #ArenaAnalyticsDB["2v2"] > 0) then
+		return ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]]["rating"]
+	elseif (teamSize == 3 and #ArenaAnalyticsDB["3v3"] > 0) then
+		return ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]]["rating"]
+	elseif (#ArenaAnalyticsDB["5v5"] > 0) then
+		return ArenaAnalyticsDB["5v5"][#ArenaAnalyticsDB["5v5"]]["rating"]
+	end
+	return nil;
+end
 
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
@@ -428,6 +439,7 @@ function AAmatch:trackArena(...)
 	arena["playerName"] = UnitName("player");
 	arena["isRanked"] = isRankedArena;
 	arena["size"] = teamSize;
+	arena["prevRating"] = AAmatch:getLastRating(teamSize);
 	if (arena["isRanked"]) then
 		local arenaTeamId;
 		if (arena["size"] == 2) then
