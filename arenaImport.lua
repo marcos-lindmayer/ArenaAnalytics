@@ -112,7 +112,7 @@ function AAimport:parseRawData(data)
                     ["enemyMmr"] = arena["enemyMmr"] == "" and "-" or tonumber(arena["enemyMmr"]),
                     ["comp"] = {"",""},
                     ["enemyComp"] = {"",""},
-                    ["won"] = arena["teamColor"] == arena["winColor"] and true or false,
+                    ["won"] = arena["teamColor"] == arena["winnerColor"] and true or false,
                     ["isRanked"] = arena["isRanked"] == "YES" and true or false,
                     ["check"] = false
                 }

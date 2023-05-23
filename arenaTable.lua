@@ -824,6 +824,41 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () AAtable:ClearSelectedMatches()end)
 
 
+    -- First time user import popup
+    if (ArenaAnalyticsPlayerSettings["firstTime"]) then
+        ArenaAnalyticsScrollFrame.popupFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
+        ArenaAnalyticsScrollFrame.popupFrame:SetPoint("CENTER")
+        ArenaAnalyticsScrollFrame.popupFrame:SetSize(600, 100)
+        ArenaAnalyticsScrollFrame.popupFrame:SetFrameStrata("HIGH");
+        ArenaAnalyticsScrollFrame.popupFrametitle = ArenaAnalyticsScrollFrame.popupFrame:CreateFontString(nil, "OVERLAY");
+        ArenaAnalyticsScrollFrame.popupFrametitle:SetPoint("TOP", ArenaAnalyticsScrollFrame.popupFrame, "TOP", -10, -5);
+        ArenaAnalyticsScrollFrame.popupFrametitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
+        ArenaAnalyticsScrollFrame.popupFrametitle:SetText("Import from ArenaStats");
+        ArenaAnalyticsScrollFrame.importData = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", 25, -35, "Import");
+        ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, 0, "Paste the ArenaStats export on the text box below the Import button");
+        ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, -18, "Note: ArenaStats data won't be available for comp filters");
+        ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, -36, "|cffff0000Do this NOW|r You won't be able to do this after closing this window!");
+        ArenaAnalyticsScrollFrame.importData:SetDisabledFontObject("GameFontDisableSmall")
+        ArenaAnalyticsScrollFrame.importData:SetScript("OnClick", function (i) 
+            ArenaAnalyticsScrollFrame.importData:Disable();
+            ArenaAnalytics.AAimport:parseRawData(ArenaAnalyticsScrollFrame.importDataBox:GetText())
+        end);
+        ArenaAnalyticsScrollFrame.importDataBox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.popupFrame, "InputBoxTemplate")
+        ArenaAnalyticsScrollFrame.importDataBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", 30, -45);
+        ArenaAnalyticsScrollFrame.importDataBox:SetFrameStrata("HIGH");
+        ArenaAnalyticsScrollFrame.importDataBox:SetWidth(120);
+        ArenaAnalyticsScrollFrame.importDataBox:SetHeight(50);
+        ArenaAnalyticsScrollFrame.importDataBox:SetAutoFocus(false);
+        
+        ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)
+            self:ClearFocus();
+        end);
+        ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEscapePressed", function(self)
+            self:ClearFocus();
+        end);
+        ArenaAnalyticsPlayerSettings["firstTime"] = false;
+    end
+
     -- Add esc to close frame
     _G["ArenaAnalyticsScrollFrame"] = ArenaAnalyticsScrollFrame 
     tinsert(UISpecialFrames, ArenaAnalyticsScrollFrame:GetName()) 

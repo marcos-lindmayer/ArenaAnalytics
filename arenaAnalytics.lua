@@ -6,8 +6,12 @@ local AAmatch = ArenaAnalytics.AAmatch;
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
 	["outliers"] = 0,
 	["seasonIsChecked"] = false,
-	["skirmishIshChecked"] = false
+	["skirmishIshChecked"] = false,
 }; 
+
+ArenaAnalyticsPlayerSettings = ArenaAnalyticsPlayerSettings and ArenaAnalyticsPlayerSettings or {
+	["firstTime"] = true
+}
 
 local eventFrame = CreateFrame("Frame");
 local arenaEventFrame = CreateFrame("Frame");

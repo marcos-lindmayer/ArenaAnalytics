@@ -5,7 +5,7 @@
 ## Version: 0.0.1
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSettings
-## SavedVariablesPerCharacter: ArenaAnalyticsDB
+## SavedVariablesPerCharacter: ArenaAnalyticsDB, ArenaAnalyticsPlayerSettings
 
 arenaConstants.lua
 arenaAnalytics.lua

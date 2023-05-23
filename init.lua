@@ -288,30 +288,6 @@ function ArenaAnalyticsSettingsFrame()
         end
     );
 
-	
-    ArenaAnalyticsScrollFrame.importData = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -215, "Import");
-    ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 5, -5, "Paste the ArenaStats export on the text box below");
-    ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 5, -15, "Note: ArenaStats data won't be available for comp filters");
-    ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 5, -25, "This will create duplicates if the same match exists on both addons!");
-    ArenaAnalyticsScrollFrame.importData:SetDisabledFontObject("GameFontDisableSmall")
-    ArenaAnalyticsScrollFrame.importData:SetScript("OnClick", function (i) 
-		ArenaAnalyticsScrollFrame.importData:Disable();
-		ArenaAnalytics.AAimport:parseRawData(ArenaAnalyticsScrollFrame.importDataBox:GetText())
-    end);
-	ArenaAnalyticsScrollFrame.importDataBox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
-    ArenaAnalyticsScrollFrame.importDataBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -225);
-    ArenaAnalyticsScrollFrame.importDataBox:SetFrameStrata("HIGH");
-    ArenaAnalyticsScrollFrame.importDataBox:SetWidth(100);
-    ArenaAnalyticsScrollFrame.importDataBox:SetHeight(50);
-    ArenaAnalyticsScrollFrame.importDataBox:SetAutoFocus(false);
-    
-    ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)
-        self:ClearFocus();
-    end);
-    ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEscapePressed", function(self)
-        self:ClearFocus();
-    end);
-
 end
 
 
