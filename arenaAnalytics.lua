@@ -224,7 +224,6 @@ function AAmatch:insertArenaOnTable()
 		AAmatch:handleSync(arena["pendingSyncData"])
 	end
 
-	print("player is in combat", UnitAffectingCombat("player"))
 	if (UnitAffectingCombat("player")) then
 		local regenEvent = CreateFrame("Frame");
 		regenEvent:RegisterEvent("PLAYER_REGEN_ENABLED");
@@ -237,7 +236,6 @@ end
 
 function AAmatch:resetAndRefresh(removeEvent, event)
 	if(removeEvent) then
-		print("player no longer in combat")
 		event:SetScript("OnEvent", nil);
 	end
 	AAmatch:resetLastArenaValues();
