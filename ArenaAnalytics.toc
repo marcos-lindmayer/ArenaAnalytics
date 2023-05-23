@@ -9,6 +9,7 @@
 
 arenaConstants.lua
 arenaAnalytics.lua
+arenaImport.lua
 iconClass.lua
 arenaTable.lua
 HybridScroll.xml
