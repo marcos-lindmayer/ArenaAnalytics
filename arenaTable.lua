@@ -1,8 +1,3 @@
---[[ 
-CODE NOT YET COMMENTED
-(sorry)
-]]
-
 local _, ArenaAnalytics = ...;
 
 local currentFilters = {
