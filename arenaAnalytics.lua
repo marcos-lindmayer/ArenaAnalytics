@@ -7,7 +7,8 @@ ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
 	["outliers"] = 0,
 	["seasonIsChecked"] = false,
 	["skirmishIshChecked"] = false,
-	["allwaysShowDeathBg"] = false
+	["allwaysShowDeathBg"] = false,
+	["firstTime"] = true
 }; 
 
 local eventFrame = CreateFrame("Frame");
