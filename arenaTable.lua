@@ -140,13 +140,20 @@ local function getCompTotalGames(comp, isEnemyComp, games) --asd
     end
     return arenasWithCompTotal
 end
--- Hides spec's icon on bottom-right class' icon
-local function hideSpecIcons()
+-- Hides spec's icon on bottom-right class' icon and death highlight
+local function hideSpecIconsAndDeathBg()
     for specIconNumber = 1, #ArenaAnalyticsScrollFrame.specFrames do
         if (not ArenaAnalyticsScrollFrame.specFrames[specIconNumber][2]:GetAttribute("clicked")) then
             ArenaAnalyticsScrollFrame.specFrames[specIconNumber][1]:Hide()
         else
             ArenaAnalyticsScrollFrame.specFrames[specIconNumber][1]:Show()
+        end
+    end
+    for deathIconNumber = 1, #ArenaAnalyticsScrollFrame.deathFrames do
+        if (not ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][2]:GetAttribute("clicked") and ArenaAnalyticsSettings["allwaysShowDeathBg"] == false) then
+            ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][1]:Hide()
+        else
+            ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][1]:Show()
         end
     end
 end
@@ -158,7 +165,7 @@ function AAtable:ClearSelectedMatches()
         buttons[i]:SetAttribute("clicked", false)
         buttons[i].Tooltip:Hide();
     end
-    hideSpecIcons()
+    hideSpecIconsAndDeathBg()
     selectedGames = {}
     AAtable:UpdateSelected()
 end
@@ -866,6 +873,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.StopMovingOrSizing)
 
     ArenaAnalyticsScrollFrame.specFrames = {}
+    ArenaAnalyticsScrollFrame.deathFrames = {}
 
     AAtable:OnShow();
 end
@@ -962,6 +970,27 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                 end
                 teamIconsFrames[teamIconIndex].tooltip = match[matchKey][teamIconIndex]["name"];
             end
+            -- Check if first to die
+            if (match["firstDeath"] and match["firstDeath"] == match[matchKey][teamIconIndex]["name"]) then
+                if (teamIconsFrames[teamIconIndex].death) then
+                    teamIconsFrames[teamIconIndex].death.texture:SetTexture(nil);
+                else
+                    local deathFrame = CreateFrame("Frame", nil, teamIconsFrames[teamIconIndex])
+                    teamIconsFrames[teamIconIndex].death = deathFrame;
+                    teamIconsFrames[teamIconIndex].death:SetPoint("BOTTOMRIGHT", teamIconsFrames[teamIconIndex], "BOTTOMRIGHT")
+                    teamIconsFrames[teamIconIndex].death:SetSize(26,26)
+                    local deathTexture = teamIconsFrames[teamIconIndex].death:CreateTexture()
+                    teamIconsFrames[teamIconIndex].death.texture = deathTexture;
+                    teamIconsFrames[teamIconIndex].death.texture:SetPoint("CENTER")
+                    teamIconsFrames[teamIconIndex].death.texture:SetSize(26,26)
+                end
+                teamIconsFrames[teamIconIndex].death.texture:SetColorTexture(1, 0, 0, 0.2);
+                if (ArenaAnalyticsSettings["allwaysShowDeathBg"] == false) then
+                    teamIconsFrames[teamIconIndex].death:Hide();
+                end
+                table.insert(ArenaAnalyticsScrollFrame.deathFrames, {teamIconsFrames[teamIconIndex].death, button})  
+            end
+
             teamIconsFrames[teamIconIndex]:Show()
         else
             teamIconsFrames[teamIconIndex]:Hide()
@@ -1209,7 +1238,7 @@ local function applyFilters(unfilteredDB)
 end
 
 -- Hide/Shows Spec icons on the class' bottom-right corner
-function AAtable:ToggleSpecs(match, visible)
+function AAtable:ToggleSpecsAndDeathBg(match, visible)
     local matchData = { match:GetChildren() };
     for i = 1, #matchData do
         if (matchData[i].spec) then
@@ -1220,6 +1249,18 @@ function AAtable:ToggleSpecs(match, visible)
             else
                 matchData[i].spec:Hide();
             end
+        end
+        if (matchData[i].death) then
+            if (visible) then
+                matchData[i].death:Show();
+            elseif (match:GetAttribute("clicked")) then
+                matchData[i].death:Show();
+            else
+                matchData[i].death:Hide();
+            end
+        end
+        if (matchData[i].death and ArenaAnalyticsSettings["allwaysShowDeathBg"]) then
+            matchData[i].death:Show();
         end
     end
 end
@@ -1438,10 +1479,10 @@ function AAtable:RefreshLayout(filter)
             button.Duration:SetText(match["duration"] or "");
 
             button:SetScript("OnEnter", function (args)
-            AAtable:ToggleSpecs(args, true)
+            AAtable:ToggleSpecsAndDeathBg(args, true)
             end)
             button:SetScript("OnLeave", function (args)
-                AAtable:ToggleSpecs(args, false)
+                AAtable:ToggleSpecsAndDeathBg(args, false)
             end)
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
@@ -1488,13 +1529,13 @@ function AAtable:RefreshLayout(filter)
                     args.Tooltip:Show();
                     selectedGames[args.Date:GetText()] = args;
                     AAtable:UpdateSelected();
-                    AAtable:ToggleSpecs(args, true)
+                    AAtable:ToggleSpecsAndDeathBg(args, true)
                 else
                     args:SetAttribute("clicked", false)
                     selectedGames[args.Date:GetText()] = nil;
                     args.Tooltip:Hide();
                     AAtable:UpdateSelected();
-                    AAtable:ToggleSpecs(args, false)
+                    AAtable:ToggleSpecsAndDeathBg(args, false)
                 end
             end
             )
@@ -1573,7 +1614,7 @@ function AAtable:RefreshLayout(filter)
     local shownHeight = #buttons * buttonHeight;
 
     -- Hide spec icons
-    hideSpecIcons()
+    hideSpecIconsAndDeathBg()
 
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
     

@@ -197,7 +197,6 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.settingsFrametitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
 	ArenaAnalyticsScrollFrame.settingsFrametitle:SetText("Settings");
 
-    
 	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -35, "Filter settings");
 
     ArenaAnalyticsScrollFrame.skirmishToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_skirmishToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
@@ -285,6 +284,21 @@ function ArenaAnalyticsSettingsFrame()
             else
                 ArenaAnalyticsScrollFrame.resetBtn:Disable()
             end
+        end
+    );
+
+	
+	ArenaAnalyticsScrollFrame.moreOptionsTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -220, "More options");
+
+    ArenaAnalyticsScrollFrame.deathToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_deathToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
+    ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -240);
+    ArenaAnalyticsScrollFrame_deathToggleText:SetText("Allways show red death bg on icon (else on mouse over only)");
+    ArenaAnalyticsScrollFrame.deathToggle:SetChecked(ArenaAnalyticsSettings["allwaysShowDeathBg"]);
+
+    ArenaAnalyticsScrollFrame.deathToggle:SetScript("OnClick", 
+        function()
+            ArenaAnalyticsSettings["allwaysShowDeathBg"] = ArenaAnalyticsScrollFrame.deathToggle:GetChecked();
+			ArenaAnalytics.AAtable:RefreshLayout(true); 
         end
     );
 

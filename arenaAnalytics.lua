@@ -6,7 +6,8 @@ local AAmatch = ArenaAnalytics.AAmatch;
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
 	["outliers"] = 0,
 	["seasonIsChecked"] = false,
-	["skirmishIshChecked"] = false
+	["skirmishIshChecked"] = false,
+	["allwaysShowDeathBg"] = false
 }; 
 
 local eventFrame = CreateFrame("Frame");
@@ -51,7 +52,8 @@ local arena = {
 	["gotAllArenaInfo"] = false,
 	["endedProperly"] = true,
 	["pendingSync"] = false;
-	["pedingSyncData"] = nil;
+	["pedingSyncData"] = nil,
+	["firstDeath"] = nil
 }
 
 local specSpells = ArenaAnalytics.arenaConstants.GetSpecSpells();
@@ -88,6 +90,7 @@ function AAmatch:resetLastArenaValues()
 	arena["pendingSync"] = false;
 	arena["pedingSyncData"] = nil;
 	arena["prevRating"] = nil;
+	arena["firstDeath"] = nil
 end
 
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
@@ -214,6 +217,7 @@ function AAmatch:insertArenaOnTable()
 		["enemyComp"] = arena["enemyComp"],
 		["won"] = arena["wonByPlayer"],
 		["isRanked"] = arena["isRanked"],
+		["firstDeath"] = arena["firstDeath"],
 		["check"] = false
 	}
 
@@ -345,10 +349,18 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 
 	-- Tracking teams for spec/race and in case arena is quitted
 	local gotAllSpecs = false;
+	local deathRegistered = false;
 	if (eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
 		local _,logEventType,_,sourceGUID,_,_,_,destGUID,_,_,_,spellID,spellName,spellSchool,extraSpellId,extraSpellName,extraSpellSchool = CombatLogGetCurrentEventInfo();
 		if (logEventType == "SPELL_CAST_SUCCESS" or logEventType == "SPELL_AURA_APPLIED") then
 			AAmatch:detectSpec(sourceGUID, spellID, spellName)
+		end
+		if (logEventType == "UNIT_DIED") then
+			if(destGUID:gsub("Player", "")) then
+				deathRegistered = true;
+				local _, _, _, _, _, name, _ = GetPlayerInfoByGUID(destGUID)
+				arena["firstDeath"] = name;
+			end
 		end
 	else
 		if (#arena["party"] < arena["size"]) then
@@ -372,7 +384,7 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 		end
 	end
 	
-	gotAllSpecs = arena["size"] * 2 == specCount;
+	gotAllSpecs = arena["size"] * 2 == specCount and deathRegistered;
 
 	return gotAllSpecs;
 end
