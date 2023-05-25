@@ -971,26 +971,24 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                 teamIconsFrames[teamIconIndex].tooltip = match[matchKey][teamIconIndex]["name"];
             end
             -- Check if first to die
-            if (match["firstDeath"] and match["firstDeath"] == match[matchKey][teamIconIndex]["name"]) then
-                if (teamIconsFrames[teamIconIndex].death) then
-                    teamIconsFrames[teamIconIndex].death.texture:SetTexture(nil);
-                else
-                    local deathFrame = CreateFrame("Frame", nil, teamIconsFrames[teamIconIndex])
-                    teamIconsFrames[teamIconIndex].death = deathFrame;
-                    teamIconsFrames[teamIconIndex].death:SetPoint("BOTTOMRIGHT", teamIconsFrames[teamIconIndex], "BOTTOMRIGHT")
-                    teamIconsFrames[teamIconIndex].death:SetSize(26,26)
-                    local deathTexture = teamIconsFrames[teamIconIndex].death:CreateTexture()
-                    teamIconsFrames[teamIconIndex].death.texture = deathTexture;
-                    teamIconsFrames[teamIconIndex].death.texture:SetPoint("CENTER")
-                    teamIconsFrames[teamIconIndex].death.texture:SetSize(26,26)
-                end
+            if (teamIconsFrames[teamIconIndex].death) then
+                teamIconsFrames[teamIconIndex].death.texture:SetTexture(nil);
+            end
+            if (match["firstDeath"] and string.find(match[matchKey][teamIconIndex]["name"], match["firstDeath"])) then
+                local deathFrame = CreateFrame("Frame", nil, teamIconsFrames[teamIconIndex])
+                teamIconsFrames[teamIconIndex].death = deathFrame;
+                teamIconsFrames[teamIconIndex].death:SetPoint("BOTTOMRIGHT", teamIconsFrames[teamIconIndex], "BOTTOMRIGHT")
+                teamIconsFrames[teamIconIndex].death:SetSize(26,26)
+                local deathTexture = teamIconsFrames[teamIconIndex].death:CreateTexture()
+                teamIconsFrames[teamIconIndex].death.texture = deathTexture;
+                teamIconsFrames[teamIconIndex].death.texture:SetPoint("CENTER")
+                teamIconsFrames[teamIconIndex].death.texture:SetSize(26,26)
                 teamIconsFrames[teamIconIndex].death.texture:SetColorTexture(1, 0, 0, 0.2);
                 if (ArenaAnalyticsSettings["allwaysShowDeathBg"] == false) then
                     teamIconsFrames[teamIconIndex].death:Hide();
                 end
                 table.insert(ArenaAnalyticsScrollFrame.deathFrames, {teamIconsFrames[teamIconIndex].death, button})  
             end
-
             teamIconsFrames[teamIconIndex]:Show()
         else
             teamIconsFrames[teamIconIndex]:Hide()

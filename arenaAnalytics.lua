@@ -144,10 +144,10 @@ function AAmatch:insertArenaOnTable()
 
 		-- Set data for skirmish
 	if (arena["isRanked"] == false) then
-		arena["partyRating"] = arena["partyRating"] ~= nil and arena["partyRating"] or "SKIRMISH";
-		arena["enemyRating"] = arena["enemyRating"] ~= nil and arena["enemyRating"] or "SKIRMISH";
-		arena["partyMMR"] = arena["partyMMR"] ~= nil and arena["partyMMR"] or "-";
-		arena["enemyMMR"] = arena["enemyMMR"] ~= nil and arena["enemyMMR"] or "-";
+		arena["partyRating"] = "SKIRMISH";
+		arena["enemyRating"] = "SKIRMISH";
+		arena["partyMMR"] = "-";
+		arena["enemyMMR"] = "-";
 	end
 
 	-- Friendly name for arena["size"]
@@ -353,13 +353,12 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 
 	-- Tracking teams for spec/race and in case arena is quitted
 	local gotAllSpecs = false;
-	local deathRegistered = false;
 	if (eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
 		local _,logEventType,_,sourceGUID,_,_,_,destGUID,_,_,_,spellID,spellName,spellSchool,extraSpellId,extraSpellName,extraSpellSchool = CombatLogGetCurrentEventInfo();
 		if (logEventType == "SPELL_CAST_SUCCESS" or logEventType == "SPELL_AURA_APPLIED") then
 			AAmatch:detectSpec(sourceGUID, spellID, spellName)
 		end
-		if (logEventType == "UNIT_DIED") then
+		if (logEventType == "UNIT_DIED" and arena["firstDeath"] == nil) then
 			if(destGUID:gsub("Player", "")) then
 				deathRegistered = true;
 				local _, _, _, _, _, name, _ = GetPlayerInfoByGUID(destGUID)
@@ -388,7 +387,7 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 		end
 	end
 	
-	gotAllSpecs = arena["size"] * 2 == specCount and deathRegistered;
+	gotAllSpecs = arena["size"] * 2 == specCount and arena["firstDeath"];
 
 	return gotAllSpecs;
 end
@@ -453,7 +452,7 @@ function AAmatch:trackArena(...)
 	arena["playerName"] = UnitName("player");
 	arena["isRanked"] = isRankedArena;
 	arena["size"] = teamSize;
-	arena["prevRating"] = AAmatch:getLastRating(teamSize);
+	arena["prevRating"] = isRankedArena and AAmatch:getLastRating(teamSize) or nil;
 	if (arena["isRanked"]) then
 		local arenaTeamId;
 		if (arena["size"] == 2) then

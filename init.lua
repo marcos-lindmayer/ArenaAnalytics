@@ -160,8 +160,8 @@ function ArenaAnalytics:init(event, name, ...)
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 
-	ArenaAnalytics.AAmatch.EventRegister();
-	ArenaAnalytics.AAtable.OnLoad();
+	ArenaAnalytics.AAmatch:EventRegister();
+	ArenaAnalytics.AAtable:OnLoad();
 	createMinimapButton();
 	
 	
