@@ -15,7 +15,7 @@ local currentFilters = {
 local isCompFilterOn;
 local filteredDB = nil;
 local dropdownCounter = 1;
-local currentSeasonStartInt = 1673916461;
+local currentSeasonStartInt = 1687219201;
 local filterCompsOpts = {
     ["2v2"] = "",
     ["3v3"] = "",
