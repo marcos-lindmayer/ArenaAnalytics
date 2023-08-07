@@ -3,6 +3,7 @@ ArenaAnalytics.AAmatch = {};
 
 local AAmatch = ArenaAnalytics.AAmatch;
 
+-- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
 	["outliers"] = 0,
 	["seasonIsChecked"] = false,
@@ -10,8 +11,8 @@ ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
 	["allwaysShowDeathBg"] = false
 }; 
 
-ArenaAnalyticsPlayerSettings = ArenaAnalyticsPlayerSettings and ArenaAnalyticsPlayerSettings or {
-	["firstTime"] = true
+ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {
+	-- Character specific settings
 }
 
 local eventFrame = CreateFrame("Frame");
@@ -341,7 +342,7 @@ function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 	end
 end
 
--- Returns bool wether all obtainable information (before arena ends) has
+-- Returns bool whether all obtainable information (before arena ends) has
 -- been collected. Attempts to get initial data on arena players:
 -- GUID, name, race, class, spec
 function AAmatch:getAllAvailableInfo(eventType, ...)
@@ -573,6 +574,7 @@ function AAmatch:handleArenaEnd()
 			table.insert(team0, player);
 		end
 	end
+
 	if (arena["playerTeam"] == 1) then
 		arena["party"] = team1;
 		arena["enemy"] = team0;
@@ -592,6 +594,7 @@ function AAmatch:handleArenaEnd()
 			arena["enemyRatingDelta"] = team1RatingDif;
 		end
 	end
+
 	AAmatch:insertArenaOnTable();
 end
 

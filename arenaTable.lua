@@ -827,7 +827,7 @@ function AAtable:OnLoad()
 
 
     -- First time user import popup
-    if (ArenaAnalyticsPlayerSettings["firstTime"]) then
+    if (#ArenaAnalyticsDB["2v2"] == 0 and #ArenaAnalyticsDB["3v3"] == 0 and #ArenaAnalyticsDB["5v5"] == 0) then
         ArenaAnalyticsScrollFrame.popupFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
         ArenaAnalyticsScrollFrame.popupFrame:SetPoint("CENTER")
         ArenaAnalyticsScrollFrame.popupFrame:SetSize(600, 100)
@@ -839,7 +839,7 @@ function AAtable:OnLoad()
         ArenaAnalyticsScrollFrame.importData = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", 25, -35, "Import");
         ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, 0, "Paste the ArenaStats export on the text box below the Import button");
         ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, -18, "Note: ArenaStats data won't be available for comp filters");
-        ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, -36, "|cffff0000Do this NOW|r You won't be able to do this after closing this window!");
+        ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, -36, "|cffff0000Do this NOW|r You won't be able to do this while you have stored arenas!");
         ArenaAnalyticsScrollFrame.importData:SetDisabledFontObject("GameFontDisableSmall")
         ArenaAnalyticsScrollFrame.importData:SetScript("OnClick", function (i) 
             ArenaAnalyticsScrollFrame.importData:Disable();
@@ -858,7 +858,6 @@ function AAtable:OnLoad()
         ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEscapePressed", function(self)
             self:ClearFocus();
         end);
-        ArenaAnalyticsPlayerSettings["firstTime"] = false;
     end
 
     -- Add esc to close frame
