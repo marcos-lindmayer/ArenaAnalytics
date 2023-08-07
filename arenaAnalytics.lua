@@ -32,7 +32,7 @@ local eventTracker = {
 }
 
 -- Arena variables
-local arena = {
+local currentArena = {
 	["mapName"] = "", 
 	["mapId"] = nil, 
 	["playerName"] = "",
@@ -72,30 +72,30 @@ ArenaAnalyticsDB = ArenaAnalyticsDB  ~= nil and ArenaAnalyticsDB or {
 
 -- Reset current arena values
 function AAmatch:resetLastArenaValues()
-	arena["mapName"] = "";
-	arena["mapId"] = nil;
-	arena["playerName"] = "";
-	arena["duration"] = nil;
-	arena["timeStartInt"] = 0;
-	arena["timeEnd"] = 0;
-	arena["enemyMMR"] = nil;
-	arena["partyMMR"] = nil;
-	arena["enemyRating"] = nil;
-	arena["partyRating"] = nil;
-	arena["size"] = nil;
-	arena["isRanked"] = nil
-	arena["playerTeam"] = nil;
-	arena["party"] = {};
-	arena["enemy"] = {};
-	arena["comp"] = {};
-	arena["enemyComp"] = {};
-	arena["gotAllArenaInfo"] = false;
-	arena["partyRatingDelta"] = "";
-	arena["enemyRatingDelta"] = "";
-	arena["pendingSync"] = false;
-	arena["pedingSyncData"] = nil;
-	arena["prevRating"] = nil;
-	arena["firstDeath"] = nil
+	currentArena["mapName"] = "";
+	currentArena["mapId"] = nil;
+	currentArena["playerName"] = "";
+	currentArena["duration"] = nil;
+	currentArena["timeStartInt"] = 0;
+	currentArena["timeEnd"] = 0;
+	currentArena["enemyMMR"] = nil;
+	currentArena["partyMMR"] = nil;
+	currentArena["enemyRating"] = nil;
+	currentArena["partyRating"] = nil;
+	currentArena["size"] = nil;
+	currentArena["isRanked"] = nil
+	currentArena["playerTeam"] = nil;
+	currentArena["party"] = {};
+	currentArena["enemy"] = {};
+	currentArena["comp"] = {};
+	currentArena["enemyComp"] = {};
+	currentArena["gotAllArenaInfo"] = false;
+	currentArena["partyRatingDelta"] = "";
+	currentArena["enemyRatingDelta"] = "";
+	currentArena["pendingSync"] = false;
+	currentArena["pedingSyncData"] = nil;
+	currentArena["prevRating"] = nil;
+	currentArena["firstDeath"] = nil
 end
 
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
@@ -132,69 +132,69 @@ end
 -- and triggers a layout refresh on ArenaAnalytics.arenaTable
 function AAmatch:insertArenaOnTable()
 	-- Calculate arena duration
-	if (arena["timeStartInt"] == 0) then
-		arena["duration"] = 0;
+	if (currentArena["timeStartInt"] == 0) then
+		currentArena["duration"] = 0;
 	else
-		arena["timeEnd"] = time();
-		local durationMS = ((arena["timeEnd"] - arena["timeStartInt"]) * 1000);
+		currentArena["timeEnd"] = time();
+		local durationMS = ((currentArena["timeEnd"] - currentArena["timeStartInt"]) * 1000);
 		durationMS = durationMS < 0 and 0 or durationMS;
 		local minutes = durationMS >= 60000 and (SecondsToTime(durationMS/1000, true) .. " ") or "";
 		local seconds = math.floor((durationMS % 60000) / 1000);
-		arena["duration"] = minutes .. seconds .. "sec";
+		currentArena["duration"] = minutes .. seconds .. "sec";
 	end
 
 		-- Set data for skirmish
-	if (arena["isRanked"] == false) then
-		arena["partyRating"] = "SKIRMISH";
-		arena["enemyRating"] = "SKIRMISH";
-		arena["partyMMR"] = "-";
-		arena["enemyMMR"] = "-";
+	if (currentArena["isRanked"] == false) then
+		currentArena["partyRating"] = "SKIRMISH";
+		currentArena["enemyRating"] = "SKIRMISH";
+		currentArena["partyMMR"] = "-";
+		currentArena["enemyMMR"] = "-";
 	end
 
-	-- Friendly name for arena["size"]
-	if arena["size"] == 2 then
-		arena["size"] = "2v2";
-	elseif arena["size"] == 3 then
-		arena["size"] = "3v3";
+	-- Friendly name for currentArena["size"]
+	if currentArena["size"] == 2 then
+		currentArena["size"] = "2v2";
+	elseif currentArena["size"] == 3 then
+		currentArena["size"] = "3v3";
 	else
-		arena["size"] = "5v5";
+		currentArena["size"] = "5v5";
 	end;
 
 	-- Place player first in the arena party group, sort rest 
-	table.sort(arena["party"], function(a, b)
-		local prioA = a["name"] == arena["playerName"] and 1 or 2
-		local prioB = b["name"] == arena["playerName"] and 1 or 2
+	table.sort(currentArena["party"], function(a, b)
+		local prioA = a["name"] == currentArena["playerName"] and 1 or 2
+		local prioB = b["name"] == currentArena["playerName"] and 1 or 2
 		local sameClass = a["class"] == b["class"]
 		return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
 	end
 	);
 
 	--Sort arena["enemy"]
-	table.sort(arena["enemy"], function(a, b)
+	table.sort(currentArena["enemy"], function(a, b)
 		local sameClass = a["class"] == b["class"]
 		return (sameClass and a["name"] < b["name"]) or a["class"] < b["class"]
 	end
 	);
 
-	if (arena["gotAllArenaInfo"] == false) then 
+	if (currentArena["gotAllArenaInfo"] == false) then 
 		-- print("Missing specs. Requesting data")
-		for i = 1, #arena["party"] do
-			if (#arena["party"][i]["spec"]<3) then
+		for i = 1, #currentArena["party"] do
+			if (#currentArena["party"][i]["spec"]<3) then
 				local messageSuccess
 				if (IsInInstance()) then
-					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. arena["party"][i]["name"], "INSTANCE_CHAT")
+					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["party"][i]["name"], "INSTANCE_CHAT")
 				elseif (IsInGroup(1)) then
-					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. arena["party"][i]["name"], "PARTY")
+					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["party"][i]["name"], "PARTY")
 				end
 			end
 		end
-		for j = 1, #arena["enemy"] do
-			if (#arena["enemy"][j]["spec"]<3) then
+		for j = 1, #currentArena["enemy"] do
+			if (#currentArena["enemy"][j]["spec"]<3) then
 				local messageSuccess
 				if (IsInInstance()) then
-					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. arena["enemy"][j]["name"], "INSTANCE_CHAT")
+					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["enemy"][j]["name"], "INSTANCE_CHAT")
 				elseif (IsInGroup(1)) then
-					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. arena["enemy"][j]["name"], "PARTY")
+					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["enemy"][j]["name"], "PARTY")
 				end
 			end
 		end
@@ -202,35 +202,35 @@ function AAmatch:insertArenaOnTable()
 	end
 
 	-- Get arena comp for each team
-	arena["comp"] = AAmatch:getArenaComp(arena["party"]);
-	arena["enemyComp"] = AAmatch:getArenaComp(arena["enemy"]);
+	currentArena["comp"] = AAmatch:getArenaComp(currentArena["party"]);
+	currentArena["enemyComp"] = AAmatch:getArenaComp(currentArena["enemy"]);
 
 	-- Setup table data to insert into ArenaAnalyticsDB
 	local arenaData = {
-		["dateInt"] = arena["timeStartInt"],
-		["map"] = arena["mapName"], 
-		["duration"] = arena["duration"], 
-		["team"] = arena["party"],
-		["rating"] = arena["prevRating"], 
-		["ratingDelta"] = arena["partyRatingDelta"],
-		["mmr"] = arena["partyMMR"], 
-		["enemyTeam"] = arena["enemy"], 
-		["enemyRating"] = arena["enemyRating"], 
-		["enemyRatingDelta"] = arena["enemyRatingDelta"],
-		["enemyMmr"] = arena["enemyMMR"],
-		["comp"] = arena["comp"],
-		["enemyComp"] = arena["enemyComp"],
-		["won"] = arena["wonByPlayer"],
-		["isRanked"] = arena["isRanked"],
-		["firstDeath"] = arena["firstDeath"],
+		["dateInt"] = currentArena["timeStartInt"],
+		["map"] = currentArena["mapName"], 
+		["duration"] = currentArena["duration"], 
+		["team"] = currentArena["party"],
+		["rating"] = currentArena["prevRating"], 
+		["ratingDelta"] = currentArena["partyRatingDelta"],
+		["mmr"] = currentArena["partyMMR"], 
+		["enemyTeam"] = currentArena["enemy"], 
+		["enemyRating"] = currentArena["enemyRating"], 
+		["enemyRatingDelta"] = currentArena["enemyRatingDelta"],
+		["enemyMmr"] = currentArena["enemyMMR"],
+		["comp"] = currentArena["comp"],
+		["enemyComp"] = currentArena["enemyComp"],
+		["won"] = currentArena["wonByPlayer"],
+		["isRanked"] = currentArena["isRanked"],
+		["firstDeath"] = currentArena["firstDeath"],
 		["check"] = false
 	}
 
 	-- Insert arena data as a new ArenaAnalyticsDB row
-	table.insert(ArenaAnalyticsDB[arena["size"]], arenaData);
+	table.insert(ArenaAnalyticsDB[currentArena["size"]], arenaData);
 	
-	if (arena["pendingSync"]) then
-		AAmatch:handleSync(arena["pendingSyncData"])
+	if (currentArena["pendingSync"]) then
+		AAmatch:handleSync(currentArena["pendingSyncData"])
 	end
 
 	if (UnitAffectingCombat("player")) then
@@ -261,14 +261,14 @@ function AAmatch:doesGroupContainMemberByName(currentGroup, name)
 end
 
 -- Search for missing members of group (party or arena), createsPlayerTable if 
--- it exist and inserts it in either arena["party"] or arena["enemy"]. If spec and GUID
+-- it exist and inserts it in either currentArena["party"] or currentArena["enemy"]. If spec and GUID
 -- are passed, include them when creating the player table
 function AAmatch:fillGroupsByUnitReference(unit, unitSpec, unitGuid)
 	local groupTable = {
-		["party"] = arena["party"],
-		["arena"] = arena["enemy"]
+		["party"] = currentArena["party"],
+		["arena"] = currentArena["enemy"]
 	}
-	for j = 1, arena["size"] do
+	for j = 1, currentArena["size"] do
 		j = unit == "party" and  (j - 1) or j;
 		local playerExists = UnitName(unit .. j) ~= nil;
 		if (playerExists) then
@@ -302,11 +302,11 @@ function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 		local unitIsParty = false;
 		local unitIsEnemy = false;
 		-- Check if spell was casted by party
-		for partyNumber = 1, #arena["party"] do
-			if (arena["party"][partyNumber]["GUID"] == sourceGUID ) then
-				if (#arena["party"][partyNumber]["spec"] < 2) then
+		for partyNumber = 1, #currentArena["party"] do
+			if (currentArena["party"][partyNumber]["GUID"] == sourceGUID ) then
+				if (#currentArena["party"][partyNumber]["spec"] < 2) then
 					-- Adding spec to party member
-					arena["party"][partyNumber]["spec"] = specSpells[spellID];
+					currentArena["party"][partyNumber]["spec"] = specSpells[spellID];
 				end
 				unitIsParty = true;
 				break;
@@ -314,11 +314,11 @@ function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 		end
 		-- Check if spell was casted by enemy
 		if (not unitIsParty) then
-			for enemyNumber = 1, #arena["enemy"] do
-				if (arena["enemy"][enemyNumber]["GUID"] == sourceGUID ) then
-					if (arena["enemy"][enemyNumber]["spec"] == "-") then
+			for enemyNumber = 1, #currentArena["enemy"] do
+				if (currentArena["enemy"][enemyNumber]["GUID"] == sourceGUID ) then
+					if (currentArena["enemy"][enemyNumber]["spec"] == "-") then
 						-- Adding spec to enemy member
-						arena["enemy"][enemyNumber]["spec"] = specSpells[spellID];
+						currentArena["enemy"][enemyNumber]["spec"] = specSpells[spellID];
 					end
 					unitIsEnemy = true;
 					break;
@@ -329,7 +329,7 @@ function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 		if (unitIsEnemy == false and unitIsParty == false and string.find(sourceGUID, "Player-")) then
 			--Determine arena group
 			local unitGroup;
-			for i = 1, arena["size"] do
+			for i = 1, currentArena["size"] do
 				if (UnitGUID("party" .. i) == sourceGUID) then
 					unitGroup = "party";
 				end
@@ -348,8 +348,8 @@ end
 function AAmatch:getAllAvailableInfo(eventType, ...)
 
 	-- Start tracking time again in case of disconnect
-	if (arena["timeStartInt"] == 0) then
-		arena["timeStartInt"] = time();
+	if (currentArena["timeStartInt"] == 0) then
+		currentArena["timeStartInt"] = time();
 	end
 
 	-- Tracking teams for spec/race and in case arena is quitted
@@ -359,36 +359,36 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 		if (logEventType == "SPELL_CAST_SUCCESS" or logEventType == "SPELL_AURA_APPLIED") then
 			AAmatch:detectSpec(sourceGUID, spellID, spellName)
 		end
-		if (logEventType == "UNIT_DIED" and arena["firstDeath"] == nil) then
+		if (logEventType == "UNIT_DIED" and currentArena["firstDeath"] == nil) then
 			if(destGUID:gsub("Player", "")) then
 				deathRegistered = true;
 				local _, _, _, _, _, name, _ = GetPlayerInfoByGUID(destGUID)
-				arena["firstDeath"] = name;
+				currentArena["firstDeath"] = name;
 			end
 		end
 	else
-		if (#arena["party"] < arena["size"]) then
+		if (#currentArena["party"] < currentArena["size"]) then
 			AAmatch:fillGroupsByUnitReference("party");
 		end
-		if (#arena["enemy"] < arena["size"]) then
+		if (#currentArena["enemy"] < currentArena["size"]) then
 			AAmatch:fillGroupsByUnitReference("arena");
 		end
 	end
 
 	-- Getting all specs means all possible data has been collected
 	local specCount = 0;
-	for u = 1, #arena["party"] do
-		if (string.len(arena["party"][u]["spec"]) > 3) then
+	for u = 1, #currentArena["party"] do
+		if (string.len(currentArena["party"][u]["spec"]) > 3) then
 			specCount = specCount + 1;
 		end
 	end
-	for y = 1, #arena["enemy"] do
-		if (string.len(arena["enemy"][y]["spec"]) > 3) then
+	for y = 1, #currentArena["enemy"] do
+		if (string.len(currentArena["enemy"][y]["spec"]) > 3) then
 			specCount = specCount + 1;
 		end
 	end
 	
-	gotAllSpecs = arena["size"] * 2 == specCount and arena["firstDeath"];
+	gotAllSpecs = currentArena["size"] * 2 == specCount and currentArena["firstDeath"];
 
 	return gotAllSpecs;
 end
@@ -396,8 +396,8 @@ end
 -- Player quitted the arena before it ended
 -- Triggers AAmatch:insertArenaOnTable with the available info
 function AAmatch:quitsArena(self, ...)
-	arena["ended"] = true;
-	arena["wonByPlayer"] = false;	
+	currentArena["ended"] = true;
+	currentArena["wonByPlayer"] = false;	
 	AAmatch:insertArenaOnTable();
 end
 
@@ -441,7 +441,7 @@ end
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
 function AAmatch:trackArena(...)
-	arena["endedProperly"] = false;
+	currentArena["endedProperly"] = false;
 	local i = ...;
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize,
 	isRankedArena, suspendedQueue, bool, queueType = GetBattlefieldStatus(i);
@@ -450,43 +450,43 @@ function AAmatch:trackArena(...)
 		return false
 	end
 
-	arena["playerName"] = UnitName("player");
-	arena["isRanked"] = isRankedArena;
-	arena["size"] = teamSize;
-	arena["prevRating"] = isRankedArena and AAmatch:getLastRating(teamSize) or nil;
-	if (arena["isRanked"]) then
+	currentArena["playerName"] = UnitName("player");
+	currentArena["isRanked"] = isRankedArena;
+	currentArena["size"] = teamSize;
+	currentArena["prevRating"] = isRankedArena and AAmatch:getLastRating(teamSize) or nil;
+	if (currentArena["isRanked"]) then
 		local arenaTeamId;
-		if (arena["size"] == 2) then
+		if (currentArena["size"] == 2) then
 			arenaTeamId = 1;
-		elseif (arena["size"] == 3) then
+		elseif (currentArena["size"] == 3) then
 			arenaTeamId = 2;
 		else
 			arenaTeamId = 3;
 		end
 		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
-		if (arena["prevRating"] == nil) then
-			arena["prevRating"] = personalRating
+		if (currentArena["prevRating"] == nil) then
+			currentArena["prevRating"] = personalRating
 			
-			print("prev rating PRE: " .. arena["prevRating"])
+			print("prev rating PRE: " .. currentArena["prevRating"])
 		end
 	end
 
-	if (#arena["party"] == 0) then
+	if (#currentArena["party"] == 0) then
 		-- Add player
 		local killingBlows, faction, filename, damageDone, healingDone, spec;
 		local class = UnitClass("player");
 		local race = UnitRace("player");
 		local GUID = UnitGUID("player");
-		local name = arena["playerName"];
+		local name = currentArena["playerName"];
 		local spec = AAmatch:getPlayerSpec();
 		local player = AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec);
-		table.insert(arena["party"], player);
+		table.insert(currentArena["party"], player);
 	end
 	
 	-- Not using mapName since string is lang based (unreliable) 
 	-- TODO update to WOTLK values and add backwards compatibility
-	arena["mapId"] = select(8,GetInstanceInfo())
-	arena["mapName"] = AAmatch:getMapNameById(arena["mapId"])
+	currentArena["mapId"] = select(8,GetInstanceInfo())
+	currentArena["mapName"] = AAmatch:getMapNameById(currentArena["mapId"])
 end
 
 -- Returns map string
@@ -508,14 +508,14 @@ end
 -- Used to link existing spec and GUID info with players'
 -- info from the UPDATE_BATTLEFIELD_SCORE event
 function AAmatch:getCollectedValue(value, name)
-	for i = 1, #arena["party"] do
-		if (arena["party"][i][value] ~= "" and arena["party"][i]["name"] == name) then
-			return arena["party"][i][value]
+	for i = 1, #currentArena["party"] do
+		if (currentArena["party"][i][value] ~= "" and currentArena["party"][i]["name"] == name) then
+			return currentArena["party"][i][value]
 		end
 	end
-	for j = 1, #arena["enemy"] do
-		if (arena["enemy"][j][value] ~= "" and arena["enemy"][j]["name"] == name) then
-			return arena["enemy"][j][value]
+	for j = 1, #currentArena["enemy"] do
+		if (currentArena["enemy"][j][value] ~= "" and currentArena["enemy"][j]["name"] == name) then
+			return currentArena["enemy"][j][value]
 		end
 	end
 	return "";
@@ -525,8 +525,8 @@ end
 -- Matches obtained info with previously collected player values
 -- Triggers AAmatch:insertArenaOnTable with (hopefully) all the information
 function AAmatch:handleArenaEnd()
-	arena["endedProperly"] = true;
-	arena["ended"] = true;
+	currentArena["endedProperly"] = true;
+	currentArena["ended"] = true;
 	local winner =  GetBattlefieldWinner();
 
 	local team1 = {};
@@ -534,7 +534,7 @@ function AAmatch:handleArenaEnd()
 	-- Process ranked information
 	local team1Name, oldTeam1Rating, newTeam1Rating, team1Rating, team1RatingDif;
 	local team0Name, oldTeam0Rating, newTeam0Rating, team0Rating, team0RatingDif;
-	if (arena["isRanked"]) then
+	if (currentArena["isRanked"]) then
 		team1Name, oldTeam1Rating, newTeam1Rating, team1Rating = GetBattlefieldTeamInfo(1);
 		team0Name, oldTeam0Rating, newTeam0Rating, team0Rating = GetBattlefieldTeamInfo(0);
 		oldTeam0Rating = tonumber(oldTeam0Rating);
@@ -554,7 +554,7 @@ function AAmatch:handleArenaEnd()
 	end
 	
 	local numScores = GetNumBattlefieldScores();
-	arena["wonByPlayer"] = false;
+	currentArena["wonByPlayer"] = false;
 	for i=1, numScores do
 		local name, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, filename, damageDone, healingDone = GetBattlefieldScore(i);
 		-- Get spec and GUID from existing data, if available
@@ -562,11 +562,11 @@ function AAmatch:handleArenaEnd()
 		local GUID = AAmatch:getCollectedValue("GUID", name);
 		-- Create complete player tables
 		local player = AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec);
-		if (player["name"] == arena["playerName"]) then
+		if (player["name"] == currentArena["playerName"]) then
 			if (player["faction"] == winner) then
-				arena["wonByPlayer"] = true;
+				currentArena["wonByPlayer"] = true;
 			end
-			arena["playerTeam"] = player["faction"];
+			currentArena["playerTeam"] = player["faction"];
 		end
 		if (player["faction"] == 1) then
 			table.insert(team1, player);
@@ -575,23 +575,23 @@ function AAmatch:handleArenaEnd()
 		end
 	end
 
-	if (arena["playerTeam"] == 1) then
-		arena["party"] = team1;
-		arena["enemy"] = team0;
-		if (arena["isRanked"]) then
-			arena["partyMMR"] = team1Rating;
-			arena["enemyMMR"] = team0Rating;
-			arena["enemyRating"] = newTeam0Rating;
-			arena["enemyRatingDelta"] = team0RatingDif;
+	if (currentArena["playerTeam"] == 1) then
+		currentArena["party"] = team1;
+		currentArena["enemy"] = team0;
+		if (currentArena["isRanked"]) then
+			currentArena["partyMMR"] = team1Rating;
+			currentArena["enemyMMR"] = team0Rating;
+			currentArena["enemyRating"] = newTeam0Rating;
+			currentArena["enemyRatingDelta"] = team0RatingDif;
 		end
 	else
-		arena["party"] = team0;
-		arena["enemy"] = team1;
-		if (arena["isRanked"]) then
-			arena["partyMMR"] = team0Rating;
-			arena["enemyMMR"] = team1Rating;
-			arena["enemyRating"] = newTeam1Rating;
-			arena["enemyRatingDelta"] = team1RatingDif;
+		currentArena["party"] = team0;
+		currentArena["enemy"] = team1;
+		if (currentArena["isRanked"]) then
+			currentArena["partyMMR"] = team0Rating;
+			currentArena["enemyMMR"] = team1Rating;
+			currentArena["enemyRating"] = newTeam1Rating;
+			currentArena["enemyRatingDelta"] = team1RatingDif;
 		end
 	end
 
@@ -603,8 +603,8 @@ function AAmatch:hasArenaStarted(msg)
 	local locale = ArenaAnalytics.arenaConstants.GetArenaTimer()
     for k,v in pairs(locale) do
         if string.find(msg, v) then
-            if (k == 0 and arena["timeStartInt"] == 0) then
-				arena["timeStartInt"] = time();
+            if (k == 0 and currentArena["timeStartInt"] == 0) then
+				currentArena["timeStartInt"] = time();
             end
         end
     end
@@ -632,7 +632,7 @@ function AAmatch:handleSync(...)
 				-- Check if arena in progress, else need to get data from saved game
 				local foundSpec = false;
 				local spec
-				if (arena["mapId"] ~= nil) then
+				if (currentArena["mapId"] ~= nil) then
 					for i = 1, #arenaParty do
 						if (arenaParty[i]["name"] == dataValue and #arenaParty[i]["spec"]>2) then
 							foundSpec = true;
@@ -698,7 +698,7 @@ function AAmatch:handleSync(...)
 		elseif (messageType == "deliver") then
 			if (dataType == "spec") then
 				
-				if (arena["pendingSync"]) then
+				if (currentArena["pendingSync"]) then
 					print("sending data")
 					indexOfSeparator, _ = string.find(dataValue, "?")
 					local nameAndSpec = dataValue:sub(indexOfSeparator + 1, #dataValue);
@@ -745,8 +745,8 @@ function AAmatch:handleSync(...)
 						ArenaAnalytics:Print("Error! Name could not be found or already has a spec assigned for latest match!")
 					end
 				else
-					arena["pendingSync"] = true;
-					arena["pedingSyncData"] = ...;
+					currentArena["pendingSync"] = true;
+					currentArena["pedingSyncData"] = ...;
 					print("data got requested to me, storing and sending when arena is over for me")
 				end
 				
@@ -782,14 +782,14 @@ end
 -- CHAT_MSG_BG_SYSTEM_NEUTRAL: Detect if the arena started
 local function handleArenaEvents(_, eventType, ...)
 	if (IsActiveBattlefieldArena()) then 
-		if (not arena["ended"]) then
+		if (not currentArena["ended"]) then
 			if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil ) then
 				AAmatch:handleArenaEnd();
 				AAmatch:removeArenaEvents();
 				-- print("FIRED UPDATE_BATTLEFIELD_SCORE")
 			elseif (eventType == "UNIT_AURA" or eventType == "COMBAT_LOG_EVENT_UNFILTERED" or eventType == "ARENA_OPPONENT_UPDATE") then
-				arena["gotAllArenaInfo"] = arena["gotAllArenaInfo"] == false and AAmatch:getAllAvailableInfo(eventType, ...) or arena["gotAllArenaInfo"];
-			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL" and arena["timeStartInt"] == 0) then
+				currentArena["gotAllArenaInfo"] = currentArena["gotAllArenaInfo"] == false and AAmatch:getAllAvailableInfo(eventType, ...) or currentArena["gotAllArenaInfo"];
+			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL" and currentArena["timeStartInt"] == 0) then
 				AAmatch:hasArenaStarted(...)
 			end
 		end
@@ -812,7 +812,7 @@ end
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
 local function handleEvents(prefix, eventType, ...)
 	if (IsActiveBattlefieldArena()) then 
-		if (not arena["ended"]) then
+		if (not currentArena["ended"]) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
 				AAmatch:trackArena(...);
 			end
@@ -821,8 +821,8 @@ local function handleEvents(prefix, eventType, ...)
 			end
 		end
 	elseif (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-		arena["ended"] = false; -- Player is out of arena, next arena hasn't ended yet
-	elseif (not IsActiveBattlefieldArena() and eventType == "ZONE_CHANGED_NEW_AREA" and arena["endedProperly"] ~= true and arena["mapId"] ~= nil) then
+		currentArena["ended"] = false; -- Player is out of arena, next arena hasn't ended yet
+	elseif (not IsActiveBattlefieldArena() and eventType == "ZONE_CHANGED_NEW_AREA" and currentArena["endedProperly"] ~= true and currentArena["mapId"] ~= nil) then
 		AAmatch:quitsArena();
 		AAmatch:removeArenaEvents();
 	end
