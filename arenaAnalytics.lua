@@ -48,6 +48,7 @@ local currentArena = {
 	["wonByPlayer"] = nil,
 	["prevRating"] = nil,
 	["partyRatingDelta"] = "",
+	["enemyRatingDelta"] = "",
 	["timeStartInt"] = 0,
 	["comp"] = {},
 	["enemyComp"] = {},
@@ -55,13 +56,20 @@ local currentArena = {
 	["enemy"] = {},
 	["ended"] = false,
 	["gotAllArenaInfo"] = false,
-	["endedProperly"] = true,
+	["endedProperly"] = false,
 	["pendingSync"] = false;
 	["pedingSyncData"] = nil,
 	["firstDeath"] = nil
 }
 
 local specSpells = ArenaAnalytics.arenaConstants.GetSpecSpells();
+
+-- Cached last rating per bracket ID
+ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {
+	[1] = 0,
+	[2] = 0,
+	[3] = 0,
+}
 
 -- Arena DB
 ArenaAnalyticsDB = ArenaAnalyticsDB  ~= nil and ArenaAnalyticsDB or {
@@ -71,7 +79,7 @@ ArenaAnalyticsDB = ArenaAnalyticsDB  ~= nil and ArenaAnalyticsDB or {
 };
 
 -- Reset current arena values
-function AAmatch:resetLastArenaValues()
+function AAmatch:resetCurrentArenaValues()
 	currentArena["mapName"] = "";
 	currentArena["mapId"] = nil;
 	currentArena["playerName"] = "";
@@ -152,13 +160,7 @@ function AAmatch:insertArenaOnTable()
 	end
 
 	-- Friendly name for currentArena["size"]
-	if currentArena["size"] == 2 then
-		currentArena["size"] = "2v2";
-	elseif currentArena["size"] == 3 then
-		currentArena["size"] = "3v3";
-	else
-		currentArena["size"] = "5v5";
-	end;
+	local friendlyBracketName = ArenaAnalyticsGetFriendlyBracketName(currentArena["size"]);
 
 	-- Place player first in the arena party group, sort rest 
 	table.sort(currentArena["party"], function(a, b)
@@ -211,7 +213,7 @@ function AAmatch:insertArenaOnTable()
 		["map"] = currentArena["mapName"], 
 		["duration"] = currentArena["duration"], 
 		["team"] = currentArena["party"],
-		["rating"] = currentArena["prevRating"], 
+		["rating"] = currentArena["partyRating"], 
 		["ratingDelta"] = currentArena["partyRatingDelta"],
 		["mmr"] = currentArena["partyMMR"], 
 		["enemyTeam"] = currentArena["enemy"], 
@@ -227,7 +229,7 @@ function AAmatch:insertArenaOnTable()
 	}
 
 	-- Insert arena data as a new ArenaAnalyticsDB row
-	table.insert(ArenaAnalyticsDB[currentArena["size"]], arenaData);
+	table.insert(ArenaAnalyticsDB[friendlyBracketName], arenaData);
 	
 	if (currentArena["pendingSync"]) then
 		AAmatch:handleSync(currentArena["pendingSyncData"])
@@ -244,10 +246,10 @@ function AAmatch:insertArenaOnTable()
 end
 
 function AAmatch:resetAndRefresh(removeEvent, event)
-	if(removeEvent) then
+	if(removeEvent and event ~= nil) then
 		event:SetScript("OnEvent", nil);
 	end
-	AAmatch:resetLastArenaValues();
+	AAmatch:resetCurrentArenaValues();
 end
 
 -- Returns bool for input group containing a character (by name) in it
@@ -394,11 +396,11 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 end
 
 -- Player quitted the arena before it ended
--- Triggers AAmatch:insertArenaOnTable with the available info
+-- Triggers AAmatch:insertArenaOnTable with the available info (@NOTE: Commented out, moved to handleArenaExited!)
 function AAmatch:quitsArena(self, ...)
 	currentArena["ended"] = true;
 	currentArena["wonByPlayer"] = false;	
-	AAmatch:insertArenaOnTable();
+	-- AAmatch:insertArenaOnTable();
 end
 
 -- Returns the player's spec
@@ -523,7 +525,7 @@ end
 
 -- Gets arena information when it ends and the scoreboard is shown
 -- Matches obtained info with previously collected player values
--- Triggers AAmatch:insertArenaOnTable with (hopefully) all the information
+-- Triggers AAmatch:insertArenaOnTable with (hopefully) all the information (@NOTE: Commented out, moved to handleArenaExited!)
 function AAmatch:handleArenaEnd()
 	currentArena["endedProperly"] = true;
 	currentArena["ended"] = true;
@@ -594,6 +596,22 @@ function AAmatch:handleArenaEnd()
 			currentArena["enemyRatingDelta"] = team1RatingDif;
 		end
 	end
+
+	-- AAmatch:insertArenaOnTable();
+end
+
+function AAmatch:handleArenaExited(bracketID)
+	local newRating = GetPersonalRatedInfo(bracketID);
+	local oldRating = ArenaAnalyticsCachedBracketRatings[bracketID];
+	local deltaRating = newRating - oldRating;
+
+	currentArena["partyRating"] = newRating;
+	currentArena["partyRatingDelta"] = deltaRating;
+
+	-- Update all the cached bracket ratings
+	ArenaAnalyticsCachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
+	ArenaAnalyticsCachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
+	ArenaAnalyticsCachedBracketRatings[3] = GetPersonalRatedInfo(3); -- 5v5
 
 	AAmatch:insertArenaOnTable();
 end
@@ -822,9 +840,24 @@ local function handleEvents(prefix, eventType, ...)
 		end
 	elseif (eventType == "UPDATE_BATTLEFIELD_STATUS") then
 		currentArena["ended"] = false; -- Player is out of arena, next arena hasn't ended yet
-	elseif (not IsActiveBattlefieldArena() and eventType == "ZONE_CHANGED_NEW_AREA" and currentArena["endedProperly"] ~= true and currentArena["mapId"] ~= nil) then
-		AAmatch:quitsArena();
-		AAmatch:removeArenaEvents();
+	elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
+		if(currentArena["mapId"] ~= nil) then
+			if(currentArena["endedProperly"] == false) then
+				AAmatch:quitsArena();
+				AAmatch:removeArenaEvents();
+			end
+
+			local bracketId;
+			if (currentArena["size"] == 2) then
+				bracketId = 1
+			elseif (currentArena["size"] == 3) then 
+				bracketId = 2
+			else
+				bracketId = 3
+			end
+
+			AAmatch:handleArenaExited(bracketId);
+		end
 	end
 	if (eventType == "CHAT_MSG_ADDON" and ... == "ArenaAnalytics") then
 		AAmatch:handleSync(...)

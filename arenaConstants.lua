@@ -380,3 +380,7 @@ function ArenaAnalyticsGetSpecIcon(spec, class)
 	end
 	return specString;
 end
+
+function ArenaAnalyticsGetFriendlyBracketName(teamSize)
+    return teamSize .. "v" .. teamSize;
+end

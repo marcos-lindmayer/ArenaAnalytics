@@ -1365,32 +1365,6 @@ function AAtable:getDBMatchByDateInt(dateInt)
     return DBmatch, bracket
 end
 
--- Fix rating gains for a specific game
-function AAtable:fixRatingGains(tableMatch)
-    local DBmatch, bracket = AAtable:getDBMatchByDateInt(tableMatch["dateInt"])
-    local teamId
-    if (string.find(bracket, "2")) then
-        teamId = 1
-    elseif (string.find(bracket, "3")) then 
-        teamId = 2
-    else
-        teamId = 3
-    end
-    local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(teamId)
-    if (personalRating ~= DBmatch["rating"]) then
-        if (DBmatch["won"] == true) then
-            DBmatch["ratingDelta"] = personalRating - DBmatch["rating"]
-        else
-            DBmatch["ratingDelta"] = DBmatch["rating"] - personalRating
-        end
-        DBmatch["rating"] = personalRating
-        tableMatch["rating"] = DBmatch["rating"]
-        tableMatch["ratingDelta"] =  DBmatch["ratingDelta"]
-    end
-    DBmatch["check"] = true;
-    tableMatch["check"] = true;
-end
-
 -- Returns array of last game played
 function AAtable:getLastGame()
     local lastGame2v2 = ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] and ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] or nil
@@ -1447,10 +1421,6 @@ function AAtable:RefreshLayout(filter)
 
     local lastGame = AAtable:getLastGame()
     
-    if (lastGame and lastGame["check"] == false and lastGame["isRanked"] == true and not IsActiveBattlefieldArena()) then
-        AAtable:fixRatingGains(lastGame);
-    end
-
     if (filter or filteredDB == nil or newArenaPlayed) then
         filteredDB = applyFilters(ArenaAnalyticsDB)
     end
@@ -1494,12 +1464,11 @@ function AAtable:RefreshLayout(filter)
                     button.Rating:SetText("|cff00cc66" .. match["rating"] .. delta .. "|r");
                 end
             else
-                local delta = (match["ratingDelta"] and match["ratingDelta"] ~= "") and " (-" .. match["ratingDelta"] .. ")" or ""
+                local delta = (match["ratingDelta"] and match["ratingDelta"] ~= "") and " (" .. match["ratingDelta"] .. ")" or ""
                 enemyDelta = (match["enemyRatingDelta"] and match["enemyRatingDelta"] ~= "") and " (+" .. match["enemyRatingDelta"] .. ")" or ""
                 if (match["rating"]) then
                     button.Rating:SetText("|cffff0000" .. match["rating"] .. delta .."|r");
-                end
-                
+                end                
             end
 
             button.MMR:SetText(match["mmr"] or "");
