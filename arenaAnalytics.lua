@@ -481,7 +481,6 @@ function AAmatch:trackArena(...)
 	if(ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
 		local bracketId = ArenaAnalyticsBracketIdFromTeamSize(teamSize);
 		ArenaAnalyticsCachedBracketRatings[bracketId] = AAmatch:getLastRating(teamSize);
-		ArenaAnalytics.Print("Refreshed missing cached bracket rating for teamSize: " .. teamSize .. " (bracketId: " .. bracketId .. ")");
 	end
 
 	if (#currentArena["party"] == 0) then
