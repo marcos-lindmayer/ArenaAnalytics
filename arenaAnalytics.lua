@@ -33,6 +33,7 @@ local eventTracker = {
 
 -- Arena variables
 local currentArena = {
+	["battlefieldId"] = nil,
 	["mapName"] = "", 
 	["mapId"] = nil, 
 	["playerName"] = "",
@@ -62,24 +63,9 @@ local currentArena = {
 	["firstDeath"] = nil
 }
 
-local specSpells = ArenaAnalytics.arenaConstants.GetSpecSpells();
-
--- Cached last rating per bracket ID
-ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {
-	[1] = 0,
-	[2] = 0,
-	[3] = 0,
-}
-
--- Arena DB
-ArenaAnalyticsDB = ArenaAnalyticsDB  ~= nil and ArenaAnalyticsDB or {
-	["2v2"] = {},
-	["3v3"] = {},
-	["5v5"] = {},
-};
-
 -- Reset current arena values
 function AAmatch:resetCurrentArenaValues()
+	currentArena["battlefieldId"] = nil;
 	currentArena["mapName"] = "";
 	currentArena["mapId"] = nil;
 	currentArena["playerName"] = "";
@@ -104,6 +90,35 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["pedingSyncData"] = nil;
 	currentArena["prevRating"] = nil;
 	currentArena["firstDeath"] = nil
+end
+
+local specSpells = ArenaAnalytics.arenaConstants.GetSpecSpells();
+
+-- Arena DB
+ArenaAnalyticsDB = ArenaAnalyticsDB  ~= nil and ArenaAnalyticsDB or {
+	["2v2"] = {},
+	["3v3"] = {},
+	["5v5"] = {},
+};
+
+-- Cached last rating per bracket ID
+ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {
+	[1] = nil,
+	[2] = nil,
+	[3] = nil,
+}
+
+-- Updates the cached bracket rating for each bracket
+function AAmatch:updateCachedBracketRatings()
+	if(IsActiveBattlefieldArena()) then
+		ArenaAnalyticsCachedBracketRatings[1] = AAmatch:getLastRating(2); -- 2v2
+		ArenaAnalyticsCachedBracketRatings[2] = AAmatch:getLastRating(3); -- 3v3
+		ArenaAnalyticsCachedBracketRatings[3] = AAmatch:getLastRating(4); -- 5v5
+	else
+		ArenaAnalyticsCachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
+		ArenaAnalyticsCachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
+		ArenaAnalyticsCachedBracketRatings[3] = GetPersonalRatedInfo(3); -- 5v5
+	end
 end
 
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
@@ -348,10 +363,18 @@ end
 -- been collected. Attempts to get initial data on arena players:
 -- GUID, name, race, class, spec
 function AAmatch:getAllAvailableInfo(eventType, ...)
-
 	-- Start tracking time again in case of disconnect
 	if (currentArena["timeStartInt"] == 0) then
 		currentArena["timeStartInt"] = time();
+	end
+
+	if (currentArena["size"] == nil) then
+		if (IsActiveBattlefieldArena() and currentArena["battlefieldId"] ~= nil) then
+			local _, _, _, _, _, teamSize = GetBattlefieldStatus(currentArena["battlefieldId"]);
+			currentArena["size"] = teamSize;
+		else
+			return false;
+		end
 	end
 
 	-- Tracking teams for spec/race and in case arena is quitted
@@ -444,10 +467,9 @@ end
 -- Gets arena player, size, map, ranked/skirmish
 function AAmatch:trackArena(...)
 	currentArena["endedProperly"] = false;
-	local i = ...;
-	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize,
-	isRankedArena, suspendedQueue, bool, queueType = GetBattlefieldStatus(i);
-
+	currentArena["battlefieldId"] = ...;
+	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRankedArena, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena["battlefieldId"]);
+	
 	if status ~= "active" then
 		return false
 	end
@@ -455,22 +477,11 @@ function AAmatch:trackArena(...)
 	currentArena["playerName"] = UnitName("player");
 	currentArena["isRanked"] = isRankedArena;
 	currentArena["size"] = teamSize;
-	currentArena["prevRating"] = isRankedArena and AAmatch:getLastRating(teamSize) or nil;
-	if (currentArena["isRanked"]) then
-		local arenaTeamId;
-		if (currentArena["size"] == 2) then
-			arenaTeamId = 1;
-		elseif (currentArena["size"] == 3) then
-			arenaTeamId = 2;
-		else
-			arenaTeamId = 3;
-		end
-		local personalRating, _, _, _, _, _, _, _, _, _, _ = GetPersonalRatedInfo(arenaTeamId)
-		if (currentArena["prevRating"] == nil) then
-			currentArena["prevRating"] = personalRating
-			
-			print("prev rating PRE: " .. currentArena["prevRating"])
-		end
+	
+	if(ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
+		local bracketId = ArenaAnalyticsBracketIdFromTeamSize(teamSize);
+		ArenaAnalyticsCachedBracketRatings[bracketId] = AAmatch:getLastRating(teamSize);
+		ArenaAnalytics.Print("Refreshed missing cached bracket rating for teamSize: " .. teamSize .. " (bracketId: " .. bracketId .. ")");
 	end
 
 	if (#currentArena["party"] == 0) then
@@ -600,20 +611,37 @@ function AAmatch:handleArenaEnd()
 	-- AAmatch:insertArenaOnTable();
 end
 
-function AAmatch:handleArenaExited(bracketID)
-	local newRating = GetPersonalRatedInfo(bracketID);
-	local oldRating = ArenaAnalyticsCachedBracketRatings[bracketID];
-	local deltaRating = newRating - oldRating;
+function AAmatch:handleArenaExited()
+	if (currentArena["mapId"] == nil or currentArena["size"] == nil) then
+		return false;	
+	end
 
-	currentArena["partyRating"] = newRating;
-	currentArena["partyRatingDelta"] = deltaRating;
+	local bracketId;
+	if (currentArena["size"] == 2) then
+		bracketId = 1
+	elseif (currentArena["size"] == 3) then
+		bracketId = 2
+	else
+		bracketId = 3
+	end
+
+	if(currentArena["isRanked"] == true) then
+		local newRating = GetPersonalRatedInfo(bracketId);
+		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
+		local deltaRating = newRating - oldRating;
+
+		currentArena["partyRating"] = newRating;
+		currentArena["partyRatingDelta"] = deltaRating;
+	else
+		currentArena["partyRating"] = "SKIRMISH";
+		currentArena["partyRatingDelta"] = "";
+	end
 
 	-- Update all the cached bracket ratings
-	ArenaAnalyticsCachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
-	ArenaAnalyticsCachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
-	ArenaAnalyticsCachedBracketRatings[3] = GetPersonalRatedInfo(3); -- 5v5
+	AAmatch:updateCachedBracketRatings();
 
 	AAmatch:insertArenaOnTable();
+	return true;
 end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
@@ -835,7 +863,7 @@ local function handleEvents(prefix, eventType, ...)
 				AAmatch:trackArena(...);
 			end
 			if (not eventTracker["ArenaEventsAdded"]) then
-				AAmatch:addArenaEvents()
+				AAmatch:addArenaEvents();
 			end
 		end
 	elseif (eventType == "UPDATE_BATTLEFIELD_STATUS") then
@@ -847,16 +875,7 @@ local function handleEvents(prefix, eventType, ...)
 				AAmatch:removeArenaEvents();
 			end
 
-			local bracketId;
-			if (currentArena["size"] == 2) then
-				bracketId = 1
-			elseif (currentArena["size"] == 3) then 
-				bracketId = 2
-			else
-				bracketId = 3
-			end
-
-			AAmatch:handleArenaExited(bracketId);
+			AAmatch:handleArenaExited();
 		end
 	end
 	if (eventType == "CHAT_MSG_ADDON" and ... == "ArenaAnalytics") then

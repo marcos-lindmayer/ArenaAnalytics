@@ -174,15 +174,7 @@ function ArenaAnalytics:init(event, name, ...)
 		messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, "PARTY")
 	end
 	
-	if(IsActiveBattlefieldArena()) then
-		ArenaAnalyticsCachedBracketRatings[1] = AAmatch:getLastRating(2); -- 2v2
-		ArenaAnalyticsCachedBracketRatings[2] = AAmatch:getLastRating(3); -- 3v3
-		ArenaAnalyticsCachedBracketRatings[3] = AAmatch:getLastRating(4); -- 5v5
-	else
-		ArenaAnalyticsCachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
-		ArenaAnalyticsCachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
-		ArenaAnalyticsCachedBracketRatings[3] = GetPersonalRatedInfo(3); -- 5v5
-	end
+	ArenaAnalytics.AAmatch.updateCachedBracketRatings();
 end
 
 function ArenaAnalyticsSettingsFrame()

@@ -384,3 +384,21 @@ end
 function ArenaAnalyticsGetFriendlyBracketName(teamSize)
     return teamSize .. "v" .. teamSize;
 end
+
+function ArenaAnalyticsBracketIdFromTeamSize(teamSize)
+    if(teamSize == 2) then
+        return 1;
+    elseif(teamSize == 3) then
+        return 2;
+    end    
+    return 3;
+end
+
+function ArenaAnalyticsTeamSizeFromBracketId(bracketId)
+    if(bracketId == 1) then
+        return 2;
+    elseif(teamSize == 2) then
+        return 3;
+    end    
+    return 5;
+end
