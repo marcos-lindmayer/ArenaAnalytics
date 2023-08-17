@@ -140,6 +140,7 @@ local function getCompTotalGames(comp, isEnemyComp, games) --asd
     end
     return arenasWithCompTotal
 end
+
 -- Hides spec's icon on bottom-right class' icon and death highlight
 local function hideSpecIconsAndDeathBg()
     for specIconNumber = 1, #ArenaAnalyticsScrollFrame.specFrames do
@@ -150,7 +151,7 @@ local function hideSpecIconsAndDeathBg()
         end
     end
     for deathIconNumber = 1, #ArenaAnalyticsScrollFrame.deathFrames do
-        if (not ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][2]:GetAttribute("clicked") and ArenaAnalyticsSettings["allwaysShowDeathBg"] == false) then
+        if (not ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][2]:GetAttribute("clicked") and ArenaAnalyticsSettings["alwaysShowDeathBg"] == false) then
             ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][1]:Hide()
         else
             ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][1]:Show()
@@ -291,12 +292,8 @@ end
 
 function AAtable:updateEnemyFilterByCompFilter(selectedFilter, filterName) 
     local bracket
-    local filter
-    if (selectedFilter == "All") then
-        filter = nil
-    else    
-        filter = selectedFilter
-    end
+    local filter = (selectedFilter ~= "All") and selectedFilter or nil;
+
     if (string.find(filterName, "2v2")) then
         bracket = "2v2"
     elseif (string.find(filterName, "3v3")) then
@@ -384,7 +381,7 @@ local function createDropdownButton(info, dropdownTable, filter, dropdown_width)
     end
     button:SetAttribute("value", info.text);
     button:SetAttribute("dropdownTable", dropdownTable);
-    button:SetScript("OnClick", function (args)changeFilter(args)end);
+    button:SetScript("OnClick", function(args) changeFilter(args) end);
     return button;
 end
 
@@ -625,6 +622,7 @@ function AAtable:getPlayerPlayedCompsAndGames(bracket, filterEnemyComp)
     end
     return {playedComps, games};
 end
+
 -- Returns array with all unique enemy played comps based on bracket
 -- param received. Ignores incomplete comps. Removes outliers (settings param)
 function AAtable:getEnemyPlayedCompsAndGames(bracket, filterComp)
@@ -983,7 +981,7 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                 teamIconsFrames[teamIconIndex].death.texture:SetPoint("CENTER")
                 teamIconsFrames[teamIconIndex].death.texture:SetSize(26,26)
                 teamIconsFrames[teamIconIndex].death.texture:SetColorTexture(1, 0, 0, 0.2);
-                if (ArenaAnalyticsSettings["allwaysShowDeathBg"] == false) then
+                if (ArenaAnalyticsSettings["alwaysShowDeathBg"] == false) then
                     teamIconsFrames[teamIconIndex].death:Hide();
                 end
                 table.insert(ArenaAnalyticsScrollFrame.deathFrames, {teamIconsFrames[teamIconIndex].death, button})  
@@ -1256,7 +1254,7 @@ function AAtable:ToggleSpecsAndDeathBg(match, visible)
                 matchData[i].death:Hide();
             end
         end
-        if (matchData[i].death and ArenaAnalyticsSettings["allwaysShowDeathBg"]) then
+        if (matchData[i].death and ArenaAnalyticsSettings["alwaysShowDeathBg"]) then
             matchData[i].death:Show();
         end
     end

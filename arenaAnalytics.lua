@@ -1,4 +1,4 @@
-local _, ArenaAnalytics = ...;
+local _, ArenaAnalytics = ...; -- Namespace
 ArenaAnalytics.AAmatch = {};
 
 local AAmatch = ArenaAnalytics.AAmatch;
@@ -8,7 +8,7 @@ ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
 	["outliers"] = 0,
 	["seasonIsChecked"] = false,
 	["skirmishIshChecked"] = false,
-	["allwaysShowDeathBg"] = false
+	["alwaysShowDeathBg"] = false
 }; 
 
 ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {
@@ -59,7 +59,7 @@ local currentArena = {
 	["gotAllArenaInfo"] = false,
 	["endedProperly"] = false,
 	["pendingSync"] = false;
-	["pedingSyncData"] = nil,
+	["pendingSyncData"] = nil,
 	["firstDeath"] = nil
 }
 
@@ -87,12 +87,12 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["partyRatingDelta"] = "";
 	currentArena["enemyRatingDelta"] = "";
 	currentArena["pendingSync"] = false;
-	currentArena["pedingSyncData"] = nil;
+	currentArena["pendingSyncData"] = nil;
 	currentArena["prevRating"] = nil;
 	currentArena["firstDeath"] = nil
 end
 
-local specSpells = ArenaAnalytics.arenaConstants.GetSpecSpells();
+local specSpells = ArenaAnalytics.Constants.GetSpecSpells();
 
 -- Arena DB
 ArenaAnalyticsDB = ArenaAnalyticsDB  ~= nil and ArenaAnalyticsDB or {
@@ -166,7 +166,7 @@ function AAmatch:insertArenaOnTable()
 		currentArena["duration"] = minutes .. seconds .. "sec";
 	end
 
-		-- Set data for skirmish
+	-- Set data for skirmish
 	if (currentArena["isRanked"] == false) then
 		currentArena["partyRating"] = "SKIRMISH";
 		currentArena["enemyRating"] = "SKIRMISH";
@@ -175,7 +175,7 @@ function AAmatch:insertArenaOnTable()
 	end
 
 	-- Friendly name for currentArena["size"]
-	local friendlyBracketName = ArenaAnalyticsGetFriendlyBracketName(currentArena["size"]);
+	local bracket = ArenaAnalytics.Constants.GetBracketFromTeamSize(currentArena["size"]);
 
 	-- Place player first in the arena party group, sort rest 
 	table.sort(currentArena["party"], function(a, b)
@@ -195,27 +195,23 @@ function AAmatch:insertArenaOnTable()
 
 	if (currentArena["gotAllArenaInfo"] == false) then 
 		-- print("Missing specs. Requesting data")
-		for i = 1, #currentArena["party"] do
-			if (#currentArena["party"][i]["spec"]<3) then
-				local messageSuccess
-				if (IsInInstance()) then
-					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["party"][i]["name"], "INSTANCE_CHAT")
-				elseif (IsInGroup(1)) then
-					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["party"][i]["name"], "PARTY")
+		if(IsInInstance() or IsInGroup(1)) then
+			local messageChannel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
+
+			-- Request party specs
+			for i = 1, #currentArena["party"] do
+				if (#currentArena["party"][i]["spec"]<3) then
+					local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["party"][i]["name"], messageChannel)
+				end
+			end
+
+			-- Request enemy specs
+			for j = 1, #currentArena["enemy"] do
+				if (#currentArena["enemy"][j]["spec"]<3) then
+					local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["enemy"][j]["name"], messageChannel)
 				end
 			end
 		end
-		for j = 1, #currentArena["enemy"] do
-			if (#currentArena["enemy"][j]["spec"]<3) then
-				local messageSuccess
-				if (IsInInstance()) then
-					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["enemy"][j]["name"], "INSTANCE_CHAT")
-				elseif (IsInGroup(1)) then
-					messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_request|spec#" .. currentArena["enemy"][j]["name"], "PARTY")
-				end
-			end
-		end
-		
 	end
 
 	-- Get arena comp for each team
@@ -226,6 +222,7 @@ function AAmatch:insertArenaOnTable()
 	local arenaData = {
 		["dateInt"] = currentArena["timeStartInt"],
 		["map"] = currentArena["mapName"], 
+		["bracket"] = ArenaAnalytics.Constants:GetBracketFromTeamSize(currentArena["size"]),
 		["duration"] = currentArena["duration"], 
 		["team"] = currentArena["party"],
 		["rating"] = currentArena["partyRating"], 
@@ -244,7 +241,7 @@ function AAmatch:insertArenaOnTable()
 	}
 
 	-- Insert arena data as a new ArenaAnalyticsDB row
-	table.insert(ArenaAnalyticsDB[friendlyBracketName], arenaData);
+	table.insert(ArenaAnalyticsDB[bracket], arenaData);
 	
 	if (currentArena["pendingSync"]) then
 		AAmatch:handleSync(currentArena["pendingSyncData"])
@@ -287,9 +284,8 @@ function AAmatch:fillGroupsByUnitReference(unit, unitSpec, unitGuid)
 	}
 	for j = 1, currentArena["size"] do
 		j = unit == "party" and  (j - 1) or j;
-		local playerExists = UnitName(unit .. j) ~= nil;
-		if (playerExists) then
-			local name, realm = UnitName(unit .. j);
+		local name, realm = UnitName(unit .. j);
+		if (name ~= nil) then
 			if ( realm == nil or string.len(realm) < 4) then
 				realm = "";
 			else
@@ -479,8 +475,11 @@ function AAmatch:trackArena(...)
 	currentArena["size"] = teamSize;
 	
 	if(ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
+		local rating = GetInspectArenaData(bracketId);
+		ArenaAnalytics:Print("DEBUG: GetInspectArenaData(" .. bracketId .. ") returned rating: " .. rating .. " inside the arena.");
+
 		local bracketId = ArenaAnalyticsBracketIdFromTeamSize(teamSize);
-		ArenaAnalyticsCachedBracketRatings[bracketId] = AAmatch:getLastRating(teamSize);
+		ArenaAnalyticsCachedBracketRatings[bracketId] = rating; -- AAmatch:getLastRating(teamSize);
 	end
 
 	if (#currentArena["party"] == 0) then
@@ -645,7 +644,7 @@ end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
 function AAmatch:hasArenaStarted(msg)
-	local locale = ArenaAnalytics.arenaConstants.GetArenaTimer()
+	local locale = ArenaAnalytics.Constants.GetArenaTimer()
     for k,v in pairs(locale) do
         if string.find(msg, v) then
             if (k == 0 and currentArena["timeStartInt"] == 0) then
@@ -659,7 +658,16 @@ end
 function AAmatch:handleSync(...)
 	local _, msg = ...
 
-	if (not string.find(msg, "|") or not string.find(msg, "_") or not string.find(msg, "%#")) then return end
+	if(msg == nil) then
+		ArenaAnalytics:Print("handleSync called with nil message.");
+		return;
+	end
+
+	-- Exit out if expected symbols for sync message format is missing
+	if (not string.find(msg, "|") or not string.find(msg, "_") or not string.find(msg, "%#")) then 
+		return;
+	end
+
 	local indexOfSeparator, _ = string.find(msg, "_")
 	local  sender = msg:sub(1, indexOfSeparator - 1);
 	-- Only read if you're not the sender
@@ -718,7 +726,7 @@ function AAmatch:handleSync(...)
 							end
 						end
 						if (lastGame["enemyTeam"]) then 
-						for j = 1, #lastGame["enemyTeam"] do
+							for j = 1, #lastGame["enemyTeam"] do
 								if (lastGame["enemyTeam"][j]["name"] == dataValue and #lastGame["enemyTeam"][j]["spec"] > 2) then
 									foundSpec = true;
 									spec = lastGame["enemyTeam"][j]["spec"];
@@ -730,11 +738,9 @@ function AAmatch:handleSync(...)
 				end
 				
 				if (foundSpec) then
-					local messageSuccess
-					if (IsInInstance()) then
-						messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|spec#" .. sender .. "?" .. dataValue .. "=" .. spec, "INSTANCE_CHAT")
-					elseif (IsInGroup(1)) then
-						messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|spec#" .. sender .. "?" .. dataValue .. "=" .. spec, "PARTY")
+					if (IsInInstance() or IsInGroup(1)) then
+						local messageChannel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
+						local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|spec#" .. sender .. "?" .. dataValue .. "=" .. spec, messageChannel);
 					end
 				end
 			elseif (dataType == "enemyRateMMR") then
@@ -791,7 +797,7 @@ function AAmatch:handleSync(...)
 					end
 				else
 					currentArena["pendingSync"] = true;
-					currentArena["pedingSyncData"] = ...;
+					currentArena["pendingSyncData"] = ...;
 					print("data got requested to me, storing and sending when arena is over for me")
 				end
 				
@@ -877,10 +883,10 @@ local function handleEvents(prefix, eventType, ...)
 			AAmatch:handleArenaExited();
 		end
 	end
-	if (eventType == "CHAT_MSG_ADDON" and ... == "ArenaAnalytics") then
-		AAmatch:handleSync(...)
-	end
 
+	if (eventType == "CHAT_MSG_ADDON" and ... == "ArenaAnalytics") then
+		AAmatch:handleSync(...);
+	end
 end
 
 -- Creates "global" events

@@ -3,8 +3,8 @@
 ]]
 
 local _, core = ...; -- Namespace
-local arenaConstants = {}
-core.arenaConstants = arenaConstants;
+local Constants = {}
+core.Constants = Constants;
 
 local specSpells = {
     -- DRUID
@@ -19,6 +19,7 @@ local specSpells = {
     [ 49376 ] = "Feral", -- Feral Charge: Cat
     [ 16979 ] = "Feral", -- Feral Charge: Bear
     [ 24907 ] = "Balance", -- Moonkin Aura
+    [ 48505 ] = "Balance", -- Starfall
     [ 33891 ] = "Restoration", -- Tree of Life
 
     -- HUNTER
@@ -35,14 +36,17 @@ local specSpells = {
 
     -- MAGE
     [ 12042 ] = "Arcane", -- Arcane Power
-    [ 42950 ] = "Fire", -- Dragon's Breath
-    [ 33933 ] = "Fire", -- Blast Wave
+    [ 12043 ] = "Arcane", -- Presence of Mind
+    [ 44425 ] = "Arcane", -- Arcane Barrage
+    [ 31589 ] = "Arcane", -- Slow
     [ 33405 ] = "Frost", -- Ice Barrier
     [ 31687 ] = "Frost", -- Summon Water Elemental
     [ 12472 ] = "Frost", -- Icy Veins
     [ 11958 ] = "Frost", -- Cold Snap
+    [ 44572 ] = "Frost", -- Deep Freeze
+    [ 42950 ] = "Fire", -- Dragon's Breath
+    [ 33933 ] = "Fire", -- Blast Wave
     [ 11129 ] = "Fire", -- Combustion
-    [ 12043 ] = "Arcane", -- Presence of Mind
     [ 55360 ] = "Fire", -- Living Bomb
     [ 31642 ] = "Fire", -- Blazing Speed
 
@@ -53,27 +57,32 @@ local specSpells = {
     [ 53654 ] = "Holy", -- Beacon of Light
     [ 20216 ] = "Holy", -- Divine Favor
     [ 31842 ] = "Holy", -- Divine Illumination
-    [ 32700 ] = "Protection", -- Avenger's Shield
+    [ 31836 ] = "Holy", -- Light's Grace
     [ 27170 ] = "Retribution", -- Seal of Command
     [ 35395 ] = "Retribution", -- Crusader Strike
     [ 20066 ] = "Retribution", -- Repentance
     [ 20218 ] = "Retribution", -- Sanctity Aura
-    [ 31836 ] = "Holy", -- Light's Grace
     [ 20375 ] = "Retribution", -- Seal of Command
     [ 20049 ] = "Retribution", -- Vengeance
     [ 20178 ] = "Protection", -- Reckoning 
+    [ 32700 ] = "Protection", -- Avenger's Shield
 
     -- PRIEST
     [ 10060 ] = "Discipline", -- Power Infusion
     [ 33206 ] = "Discipline", -- Pain Suppression
     [ 14752 ] = "Discipline", -- Divine Spirit
     [ 33143 ] = "Holy", -- Blessed Resilience
+    [ 20711 ] = "Holy", -- Spirit of Redemption
+    [ 724 ] = "Holy", -- Lightwell
     [ 34861 ] = "Holy", -- Circle of Healing
+    [ 47788 ] = "Holy", -- Guardian Spirit
+    [ 33142 ] = "Holy", -- Blessed Resilience
     [ 15473 ] = "Shadow", -- Shadowform
     [ 34917 ] = "Shadow", -- Vampiric Touch
+    [ 64044 ] = "Shadow", -- Psychic Horror
+    [ 47585 ] = "Shadow", -- Dispersion
     [ 45234 ] = "Discipline", -- Focused Will
     [ 27811 ] = "Discipline", -- Blessed Recovery
-    [ 33142 ] = "Holy", -- Blessed Resilience
     [ 14752 ] = "Discipline", -- Divine Spirit
     [ 27681 ] = "Discipline", -- Prayer of Spirit
     [ 14893 ] = "Discipline", -- Inspiration
@@ -83,18 +92,21 @@ local specSpells = {
     -- ROGUE
     [ 14177 ] = "Assassination", -- Cold Blood
     [ 13750 ] = "Combat", -- Adrenaline Rush
+    [ 51690 ] = "Combat", -- Killing Spree
     [ 14185 ] = "Subtlety", -- Preparation
     [ 16511 ] = "Subtlety", -- Hemorrhage
-    [ 36554 ] = "Subtlety", -- Shadowstep
     [ 14278 ] = "Subtlety", -- Ghostly Strike
     [ 14183 ] = "Subtlety", -- Premeditation
+    [ 36554 ] = "Subtlety", -- Shadowstep
     [ 44373 ] = "Subtlety", -- Shadowstep Speed
     [ 36563 ] = "Subtlety", -- Shadowstep DMG
     [ 14278 ] = "Subtlety", -- Ghostly Strike
     [ 31665 ] = "Subtlety", -- Master of Subtlety
+    [ 51713 ] = "Subtlety", -- Shadow Dance
     [ 31233 ] = "Assassination", -- Find Weakness
     [ 48666 ] = "Assassination", -- Mutilate
     [ 57993 ] = "Assassination", -- Envenom
+    [ 51662 ] = "Assassination", -- Hunger For Blood
 
     -- SHAMAN
     [ 16166 ] = "Elemental", -- Elemental Mastery
@@ -143,7 +155,7 @@ local specSpells = {
     [ 55262 ] = "Blood", -- Heart Strike
     [ 49028 ] = "Blood", -- Dancing Rune Weapon
 }
-function arenaConstants:GetSpecSpells()
+function Constants:GetSpecSpells()
     return specSpells
 end
 
@@ -213,7 +225,7 @@ local racials = {
         texture = select(3, GetSpellInfo(20594))
     },
 }
-function arenaConstants:Racials()
+function Constants:Racials()
     return racials
 end
 local arenaTimer = {
@@ -277,7 +289,7 @@ local arenaTimer = {
 arenaTimer["esMX"] = arenaTimer["esES"]
 arenaTimer["ptPT"] = arenaTimer["ptBR"]
 
-function arenaConstants:GetArenaTimer()
+function Constants:GetArenaTimer()
     if arenaTimer[GetLocale()] then
         return arenaTimer[GetLocale()]
     else
@@ -381,11 +393,11 @@ function ArenaAnalyticsGetSpecIcon(spec, class)
 	return specString;
 end
 
-function ArenaAnalyticsGetFriendlyBracketName(teamSize)
+function Constants:GetBracketFromTeamSize(teamSize)
     return teamSize .. "v" .. teamSize;
 end
 
-function ArenaAnalyticsBracketIdFromTeamSize(teamSize)
+function Constants:BracketIdFromTeamSize(teamSize)
     if(teamSize == 2) then
         return 1;
     elseif(teamSize == 3) then
@@ -394,7 +406,7 @@ function ArenaAnalyticsBracketIdFromTeamSize(teamSize)
     return 3;
 end
 
-function ArenaAnalyticsTeamSizeFromBracketId(bracketId)
+function Constants:TeamSizeFromBracketId(bracketId)
     if(bracketId == 1) then
         return 2;
     elseif(teamSize == 2) then

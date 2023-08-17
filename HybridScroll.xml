@@ -239,7 +239,6 @@
                 </Scripts>
             </Button>
         </Frames>
-
     </Frame>
 
     <Frame name="ArenaAnalyticsScrollFrame" parent="UIParent" inherits="BasicFrameTemplate" mixin="HybridScrollMixin">

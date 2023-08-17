@@ -158,6 +158,7 @@ function ArenaAnalytics:init(event, name, ...)
 
 	ArenaAnalytics:Print("Testing version");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
+    ArenaAnalytics:Print("Current Season: " .. GetCurrentArenaSeason());
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 
 	ArenaAnalytics.AAmatch:EventRegister();
@@ -167,11 +168,9 @@ function ArenaAnalytics:init(event, name, ...)
 	
 	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 9999;
 	
-	local messageSuccess
-	if (IsInInstance()) then
-		messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, "INSTANCE_CHAT")
-	elseif (IsInGroup(1)) then
-		messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, "PARTY")
+	if(IsInInstance() or IsInGroup(1)) then
+		local channel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
+		local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, channel)
 	end
 	
 	ArenaAnalytics.AAmatch.updateCachedBracketRatings();
@@ -293,12 +292,12 @@ function ArenaAnalyticsSettingsFrame()
 
     ArenaAnalyticsScrollFrame.deathToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_deathToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -240);
-    ArenaAnalyticsScrollFrame_deathToggleText:SetText("Allways show red death bg on icon (else on mouse over only)");
-    ArenaAnalyticsScrollFrame.deathToggle:SetChecked(ArenaAnalyticsSettings["allwaysShowDeathBg"]);
+    ArenaAnalyticsScrollFrame_deathToggleText:SetText("Always show red death bg on icon (else on mouse over only)");
+    ArenaAnalyticsScrollFrame.deathToggle:SetChecked(ArenaAnalyticsSettings["alwaysShowDeathBg"]);
 
     ArenaAnalyticsScrollFrame.deathToggle:SetScript("OnClick", 
         function()
-            ArenaAnalyticsSettings["allwaysShowDeathBg"] = ArenaAnalyticsScrollFrame.deathToggle:GetChecked();
+            ArenaAnalyticsSettings["alwaysShowDeathBg"] = ArenaAnalyticsScrollFrame.deathToggle:GetChecked();
 			ArenaAnalytics.AAtable:RefreshLayout(true); 
         end
     );
