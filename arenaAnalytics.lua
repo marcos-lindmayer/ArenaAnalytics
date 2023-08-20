@@ -38,29 +38,28 @@ local currentArena = {
 	["mapId"] = nil, 
 	["playerName"] = "",
 	["duration"] = nil, 
+	["timeStartInt"] = 0,
 	["timeEnd"] = 0, 
-	["enemyMMR"] = nil,
-	["patyMMR"] = nil, 
 	["partyRating"] = nil,
+	["partyRatingDelta"] = "",
+	["partyMMR"] = nil, 
 	["enemyRating"] = nil,
+	["enemyRatingDelta"] = "",
+	["enemyMMR"] = nil,
 	["size"] = nil,
 	["isRanked"] = nil,
 	["playerTeam"] = nil,
-	["wonByPlayer"] = nil,
-	["prevRating"] = nil,
-	["partyRatingDelta"] = "",
-	["enemyRatingDelta"] = "",
-	["timeStartInt"] = 0,
 	["comp"] = {},
 	["enemyComp"] = {},
 	["party"] = {},
 	["enemy"] = {},
-	["ended"] = false,
 	["gotAllArenaInfo"] = false,
+	["ended"] = false,
 	["endedProperly"] = false,
-	["pendingSync"] = false;
-	["pendingSyncData"] = nil,
-	["firstDeath"] = nil
+	["wonByPlayer"] = nil,
+	["firstDeath"] = nil,
+	["pendingSync"] = false,
+	["pendingSyncData"] = nil
 }
 
 -- Reset current arena values
@@ -72,24 +71,26 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["duration"] = nil;
 	currentArena["timeStartInt"] = 0;
 	currentArena["timeEnd"] = 0;
-	currentArena["enemyMMR"] = nil;
+	currentArena["partyRating"] = nil;
+	currentArena["partyRatingDelta"] = "";
 	currentArena["partyMMR"] = nil;
 	currentArena["enemyRating"] = nil;
-	currentArena["partyRating"] = nil;
+	currentArena["enemyRatingDelta"] = "";
+	currentArena["enemyMMR"] = nil;
 	currentArena["size"] = nil;
-	currentArena["isRanked"] = nil
+	currentArena["isRanked"] = nil;
 	currentArena["playerTeam"] = nil;
-	currentArena["party"] = {};
-	currentArena["enemy"] = {};
 	currentArena["comp"] = {};
 	currentArena["enemyComp"] = {};
+	currentArena["party"] = {};
+	currentArena["enemy"] = {};
 	currentArena["gotAllArenaInfo"] = false;
-	currentArena["partyRatingDelta"] = "";
-	currentArena["enemyRatingDelta"] = "";
+	currentArena["ended"] = false;
+	currentArena["endedProperly"] = false;
+	currentArena["wonByPlayer"] = nil;
+	currentArena["firstDeath"] = nil;
 	currentArena["pendingSync"] = false;
 	currentArena["pendingSyncData"] = nil;
-	currentArena["prevRating"] = nil;
-	currentArena["firstDeath"] = nil
 end
 
 local specSpells = ArenaAnalytics.Constants.GetSpecSpells();
@@ -159,18 +160,20 @@ function AAmatch:insertArenaOnTable()
 		currentArena["duration"] = 0;
 	else
 		currentArena["timeEnd"] = time();
-		local durationMS = ((currentArena["timeEnd"] - currentArena["timeStartInt"]) * 1000);
-		durationMS = durationMS < 0 and 0 or durationMS;
-		local minutes = durationMS >= 60000 and (SecondsToTime(durationMS/1000, true) .. " ") or "";
-		local seconds = math.floor((durationMS % 60000) / 1000);
-		currentArena["duration"] = minutes .. seconds .. "sec";
+		local duration = (currentArena["timeEnd"] - currentArena["timeStartInt"]);
+		duration = duration < 0 and 0 or duration;
+		local minutes = duration >= 60 and (SecondsToTime(duration, true) .. " ") or "";
+		local seconds = math.floor(duration % 60);
+		currentArena["duration"] = minutes .. seconds .. " Sec";
 	end
 
 	-- Set data for skirmish
 	if (currentArena["isRanked"] == false) then
 		currentArena["partyRating"] = "SKIRMISH";
-		currentArena["enemyRating"] = "SKIRMISH";
 		currentArena["partyMMR"] = "-";
+		currentArena["partyRatingDelta"] = "";
+		currentArena["enemyRating"] = "SKIRMISH";
+		currentArena["enemyRatingDelta"] = "";
 		currentArena["enemyMMR"] = "-";
 	end
 
@@ -462,7 +465,8 @@ end
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
 function AAmatch:trackArena(...)
-	currentArena["endedProperly"] = false;
+	resetCurrentArenaValues();
+	
 	currentArena["battlefieldId"] = ...;
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRankedArena, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena["battlefieldId"]);
 	
