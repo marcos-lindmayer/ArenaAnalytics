@@ -161,19 +161,18 @@ function ArenaAnalytics:init(event, name, ...)
     ArenaAnalytics:Print("Current Season: " .. GetCurrentArenaSeason());
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 
+	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
+
 	ArenaAnalytics.AAmatch:EventRegister();
 	ArenaAnalytics.AAtable:OnLoad();
 	createMinimapButton();
-	
-	
+		
 	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 9999;
 	
 	if(IsInInstance() or IsInGroup(1)) then
 		local channel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
 		local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, channel)
 	end
-	
-	ArenaAnalytics.AAmatch.updateCachedBracketRatings();
 end
 
 function ArenaAnalyticsSettingsFrame()

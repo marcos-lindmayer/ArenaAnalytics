@@ -3,6 +3,14 @@ ArenaAnalytics.AAmatch = {};
 
 local AAmatch = ArenaAnalytics.AAmatch;
 
+-- Debug function to force a nil error if input is nil
+local skipDebugForceNilError = false;
+function ForceDebugNilError(value)
+	if(value == nil and not skipDebugForceNilError) then
+		local nilOperation = value + 666;
+	end
+end
+
 -- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
 	["outliers"] = 0,
@@ -177,9 +185,6 @@ function AAmatch:insertArenaOnTable()
 		currentArena["enemyMMR"] = "-";
 	end
 
-	-- Friendly name for currentArena["size"]
-	local bracket = ArenaAnalytics.Constants.GetBracketFromTeamSize(currentArena["size"]);
-
 	-- Place player first in the arena party group, sort rest 
 	table.sort(currentArena["party"], function(a, b)
 		local prioA = a["name"] == currentArena["playerName"] and 1 or 2
@@ -239,11 +244,11 @@ function AAmatch:insertArenaOnTable()
 		["enemyComp"] = currentArena["enemyComp"],
 		["won"] = currentArena["wonByPlayer"],
 		["isRanked"] = currentArena["isRanked"],
-		["firstDeath"] = currentArena["firstDeath"],
-		["check"] = false
+		["firstDeath"] = currentArena["firstDeath"]
 	}
 
 	-- Insert arena data as a new ArenaAnalyticsDB row
+	local bracket = arenaData["bracket"];
 	table.insert(ArenaAnalyticsDB[bracket], arenaData);
 	
 	if (currentArena["pendingSync"]) then
@@ -465,12 +470,12 @@ end
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
 function AAmatch:trackArena(...)
-	resetCurrentArenaValues();
+	AAmatch:resetCurrentArenaValues();
 	
 	currentArena["battlefieldId"] = ...;
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRankedArena, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena["battlefieldId"]);
 	
-	if status ~= "active" then
+	if (status ~= "active") then
 		return false
 	end
 
@@ -478,11 +483,11 @@ function AAmatch:trackArena(...)
 	currentArena["isRanked"] = isRankedArena;
 	currentArena["size"] = teamSize;
 	
+	local bracketId = ArenaAnalytics.Constants:BracketIdFromTeamSize(teamSize);
 	if(ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
 		local rating = GetInspectArenaData(bracketId);
 		ArenaAnalytics:Print("DEBUG: GetInspectArenaData(" .. bracketId .. ") returned rating: " .. rating .. " inside the arena.");
 
-		local bracketId = ArenaAnalyticsBracketIdFromTeamSize(teamSize);
 		ArenaAnalyticsCachedBracketRatings[bracketId] = rating; -- AAmatch:getLastRating(teamSize);
 	end
 
@@ -630,8 +635,13 @@ function AAmatch:handleArenaExited()
 	if(currentArena["isRanked"] == true) then
 		local newRating = GetPersonalRatedInfo(bracketId);
 		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
+		
+		if(oldRating == "SKIRMISH") then
+			ForceDebugNilError(nil);
+		end
+		
 		local deltaRating = newRating - oldRating;
-
+		
 		currentArena["partyRating"] = newRating;
 		currentArena["partyRatingDelta"] = deltaRating;
 	else

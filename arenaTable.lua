@@ -781,7 +781,6 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterMap = AAtable:createDropdown(filterMap_opts)
     ArenaAnalyticsScrollFrame.filterMap.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame, "RIGHT", 15, 0);
 
-    
 
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
     ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
@@ -1444,7 +1443,7 @@ function AAtable:RefreshLayout(filter)
             button.Duration:SetText(match["duration"] or "");
 
             button:SetScript("OnEnter", function (args)
-            AAtable:ToggleSpecsAndDeathBg(args, true)
+                AAtable:ToggleSpecsAndDeathBg(args, true)
             end)
             button:SetScript("OnLeave", function (args)
                 AAtable:ToggleSpecsAndDeathBg(args, false)
