@@ -612,7 +612,7 @@ function AAtable:getPlayerPlayedCompsAndGames(bracket, filterEnemyComp)
                                 end
                             end
                         end
-                        if (#result > tonumber(ArenaAnalyticsSettings["outliers"])) then
+                        if (#result >= tonumber(ArenaAnalyticsSettings["outliers"])) then
                             table.insert(playedComps, compString)
                         end
                     end
@@ -653,7 +653,7 @@ function AAtable:getEnemyPlayedCompsAndGames(bracket, filterComp)
                                 end
                             end
                         end
-                        if (#result > tonumber(ArenaAnalyticsSettings["outliers"])) then
+                        if (#result >= tonumber(ArenaAnalyticsSettings["outliers"])) then
                             table.insert(playedComps, compString)
                         end
                     end
@@ -955,17 +955,22 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                 )
             end
 
+            -- Add tooltip with player name and class colored spec/class
             local spec = match[matchKey][teamIconIndex]["spec"]
-            -- Check for spec
-            if (spec ~= "-") then
-                addSpecFrame(button, teamIconsFrames[teamIconIndex], spec, match[matchKey][teamIconIndex]["class"])
-                teamIconsFrames[teamIconIndex].tooltip = match[matchKey][teamIconIndex]["name"] .. " | " .. spec;
+            local class = match[matchKey][teamIconIndex]["class"];
+            ForceDebugNilError(class);
+            if (class ~= nil and spec ~= nil) then
+                addSpecFrame(button, teamIconsFrames[teamIconIndex], spec, class);
+                local tooltipSpecText = #spec > 2 and spec or class;
+                local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class):upper(), tooltipSpecText);
+                teamIconsFrames[teamIconIndex].tooltip = match[matchKey][teamIconIndex]["name"] .. " | " .. coloredSpecText;
             else
                 if (teamIconsFrames[teamIconIndex].spec) then
                     teamIconsFrames[teamIconIndex].spec = nil;
                 end
                 teamIconsFrames[teamIconIndex].tooltip = match[matchKey][teamIconIndex]["name"];
             end
+
             -- Check if first to die
             if (teamIconsFrames[teamIconIndex].death) then
                 teamIconsFrames[teamIconIndex].death.texture:SetTexture(nil);

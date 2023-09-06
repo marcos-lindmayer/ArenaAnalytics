@@ -3,6 +3,9 @@ ArenaAnalytics.AAmatch = {};
 
 local AAmatch = ArenaAnalytics.AAmatch;
 
+-- TEMP: Skip sync logic for early release
+local skipSyncLogic = true;
+
 -- Debug function to force a nil error if input is nil
 local skipDebugForceNilError = false;
 function ForceDebugNilError(value)
@@ -101,8 +104,6 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["pendingSyncData"] = nil;
 end
 
-local specSpells = ArenaAnalytics.Constants.GetSpecSpells();
-
 -- Arena DB
 ArenaAnalyticsDB = ArenaAnalyticsDB  ~= nil and ArenaAnalyticsDB or {
 	["2v2"] = {},
@@ -180,7 +181,7 @@ function AAmatch:insertArenaOnTable()
 		currentArena["partyRating"] = "SKIRMISH";
 		currentArena["partyMMR"] = "-";
 		currentArena["partyRatingDelta"] = "";
-		currentArena["enemyRating"] = "SKIRMISH";
+		currentArena["enemyRating"] = "-";
 		currentArena["enemyRatingDelta"] = "";
 		currentArena["enemyMMR"] = "-";
 	end
@@ -201,7 +202,7 @@ function AAmatch:insertArenaOnTable()
 	end
 	);
 
-	if (currentArena["gotAllArenaInfo"] == false) then 
+	if (not skipSyncLogic and currentArena["gotAllArenaInfo"] == false) then 
 		-- print("Missing specs. Requesting data")
 		if(IsInInstance() or IsInGroup(1)) then
 			local messageChannel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
@@ -229,6 +230,7 @@ function AAmatch:insertArenaOnTable()
 	-- Setup table data to insert into ArenaAnalyticsDB
 	local arenaData = {
 		["dateInt"] = currentArena["timeStartInt"],
+		["season"] = GetCurrentArenaSeason(), -- NYI
 		["map"] = currentArena["mapName"], 
 		["bracket"] = ArenaAnalytics.Constants:GetBracketFromTeamSize(currentArena["size"]),
 		["duration"] = currentArena["duration"], 
@@ -251,7 +253,7 @@ function AAmatch:insertArenaOnTable()
 	local bracket = arenaData["bracket"];
 	table.insert(ArenaAnalyticsDB[bracket], arenaData);
 	
-	if (currentArena["pendingSync"]) then
+	if (not skipSyncLogic and currentArena["pendingSync"]) then
 		AAmatch:handleSync(currentArena["pendingSyncData"])
 	end
 
@@ -285,14 +287,12 @@ end
 -- Search for missing members of group (party or arena), createsPlayerTable if 
 -- it exist and inserts it in either currentArena["party"] or currentArena["enemy"]. If spec and GUID
 -- are passed, include them when creating the player table
-function AAmatch:fillGroupsByUnitReference(unit, unitSpec, unitGuid)
-	local groupTable = {
-		["party"] = currentArena["party"],
-		["arena"] = currentArena["enemy"]
-	}
-	for j = 1, currentArena["size"] do
-		j = unit == "party" and  (j - 1) or j;
-		local name, realm = UnitName(unit .. j);
+function AAmatch:fillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
+	unitGroup = unitGroup == "party" and "party" or "arena";
+	
+	initialValue = unitGroup == "party" and  0 or 1;
+	for i = initialValue, currentArena["size"] do
+		local name, realm = UnitName(unitGroup .. i);
 		if (name ~= nil) then
 			if ( realm == nil or string.len(realm) < 4) then
 				realm = "";
@@ -301,12 +301,12 @@ function AAmatch:fillGroupsByUnitReference(unit, unitSpec, unitGuid)
 			end
 			name = name .. realm;
 			-- Check if they were already added
-			local currentGroup = groupTable[unit];
+			local currentGroup = (unitGroup == "party") and currentArena["party"] or currentArena["enemy"];
 			if (not AAmatch:doesGroupContainMemberByName(currentGroup, name) and name ~= "Unknown") then
 				local killingBlows, deaths, faction, filename, damageDone, healingDone;
-				local class = UnitClass(unit .. j);
-				local race = UnitRace(unit .. j);
-				local GUID = UnitGUID(unit .. j);
+				local class = UnitClass(unitGroup .. i);
+				local race = UnitRace(unitGroup .. i);
+				local GUID = UnitGUID(unitGroup .. i);
 				local spec = GUID == unitGuid and unitSpec or nil;
 				local player = AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec);
 				table.insert(currentGroup, player);
@@ -319,28 +319,27 @@ end
 -- caster if they weren't defined yet, or adds a new unit with it
 function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 	-- Check if spell belongs to spec defining spells
-	if (specSpells[spellID]) then
+	local spec = ArenaAnalytics.Constants:GetSpecBySpellID(spellID);
+	if (spec ~= nil) then
 		local unitIsParty = false;
 		local unitIsEnemy = false;
 		-- Check if spell was casted by party
-		for partyNumber = 1, #currentArena["party"] do
-			if (currentArena["party"][partyNumber]["GUID"] == sourceGUID ) then
-				if (#currentArena["party"][partyNumber]["spec"] < 2) then
-					-- Adding spec to party member
-					currentArena["party"][partyNumber]["spec"] = specSpells[spellID];
-				end
+		for i = 1, #currentArena["party"] do
+			local unit = currentArena["party"][i];
+			if (unit["GUID"] == sourceGUID ) then
+				-- Adding spec to party member
+				unit["spec"] = AAmatch:assignSpec(unit["class"], unit["spec"], spec);
 				unitIsParty = true;
 				break;
 			end
 		end
 		-- Check if spell was casted by enemy
 		if (not unitIsParty) then
-			for enemyNumber = 1, #currentArena["enemy"] do
-				if (currentArena["enemy"][enemyNumber]["GUID"] == sourceGUID ) then
-					if (currentArena["enemy"][enemyNumber]["spec"] == "-") then
-						-- Adding spec to enemy member
-						currentArena["enemy"][enemyNumber]["spec"] = specSpells[spellID];
-					end
+			for i = 1, #currentArena["enemy"] do
+				local unit = currentArena["enemy"][i];
+				if (unit["GUID"] == sourceGUID ) then
+					-- Adding spec to enemy member
+					unit["spec"] = AAmatch:assignSpec(unit["class"], unit["spec"], spec);
 					unitIsEnemy = true;
 					break;
 				end
@@ -358,9 +357,21 @@ function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 			if (unitGroup == nil) then
 				unitGroup = "arena";
 			end
-			AAmatch:fillGroupsByUnitReference(unitGroup, specSpells[spellID], sourceGUID);
+			AAmatch:fillGroupsByUnitReference(unitGroup, sourceGUID, spec);
 		end
 	end
+end
+
+function AAmatch:assignSpec(class, oldSpec, newSpec)
+	if(oldSpec == newSpec) then 
+		return oldSpec 
+	end;
+
+	if(oldSpec == nil or oldSpec == "" or oldSpec == "-" or oldSpec == "Preg") then
+		return newSpec;
+	end
+
+	return oldSpec;
 end
 
 -- Returns bool whether all obtainable information (before arena ends) has
@@ -404,16 +415,18 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 		end
 	end
 
-	-- Getting all specs means all possible data has been collected
+	-- Getting all specs (without containing question marks) means all possible data has been collected
 	local specCount = 0;
-	for u = 1, #currentArena["party"] do
-		if (string.len(currentArena["party"][u]["spec"]) > 3) then
-			specCount = specCount + 1;
+	for i = 1, #currentArena["party"] do
+		local spec = currentArena["party"][i]["spec"]
+		if (spec == nil or string.len(spec) < 3 or spec == "Preg") then
+			return false;
 		end
 	end
-	for y = 1, #currentArena["enemy"] do
-		if (string.len(currentArena["enemy"][y]["spec"]) > 3) then
-			specCount = specCount + 1;
+	for i = 1, #currentArena["enemy"] do
+		local spec = currentArena["enemy"][i]["spec"];
+		if (spec == nil or string.len(spec) < 3 or spec == "Preg") then
+			return false;
 		end
 	end
 	
@@ -486,8 +499,6 @@ function AAmatch:trackArena(...)
 	local bracketId = ArenaAnalytics.Constants:BracketIdFromTeamSize(teamSize);
 	if(ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
 		local rating = GetInspectArenaData(bracketId);
-		ArenaAnalytics:Print("DEBUG: GetInspectArenaData(" .. bracketId .. ") returned rating: " .. rating .. " inside the arena.");
-
 		ArenaAnalyticsCachedBracketRatings[bracketId] = rating; -- AAmatch:getLastRating(teamSize);
 	end
 
@@ -671,9 +682,13 @@ end
 -- Handles both requests and delivers for specs, enemy MMR/Rating, and version
 function AAmatch:handleSync(...)
 	local _, msg = ...
+	
+	if(skipSyncLogic == true) then
+		return; -- Exit out to skip sync for now
+	end
 
 	if(msg == nil) then
-		ArenaAnalytics:Print("handleSync called with nil message.");
+		ArenaAnalytics:Print("WARNING: handleSync called with nil message.");
 		return;
 	end
 

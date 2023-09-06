@@ -19,7 +19,10 @@ local specSpells = {
     [ 49376 ] = "Feral", -- Feral Charge: Cat
     [ 16979 ] = "Feral", -- Feral Charge: Bear
     [ 24907 ] = "Balance", -- Moonkin Aura
-    [ 48505 ] = "Balance", -- Starfall
+    [ 48505 ] = "Balance", -- Starfall (Rank 1)
+    [ 53199 ] = "Balance", -- Starfall (Rank 2)
+    [ 53200 ] = "Balance", -- Starfall (Rank 3)
+    [ 53201 ] = "Balance", -- Starfall (Rank 4)
     [ 33891 ] = "Restoration", -- Tree of Life
 
     -- HUNTER
@@ -51,21 +54,42 @@ local specSpells = {
     [ 31642 ] = "Fire", -- Blazing Speed
 
     -- PALADIN
-    [ 48821 ] = "Holy", -- Holy Shock
-    [ 53652 ] = "Holy", -- Beacon of Light
-    [ 53653 ] = "Holy", -- Beacon of Light
-    [ 53654 ] = "Holy", -- Beacon of Light
+    [ 20473 ] = "Holy", -- Holy Shock (Rank 1)
+    [ 20929 ] = "Holy", -- Holy Shock (Rank 2)
+    [ 20930 ] = "Holy", -- Holy Shock (Rank 3)
+    [ 27174 ] = "Holy", -- Holy Shock (Rank 4)
+    [ 33072 ] = "Holy", -- Holy Shock (Rank 5)
+    [ 48824 ] = "Holy", -- Holy Shock (Rank 6)
+    [ 48825 ] = "Holy", -- Holy Shock (Rank 7)
+    [ 53563 ] = "Holy", -- Beacon of Light
+    [ 53652 ] = "Holy", -- Beacon of Light (Holy Shock)
+    [ 53653 ] = "Holy", -- Beacon of Light (Flash of Light)
+    [ 53654 ] = "Holy", -- Beacon of Light (???)
     [ 20216 ] = "Holy", -- Divine Favor
     [ 31842 ] = "Holy", -- Divine Illumination
     [ 31836 ] = "Holy", -- Light's Grace
-    [ 27170 ] = "Retribution", -- Seal of Command
     [ 35395 ] = "Retribution", -- Crusader Strike
-    [ 20066 ] = "Retribution", -- Repentance
-    [ 20218 ] = "Retribution", -- Sanctity Aura
-    [ 20375 ] = "Retribution", -- Seal of Command
     [ 20049 ] = "Retribution", -- Vengeance
-    [ 20178 ] = "Protection", -- Reckoning 
-    [ 32700 ] = "Protection", -- Avenger's Shield
+    [ 53380 ] = "Retribution", -- Righteous Vengeance (Rank 1)
+    [ 53381 ] = "Retribution", -- Righteous Vengeance (Rank 2)
+    [ 53382 ] = "Retribution", -- Righteous Vengeance (Rank 3)
+    [ 53385 ] = "Retribution", -- Divine Storm
+    [ 20066 ] = "Preg", -- Repentance (Ret tree)
+    [ 54203 ] = "Preg", -- Sheath of Light (Ret tree)
+    [ 20178 ] = "Preg", -- Reckoning (Prot tree)
+    [ 20911 ] = "Preg", -- Blessing of Sanctuary (Prot tree)
+    [ 31935 ] = "Protection", -- Avenger's Shield (Rank 1)
+    [ 32699 ] = "Protection", -- Avenger's Shield (Rank 2)
+    [ 32700 ] = "Protection", -- Avenger's Shield (Rank 3)
+    [ 48826 ] = "Protection", -- Avenger's Shield (Rank 4)
+    [ 48827 ] = "Protection", -- Avenger's Shield (Rank 5)
+    [ 20925 ] = "Protection", -- Holy Shield (Rank 1)
+    [ 20927 ] = "Protection", -- Holy Shield (Rank 2)
+    [ 20928 ] = "Protection", -- Holy Shield (Rank 3)
+    [ 27179 ] = "Protection", -- Holy Shield (Rank 4)
+    [ 48951 ] = "Protection", -- Holy Shield (Rank 5)
+    [ 48952 ] = "Protection", -- Holy Shield (Rank 6)
+    [ 53595 ] = "Protection", -- Hammer of the Righteous
 
     -- PRIEST
     [ 10060 ] = "Discipline", -- Power Infusion
@@ -78,7 +102,11 @@ local specSpells = {
     [ 47788 ] = "Holy", -- Guardian Spirit
     [ 33142 ] = "Holy", -- Blessed Resilience
     [ 15473 ] = "Shadow", -- Shadowform
-    [ 34917 ] = "Shadow", -- Vampiric Touch
+    [ 34914 ] = "Shadow", -- Vampiric Touch (Rank 1)
+    [ 34916 ] = "Shadow", -- Vampiric Touch (Rank 2)
+    [ 34917 ] = "Shadow", -- Vampiric Touch (Rank 3)
+    [ 48159 ] = "Shadow", -- Vampiric Touch (Rank 4)
+    [ 48160 ] = "Shadow", -- Vampiric Touch (Rank 5)
     [ 64044 ] = "Shadow", -- Psychic Horror
     [ 47585 ] = "Shadow", -- Dispersion
     [ 45234 ] = "Discipline", -- Focused Will
@@ -134,6 +162,7 @@ local specSpells = {
     [ 47486 ] = "Arms", -- Mortal Strike
     [ 12292 ] = "Arms", -- Death Wish
     [ 23881 ] = "Fury", -- Bloodthirst
+    [ 46916 ] = "Fury", -- Bloodsurge
     [ 12809 ] = "Protection", -- Concussion Blow
     [ 47498 ] = "Protection", -- Devastate
     [ 29838 ] = "Arms", -- Second Wind
@@ -155,8 +184,8 @@ local specSpells = {
     [ 55262 ] = "Blood", -- Heart Strike
     [ 49028 ] = "Blood", -- Dancing Rune Weapon
 }
-function Constants:GetSpecSpells()
-    return specSpells
+function Constants:GetSpecBySpellID(spellID)
+    return specSpells[spellID];   
 end
 
 local racials = {
@@ -297,6 +326,19 @@ function Constants:GetArenaTimer()
     end
 end
 
+-- Returns class color hex by className
+function ArenaAnalyticsGetClassColor(className)
+    if(className == nil) then
+        return 'ffffffff';
+    end
+    
+    if(className == "Death Knight") then
+        return select(4, GetClassColor("DEATHKNIGHT"));
+    end
+    
+    return select(4, GetClassColor(className:upper()));
+end
+
 -- Returns class icon path string
 function ArenaAnalyticsGetClassIcon(className)
 	local currentClassName = className;
@@ -365,6 +407,8 @@ function ArenaAnalyticsGetSpecIcon(spec, class)
 		specString = [[Interface\Icons\spell_holy_devotionaura]];
 	elseif (currentSpecName == "Retribution") then
 		specString = [[Interface\Icons\spell_holy_auraoflight]];
+    elseif (currentSpecName == "Preg") then
+        specString = [[Interface\Icons\ability_paladin_hammeroftherighteous]];
 	elseif (currentSpecName == "Discipline") then
 		specString = [[Interface\Icons\spell_holy_wordfortitude]];
 	elseif (currentSpecName == "Holy") then

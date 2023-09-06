@@ -156,7 +156,7 @@ function ArenaAnalytics:init(event, name, ...)
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
-	ArenaAnalytics:Print("Testing version");
+	ArenaAnalytics:Print("Early Access: Bugs are expected!");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
     ArenaAnalytics:Print("Current Season: " .. GetCurrentArenaSeason());
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
@@ -228,7 +228,7 @@ function ArenaAnalyticsSettingsFrame()
         end
     );
 
-    ArenaAnalyticsScrollFrame.outliers = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -100, "Min games required to appear on comp filter");
+    ArenaAnalyticsScrollFrame.outliers = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -100, "Minimum games required to appear on comp filter");
     ArenaAnalyticsScrollFrame.outliersInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
     ArenaAnalyticsScrollFrame.outliersInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -95);
     ArenaAnalyticsScrollFrame.outliersInput:SetFrameStrata("HIGH");
