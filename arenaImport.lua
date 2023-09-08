@@ -4,7 +4,10 @@ ArenaAnalytics.AAimport = {};
 local AAimport = ArenaAnalytics.AAimport;
 
 function AAimport:parseRawData(data)
-    if(not AAimport:isDataValid(data)) then
+    if(ArenaAnalytics:hasStoredMatches()) then
+        ArenaAnalytics:Print("Import failed due to existing stored matches!");
+        AAimport:reset();
+    elseif(not AAimport:isDataValid(data)) then
         ArenaAnalytics:Print("Import data is corrupted, not valid, or empty. Make sure to copy the whole ArenaStats export text.")
         AAimport:reset();
     else
@@ -98,18 +101,24 @@ function AAimport:parseRawData(data)
                 end
                 size = size == 1 and 2 or size;
                 size = size == 4 and 5 or size;
+
+                local hasRating = (arena["newTeamRating"] ~= nil and arena["newTeamRating"] ~= "");
+                local hasMmr = (arena["mmr"] ~= nil and arena["mmr"] ~= "");
+                local hasEnemyRating = (arena["enemyNewTeamRating"] ~= nil and arena["enemyNewTeamRating"] ~= "");
+                local hasEnemyMmr = (arena["enemyMmr"] ~= nil and arena["enemyMmr"] ~= "");
+                
                 local arenaDB = {
                     ["dateInt"] = tonumber(arena["startTime"]),
-                    ["map"] =  ArenaAnalytics.AAmatch:getMapNameById(tonumber(arena["zoneId"])), 
+                    ["map"] = ArenaAnalytics.AAmatch:getMapNameById(tonumber(arena["zoneId"])), 
                     ["duration"] = AAimport:getDuration(tonumber(arena["duration"])),
                     ["team"] = AAimport:createGroupTable(arena, "team", size),
-                    ["rating"] = arena["newTeamRating"] == "" and "SKIRMISH" or tonumber(arena["newTeamRating"]), 
+                    ["rating"] = hasRating and tonumber(arena["newTeamRating"]) or "SKIRMISH", 
                     ["ratingDelta"] = tonumber(arena["diffRating"]),
-                    ["mmr"] = arena["mmr"] == "" and "-" or tonumber(arena["mmr"]), 
+                    ["mmr"] = hasMmr and tonumber(arena["mmr"]) or "", 
                     ["enemyTeam"] = AAimport:createGroupTable(arena, "enemy", size),
-                    ["enemyRating"] = arena["enemyNewTeamRating"] == "" and "SKIRMISH" or tonumber(arena["enemyNewTeamRating"]), 
-                    ["enemyRatingDelta"] = tonumber(arena["enemyDiffRating"]),
-                    ["enemyMmr"] = arena["enemyMmr"] == "" and "-" or tonumber(arena["enemyMmr"]),
+                    ["enemyRating"] = hasEnemyRating and tonumber(arena["enemyNewTeamRating"]) or "-", 
+                    ["enemyRatingDelta"] = hasEnemyRating and tonumber(arena["enemyDiffRating"]) or "",
+                    ["enemyMmr"] = hasEnemyMmr and tonumber(arena["enemyMmr"]) or "-",
                     ["comp"] = {"",""},
                     ["enemyComp"] = {"",""},
                     ["won"] = arena["teamColor"] == arena["winnerColor"] and true or false,
@@ -128,6 +137,14 @@ function AAimport:parseRawData(data)
             AAimport:reset()
         end        
     end
+
+    -- Hide the dialog if we have existing matches
+    if(ArenaAnalytics:hasStoredMatches()) then
+        ArenaAnalyticsScrollFrame.importDataBtn:Disable();
+        ArenaAnalyticsScrollFrame.importDataBox:SetText("");
+        ArenaAnalyticsScrollFrame.importFrame:Hide();
+        ArenaAnalyticsScrollFrame.importFrame = nil;
+    end
 end
 
 function AAimport:isDataValid(data)
@@ -138,7 +155,7 @@ function AAimport:isDataValid(data)
 end
 
 function AAimport:reset()
-    ArenaAnalyticsScrollFrame.importData:Enable();
+    ArenaAnalyticsScrollFrame.importDataBtn:Enable();
     ArenaAnalyticsScrollFrame.importDataBox:SetText("");
     ArenaAnalytics.AAtable:RefreshLayout(true);
 end

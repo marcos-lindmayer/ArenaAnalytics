@@ -1,4 +1,7 @@
 local _, ArenaAnalytics = ...;
+HybridScrollMixin = {};
+ArenaAnalytics.AAtable = HybridScrollMixin;
+local AAtable = ArenaAnalytics.AAtable
 
 local currentFilters = {
     ["map"] = "All", 
@@ -26,14 +29,13 @@ local filterEnemyCompsOpts = {
     ["3v3"] = "",
     ["5v5"] = ""
 }
+
 local totalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #ArenaAnalyticsDB["5v5"] 
+function AAtable:resetTotalArenas()
+    totalArenas = 0;
+end
 
 local selectedGames = {}
-
-HybridScrollMixin = {};
-ArenaAnalytics.AAtable = HybridScrollMixin;
-local AAtable = ArenaAnalytics.AAtable
-
 
 -- Toggles addOn view/hide
 function AAtable:Toggle()
@@ -524,6 +526,10 @@ end
 
 -- Returns a CSV-formatted string using ArenaAnalyticsDB info
 local function getCsvFromDB()
+    if(not ArenaAnalytics:hasStoredMatches()) then
+        return "";
+    end
+
     local CSVString = "date,map,duration,won,isRanked,team1Name,team2Name,team3Name,team4Name,team5Name,rating,mmr," .. 
     "enemyTeam1Name,enemyTeam2Name,enemyTeam3Name,enemyTeam4Name,enemyTeam5Name,enemyRating, enemyMMR" .. "\n";
     -- Get all arenas ordered by date
@@ -542,35 +548,37 @@ local function getCsvFromDB()
     end)
 
     for arenaN = 1, #allArenas do
+        local match = allArenas[arenaN];
+        
         local arenaDateString = date("%d/%m/%y %H:%M:%S", match["dateInt"]);
         CSVString = CSVString 
         .. arenaDateString .. ","
-        .. allArenas[arenaN]["map"] .. ","
-        .. allArenas[arenaN]["duration"] .. ","
-        .. (allArenas[arenaN]["won"] and "yes" or "no") .. ","
-        .. (allArenas[arenaN]["isRanked"] and "yes" or "no") .. ","
-        .. allArenas[arenaN]["team"][1]["name"] .. ","
-        .. (allArenas[arenaN]["team"][2] and allArenas[arenaN]["team"][2]["name"] or "") .. ","
-        .. (allArenas[arenaN]["team"][3] and allArenas[arenaN]["team"][3]["name"] or "") .. ","
-        .. (allArenas[arenaN]["team"][4] and allArenas[arenaN]["team"][4]["name"] or "") .. ","
-        .. (allArenas[arenaN]["team"][5] and allArenas[arenaN]["team"][5]["name"] or "") .. ","
-        .. allArenas[arenaN]["rating"] .. ","
-        .. allArenas[arenaN]["mmr"] .. ","
-        .. (allArenas[arenaN]["enemyTeam"][1] and allArenas[arenaN]["enemyTeam"][1]["name"] or "") .. ","
-        .. (allArenas[arenaN]["enemyTeam"][2] and allArenas[arenaN]["enemyTeam"][2]["name"] or "") .. ","
-        .. (allArenas[arenaN]["enemyTeam"][3] and allArenas[arenaN]["enemyTeam"][3]["name"] or "") .. ","
-        .. (allArenas[arenaN]["enemyTeam"][4] and allArenas[arenaN]["enemyTeam"][4]["name"] or "") .. ","
-        .. (allArenas[arenaN]["enemyTeam"][5] and allArenas[arenaN]["enemyTeam"][5]["name"] or "") .. ","
-        .. allArenas[arenaN]["enemyRating"] .. ","
-        .. allArenas[arenaN]["enemyMmr"] .. ","
+        .. (match["map"] or "??") .. ","
+        .. (match["duration"] or "") .. ","
+        .. (match["won"] and "yes" or "no") .. ","
+        .. (match["isRanked"] and "yes" or "no") .. ","
+        .. (match["team"][1]["name"] or "") .. ","
+        .. (match["team"][2] and match["team"][2]["name"] or "") .. ","
+        .. (match["team"][3] and match["team"][3]["name"] or "") .. ","
+        .. (match["team"][4] and match["team"][4]["name"] or "") .. ","
+        .. (match["team"][5] and match["team"][5]["name"] or "") .. ","
+        .. (match["rating"] or "").. ","
+        .. (match["mmr"] or "") .. ","
+        .. (match["enemyTeam"][1] and match["enemyTeam"][1]["name"] or "") .. ","
+        .. (match["enemyTeam"][2] and match["enemyTeam"][2]["name"] or "") .. ","
+        .. (match["enemyTeam"][3] and match["enemyTeam"][3]["name"] or "") .. ","
+        .. (match["enemyTeam"][4] and match["enemyTeam"][4]["name"] or "") .. ","
+        .. (match["enemyTeam"][5] and match["enemyTeam"][5]["name"] or "") .. ","
+        .. (match["enemyRating"] or "") .. ","
+        .. (match["enemyMmr"] or "") .. ","
         CSVString = CSVString .. "\n";
     end
     return CSVString;
 end
 
 -- Toggle Export DB frame
-local function exportDB() 
-    if not ArenaAnalyticsScrollFrame.exportFrameContainer:IsShown() then   
+local function toggleExportFrame()
+    if (not ArenaAnalyticsScrollFrame.exportFrameContainer:IsShown() and ArenaAnalytics:hasStoredMatches() or true) then
         ArenaAnalyticsScrollFrame.exportFrameContainer:Show();
         ArenaAnalyticsScrollFrame.exportFrame:SetText(getCsvFromDB())
         ArenaAnalyticsScrollFrame.exportFrame:HighlightText()
@@ -676,7 +684,8 @@ end
 -- Creates the Export DB frame
 local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrameContainer = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
-    ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameStrata("DIALOG");
+    ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameLevel(10);
     ArenaAnalyticsScrollFrame.exportFrameContainer:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
     ArenaAnalyticsScrollFrame.exportFrameContainer:SetSize(510, 150);
     ArenaAnalyticsScrollFrame.exportFrameScroll = CreateFrame("ScrollFrame", "exportFrameScroll", ArenaAnalyticsScrollFrame.exportFrameContainer, "UIPanelScrollFrameTemplate");
@@ -696,6 +705,12 @@ local function createExportFrame()
     ArenaAnalyticsScrollFrame.exportFrame:SetJustifyV("CENTER");
     ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
     ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+
+    -- Escape to close
+    ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEscapePressed", function(self)
+        self:SetText("");
+        ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+    end);
     
     -- Make frame draggable
     ArenaAnalyticsScrollFrame.exportFrameContainer:SetMovable(true)
@@ -751,8 +766,8 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 413);
     ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
 
-    ArenaAnalyticsScrollFrame.export = AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 20, -35, "Export");
-    ArenaAnalyticsScrollFrame.export:SetScript("OnClick", exportDB);
+    ArenaAnalyticsScrollFrame.exportBtn = AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 20, -35, "Export");
+    ArenaAnalyticsScrollFrame.exportBtn:SetScript("OnClick", toggleExportFrame);
 
     -- Set export DB CSV frame layout
     createExportFrame();
@@ -767,7 +782,7 @@ function AAtable:OnLoad()
     }
 
     ArenaAnalyticsScrollFrame.arenaTypeMenu = AAtable:createDropdown(arenaBracket_opts)
-    ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.export, "RIGHT", 15, 0);
+    ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.exportBtn, "RIGHT", 15, 0);
 
     local filterMap_opts = {
         ['name']='Filter_Map',
@@ -801,7 +816,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsSettingsFrame()    
 
     -- Table headers
-    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.export, "TOPLEFT", 5, -40, "Date");
+    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.exportBtn, "TOPLEFT", 5, -40, "Date");
     ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
     ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
     ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 120, 0, "Team");
@@ -822,40 +837,8 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () AAtable:ClearSelectedMatches()end)
 
-
-    -- First time user import popup
-    if (#ArenaAnalyticsDB["2v2"] == 0 and #ArenaAnalyticsDB["3v3"] == 0 and #ArenaAnalyticsDB["5v5"] == 0) then
-        ArenaAnalyticsScrollFrame.popupFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
-        ArenaAnalyticsScrollFrame.popupFrame:SetPoint("CENTER")
-        ArenaAnalyticsScrollFrame.popupFrame:SetSize(600, 100)
-        ArenaAnalyticsScrollFrame.popupFrame:SetFrameStrata("HIGH");
-        ArenaAnalyticsScrollFrame.popupFrametitle = ArenaAnalyticsScrollFrame.popupFrame:CreateFontString(nil, "OVERLAY");
-        ArenaAnalyticsScrollFrame.popupFrametitle:SetPoint("TOP", ArenaAnalyticsScrollFrame.popupFrame, "TOP", -10, -5);
-        ArenaAnalyticsScrollFrame.popupFrametitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-        ArenaAnalyticsScrollFrame.popupFrametitle:SetText("Import from ArenaStats");
-        ArenaAnalyticsScrollFrame.importData = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", 25, -35, "Import");
-        ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, 0, "Paste the ArenaStats export on the text box below the Import button");
-        ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, -18, "Note: ArenaStats data won't be available for comp filters");
-        ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importData, "TOPRIGHT", 8, -36, "|cffff0000Do this NOW|r You won't be able to do this while you have stored arenas!");
-        ArenaAnalyticsScrollFrame.importData:SetDisabledFontObject("GameFontDisableSmall")
-        ArenaAnalyticsScrollFrame.importData:SetScript("OnClick", function (i) 
-            ArenaAnalyticsScrollFrame.importData:Disable();
-            ArenaAnalytics.AAimport:parseRawData(ArenaAnalyticsScrollFrame.importDataBox:GetText())
-        end);
-        ArenaAnalyticsScrollFrame.importDataBox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.popupFrame, "InputBoxTemplate")
-        ArenaAnalyticsScrollFrame.importDataBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.popupFrame, "TOPLEFT", 30, -45);
-        ArenaAnalyticsScrollFrame.importDataBox:SetFrameStrata("HIGH");
-        ArenaAnalyticsScrollFrame.importDataBox:SetWidth(120);
-        ArenaAnalyticsScrollFrame.importDataBox:SetHeight(50);
-        ArenaAnalyticsScrollFrame.importDataBox:SetAutoFocus(false);
-        
-        ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)
-            self:ClearFocus();
-        end);
-        ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEscapePressed", function(self)
-            self:ClearFocus();
-        end);
-    end
+    -- First time user import popup if no matches are stored
+    AAtable:tryShowimportFrame();
 
     -- Add esc to close frame
     _G["ArenaAnalyticsScrollFrame"] = ArenaAnalyticsScrollFrame 
@@ -872,6 +855,48 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.deathFrames = {}
 
     AAtable:OnShow();
+end
+
+function AAtable:tryShowimportFrame()
+    if (not ArenaAnalytics:hasStoredMatches()) then
+        if(ArenaAnalyticsScrollFrame.importFrame == nil) then
+            ArenaAnalyticsScrollFrame.importFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
+            ArenaAnalyticsScrollFrame.importFrame:SetPoint("CENTER")
+            ArenaAnalyticsScrollFrame.importFrame:SetSize(600, 100)
+            ArenaAnalyticsScrollFrame.importFrame:SetFrameStrata("HIGH");
+            ArenaAnalyticsScrollFrame.importFrametitle = ArenaAnalyticsScrollFrame.importFrame:CreateFontString(nil, "OVERLAY");
+            ArenaAnalyticsScrollFrame.importFrametitle:SetPoint("TOP", ArenaAnalyticsScrollFrame.importFrame, "TOP", -10, -5);
+            ArenaAnalyticsScrollFrame.importFrametitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
+            ArenaAnalyticsScrollFrame.importFrametitle:SetText("Import from ArenaStats");
+            ArenaAnalyticsScrollFrame.importDataBtn = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", 25, -35, "Import");
+            ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importDataBtn, "TOPRIGHT", 8, 0, "Paste the ArenaStats export on the text box below the Import button");
+            ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importDataBtn, "TOPRIGHT", 8, -18, "Note: ArenaStats data won't be available for comp filters");
+            ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importDataBtn, "TOPRIGHT", 8, -36, "|cffff0000Do this NOW|r You won't be able to do this while you have stored arenas!");
+            ArenaAnalyticsScrollFrame.importDataBtn:SetDisabledFontObject("GameFontDisableSmall")
+            
+            ArenaAnalyticsScrollFrame.importDataBox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.importFrame, "InputBoxTemplate")
+            ArenaAnalyticsScrollFrame.importDataBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", 30, -45);
+            ArenaAnalyticsScrollFrame.importDataBox:SetFrameStrata("HIGH");
+            ArenaAnalyticsScrollFrame.importDataBox:SetWidth(120);
+            ArenaAnalyticsScrollFrame.importDataBox:SetHeight(50);
+            ArenaAnalyticsScrollFrame.importDataBox:SetAutoFocus(false);
+            
+            ArenaAnalyticsScrollFrame.importDataBtn:SetScript("OnClick", function (i) 
+                ArenaAnalyticsScrollFrame.importDataBtn:Disable();
+                ArenaAnalytics.AAimport:parseRawData(ArenaAnalyticsScrollFrame.importDataBox:GetText())
+            end);
+
+            ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)
+                self:ClearFocus();
+            end);
+            ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEscapePressed", function(self)
+                self:ClearFocus();
+            end);
+        end
+
+        ArenaAnalyticsScrollFrame.importDataBtn:Enable();
+        ArenaAnalyticsScrollFrame.importFrame:Show();
+    end
 end
 
 function AAtable:OnShow()
@@ -1419,8 +1444,15 @@ function AAtable:RefreshLayout(filter)
         newArenaPlayed = true;
         totalArenas = currentTotalArenas;
     end
-    
 
+    if(ArenaAnalytics:hasStoredMatches()) then
+        ArenaAnalyticsScrollFrame.exportBtn:Enable();
+    else
+        ArenaAnalyticsScrollFrame.exportBtn:Disable();
+        ArenaAnalyticsScrollFrame.exportFrame:SetText("");
+        ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+    end
+    
     local lastGame = AAtable:getLastGame()
     
     if (filter or filteredDB == nil or newArenaPlayed) then

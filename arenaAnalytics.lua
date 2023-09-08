@@ -105,11 +105,28 @@ function AAmatch:resetCurrentArenaValues()
 end
 
 -- Arena DB
-ArenaAnalyticsDB = ArenaAnalyticsDB  ~= nil and ArenaAnalyticsDB or {
+ArenaAnalyticsDB = ArenaAnalyticsDB ~= nil and ArenaAnalyticsDB or {
 	["2v2"] = {},
 	["3v3"] = {},
 	["5v5"] = {},
 };
+
+function ArenaAnalytics:hasStoredMatches()
+	-- Update to avoid nil values
+	if(ArenaAnalyticsDB == nil) then
+        ArenaAnalyticsDB = {
+            ["2v2"] = {},
+            ["3v3"] = {},
+            ["5v5"] = {},
+        };
+    else
+        ArenaAnalyticsDB["2v2"] = ArenaAnalyticsDB["2v2"] or { }
+        ArenaAnalyticsDB["3v3"] = ArenaAnalyticsDB["3v3"] or { }
+        ArenaAnalyticsDB["5v5"] = ArenaAnalyticsDB["5v5"] or { }
+    end
+
+	return #ArenaAnalyticsDB["2v2"] > 0 or #ArenaAnalyticsDB["3v3"] > 0 or #ArenaAnalyticsDB["5v5"] > 0;
+end
 
 -- Cached last rating per bracket ID
 ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {

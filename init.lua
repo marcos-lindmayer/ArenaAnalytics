@@ -158,7 +158,6 @@ function ArenaAnalytics:init(event, name, ...)
 
 	ArenaAnalytics:Print("Early Access: Bugs are expected!");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
-    ArenaAnalytics:Print("Current Season: " .. GetCurrentArenaSeason());
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 
 	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
@@ -176,12 +175,11 @@ function ArenaAnalytics:init(event, name, ...)
 end
 
 function ArenaAnalyticsSettingsFrame()
-
 	local paddingLeft = 25;
 	ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
     ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
     ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 300)
-    ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("DIALOG");
     ArenaAnalyticsScrollFrame.settingsFrame:Hide();
 
     -- Make frame draggable
@@ -266,9 +264,17 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.resetBtn:Disable()
     ArenaAnalyticsScrollFrame.resetBtn:SetDisabledFontObject("GameFontDisableSmall")
     ArenaAnalyticsScrollFrame.resetBtn:SetScript("OnClick", function (i) 
-        ArenaAnalyticsDB = {}; 
-        print("ArenaAnalytics match history deleted!");
-        ArenaAnalytics.AAtable:RefreshLayout(true); 
+        ArenaAnalyticsDB = {
+			["2v2"] = {},
+			["3v3"] = {},
+			["5v5"] = {},
+		};
+		ArenaAnalytics.AAtable:resetTotalArenas();
+		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
+		ArenaAnalyticsScrollFrame.resetBtn:Disable();
+        ArenaAnalytics:Print("Match history deleted!");
+        ArenaAnalytics.AAtable:RefreshLayout(true);
+		ArenaAnalytics.AAtable:tryShowimportFrame();
     end);
     
     ArenaAnalyticsScrollFrame.allowReset = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_allowReset", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
