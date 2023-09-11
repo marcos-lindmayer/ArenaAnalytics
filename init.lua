@@ -79,7 +79,7 @@ end
 local function createMinimapButton()
 	-- Create minimap button -- Credit to Leatrix
 	local minibtn = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap)
-	minibtn:SetFrameLevel(8)
+	minibtn:SetFrameLevel(13)
 	minibtn:SetSize(24,24)
 	minibtn:SetMovable(true)
 	minibtn:SetNormalTexture([[Interface\AddOns\ArenaAnalytics\icon\mmicon]])
@@ -101,20 +101,21 @@ local function createMinimapButton()
 	minibtnBorder:SetPoint("TOPLEFT");
 	local minibtnBorderT = minibtnBorder:CreateTexture()
 	minibtnBorderT:SetSize(50,50)
-	minibtnBorderT:SetPoint("TOPLEFT");
+	minibtnBorderT:SetPoint("TOPLEFT", -2, 2);
 	minibtnBorderT:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 
 	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos and ArenaAnalyticsMapIconPos or 0
 	
 	-- Control movement
 	local function UpdateMapBtn()
-		local Xpoa, Ypoa = GetCursorPosition()
-		local Xmin, Ymin = Minimap:GetLeft(), Minimap:GetBottom()
-		Xpoa = Xmin - Xpoa / Minimap:GetEffectiveScale() + 70
-		Ypoa = Ypoa / Minimap:GetEffectiveScale() - Ymin - 70
-		ArenaAnalyticsMapIconPos = math.deg(math.atan2(Ypoa, Xpoa))
-		minibtn:ClearAllPoints()
-		minibtn:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 52 - (80 * cos(ArenaAnalyticsMapIconPos)), (80 * sin(ArenaAnalyticsMapIconPos)) - 52)
+		local cursorX, cursorY = GetCursorPosition();
+		local minX, minY = Minimap:GetLeft(), Minimap:GetBottom();
+		cursorX = minX - cursorX / Minimap:GetEffectiveScale() + 70;
+		cursorY = cursorY / Minimap:GetEffectiveScale() - minY - 70;
+		ArenaAnalyticsMapIconPos = math.deg(math.atan2(cursorY, cursorX));
+		minibtn:ClearAllPoints();
+		local offset = 57;
+		minibtn:SetPoint("TOPLEFT", Minimap, "TOPLEFT", offset - (80 * cos(ArenaAnalyticsMapIconPos)), (80 * sin(ArenaAnalyticsMapIconPos)) - offset);
 	end
 	
 	minibtn:RegisterForDrag("LeftButton")
