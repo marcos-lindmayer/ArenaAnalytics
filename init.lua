@@ -229,7 +229,6 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.outliers = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -100, "Minimum games required to appear on comp filter");
     ArenaAnalyticsScrollFrame.outliersInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
     ArenaAnalyticsScrollFrame.outliersInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -95);
-    ArenaAnalyticsScrollFrame.outliersInput:SetFrameStrata("HIGH");
     ArenaAnalyticsScrollFrame.outliersInput:SetWidth(30);
     ArenaAnalyticsScrollFrame.outliersInput:SetHeight(20);
     ArenaAnalyticsScrollFrame.outliersInput:SetNumeric();
