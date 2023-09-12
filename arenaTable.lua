@@ -896,7 +896,6 @@ function AAtable:tryShowimportFrame()
 
             
             local pasteBuffer, lastPasteTime, index = {}, 0, 0;
-            local paste = "";
 
             local function onCharAdded(self, c)
                 if(ArenaAnalyticsScrollFrame.importDataBox:IsEnabled()) then
@@ -910,6 +909,8 @@ function AAtable:tryShowimportFrame()
                     C_Timer.After(0, function()
                         ArenaAnalyticsScrollFrame.importDataBox:Enable();
                         ArenaImportPasteString = string.trim(table.concat(pasteBuffer));
+                        pasteBuffer = {}
+                        index = 0;
 
                         -- Update text: 1) Prevent OnChar for changing text
                         ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', nil);
@@ -927,13 +928,10 @@ function AAtable:tryShowimportFrame()
                 ArenaAnalyticsScrollFrame.importDataBox:HighlightText();
             end);
 
-            ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnUpdate', function()
-                --print(#pasteBuffer);
-            end)
-            
             ArenaAnalyticsScrollFrame.importDataBtn:SetScript("OnClick", function (i) 
                 ArenaAnalyticsScrollFrame.importDataBtn:Disable();
                 ArenaAnalytics.AAimport:parseRawData(ArenaImportPasteString);
+                ArenaImportPasteString = "";
             end);
 
             ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)
@@ -1341,6 +1339,10 @@ end
 
 -- Checks if 2 arenas have the same party members
 local function arenasHaveSameParty(arena, prevArena)
+    if(arena["size"] ~= prevArena["size"]) then
+        return false;
+    end
+
     for i = 1, #arena["team"] do
         if (prevArena["team"][i] and arena["team"][i]["name"] ~= prevArena["team"][i]["name"]) then
             return false;
@@ -1667,5 +1669,4 @@ function AAtable:RefreshLayout(filter)
     hideSpecIconsAndDeathBg()
 
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
-    
 end

@@ -62,7 +62,3 @@ end
 function DataSync:sendDataSync(requestedDataType)
 
 end
-
-#showtooltip
-/run local m,r,d,b="Drink",33445,43523;b=GetMacroBody(m)EditMacro(m,m,nil,b:gsub(":%d+",function()if GetItemCount(d)>0 then r=d elseif IsActiveBattlefieldArena()then r=43236 end return ":"..r end))
-/use item:33445

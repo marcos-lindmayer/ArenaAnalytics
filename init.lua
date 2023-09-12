@@ -163,7 +163,7 @@ function ArenaAnalytics:init(event, name, ...)
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 
-	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
+	C_Timer.After(0, function() ArenaAnalytics.AAmatch:updateCachedBracketRatings() end);
 
 	ArenaAnalytics.AAmatch:EventRegister();
 	ArenaAnalytics.AAtable:OnLoad();
@@ -310,7 +310,6 @@ function ArenaAnalyticsSettingsFrame()
     );
 
 end
-
 
 local events = CreateFrame("Frame");
 events:RegisterEvent("ADDON_LOADED");
