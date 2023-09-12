@@ -796,21 +796,21 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterMap = AAtable:createDropdown(filterMap_opts)
     ArenaAnalyticsScrollFrame.filterMap.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame, "RIGHT", 15, 0);
 
-
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
     ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
     ArenaAnalyticsScrollFrame.settingsButton:SetText([[|TInterface\Buttons\UI-OptionsButton:0|t]]);
     ArenaAnalyticsScrollFrame.settingsButton:SetNormalFontObject("GameFontHighlight");
     ArenaAnalyticsScrollFrame.settingsButton:SetHighlightFontObject("GameFontHighlight");
     ArenaAnalyticsScrollFrame.settingsButton:SetSize(24, 19);
-    ArenaAnalyticsScrollFrame.settingsButton:SetScript("OnClick", function ()
+    ArenaAnalyticsScrollFrame.settingsButton:SetScript("OnClick", function()
         if not  ArenaAnalyticsScrollFrame.settingsFrame:IsShown() then  
             ArenaAnalyticsScrollFrame.settingsFrame:Show();
+            ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
+            ArenaAnalyticsScrollFrame.resetBtn:Disable();
         else
             ArenaAnalyticsScrollFrame.settingsFrame:Hide();
         end
-    end
-    )
+    end);
 
     -- Settings window
     ArenaAnalyticsSettingsFrame()    
@@ -850,6 +850,16 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:RegisterForDrag("LeftButton")
     ArenaAnalyticsScrollFrame:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.StartMoving)
     ArenaAnalyticsScrollFrame:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.StopMovingOrSizing)
+    ArenaAnalyticsScrollFrame:SetScript("OnHide", function()
+		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
+		ArenaAnalyticsScrollFrame.resetBtn:Disable();
+    end);
+
+    ArenaAnalyticsScrollFrame:SetScript("OnShow", function()
+		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
+		ArenaAnalyticsScrollFrame.resetBtn:Disable();
+        AAtable:tryShowimportFrame();
+    end);
 
     ArenaAnalyticsScrollFrame.specFrames = {}
     ArenaAnalyticsScrollFrame.deathFrames = {}
@@ -862,28 +872,68 @@ function AAtable:tryShowimportFrame()
         if(ArenaAnalyticsScrollFrame.importFrame == nil) then
             ArenaAnalyticsScrollFrame.importFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
             ArenaAnalyticsScrollFrame.importFrame:SetPoint("CENTER")
-            ArenaAnalyticsScrollFrame.importFrame:SetSize(600, 100)
+            ArenaAnalyticsScrollFrame.importFrame:SetSize(475, 150)
             ArenaAnalyticsScrollFrame.importFrame:SetFrameStrata("HIGH");
             ArenaAnalyticsScrollFrame.importFrametitle = ArenaAnalyticsScrollFrame.importFrame:CreateFontString(nil, "OVERLAY");
             ArenaAnalyticsScrollFrame.importFrametitle:SetPoint("TOP", ArenaAnalyticsScrollFrame.importFrame, "TOP", -10, -5);
             ArenaAnalyticsScrollFrame.importFrametitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
             ArenaAnalyticsScrollFrame.importFrametitle:SetText("Import from ArenaStats");
-            ArenaAnalyticsScrollFrame.importDataBtn = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", 25, -35, "Import");
-            ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importDataBtn, "TOPRIGHT", 8, 0, "Paste the ArenaStats export on the text box below the Import button");
-            ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importDataBtn, "TOPRIGHT", 8, -18, "Note: ArenaStats data won't be available for comp filters");
-            ArenaAnalyticsScrollFrame.importDataText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.importDataBtn, "TOPRIGHT", 8, -36, "|cffff0000Do this NOW|r You won't be able to do this while you have stored arenas!");
+            ArenaAnalyticsScrollFrame.importDataText1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "CENTER", ArenaAnalyticsScrollFrame.importFrame, "TOP", 0, -45, "Paste the ArenaStats export on the text box below.");
+            ArenaAnalyticsScrollFrame.importDataText2 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "CENTER", ArenaAnalyticsScrollFrame.importFrame, "TOP", 0, -60, "Note: ArenaStats data won't be available for comp filters.");
+                
+            ArenaAnalyticsScrollFrame.importDataBtn = ArenaAnalytics.AAtable:CreateButton("TOPRIGHT", ArenaAnalyticsScrollFrame.importFrame, "TOPRIGHT", -70, -80, "Import");
+            ArenaAnalyticsScrollFrame.importDataBtn:SetSize(115, 25)
             ArenaAnalyticsScrollFrame.importDataBtn:SetDisabledFontObject("GameFontDisableSmall")
             
-            ArenaAnalyticsScrollFrame.importDataBox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.importFrame, "InputBoxTemplate")
-            ArenaAnalyticsScrollFrame.importDataBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.importFrame, "TOPLEFT", 30, -45);
+            ArenaAnalyticsScrollFrame.importDataBox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.importDataBtn, "InputBoxTemplate")
+            ArenaAnalyticsScrollFrame.importDataBox:SetPoint("RIGHT", ArenaAnalyticsScrollFrame.importDataBtn, "LEFT", -10, 0);
             ArenaAnalyticsScrollFrame.importDataBox:SetFrameStrata("HIGH");
-            ArenaAnalyticsScrollFrame.importDataBox:SetWidth(120);
-            ArenaAnalyticsScrollFrame.importDataBox:SetHeight(50);
+            ArenaAnalyticsScrollFrame.importDataBox:SetSize(213, 55);
             ArenaAnalyticsScrollFrame.importDataBox:SetAutoFocus(false);
+            ArenaAnalyticsScrollFrame.importDataBox:SetMaxBytes(50);
+
+            ArenaAnalyticsScrollFrame.importDataText3 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "CENTER", ArenaAnalyticsScrollFrame.importFrame, "BOTTOM", 0, 25, "|cffff0000Do this NOW|r You won't be able to do this while you have stored arenas!");
+
+            
+            local pasteBuffer, lastPasteTime, index = {}, 0, 0;
+            local paste = "";
+
+            local function onCharAdded(self, c)
+                if(ArenaAnalyticsScrollFrame.importDataBox:IsEnabled()) then
+                    ArenaAnalyticsScrollFrame.importDataBox:Disable();
+                    pasteBuffer, index = {}, 0;
+
+                    ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', nil);
+                    ArenaAnalyticsScrollFrame.importDataBox:SetText("");
+                    ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
+
+                    C_Timer.After(0, function()
+                        ArenaAnalyticsScrollFrame.importDataBox:Enable();
+                        ArenaImportPasteString = string.trim(table.concat(pasteBuffer));
+
+                        -- Update text: 1) Prevent OnChar for changing text
+                        ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', nil);
+                        ArenaAnalyticsScrollFrame.importDataBox:SetText(ArenaAnalytics.AAimport:determineImportSource(ArenaImportPasteString) .. " import detected...");
+                        ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
+                    end);
+                end
+
+                index = index + 1;
+                pasteBuffer[index] = c;
+            end
+
+            ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
+            ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnEditFocusGained', function()
+                ArenaAnalyticsScrollFrame.importDataBox:HighlightText();
+            end);
+
+            ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnUpdate', function()
+                --print(#pasteBuffer);
+            end)
             
             ArenaAnalyticsScrollFrame.importDataBtn:SetScript("OnClick", function (i) 
                 ArenaAnalyticsScrollFrame.importDataBtn:Disable();
-                ArenaAnalytics.AAimport:parseRawData(ArenaAnalyticsScrollFrame.importDataBox:GetText())
+                ArenaAnalytics.AAimport:parseRawData(ArenaImportPasteString);
             end);
 
             ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)

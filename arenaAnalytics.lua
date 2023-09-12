@@ -277,7 +277,7 @@ function AAmatch:insertArenaOnTable()
 	if (UnitAffectingCombat("player")) then
 		local regenEvent = CreateFrame("Frame");
 		regenEvent:RegisterEvent("PLAYER_REGEN_ENABLED");
-		regenEvent:SetScript("OnEvent", AAmatch:resetAndRefresh(true, regenEvent));
+		regenEvent:SetScript("OnEvent", function() AAmatch:resetAndRefresh(true, regenEvent) end);
 	else
 		-- Refresh and reset
 		AAmatch:resetAndRefresh(false, nil)
@@ -750,7 +750,6 @@ function AAmatch:handleSync(...)
 					end
 					
 				else
-					local lastGame
 					local lastGamePerBracket = {
 						#ArenaAnalyticsDB["2v2"] > 0 and ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] or 0,
 						#ArenaAnalyticsDB["3v3"] > 0 and ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]] or 0,
