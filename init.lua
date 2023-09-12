@@ -157,7 +157,9 @@ function ArenaAnalytics:init(event, name, ...)
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
-	ArenaAnalytics:Print("Early Access: Bugs are expected!");
+	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or nil;
+	local versionText = version ~= nil and " (Version: " .. version .. ")" or ""
+	ArenaAnalytics:Print("Early Access: Bugs are expected!" .. versionText);
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 
