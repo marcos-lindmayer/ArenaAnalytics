@@ -102,6 +102,8 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["firstDeath"] = nil;
 	currentArena["pendingSync"] = false;
 	currentArena["pendingSyncData"] = nil;
+
+	ArenaAnalytics:Print("Current Arena Values reset!")
 end
 
 -- Arena DB
@@ -130,9 +132,9 @@ end
 
 -- Cached last rating per bracket ID
 ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {
-	[1] = nil,
-	[2] = nil,
-	[3] = nil,
+	[1] = 0,
+	[2] = 0,
+	[3] = 0,
 }
 
 -- Updates the cached bracket rating for each bracket
@@ -269,6 +271,8 @@ function AAmatch:insertArenaOnTable()
 	-- Insert arena data as a new ArenaAnalyticsDB row
 	local bracket = arenaData["bracket"];
 	table.insert(ArenaAnalyticsDB[bracket], arenaData);
+
+	ArenaAnalytics:Print("Arena recorded!");
 	
 	if (not skipSyncLogic and currentArena["pendingSync"]) then
 		AAmatch:handleSync(currentArena["pendingSyncData"])
@@ -280,14 +284,17 @@ function AAmatch:insertArenaOnTable()
 		regenEvent:SetScript("OnEvent", function() AAmatch:resetAndRefresh(true, regenEvent) end);
 	else
 		-- Refresh and reset
-		AAmatch:resetAndRefresh(false, nil)
+		AAmatch:resetCurrentArenaValues();
 	end
 end
 
 function AAmatch:resetAndRefresh(removeEvent, event)
+	if(IsActiveBattlefieldArena()) then return end;
+	
 	if(removeEvent and event ~= nil) then
 		event:SetScript("OnEvent", nil);
 	end
+	
 	AAmatch:resetCurrentArenaValues();
 end
 
@@ -453,11 +460,9 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 end
 
 -- Player quitted the arena before it ended
--- Triggers AAmatch:insertArenaOnTable with the available info (@NOTE: Commented out, moved to handleArenaExited!)
 function AAmatch:quitsArena(self, ...)
 	currentArena["ended"] = true;
-	currentArena["wonByPlayer"] = false;	
-	-- AAmatch:insertArenaOnTable();
+	currentArena["wonByPlayer"] = false;
 end
 
 -- Returns the player's spec
@@ -501,6 +506,8 @@ end
 -- Gets arena player, size, map, ranked/skirmish
 function AAmatch:trackArena(...)
 	AAmatch:resetCurrentArenaValues();
+
+	ArenaAnalytics:Print("Track Arena!");
 	
 	currentArena["battlefieldId"] = ...;
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRankedArena, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena["battlefieldId"]);
@@ -516,6 +523,7 @@ function AAmatch:trackArena(...)
 	local bracketId = ArenaAnalytics.Constants:BracketIdFromTeamSize(teamSize);
 	if(ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
 		local rating = GetInspectArenaData(bracketId);
+		ArenaAnalytics:Print("Fixing cached bracket rating in arena to: " .. trackArena);
 		ArenaAnalyticsCachedBracketRatings[bracketId] = rating; -- AAmatch:getLastRating(teamSize);
 	end
 
@@ -571,7 +579,6 @@ end
 
 -- Gets arena information when it ends and the scoreboard is shown
 -- Matches obtained info with previously collected player values
--- Triggers AAmatch:insertArenaOnTable with (hopefully) all the information (@NOTE: Commented out, moved to handleArenaExited!)
 function AAmatch:handleArenaEnd()
 	currentArena["endedProperly"] = true;
 	currentArena["ended"] = true;
@@ -642,8 +649,6 @@ function AAmatch:handleArenaEnd()
 			currentArena["enemyRatingDelta"] = team1RatingDif;
 		end
 	end
-
-	-- AAmatch:insertArenaOnTable();
 end
 
 function AAmatch:handleArenaExited()
@@ -651,20 +656,16 @@ function AAmatch:handleArenaExited()
 		return false;	
 	end
 
-	local bracketId;
-	if (currentArena["size"] == 2) then
-		bracketId = 1
-	elseif (currentArena["size"] == 3) then
-		bracketId = 2
-	else
-		bracketId = 3
-	end
+	ArenaAnalytics:Print("Arena exited!");
+
+	local bracketId = ArenaAnalytics.Constants:BracketIdFromTeamSize(currentArena["size"]);
 
 	if(currentArena["isRanked"] == true) then
 		local newRating = GetPersonalRatedInfo(bracketId);
 		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
 		
-		if(oldRating == "SKIRMISH") then
+		if(oldRating == nil or oldRating == "SKIRMISH") then
+			oldRating = newRating - 666; -- Catching the error by showing detla = 666
 			ForceDebugNilError(nil);
 		end
 		
@@ -680,6 +681,7 @@ function AAmatch:handleArenaExited()
 	-- Update all the cached bracket ratings
 	AAmatch:updateCachedBracketRatings();
 
+	ArenaAnalytics:Print("Call insertArenaOnTable");
 	AAmatch:insertArenaOnTable();
 	return true;
 end

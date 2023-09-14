@@ -1339,7 +1339,7 @@ end
 
 -- Checks if 2 arenas have the same party members
 local function arenasHaveSameParty(arena, prevArena)
-    if(arena["size"] ~= prevArena["size"]) then
+    if(arena["bracket"] ~= prevArena["bracket"]) then
         return false;
     end
 
