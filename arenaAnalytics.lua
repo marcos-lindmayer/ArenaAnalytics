@@ -102,8 +102,6 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["firstDeath"] = nil;
 	currentArena["pendingSync"] = false;
 	currentArena["pendingSyncData"] = nil;
-
-	ArenaAnalytics:Print("Current Arena Values reset!")
 end
 
 -- Arena DB
@@ -132,9 +130,9 @@ end
 
 -- Cached last rating per bracket ID
 ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {
-	[1] = 0,
-	[2] = 0,
-	[3] = 0,
+	[1] = nil,
+	[2] = nil,
+	[3] = nil,
 }
 
 -- Updates the cached bracket rating for each bracket
@@ -278,23 +276,7 @@ function AAmatch:insertArenaOnTable()
 		AAmatch:handleSync(currentArena["pendingSyncData"])
 	end
 
-	if (UnitAffectingCombat("player")) then
-		local regenEvent = CreateFrame("Frame");
-		regenEvent:RegisterEvent("PLAYER_REGEN_ENABLED");
-		regenEvent:SetScript("OnEvent", function() AAmatch:resetAndRefresh(true, regenEvent) end);
-	else
-		-- Refresh and reset
-		AAmatch:resetCurrentArenaValues();
-	end
-end
-
-function AAmatch:resetAndRefresh(removeEvent, event)
-	if(IsActiveBattlefieldArena()) then return end;
-	
-	if(removeEvent and event ~= nil) then
-		event:SetScript("OnEvent", nil);
-	end
-	
+	-- Refresh and reset current arena
 	AAmatch:resetCurrentArenaValues();
 end
 
@@ -417,7 +399,6 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 	end
 
 	-- Tracking teams for spec/race and in case arena is quitted
-	local gotAllSpecs = false;
 	if (eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
 		local _,logEventType,_,sourceGUID,_,_,_,destGUID,_,_,_,spellID,spellName,spellSchool,extraSpellId,extraSpellName,extraSpellSchool = CombatLogGetCurrentEventInfo();
 		if (logEventType == "SPELL_CAST_SUCCESS" or logEventType == "SPELL_AURA_APPLIED") then
@@ -439,24 +420,33 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 		end
 	end
 
-	-- Getting all specs (without containing question marks) means all possible data has been collected
-	local specCount = 0;
-	for i = 1, #currentArena["party"] do
-		local spec = currentArena["party"][i]["spec"]
-		if (spec == nil or string.len(spec) < 3 or spec == "Preg") then
+	-- Look for missing party member or party member with missing spec. (Preg is considered uncertain)
+	for i = 1, currentArena["size"] do
+		local partyMember = currentArena["party"][i];
+		if(partyMember == nil) then
 			return false;
 		end
-	end
-	for i = 1, #currentArena["enemy"] do
-		local spec = currentArena["enemy"][i]["spec"];
-		if (spec == nil or string.len(spec) < 3 or spec == "Preg") then
-			return false;
-		end
-	end
-	
-	gotAllSpecs = currentArena["size"] * 2 == specCount and currentArena["firstDeath"];
 
-	return gotAllSpecs;
+		local spec = partyMember["spec"]
+		if (spec == nil or string.len(spec) < 3 or spec == "Preg") then
+			return false;
+		end
+	end
+
+	-- Look for missing enemy or enemy with missing spec. (Preg is considered uncertain)
+	for i = 1, currentArena["size"] do
+		local enemy = currentArena["enemy"][i];
+		if(enemy == nil) then
+			return false;
+		end
+
+		local spec = enemy["spec"];
+		if (spec == nil or string.len(spec) < 3 or spec == "Preg") then
+			return false;
+		end
+	end
+
+	return currentArena["firstDeath"];
 end
 
 -- Player quitted the arena before it ended
@@ -492,14 +482,17 @@ end
 
 -- Returns last saved rating on selected bracket (teamSize)
 function AAmatch:getLastRating(teamSize)
-	if (teamSize == 2 and #ArenaAnalyticsDB["2v2"] > 0) then
-		return ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]]["rating"]
-	elseif (teamSize == 3 and #ArenaAnalyticsDB["3v3"] > 0) then
-		return ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]]["rating"]
-	elseif (#ArenaAnalyticsDB["5v5"] > 0) then
-		return ArenaAnalyticsDB["5v5"][#ArenaAnalyticsDB["5v5"]]["rating"]
+	local bracket = ArenaAnalytics.Constants:GetBracketFromTeamSize(teamSize);
+	if(ArenaAnalyticsDB[bracket] ~= nil) then
+		for i = 0, (#ArenaAnalyticsDB[bracket] - 1) do
+			local match = ArenaAnalyticsDB[bracket][#ArenaAnalyticsDB[bracket] - i];
+			if(match ~= nil and match["rating"] ~= nil and match["rating"] ~= "SKIRMISH") then
+				return tonumber(match["rating"]);
+			end
+		end
 	end
-	return nil;
+	
+	return 0;
 end
 
 -- Begins capturing data for the current arena
@@ -507,8 +500,6 @@ end
 function AAmatch:trackArena(...)
 	AAmatch:resetCurrentArenaValues();
 
-	ArenaAnalytics:Print("Track Arena!");
-	
 	currentArena["battlefieldId"] = ...;
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRankedArena, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena["battlefieldId"]);
 	
@@ -521,10 +512,8 @@ function AAmatch:trackArena(...)
 	currentArena["size"] = teamSize;
 	
 	local bracketId = ArenaAnalytics.Constants:BracketIdFromTeamSize(teamSize);
-	if(ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
-		local rating = GetInspectArenaData(bracketId);
-		ArenaAnalytics:Print("Fixing cached bracket rating in arena to: " .. trackArena);
-		ArenaAnalyticsCachedBracketRatings[bracketId] = rating; -- AAmatch:getLastRating(teamSize);
+	if(isRankedArena and ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
+		ArenaAnalyticsCachedBracketRatings[bracketId] = AAmatch:getLastRating(teamSize);
 	end
 
 	if (#currentArena["party"] == 0) then
@@ -656,16 +645,15 @@ function AAmatch:handleArenaExited()
 		return false;	
 	end
 
-	ArenaAnalytics:Print("Arena exited!");
-
 	local bracketId = ArenaAnalytics.Constants:BracketIdFromTeamSize(currentArena["size"]);
 
 	if(currentArena["isRanked"] == true) then
 		local newRating = GetPersonalRatedInfo(bracketId);
 		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
+		ForceDebugNilError(ArenaAnalyticsCachedBracketRatings[bracketId]);
 		
 		if(oldRating == nil or oldRating == "SKIRMISH") then
-			oldRating = newRating - 666; -- Catching the error by showing detla = 666
+			oldRating = AAmatch:getLastRating();
 			ForceDebugNilError(nil);
 		end
 		
@@ -681,7 +669,6 @@ function AAmatch:handleArenaExited()
 	-- Update all the cached bracket ratings
 	AAmatch:updateCachedBracketRatings();
 
-	ArenaAnalytics:Print("Call insertArenaOnTable");
 	AAmatch:insertArenaOnTable();
 	return true;
 end

@@ -1,5 +1,7 @@
 local _, ArenaAnalytics = ...; -- Namespace
 
+local ratedUpdateEvent = nil;
+
 --------------------------------------
 -- Custom Slash Command
 --------------------------------------
@@ -74,6 +76,15 @@ function ArenaAnalytics:GetThemeColor()
 	}
 	local c = defaults.theme;
 	return c.r, c.g, c.b, c.hex;
+end
+
+local function onRatedStatsReceived()
+	if(ratedUpdateEvent ~= nil) then
+		ratedUpdateEvent:SetScript("OnEvent", nil);
+		ratedUpdateEvent = nil;
+	end
+	
+	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
 end
 
 local function createMinimapButton()
@@ -163,7 +174,11 @@ function ArenaAnalytics:init(event, name, ...)
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
 
-	C_Timer.After(0, function() ArenaAnalytics.AAmatch:updateCachedBracketRatings() end);
+	-- Update cached rating as soon as possible
+	ratedUpdateEvent = CreateFrame("Frame");
+	ratedUpdateEvent:RegisterEvent("PVP_RATED_STATS_UPDATE");
+	ratedUpdateEvent:SetScript("OnEvent", function() onRatedStatsReceived() end);
+	C_Timer.After(0, function() RequestRatedInfo() end);
 
 	ArenaAnalytics.AAmatch:EventRegister();
 	ArenaAnalytics.AAtable:OnLoad();
@@ -293,7 +308,6 @@ function ArenaAnalyticsSettingsFrame()
             end
         end
     );
-
 	
 	ArenaAnalyticsScrollFrame.moreOptionsTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -220, "More options");
 

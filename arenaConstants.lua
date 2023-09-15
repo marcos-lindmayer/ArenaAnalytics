@@ -161,12 +161,13 @@ local specSpells = {
     [ 64976 ] = "Arms", -- Juggernaut
     [ 47486 ] = "Arms", -- Mortal Strike
     [ 12292 ] = "Arms", -- Death Wish
+    [ 29834 ] = "Arms", -- Second Wind (Rank 1)
+    [ 29838 ] = "Arms", -- Second Wind (Rank 2)
+    [ 46924 ] = "Arms", -- Bladestorm
     [ 23881 ] = "Fury", -- Bloodthirst
     [ 46916 ] = "Fury", -- Bloodsurge
     [ 12809 ] = "Protection", -- Concussion Blow
     [ 47498 ] = "Protection", -- Devastate
-    [ 29838 ] = "Arms", -- Second Wind
-    [ 46924 ] = "Arms", -- Bladestorm
 
     -- DEATHKNIGHT
     [ 50461 ] = "Unholy", -- Anti-magic Zone
