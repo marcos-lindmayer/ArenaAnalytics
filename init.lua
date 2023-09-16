@@ -59,8 +59,21 @@ end
 
 function ArenaAnalytics:Print(...)
     local hex = select(4, ArenaAnalytics:GetThemeColor());
-    local prefix = string.format("|cff%s%s|r", hex:upper(), "ArenaAnalytics:");	
-    DEFAULT_CHAT_FRAME:AddMessage(string.join(" ", prefix, ...));
+    local prefix = string.format("|cff%s%s|r", hex:upper(), "ArenaAnalytics:");
+    -- DEFAULT_CHAT_FRAME:AddMessage(string.join(" ", prefix, ...));
+	print(prefix, ...);
+end
+
+-- Debug logging version of print
+local skipDebugLog = true;
+function ArenaAnalytics:Log(...)
+	if skipDebugLog then 
+		return;
+	end
+
+    local hex = "FF6EC7";
+    local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Debug):");
+	print(prefix, ...);
 end
 
 
@@ -192,11 +205,63 @@ function ArenaAnalytics:init(event, name, ...)
 	end
 end
 
+-- Toggle Export DB frame
+local function toggleExportFrame()
+	if (not ArenaAnalyticsScrollFrame.exportFrameContainer:IsShown() and ArenaAnalytics:hasStoredMatches() or true) then
+        ArenaAnalyticsScrollFrame.exportFrameContainer:Show();
+        ArenaAnalyticsScrollFrame.exportFrame:SetText(ArenaAnalytics:getCsvFromDB());
+        ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
+    else
+        ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+    end    
+end
+
+-- Creates the Export DB frame
+local function createExportFrame()
+	if(ArenaAnalyticsScrollFrame.exportFrameContainer == nil) then
+		ArenaAnalyticsScrollFrame.exportFrameContainer = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
+		ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameStrata("DIALOG");
+		ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameLevel(10);
+		ArenaAnalyticsScrollFrame.exportFrameContainer:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
+		ArenaAnalyticsScrollFrame.exportFrameContainer:SetSize(510, 150);
+		ArenaAnalyticsScrollFrame.exportFrameScroll = CreateFrame("ScrollFrame", "exportFrameScroll", ArenaAnalyticsScrollFrame.exportFrameContainer, "UIPanelScrollFrameTemplate");
+		ArenaAnalyticsScrollFrame.exportFrameScroll:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameContainer, "CENTER");
+		ArenaAnalyticsScrollFrame.exportFrameScroll:SetSize(500, 100);
+		ArenaAnalyticsScrollFrame.exportFrameScroll.ScrollBar:Hide();
+		ArenaAnalyticsScrollFrame.exportFrameScrollBg = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateTexture()
+		ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetSize(500, 100);
+		ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameScroll, "CENTER");
+		ArenaAnalyticsScrollFrame.exportFrame = CreateFrame("EditBox", "exportFrameScroll", nil, "BackdropTemplate");
+		ArenaAnalyticsScrollFrame.exportFrameScroll:SetScrollChild(ArenaAnalyticsScrollFrame.exportFrame);
+		ArenaAnalyticsScrollFrame.exportFrame:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18);
+		ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(true);
+		ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(true);
+		ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
+		ArenaAnalyticsScrollFrame.exportFrame:SetJustifyH("LEFT");
+		ArenaAnalyticsScrollFrame.exportFrame:SetJustifyV("CENTER");
+		ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
+		ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+
+		-- Escape to close
+		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEscapePressed", function(self)
+			self:SetText("");
+			ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+		end);
+		
+		-- Make frame draggable
+		ArenaAnalyticsScrollFrame.exportFrameContainer:SetMovable(true)
+		ArenaAnalyticsScrollFrame.exportFrameContainer:EnableMouse(true)
+		ArenaAnalyticsScrollFrame.exportFrameContainer:RegisterForDrag("LeftButton")
+		ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.exportFrameContainer.StartMoving)
+		ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.exportFrameContainer.StopMovingOrSizing)
+	end
+end
+
 function ArenaAnalyticsSettingsFrame()
 	local paddingLeft = 25;
 	ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
     ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
-    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 300)
+    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 315)
     ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("DIALOG");
     ArenaAnalyticsScrollFrame.settingsFrame:Hide();
 
@@ -312,7 +377,7 @@ function ArenaAnalyticsSettingsFrame()
 	ArenaAnalyticsScrollFrame.moreOptionsTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -220, "More options");
 
     ArenaAnalyticsScrollFrame.deathToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_deathToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -240);
+    ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -235);
     ArenaAnalyticsScrollFrame_deathToggleText:SetText("Always show red death bg on icon (else on mouse over only)");
     ArenaAnalyticsScrollFrame.deathToggle:SetChecked(ArenaAnalyticsSettings["alwaysShowDeathBg"]);
 
@@ -322,6 +387,12 @@ function ArenaAnalyticsSettingsFrame()
 			ArenaAnalytics.AAtable:RefreshLayout(true); 
         end
     );
+
+	ArenaAnalyticsScrollFrame.exportBtn = ArenaAnalytics.AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.settingsFrame, "BOTTOM", 0, 22, "Export");
+    ArenaAnalyticsScrollFrame.exportBtn:SetScript("OnClick", toggleExportFrame);
+
+    -- Set export DB CSV frame layout
+    createExportFrame();
 
 end
 

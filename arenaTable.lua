@@ -4,6 +4,7 @@ ArenaAnalytics.AAtable = HybridScrollMixin;
 local AAtable = ArenaAnalytics.AAtable
 
 local currentFilters = {
+    ["search"] = { },
     ["map"] = "All", 
     ["bracket"] = "All", 
     ["comps"] = "All",
@@ -449,7 +450,7 @@ function AAtable:createDropdown(opts)
         dropdownTable.filterName = title_text;
     end
     
-    dropdownTable.dd_title:SetPoint("TOPLEFT", 0, 13)
+    dropdownTable.dd_title:SetPoint("TOPLEFT", 0, 15)
 
     dropdownTable.buttons = {}
     
@@ -516,7 +517,7 @@ function AAtable:createDropdown(opts)
         else
             dropdownList:Hide();
         end
-    end)
+    end);
 
     dropdownTable.dropdownList:Hide();
 
@@ -525,7 +526,7 @@ end
 
 
 -- Returns a CSV-formatted string using ArenaAnalyticsDB info
-local function getCsvFromDB()
+function ArenaAnalytics:getCsvFromDB()
     if(not ArenaAnalytics:hasStoredMatches()) then
         return "";
     end
@@ -574,17 +575,6 @@ local function getCsvFromDB()
         CSVString = CSVString .. "\n";
     end
     return CSVString;
-end
-
--- Toggle Export DB frame
-local function toggleExportFrame()
-    if (not ArenaAnalyticsScrollFrame.exportFrameContainer:IsShown() and ArenaAnalytics:hasStoredMatches() or true) then
-        ArenaAnalyticsScrollFrame.exportFrameContainer:Show();
-        ArenaAnalyticsScrollFrame.exportFrame:SetText(getCsvFromDB())
-        ArenaAnalyticsScrollFrame.exportFrame:HighlightText()
-    else
-        ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
-    end
 end
 
 -- Returns array with all unique played comps based on bracket
@@ -681,45 +671,6 @@ function ArenaAnalyticsCreateText(relativeFrame, anchor, refFrame, relPoint, xOf
     return fontString
 end
 
--- Creates the Export DB frame
-local function createExportFrame()
-    ArenaAnalyticsScrollFrame.exportFrameContainer = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
-    ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameStrata("DIALOG");
-    ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameLevel(10);
-    ArenaAnalyticsScrollFrame.exportFrameContainer:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
-    ArenaAnalyticsScrollFrame.exportFrameContainer:SetSize(510, 150);
-    ArenaAnalyticsScrollFrame.exportFrameScroll = CreateFrame("ScrollFrame", "exportFrameScroll", ArenaAnalyticsScrollFrame.exportFrameContainer, "UIPanelScrollFrameTemplate");
-    ArenaAnalyticsScrollFrame.exportFrameScroll:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameContainer, "CENTER");
-    ArenaAnalyticsScrollFrame.exportFrameScroll:SetSize(500, 100);
-    ArenaAnalyticsScrollFrame.exportFrameScroll.ScrollBar:Hide();
-    ArenaAnalyticsScrollFrame.exportFrameScrollBg = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateTexture()
-    ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetSize(500, 100);
-    ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameScroll, "CENTER");
-    ArenaAnalyticsScrollFrame.exportFrame = CreateFrame("EditBox", "exportFrameScroll", nil, "BackdropTemplate");
-    ArenaAnalyticsScrollFrame.exportFrameScroll:SetScrollChild(ArenaAnalyticsScrollFrame.exportFrame);
-    ArenaAnalyticsScrollFrame.exportFrame:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18);
-    ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(true);
-    ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(true);
-    ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
-    ArenaAnalyticsScrollFrame.exportFrame:SetJustifyH("LEFT");
-    ArenaAnalyticsScrollFrame.exportFrame:SetJustifyV("CENTER");
-    ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
-    ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
-
-    -- Escape to close
-    ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEscapePressed", function(self)
-        self:SetText("");
-        ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
-    end);
-    
-    -- Make frame draggable
-    ArenaAnalyticsScrollFrame.exportFrameContainer:SetMovable(true)
-    ArenaAnalyticsScrollFrame.exportFrameContainer:EnableMouse(true)
-    ArenaAnalyticsScrollFrame.exportFrameContainer:RegisterForDrag("LeftButton")
-    ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.exportFrameContainer.StartMoving)
-    ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.exportFrameContainer.StopMovingOrSizing)
-end
-
 function AAtable:UpdateSelected()
     local newSelectedText = ""
     local selectedGamesCount = 0;
@@ -766,11 +717,46 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 413);
     ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
 
-    ArenaAnalyticsScrollFrame.exportBtn = AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 20, -35, "Export");
-    ArenaAnalyticsScrollFrame.exportBtn:SetScript("OnClick", toggleExportFrame);
+    ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "InputBoxTemplate")
+    ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, -27);
+    ArenaAnalyticsScrollFrame.searchBox:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame.searchBox:SetSize(155, 55);
+    ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
+    ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(255);
 
-    -- Set export DB CSV frame layout
-    createExportFrame();
+    ArenaAnalyticsScrollFrame.searchTitle = ArenaAnalyticsScrollFrame.searchBox:CreateFontString(nil, 'OVERLAY');
+    ArenaAnalyticsScrollFrame.searchTitle:SetPoint("TOPLEFT", -4, 0);
+    ArenaAnalyticsScrollFrame.searchTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
+    ArenaAnalyticsScrollFrame.searchTitle:SetText("Player Search")
+
+    ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEnterPressed', function()
+        ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
+    end);
+
+    ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEditFocusLost', function() 
+        -- Clear white spaces
+        local text = string.gsub(ArenaAnalyticsScrollFrame.searchBox:GetText(), "%s%s+", " ");
+        local searchTable = {};
+
+        -- Get search table from search
+        if(text ~= "") then
+            separator = ",";
+            text:gsub("([^"..separator.."]*)", function(s)
+                local s = s:gsub("%s+", "");
+                if(s ~= "") then
+                    table.insert(searchTable, s:lower());
+                end
+            end);
+        end
+
+        -- Commit search
+        if(searchTable ~= currentFilters["search"]) then
+            currentFilters["search"] = searchTable;
+            AAtable:RefreshLayout(true);
+        end
+
+        ArenaAnalyticsScrollFrame.searchBox:SetText(text);
+    end);
 
     local arenaBracket_opts = {
         ['name']='Arena_Bracket',
@@ -782,7 +768,7 @@ function AAtable:OnLoad()
     }
 
     ArenaAnalyticsScrollFrame.arenaTypeMenu = AAtable:createDropdown(arenaBracket_opts)
-    ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.exportBtn, "RIGHT", 15, 0);
+    ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 15, 0);
 
     local filterMap_opts = {
         ['name']='Filter_Map',
@@ -816,16 +802,15 @@ function AAtable:OnLoad()
     ArenaAnalyticsSettingsFrame()    
 
     -- Table headers
-    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.exportBtn, "TOPLEFT", 5, -40, "Date");
+    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "TOPLEFT", -5, -47, "Date");
     ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
     ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
-    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 120, 0, "Team");
-    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 130, 0, "Rating");
-    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 85, 0, "MMR");
-    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 70, 0, "Enemy Team");
-    ArenaAnalyticsScrollFrame.enemyRatingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 140, 0, "Enemy MMR");
+    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 118, 0, "Team");
+    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 132, 0, "Rating");
+    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 88, 0, "MMR");
+    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 67, 0, "Enemy Team");
+    ArenaAnalyticsScrollFrame.enemyRatingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 141, 0, "Enemy MMR");
     ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 125, 0, "Enemy Rating");
-
 
     -- Recorded arena number and winrate
     ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 15, 30, "");
@@ -1097,14 +1082,83 @@ function AAtable:checkForFilterUpdate(bracket)
     --[[ ArenaAnalyticsScrollFrame.arenaTypeMenu.buttons[1]:Click() ]]
 end
 
+local function checkSearchMatch(playerName, search)
+    if(search == nil or search == "") then
+        return true;
+    end
+
+    if(playerName == nil) then
+        return false;
+    end
+    
+    local stringToSearch = string.gsub(playerName:lower(), "%s+", "");
+    local finalSearch = search;
+
+    local isExactSearch = #finalSearch > 1 and string.sub(search, 1, 1) == '"' and string.sub(search, -1) == '"';
+    finalSearch = finalSearch:gsub('"', '');
+
+    -- If search term is surrounded by quotation marks, check exact search
+    if(isExactSearch) then
+        if(not string.find(search, "-")) then
+            -- Exclude server when it was excluded for an exact search term
+            stringToSearch = string.match(stringToSearch, "[^-]+");
+        end
+
+        return finalSearch == stringToSearch;
+    end
+    
+    -- Fix special characters
+    finalSearch = finalSearch:gsub("-", "%%-");
+
+    return stringToSearch:find(finalSearch) ~= nil;
+end
+
+local function doesMatchPassSearchFilter(match)
+    if(match ~= nil) then
+        if(currentFilters["search"] == nil) then
+            return true;
+        end
+        for k=1, #currentFilters["search"] do
+            local foundMatch = false;
+            local search = currentFilters["search"][k];
+            if(search ~= nil and search ~= "") then
+                local teams = {"team", "enemyTeam"}
+                for _, team in ipairs(teams) do
+                    for j = 1, #match[team] do
+                        local player = match[team][j];
+                        if(player ~= nil) then
+                            -- keep match if player name match the search
+                            if(checkSearchMatch(player["name"]:lower(), search)) then
+                                foundMatch = true;
+                            end
+                        end
+                    end
+                end
+            else
+                -- Invalid or empty search element, skipping.
+                foundMatch = true;
+            end
+
+            -- Search element had no match
+            if(not foundMatch) then
+                return false;
+            end
+        end
+        return true;
+    end
+
+    return false;
+end
+
 -- Returns matches applying current match filters
 local function applyFilters(unfilteredDB)
-
     local holderDB = {
         ["2v2"] = {},
         ["3v3"] = {},
         ["5v5"] = {},
     };
+
+    local brackets = {"2v2", "3v3", "5v5"};
 
     -- Filter map
     local arenaMaps = {{"Nagrand Arena","NA"}, {"Ruins of Lordaeron", "RoL"}, {"Blade Edge Arena", "BEA"}, {"Dalaran Arena", "DA"}}
@@ -1113,7 +1167,6 @@ local function applyFilters(unfilteredDB)
     else
         for _,arenaMap in ipairs(arenaMaps) do
             if (currentFilters["map"] == arenaMap[1]) then
-                local brackets = {"2v2", "3v3", "5v5"};
                 for _, bracket in ipairs(brackets) do
                     if (#unfilteredDB[bracket] > 0) then
                         for arenaNumber = 1, #unfilteredDB[bracket] do
@@ -1255,7 +1308,6 @@ local function applyFilters(unfilteredDB)
         end
     end
 
-
     -- Filter Season (only show current season)
     if (ArenaAnalyticsSettings["seasonIsChecked"] == false) then
         local n2v2 = #holderDB["2v2"];
@@ -1287,17 +1339,28 @@ local function applyFilters(unfilteredDB)
         end
     end
 
+    if(currentFilters["search"] ~= "") then
+        for _, bracket in ipairs(brackets) do
+            for i = #holderDB[bracket], 1, -1 do
+                if(not doesMatchPassSearchFilter(holderDB[bracket][i])) then
+                    table.remove(holderDB[bracket], i);
+                    i = i - 1;
+                end
+            end
+        end
+    end
+
     -- Get arenas from each bracket and sort by date 
     local sortedDB = {}; 
 
-    for b = 1, #holderDB["2v2"] do
-        table.insert(sortedDB, holderDB["2v2"][b]);
+    for i = 1, #holderDB["2v2"] do
+        table.insert(sortedDB, holderDB["2v2"][i]);
     end
-    for n = 1, #holderDB["3v3"] do
-        table.insert(sortedDB, holderDB["3v3"][n]);
+    for i = 1, #holderDB["3v3"] do
+        table.insert(sortedDB, holderDB["3v3"][i]);
     end
-    for m = 1, #holderDB["5v5"] do
-        table.insert(sortedDB, holderDB["5v5"][m]);
+    for i = 1, #holderDB["5v5"] do
+        table.insert(sortedDB, holderDB["5v5"][i]);
     end
     
     table.sort(sortedDB, function (k1,k2)
