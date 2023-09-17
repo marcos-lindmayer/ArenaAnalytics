@@ -181,12 +181,12 @@ function ArenaAnalytics:init(event, name, ...)
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
-	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or nil;
-	local versionText = version ~= nil and " (Version: " .. version .. ")" or ""
-	ArenaAnalytics:Print("Early Access: Bugs are expected!" .. versionText);
+	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 99999;
+	local versionText = version ~= 99999 and " (Version: " .. version .. ")" or ""
+	ArenaAnalytics:Print("Early Access: Bugs are expected!", versionText);
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
-
+	
 	-- Update cached rating as soon as possible
 	ratedUpdateEvent = CreateFrame("Frame");
 	ratedUpdateEvent:RegisterEvent("PVP_RATED_STATS_UPDATE");
@@ -196,9 +196,7 @@ function ArenaAnalytics:init(event, name, ...)
 	ArenaAnalytics.AAmatch:EventRegister();
 	ArenaAnalytics.AAtable:OnLoad();
 	createMinimapButton();
-		
-	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 9999;
-	
+
 	if(IsInInstance() or IsInGroup(1)) then
 		local channel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
 		local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, channel)
