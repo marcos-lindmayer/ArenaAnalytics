@@ -223,14 +223,22 @@ local function createExportFrame()
 		ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameStrata("DIALOG");
 		ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameLevel(10);
 		ArenaAnalyticsScrollFrame.exportFrameContainer:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
-		ArenaAnalyticsScrollFrame.exportFrameContainer:SetSize(510, 150);
+		ArenaAnalyticsScrollFrame.exportFrameContainer:SetSize(400, 150);
+
+		ArenaAnalyticsScrollFrame.exportFrameTitle = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateFontString(nil, "OVERLAY");
+		ArenaAnalyticsScrollFrame.exportFrameTitle:SetPoint("TOP", ArenaAnalyticsScrollFrame.exportFrameContainer, "TOP", -10, -5);
+		ArenaAnalyticsScrollFrame.exportFrameTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
+		ArenaAnalyticsScrollFrame.exportFrameTitle:SetText("ArenaAnalytics Export");
+
 		ArenaAnalyticsScrollFrame.exportFrameScroll = CreateFrame("ScrollFrame", "exportFrameScroll", ArenaAnalyticsScrollFrame.exportFrameContainer, "UIPanelScrollFrameTemplate");
-		ArenaAnalyticsScrollFrame.exportFrameScroll:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameContainer, "CENTER");
-		ArenaAnalyticsScrollFrame.exportFrameScroll:SetSize(500, 100);
+		ArenaAnalyticsScrollFrame.exportFrameScroll:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameContainer, "CENTER", -10, -11);
+		ArenaAnalyticsScrollFrame.exportFrameScroll:SetSize(355, 110);
 		ArenaAnalyticsScrollFrame.exportFrameScroll.ScrollBar:Hide();
+
 		ArenaAnalyticsScrollFrame.exportFrameScrollBg = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateTexture()
-		ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetSize(500, 100);
+		ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetSize(380, 110);
 		ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameScroll, "CENTER");
+
 		ArenaAnalyticsScrollFrame.exportFrame = CreateFrame("EditBox", "exportFrameScroll", nil, "BackdropTemplate");
 		ArenaAnalyticsScrollFrame.exportFrameScroll:SetScrollChild(ArenaAnalyticsScrollFrame.exportFrame);
 		ArenaAnalyticsScrollFrame.exportFrame:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18);
@@ -399,3 +407,19 @@ end
 local events = CreateFrame("Frame");
 events:RegisterEvent("ADDON_LOADED");
 events:SetScript("OnEvent", ArenaAnalytics.init);
+
+--⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+--⠀⠀⠀⠀⠀⣀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+--⠀⠀⢀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⢀⣀⡀⠀⠀⠀⠀⠀
+--⠀⠀⠉⠉⠉⠉⠙⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⣰⣿⣿⡃⠀⠀⠀⠀⠀
+--⠀⠀⠀⠀⠀⠀⠀⠀ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⣠⣾⣿⣿⣿⣿⣷⣦⠀⠀⠀
+--⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⠟⠋⣀⣼⣿⣿⣿⣿⣿⣿⣀⣿⣇⠀⠀
+--⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⠟⢁⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+--⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⠃⣠⣿⣿⣿⣿⣿⣿⣿⣿⡟⠁⠉⠉⠙⠉⠀⠀
+--⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⠃⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⣀⠀⠀⠀⠀⠀
+--⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⢰⣿⣿⣿⣿⠟⠋⣉⣭⣭⣉⠛⠻⠿⠟⠃⠀⠀⠀
+--⠀⠀⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢃⣴⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀
+--⠀⠀⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣸⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀
+--⠀⠀⠀⠀⠈⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⠀
+--⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣤⡀⠀⠀⠀⠀⠀⠀
+--⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀

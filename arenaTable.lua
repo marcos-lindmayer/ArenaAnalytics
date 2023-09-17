@@ -719,15 +719,14 @@ function AAtable:OnLoad()
 
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "InputBoxTemplate")
     ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, -27);
-    ArenaAnalyticsScrollFrame.searchBox:SetFrameStrata("HIGH");
     ArenaAnalyticsScrollFrame.searchBox:SetSize(155, 55);
     ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
-    ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(255);
+    ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(513);
 
     ArenaAnalyticsScrollFrame.searchTitle = ArenaAnalyticsScrollFrame.searchBox:CreateFontString(nil, 'OVERLAY');
     ArenaAnalyticsScrollFrame.searchTitle:SetPoint("TOPLEFT", -4, 0);
     ArenaAnalyticsScrollFrame.searchTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-    ArenaAnalyticsScrollFrame.searchTitle:SetText("Player Search")
+    ArenaAnalyticsScrollFrame.searchTitle:SetText("Player Search");
 
     ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEnterPressed', function()
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
