@@ -19,6 +19,18 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print("Wanna get more data? Web project coming soon...");
 	end,
 
+	-- Debug command to 
+	["debug"] = function()
+		ArenaAnalytics.skipDebugLog = false;
+		ArenaAnalytics.skipDebugForceNilError = false;
+		ArenaAnalytics:Log("Enabled debug logic.");
+	end,
+
+	["nodebug"] = function()
+		ArenaAnalytics.skipDebugLog = true;
+		ArenaAnalytics.skipDebugForceNilError = true;
+		ArenaAnalytics:Print("Disabled debug logic.");
+	end,
 };
 
 local function HandleSlashCommands(str)	
@@ -65,9 +77,9 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
-local skipDebugLog = true;
+ArenaAnalytics.skipDebugLog = true;
 function ArenaAnalytics:Log(...)
-	if skipDebugLog then 
+	if ArenaAnalytics.skipDebugLog then 
 		return;
 	end
 
@@ -162,7 +174,6 @@ local function createMinimapButton()
 	minibtn:SetScript("OnClick", function()
 		ArenaAnalytics.AAtable.Toggle()
 	end)
-
 end
 
 function ArenaAnalytics:init(event, name, ...)

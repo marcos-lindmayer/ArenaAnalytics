@@ -1089,7 +1089,6 @@ local function checkSearchMatch(playerName, search)
     if(playerName == nil) then
         return false;
     end
-    
     local stringToSearch = string.gsub(playerName:lower(), "%s+", "");
     local finalSearch = search;
 

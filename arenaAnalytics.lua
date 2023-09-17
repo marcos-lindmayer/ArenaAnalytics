@@ -7,9 +7,9 @@ local AAmatch = ArenaAnalytics.AAmatch;
 local skipSyncLogic = true;
 
 -- Debug function to force a nil error if input is nil
-local skipDebugForceNilError = true;
+ArenaAnalytics.skipDebugForceNilError = true;
 function ForceDebugNilError(value)
-	if(value == nil and not skipDebugForceNilError) then
+	if(value == nil and not ArenaAnalytics.skipDebugForceNilError) then
 		local nilOperation = value + 666;
 	end
 end
