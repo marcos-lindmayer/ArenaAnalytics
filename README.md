@@ -29,5 +29,5 @@ Example: "Hydr", "hxii-firemaw"
 Quick Search:
 Clicking class icons for players in a stored arena in the match history will search for the player.
 Shift-clicking adds it to the existing search.
-If control is held, the player will be added as your team only, otherwise if alt is held it must be an enemy.
-Right-clicking overrides the explicit team prefix to match the team of the player in the match you clicked.
+Right-clicking adds explicit team prefix to match the team of the player in the match you clicked.
+If ctrl is held, the player will be added as your team search only, otherwise if alt is held it must be an enemy.

@@ -1025,17 +1025,15 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                 teamIconsFrames[teamIconIndex]:RegisterForClicks("LeftButtonDown", "RightButtonDown");
                 teamIconsFrames[teamIconIndex]:SetScript("OnClick", function(frame, button)
                     -- Specify explicit team prefix for search
-                    local prefix = '';                    
-                    if (button == "RightButton") then
-                        prefix = matchKey == "team" and '+' or '-';
-                    else
-                        if(IsControlKeyDown()) then
-                            -- Search for this player on your team
-                            prefix = '+';
-                        elseif(IsAltKeyDown()) then
-                            -- Search for this player on enemy team
-                            prefix = '-'
-                        end
+                    local prefix = '';
+                    if(IsControlKeyDown()) then
+                        -- Search for this player on your team
+                        prefix = '+';
+                    elseif(IsAltKeyDown()) then
+                        -- Search for this player on enemy team
+                        prefix = '-'
+                    elseif (button == "RightButton") then
+                        prefix = matchKey == "team" and '+' or '-';                        
                     end
 
                     if(IsShiftKeyDown()) then
