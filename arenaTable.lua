@@ -948,6 +948,7 @@ local function addSpecFrame(button, classIconFrame, spec, class)
     table.insert(ArenaAnalyticsScrollFrame.specFrames, {classIconFrame.spec, button})    
 end
 
+---TODO: Consider removing. No longer used. (Replaced by search box)
 -- Displayes a small window with the clicked player's name
 -- for easy copy/paste
 local function showClickedName(classFrame)
@@ -1023,19 +1024,26 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
             if (teamIconsFrames[teamIconIndex]) then
                 teamIconsFrames[teamIconIndex]:RegisterForClicks("LeftButtonDown", "RightButtonDown");
                 teamIconsFrames[teamIconIndex]:SetScript("OnClick", function(frame, button)
-                    local previousSearch = (button == "RightButton") and ArenaAnalyticsScrollFrame.searchBox:GetText() or "";
+                    -- Specify explicit team prefix for search
+                    local prefix = '';                    
+                    if (button == "RightButton") then
+                        prefix = matchKey == "team" and '+' or '-';
+                    else
+                        if(IsControlKeyDown()) then
+                            -- Search for this player on your team
+                            prefix = '+';
+                        elseif(IsAltKeyDown()) then
+                            -- Search for this player on enemy team
+                            prefix = '-'
+                        end
+                    end
 
                     if(IsShiftKeyDown()) then
                         -- Search for this player on any team
-                        updateSearchForPlayer(previousSearch, "", playerName);
-                    elseif(IsControlKeyDown()) then
-                        -- Search for this player on your team
-                        updateSearchForPlayer(previousSearch, "+", playerName);
-                    elseif(IsAltKeyDown()) then
-                        -- Search for this player on enemy team
-                        updateSearchForPlayer(previousSearch, "-", playerName);
-                    elseif(button == "LeftButton") then
-                        showClickedName(frame);
+                        updateSearchForPlayer(ArenaAnalyticsScrollFrame.searchBox:GetText(), prefix, playerName);
+                    else
+                        -- Search for the player
+                        updateSearchForPlayer("", prefix, playerName);
                     end
                 end);
             end
