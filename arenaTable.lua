@@ -4,7 +4,10 @@ ArenaAnalytics.AAtable = HybridScrollMixin;
 local AAtable = ArenaAnalytics.AAtable
 
 local currentFilters = {
-    ["search"] = { },
+    ["search"] = { 
+        ["raw"] = "",
+        ["data"] = { }
+    },
     ["map"] = "All", 
     ["bracket"] = "All", 
     ["comps"] = "All",
@@ -16,7 +19,7 @@ local currentFilters = {
     ["enemycomps5v5"] = "All"
 };
 
-local isCompFilterOn;
+local isCompFilterOn = false;
 local filteredDB = nil;
 local dropdownCounter = 1;
 local currentSeasonStartInt = 1687219201;
