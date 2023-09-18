@@ -732,29 +732,19 @@ function AAtable:OnLoad()
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
     end);
 
+    ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEscapePressed', function() 
+        ArenaAnalyticsScrollFrame.searchBox:SetText(currentFilters["search"]["raw"]);
+        ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
+    end);
+        
     ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEditFocusLost', function() 
         -- Clear white spaces
-        local text = string.gsub(ArenaAnalyticsScrollFrame.searchBox:GetText(), "%s%s+", " ");
-        local searchTable = {};
+        local search = ArenaAnalyticsScrollFrame.searchBox:GetText();
 
-        -- Get search table from search
-        if(text ~= "") then
-            separator = ",";
-            text:gsub("([^"..separator.."]*)", function(s)
-                local s = s:gsub("%s+", "");
-                if(s ~= "") then
-                    table.insert(searchTable, s:lower());
-                end
-            end);
-        end
+        ArenaAnalytics:updateSearchFilterData(search);
 
-        -- Commit search
-        if(searchTable ~= currentFilters["search"]) then
-            currentFilters["search"] = searchTable;
-            AAtable:RefreshLayout(true);
-        end
-
-        ArenaAnalyticsScrollFrame.searchBox:SetText(text);
+        -- Compact double spaces to single spaces in the search box
+        ArenaAnalyticsScrollFrame.searchBox:SetText(currentFilters["search"]["raw"]);
     end);
 
     local arenaBracket_opts = {
@@ -960,7 +950,7 @@ end
 
 -- Displayes a small window with the clicked player's name
 -- for easy copy/paste
-function showClickedName(classFrame)
+local function showClickedName(classFrame)
     local name = classFrame:GetAttribute("name");
     if (not ArenaAnalyticsScrollFrame.clickedNameFrame) then
         ArenaAnalyticsScrollFrame.clickedNameFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
@@ -1002,14 +992,52 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
             teamIconsFrames[teamIconIndex].texture:SetTexture(match[matchKey][teamIconIndex] and match[matchKey][teamIconIndex]["classIcon"] or nil);
             teamIconsFrames[teamIconIndex].tooltip = ""
 
-            teamIconsFrames[teamIconIndex]:SetAttribute("name", match[matchKey][teamIconIndex] and match[matchKey][teamIconIndex]["name"] or "")
+            local playerName = match[matchKey][teamIconIndex] and match[matchKey][teamIconIndex]["name"] or ""
+            teamIconsFrames[teamIconIndex]:SetAttribute("name", playerName)
+
+            local function updateSearchForPlayer(previousSearch, prefix, search)
+                previousSearch = previousSearch or "";
+                search = search or "";
+
+                local newSearch = prefix .. search;
+                local existingSearch = search:gsub("-", "%%-");
+                if(previousSearch ~= "" and previousSearch:find(search:gsub("-", "%%-")) ~= nil) then
+                    -- Clear existing prefix
+                    previousSearch = previousSearch:gsub("-"..existingSearch, search);
+                    previousSearch = previousSearch:gsub("+"..existingSearch, search);
+
+                    newSearch = previousSearch:gsub(existingSearch, newSearch);
+                else
+                    if(previousSearch ~= "" and previousSearch:sub(-1) ~= '|') then
+                        previousSearch = previousSearch .. ", ";
+                    end
+                    
+                    newSearch = previousSearch .. newSearch;
+                end
+                
+                ArenaAnalytics:updateSearchFilterData(newSearch);
+                ArenaAnalyticsScrollFrame.searchBox:SetText(currentFilters["search"]["raw"]);
+            end
 
             -- Set click to copy name
             if (teamIconsFrames[teamIconIndex]) then
-                teamIconsFrames[teamIconIndex]:SetScript("OnClick", function (args)
-                    showClickedName(args);
-                end
-                )
+                teamIconsFrames[teamIconIndex]:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+                teamIconsFrames[teamIconIndex]:SetScript("OnClick", function(frame, button)
+                    local previousSearch = (button == "RightButton") and ArenaAnalyticsScrollFrame.searchBox:GetText() or "";
+
+                    if(IsShiftKeyDown()) then
+                        -- Search for this player on any team
+                        updateSearchForPlayer(previousSearch, "", playerName);
+                    elseif(IsControlKeyDown()) then
+                        -- Search for this player on your team
+                        updateSearchForPlayer(previousSearch, "+", playerName);
+                    elseif(IsAltKeyDown()) then
+                        -- Search for this player on enemy team
+                        updateSearchForPlayer(previousSearch, "-", playerName);
+                    elseif(button == "LeftButton") then
+                        showClickedName(frame);
+                    end
+                end);
             end
 
             -- Add tooltip with player name and class colored spec/class
@@ -1051,9 +1079,7 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
         else
             teamIconsFrames[teamIconIndex]:Hide()
         end
-
     end
-    return teamIconsFrames[#teamIconsFrames];
 end
 
 -- Updates comp filter if there's a new comp registered
@@ -1081,52 +1107,123 @@ function AAtable:checkForFilterUpdate(bracket)
     --[[ ArenaAnalyticsScrollFrame.arenaTypeMenu.buttons[1]:Click() ]]
 end
 
-local function checkSearchMatch(playerName, search)
-    if(search == nil or search == "") then
+function ArenaAnalytics:updateSearchFilterData(search)
+        search = search or "";
+        
+        -- Get search table from search
+        local searchFilter = {
+            ["raw"] = string.gsub(search, "%s%s+", " "),
+            ["data"] = {}
+        };
+
+        -- Search didn't change
+        if(searchFilter["raw"] == currentFilters["search"]["raw"]) then
+            return;
+        end
+    
+        search = string.gsub(search, "%s+", "");
+
+        if(search ~= "") then
+            search:gsub("([^,]*)", function(player)
+                if(player ~= nil and player ~= "") then
+                    player = player:gsub(',', '');
+
+                    local playerTable = {
+                        ["alts"] = {},
+                        ["explicitTeam"] = "any"
+                    }
+
+                    -- Parse for alts and explicit teams
+                    -- If first symbol is + or -, specify explicit team for the player
+                    local prefix = player:sub(1, 1);
+
+                    if(prefix == "+") then
+                        player = player:sub(2);
+                        playerTable["explicitTeam"] = "team";
+                    elseif(prefix == "-") then
+                        player = player:sub(2);
+                        playerTable["explicitTeam"] = "enemyTeam";
+                    end
+
+                    player:gsub("([^|]*)", function(alt)
+                        alt = alt:gsub('|', '');
+                        if(alt ~= nil and alt ~= "") then
+                            table.insert(playerTable["alts"], alt:lower());
+                        end
+                    end);
+
+                    table.insert(searchFilter["data"], playerTable);
+                end
+            end);
+        end
+
+        -- Commit search
+        if(searchFilter ~= currentFilters["search"]) then
+            currentFilters["search"] = searchFilter;
+
+            ArenaAnalytics:Log("Refreshing...");
+            AAtable:RefreshLayout(true);
+        end
+end
+
+local function checkSearchMatch(playerName, search, team)
+    if(search == nil) then
+        ArenaAnalytics:Log("Empty search reached checkSearchMatch!");
         return true;
     end
 
-    if(playerName == nil) then
+    if(playerName == nil or playerName == "") then
         return false;
     end
-    local stringToSearch = string.gsub(playerName:lower(), "%s+", "");
-    local finalSearch = search;
-
-    local isExactSearch = #finalSearch > 1 and string.sub(search, 1, 1) == '"' and string.sub(search, -1) == '"';
-    finalSearch = finalSearch:gsub('"', '');
-
-    -- If search term is surrounded by quotation marks, check exact search
-    if(isExactSearch) then
-        if(not string.find(search, "-")) then
-            -- Exclude server when it was excluded for an exact search term
-            stringToSearch = string.match(stringToSearch, "[^-]+");
-        end
-
-        return finalSearch == stringToSearch;
-    end
     
-    -- Fix special characters
-    finalSearch = finalSearch:gsub("-", "%%-");
+    local stringToSearch = string.gsub(playerName:lower(), "%s+", "");
 
-    return stringToSearch:find(finalSearch) ~= nil;
+    for i=1, #search do
+        local altSearch = search[i];
+        if(altSearch ~= nil and altSearch ~= "") then
+            local isExactSearch = #altSearch > 1 and altSearch:sub(1, 1) == '"' and altSearch:sub(-1) == '"';
+            altSearch = altSearch:gsub('"', '');
+            
+            -- If search term is surrounded by quotation marks, check exact search
+            if(isExactSearch) then
+                if(not string.find(altSearch, "-")) then
+                    -- Exclude server when it was excluded for an exact search term
+                    stringToSearch = string.match(stringToSearch, "[^-]+");
+                end
+                
+                if(altSearch == stringToSearch) then
+                    return true;
+                end
+            else
+                -- Fix special characters
+                altSearch = altSearch:gsub("-", "%%-");
+                
+                if(stringToSearch:find(altSearch) ~= nil) then
+                    return true;
+                end
+            end
+        end
+    end
+
+    return false;
 end
 
 local function doesMatchPassSearchFilter(match)
     if(match ~= nil) then
-        if(currentFilters["search"] == nil) then
+        if(currentFilters["search"]["data"] == nil) then
             return true;
         end
-        for k=1, #currentFilters["search"] do
+        for k=1, #currentFilters["search"]["data"] do
             local foundMatch = false;
-            local search = currentFilters["search"][k];
-            if(search ~= nil and search ~= "") then
-                local teams = {"team", "enemyTeam"}
+            local search = currentFilters["search"]["data"][k];
+            if(search ~= nil and search["alts"] ~= nil and #search["alts"] > 0) then
+                local teams = (search["explicitTeam"] ~= "any") and { search["explicitTeam"] } or {"team", "enemyTeam"};
                 for _, team in ipairs(teams) do
                     for j = 1, #match[team] do
                         local player = match[team][j];
                         if(player ~= nil) then
                             -- keep match if player name match the search
-                            if(checkSearchMatch(player["name"]:lower(), search)) then
+                            if(checkSearchMatch(player["name"]:lower(), search["alts"], team)) then
                                 foundMatch = true;
                             end
                         end
@@ -1337,7 +1434,7 @@ local function applyFilters(unfilteredDB)
         end
     end
 
-    if(currentFilters["search"] ~= "") then
+    if(currentFilters["search"]["data"] ~= "") then
         for _, bracket in ipairs(brackets) do
             for i = #holderDB[bracket], 1, -1 do
                 if(not doesMatchPassSearchFilter(holderDB[bracket][i])) then
@@ -1601,7 +1698,7 @@ function AAtable:RefreshLayout(filter)
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
             
-            local ratingPrevFrame = setClassTextureWithTooltip(teamIconsFrames, match, "team", button)
+            setClassTextureWithTooltip(teamIconsFrames, match, "team", button)
             local enemyDelta
             -- Paint winner green, loser red 
             if (match["won"]) then
@@ -1620,7 +1717,7 @@ function AAtable:RefreshLayout(filter)
 
             button.MMR:SetText(match["mmr"] or "");
 
-            local enemyRatingPrevFrame = setClassTextureWithTooltip(enemyTeamIconsFrames, match, "enemyTeam", button)
+            setClassTextureWithTooltip(enemyTeamIconsFrames, match, "enemyTeam", button)
             local enemyRating = match["enemyRating"] and match["enemyRating"] or ""
             button.EnemyRating:SetText(enemyRating .. enemyDelta or "");
             button.EnemyMMR:SetText(match["enemyMmr"] or "");

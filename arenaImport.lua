@@ -53,7 +53,7 @@ function AAimport:parseRawData(data)
     local dataSource = AAimport:determineImportSource(data);
     
     if (data ~= nil) then 
-        ArenaAnalytics:Print("Import data length: " .. #data);
+        ArenaAnalytics:Log("Import data length: " .. #data);
     end
 
     if(isImporting) then
@@ -226,8 +226,9 @@ function AAimport:addCachedArenasToBracketDB_ArenaStats(nextIndex)
         }
 
         table.sort(arenaDB["team"], function(a, b)
-            local prioA = a["name"] == UnitName("player") and 1 or 2;
-            local prioB = b["name"] == UnitName("player") and 1 or 2;
+            local name = UnitName("player");
+            local prioA = a["name"] == name and 1 or 2;
+            local prioB = b["name"] == name and 1 or 2;
             local sameClass = a["class"] == b["class"];
             return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
         end)
@@ -272,6 +273,16 @@ function AAimport:createGroupTable(arena, groupType, size)
         }
         table.insert(group, player)
     end
+
+    -- Place player first in the arena party group, sort rest 
+	table.sort(group, function(a, b)
+        local name = UnitName("player");
+		local prioA = a["name"] == name and 1 or 2;
+		local prioB = b["name"] == name and 1 or 2;
+		local sameClass = a["class"] == b["class"]
+		return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
+	end);
+
     return group;
 end
 

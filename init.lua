@@ -23,13 +23,13 @@ ArenaAnalytics.commands = {
 	["debug"] = function()
 		ArenaAnalytics.skipDebugLog = false;
 		ArenaAnalytics.skipDebugForceNilError = false;
-		ArenaAnalytics:Log("Enabled debug logic.");
+		ArenaAnalytics:Log("Debugging enabled!");
 	end,
 
 	["nodebug"] = function()
 		ArenaAnalytics.skipDebugLog = true;
 		ArenaAnalytics.skipDebugForceNilError = true;
-		ArenaAnalytics:Print("Disabled debug logic.");
+		ArenaAnalytics:Print("Debugging disabled!");
 	end,
 };
 

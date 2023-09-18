@@ -209,15 +209,13 @@ function AAmatch:insertArenaOnTable()
 		local prioB = b["name"] == currentArena["playerName"] and 1 or 2
 		local sameClass = a["class"] == b["class"]
 		return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
-	end
-	);
+	end);
 
 	--Sort arena["enemy"]
 	table.sort(currentArena["enemy"], function(a, b)
 		local sameClass = a["class"] == b["class"]
 		return (sameClass and a["name"] < b["name"]) or a["class"] < b["class"]
-	end
-	);
+	end);
 
 	if (not skipSyncLogic and currentArena["gotAllArenaInfo"] == false) then 
 		-- print("Missing specs. Requesting data")
