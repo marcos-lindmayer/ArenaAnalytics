@@ -6,6 +6,8 @@ local _, core = ...; -- Namespace
 local Constants = {}
 core.Constants = Constants;
 
+Constants.currentSeasonStartInt = 1687219201;
+
 local specSpells = {
     -- DRUID
     [ 33831 ] = "Balance", -- Force of Nature
