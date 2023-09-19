@@ -741,6 +741,13 @@ function AAtable:OnLoad()
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
     end);
         
+    ArenaAnalyticsScrollFrame.searchBox:SetScript('OnTextSet', function(self) 
+        if(self:GetText() == "" and currentFilters["search"]["raw"] ~= "") then
+            ArenaAnalytics:updateSearchFilterData("");
+            self:SetText("");
+        end
+    end);
+        
     ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEditFocusLost', function() 
         -- Clear white spaces
         local search = ArenaAnalyticsScrollFrame.searchBox:GetText();
