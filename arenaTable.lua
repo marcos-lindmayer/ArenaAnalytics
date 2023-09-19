@@ -405,6 +405,7 @@ local function setIconsOnCompFilter(itext, itooltip, isEnemyComp, games)
         local arenaSpec = arenaClassSpec:sub(indexOfSeparator + 1)
         local iconPath = "Interface\\AddOns\\ArenaAnalytics\\icon\\" .. arenaClass .. "\\" .. arenaSpec;
         local singleClassSpecIcon = IconClass(iconPath, 0, 0, 0, 0, 0, 0, 25, 25);
+        --TODO: Add preg
         inlineIcons = inlineIcons .. singleClassSpecIcon:GetIconString() .. " ";
         infoTooltip = infoTooltip .. arenaClass .. "|" .. arenaSpec .."-"
     end
@@ -720,7 +721,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 413);
     ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
 
-    ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "InputBoxTemplate")
+    ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
     ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, -27);
     ArenaAnalyticsScrollFrame.searchBox:SetSize(155, 55);
     ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
@@ -1026,7 +1027,7 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
             -- Set click to copy name
             if (teamIconsFrames[teamIconIndex]) then
                 teamIconsFrames[teamIconIndex]:RegisterForClicks("LeftButtonDown", "RightButtonDown");
-                teamIconsFrames[teamIconIndex]:SetScript("OnClick", function(frame, button)
+                teamIconsFrames[teamIconIndex]:SetScript("OnClick", function(frame, btn)
                     -- Specify explicit team prefix for search
                     local prefix = '';
                     if(IsControlKeyDown()) then
@@ -1035,7 +1036,7 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                     elseif(IsAltKeyDown()) then
                         -- Search for this player on enemy team
                         prefix = '-'
-                    elseif (button == "RightButton") then
+                    elseif (btn == "RightButton") then
                         prefix = matchKey == "team" and '+' or '-';                        
                     end
 

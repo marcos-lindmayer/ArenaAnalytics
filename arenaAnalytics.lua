@@ -245,7 +245,7 @@ function AAmatch:insertArenaOnTable()
 	-- Setup table data to insert into ArenaAnalyticsDB
 	local arenaData = {
 		["dateInt"] = currentArena["timeStartInt"],
-		["season"] = GetCurrentArenaSeason(), -- NYI
+		["season"] = GetCurrentArenaSeason(),
 		["map"] = currentArena["mapName"], 
 		["bracket"] = ArenaAnalytics.Constants:GetBracketFromTeamSize(currentArena["size"]),
 		["duration"] = currentArena["duration"], 
