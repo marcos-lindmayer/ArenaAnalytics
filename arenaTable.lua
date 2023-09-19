@@ -352,8 +352,8 @@ function AAtable:OnLoad()
     end);
         
     ArenaAnalyticsScrollFrame.searchBox:SetScript('OnTextSet', function(self) 
-        if(self:GetText() == "" and currentFilters["search"]["raw"] ~= "") then
-            ArenaAnalytics:updateSearchFilterData("");
+        if(self:GetText() == "" and ArenaAnalytics.Filter.currentFilters["search"]["raw"] ~= "") then
+            ArenaAnalytics.Filter:updateSearchFilterData("");
             self:SetText("");
         end
     end);
