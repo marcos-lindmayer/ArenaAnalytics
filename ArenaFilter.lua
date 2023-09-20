@@ -240,18 +240,9 @@ function Filter:changeFilter(args)
         Filter.currentFilters["enemycomps5v5"] = "All";
     end
     
-    if (Filter.currentFilters["bracket"] ~= "All" and Filter.currentFilters["comps" .. Filter.currentFilters["bracket"]] ~= "All") then 
-        isCompFilterOn = true;
-    else
-        isCompFilterOn = false;
-    end
+    isCompFilterOn = (Filter.currentFilters["bracket"] ~= "All" and Filter.currentFilters["comps" .. Filter.currentFilters["bracket"]] ~= "All")
+    isEnemyCompFilterOn = (Filter.currentFilters["bracket"] ~= "All" and Filter.currentFilters["enemycomps" .. Filter.currentFilters["bracket"]] ~= "All")
     
-    if (Filter.currentFilters["bracket"] ~= "All" and Filter.currentFilters["enemycomps" .. Filter.currentFilters["bracket"]] ~= "All") then 
-        isEnemyCompFilterOn = true;
-    else
-        isEnemyCompFilterOn = false;
-    end
-
     if (string.find(filterName, "enemy")) then
         Filter:updateCompFilterByEnemyFilter(selectedFilter, filterName)
     elseif (string.find(filterName, "comp")) then
@@ -475,8 +466,6 @@ function Filter:updateSearchFilterData(search)
     -- Commit search
     if(searchFilter ~= Filter.currentFilters["search"]) then
         Filter.currentFilters["search"] = searchFilter;
-
-        ArenaAnalytics:Log("Refreshing...");
         ArenaAnalytics.AAtable:RefreshLayout(true);
     end
 end
@@ -589,7 +578,6 @@ function Filter:applyFilters(unfilteredDB)
             end
         end
     end
-
 
     -- Filter comp
     if (Filter.currentFilters["bracket"] ~= "All" and isCompFilterOn) then

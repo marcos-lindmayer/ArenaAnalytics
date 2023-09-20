@@ -305,9 +305,9 @@ function ArenaAnalyticsSettingsFrame()
         function()
             ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
             ArenaAnalytics.AAtable:RefreshLayout(true);
-            ArenaAnalytics.AAtable:checkForFilterUpdate("2v2")
-			ArenaAnalytics.AAtable:checkForFilterUpdate("3v3")
-			ArenaAnalytics.AAtable:checkForFilterUpdate("5v5")
+            ArenaAnalytics.Filter:checkForFilterUpdate("2v2")
+			ArenaAnalytics.Filter:checkForFilterUpdate("3v3")
+			ArenaAnalytics.Filter:checkForFilterUpdate("5v5")
         end
     );
 
@@ -320,9 +320,9 @@ function ArenaAnalyticsSettingsFrame()
         function()
             ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
             ArenaAnalytics.AAtable:RefreshLayout(true);
-            ArenaAnalytics.AAtable:checkForFilterUpdate("2v2")
-			ArenaAnalytics.AAtable:checkForFilterUpdate("3v3")
-			ArenaAnalytics.AAtable:checkForFilterUpdate("5v5")
+            ArenaAnalytics.Filter:checkForFilterUpdate("2v2")
+			ArenaAnalytics.Filter:checkForFilterUpdate("3v3")
+			ArenaAnalytics.Filter:checkForFilterUpdate("5v5")
         end
     );
 
@@ -339,16 +339,16 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEnterPressed", function(self)
         self:ClearFocus();
         ArenaAnalytics.AAtable:RefreshLayout(true);
-        ArenaAnalytics.AAtable:checkForFilterUpdate("2v2")
-        ArenaAnalytics.AAtable:checkForFilterUpdate("3v3")
-        ArenaAnalytics.AAtable:checkForFilterUpdate("5v5")
+        ArenaAnalytics.Filter:checkForFilterUpdate("2v2")
+        ArenaAnalytics.Filter:checkForFilterUpdate("3v3")
+        ArenaAnalytics.Filter:checkForFilterUpdate("5v5")
     end);
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEscapePressed", function(self)
         self:ClearFocus();
         ArenaAnalytics.AAtable:RefreshLayout(true);
-        ArenaAnalytics.AAtable:checkForFilterUpdate("2v2")
-        ArenaAnalytics.AAtable:checkForFilterUpdate("3v3")
-        ArenaAnalytics.AAtable:checkForFilterUpdate("5v5")
+        ArenaAnalytics.Filter:checkForFilterUpdate("2v2")
+        ArenaAnalytics.Filter:checkForFilterUpdate("3v3")
+        ArenaAnalytics.Filter:checkForFilterUpdate("5v5")
     end);
 
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnTextChanged", function(self)

@@ -3,11 +3,18 @@ ArenaAnalytics.AAmatch = {};
 
 local AAmatch = ArenaAnalytics.AAmatch;
 
+-- Character SavedVariables match history
+MatchHistoryDB = MatchHistoryDB or { }
+
 -- Debug function to force a nil error if input is nil
 ArenaAnalytics.skipDebugForceNilError = true;
 function ForceDebugNilError(value)
-	if(value == nil and not ArenaAnalytics.skipDebugForceNilError) then
-		local nilOperation = value + 666;
+	if(value == nil) then
+		ArenaAnalytics:Log("Nil error detected.");
+		
+		if(not ArenaAnalytics.skipDebugForceNilError) then
+			local nilOperation = value + 666;
+		end
 	end
 end
 
@@ -154,7 +161,7 @@ function AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, fil
 		["name"] = name,
 		["killingBlows"] = killingBlows,
 		["deaths"] = deaths,
-		["faction"] = faction,
+		["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
 		["race"] = race,
 		["class"] = class,
 		["filename"] = filename,
@@ -216,6 +223,7 @@ function AAmatch:insertArenaOnTable()
 
 	ArenaAnalytics.DataSync:requestMissingData(currentArena);
 
+	-- TODO: Look into converting this to the format used by comp filters directly
 	-- Get arena comp for each team
 	currentArena["comp"] = AAmatch:getArenaComp(currentArena["party"]);
 	currentArena["enemyComp"] = AAmatch:getArenaComp(currentArena["enemy"]);
@@ -583,12 +591,12 @@ function AAmatch:handleArenaEnd()
 		-- Create complete player tables
 		local player = AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec);
 		if (player["name"] == currentArena["playerName"]) then
-			if (player["faction"] == winner) then
+			if (faction == winner) then
 				currentArena["wonByPlayer"] = true;
 			end
-			currentArena["playerTeam"] = player["faction"];
+			currentArena["playerTeam"] = faction;
 		end
-		if (player["faction"] == 1) then
+		if (faction == 1) then
 			table.insert(team1, player);
 		else
 			table.insert(team0, player);

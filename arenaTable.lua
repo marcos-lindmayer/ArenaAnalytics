@@ -7,6 +7,8 @@ local Filter = ArenaAnalytics.Filter;
 
 local filteredDB = nil;
 
+ArenaAnalytics.filteredMatchHistory = nil;
+
 local totalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #ArenaAnalyticsDB["5v5"] 
 function AAtable:resetTotalArenas()
     totalArenas = 0;
@@ -223,7 +225,6 @@ function AAtable:createDropdown(opts)
     return dropdownTable
 end
 
-
 -- Returns a CSV-formatted string using ArenaAnalyticsDB info
 function ArenaAnalytics:getCsvFromDB()
     if(not ArenaAnalytics:hasStoredMatches()) then
@@ -251,9 +252,9 @@ function ArenaAnalytics:getCsvFromDB()
         local match = allArenas[arenaN];
         
         local arenaDateString = date("%d/%m/%y %H:%M:%S", match["dateInt"]);
-        CSVString = CSVString 
+        CSVString = CSVString
         .. arenaDateString .. ","
-        .. (match["map"] or "??") .. ","
+        .. (match["map"] or "") .. ","
         .. (match["duration"] or "") .. ","
         .. (match["won"] and "yes" or "no") .. ","
         .. (match["isRanked"] and "yes" or "no") .. ","
@@ -961,7 +962,6 @@ function AAtable:RefreshLayout(updateFilter)
             local enemyRating = match["enemyRating"] and match["enemyRating"] or ""
             button.EnemyRating:SetText(enemyRating .. enemyDelta or "");
             button.EnemyMMR:SetText(match["enemyMmr"] or "");
-
             
             button:SetAttribute("won", match["won"]);
 
@@ -1000,17 +1000,17 @@ function AAtable:RefreshLayout(updateFilter)
     if (ArenaAnalyticsScrollFrame.filterComps["2v2"] == nil) then
         AAtable:createDropdownForFilterComps("2v2")
     elseif (newArenaPlayed) then
-        AAtable:checkForFilterUpdate("2v2");
+        Filter:checkForFilterUpdate("2v2");
     end
     if (ArenaAnalyticsScrollFrame.filterComps["3v3"] == nil) then
         AAtable:createDropdownForFilterComps("3v3")
     elseif (newArenaPlayed) then
-        AAtable:checkForFilterUpdate("3v3");
+        Filter:checkForFilterUpdate("3v3");
     end
     if (ArenaAnalyticsScrollFrame.filterComps["5v5"] == nil) then
         AAtable:createDropdownForFilterComps("5v5")
     elseif (newArenaPlayed) then
-        AAtable:checkForFilterUpdate("5v5");
+        Filter:checkForFilterUpdate("5v5");
     end
 
     if (ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"] == nil) then

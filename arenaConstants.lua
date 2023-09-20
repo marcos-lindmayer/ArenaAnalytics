@@ -191,75 +191,23 @@ function Constants:GetSpecBySpellID(spellID)
     return specSpells[spellID];   
 end
 
-local racials = {
-    ["Scourge"] = {
-        [7744] = true, -- Will of the Forsaken
-        duration = 120,
-        spellName = select(1, GetSpellInfo(7744)),
-        texture = select(3, GetSpellInfo(7744))
-    },
-    ["BloodElf"] = {
-        [28730] = true, -- Arcane Torrent
-        duration = 120,
-        spellName = select(1, GetSpellInfo(28730)),
-        texture = select(3, GetSpellInfo(28730))
-    },
-    ["Tauren"] = {
-        [20549] = true, -- War Stomp
-        duration = 120,
-        spellName = select(1, GetSpellInfo(20549)),
-        texture = select(3, GetSpellInfo(20549))
-    },
-    ["Orc"] = {
-        [20572] = true,
-        [33697] = true,
-        [33702] = true,
-        duration = 120,
-        spellName = select(1, GetSpellInfo(20572)),
-        texture = select(3, GetSpellInfo(20572))
-    },
-    ["Troll"] = {
-        [20554] = true,
-        [26296] = true,
-        [26297] = true,
-        duration = 180,
-        spellName = select(1, GetSpellInfo(20554)),
-        texture = select(3, GetSpellInfo(20554))
-    },
-    ["NightElf"] = {
-        [20580] = true,
-        duration = 10,
-        spellName = select(1, GetSpellInfo(20580)),
-        texture = select(3, GetSpellInfo(20580))
-    },
-    ["Draenei"] = {
-        [28880] = true,
-        duration = 180,
-        spellName = select(1, GetSpellInfo(28880)),
-        texture = select(3, GetSpellInfo(28880))
-    },
-    ["Human"] = {
-        [20600] = true, -- Perception
-        duration = 180,
-        spellName = select(1, GetSpellInfo(20600)),
-        texture = select(3, GetSpellInfo(20600))
-    },
-    ["Gnome"] = {
-        [20589] = true, -- Escape Artist
-        duration = 105,
-        spellName = select(1, GetSpellInfo(20589)),
-        texture = select(3, GetSpellInfo(20589))
-    },
-    ["Dwarf"] = {
-        [20594] = true, -- Stoneform
-        duration = 180,
-        spellName = select(1, GetSpellInfo(20594)),
-        texture = select(3, GetSpellInfo(20594))
-    },
+local raceToFaction = {
+    ["Undead"] = "Horde",
+    ["Blood Elf"] = "Horde",
+    ["Orc"] = "Horde",
+    ["Tauren"] = "Horde",
+    ["Troll"] = "Horde",
+    ["Human"] = "Alliance",
+    ["Draenei"] = "Alliance",
+    ["Night Elf"] = "Alliance",
+    ["Gnome"] = "Alliance",
+    ["Dwarf"] = "Alliance"    
 }
-function Constants:Racials()
-    return racials
+
+function Constants:GetFactionByRace(race)
+    return raceToFaction[race];
 end
+
 local arenaTimer = {
     ["default"] = {
         [61] = "One minute until the Arena battle begins!",
