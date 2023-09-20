@@ -232,7 +232,7 @@ function ArenaAnalytics:getCsvFromDB()
     end
 
     local CSVString = "date,map,duration,won,isRanked,team1Name,team2Name,team3Name,team4Name,team5Name,rating,mmr," .. 
-    "enemyTeam1Name,enemyTeam2Name,enemyTeam3Name,enemyTeam4Name,enemyTeam5Name,enemyRating, enemyMMR" .. "\n";
+    "enemyTeam1Name,enemyTeam2Name,enemyTeam3Name,enemyTeam4Name,enemyTeam5Name,enemyRating,enemyMMR" .. "\n";
     -- Get all arenas ordered by date
     local allArenas = {}
     for arenaN2v2 = 1, #ArenaAnalyticsDB["2v2"] do
@@ -249,11 +249,11 @@ function ArenaAnalytics:getCsvFromDB()
     end)
 
     for arenaN = 1, #allArenas do
-        local match = allArenas[arenaN];
-        
         local arenaDateString = date("%d/%m/%y %H:%M:%S", match["dateInt"]);
+        
+        local match = allArenas[arenaN];
         CSVString = CSVString
-        .. arenaDateString .. ","
+        .. match["dateInt"] .. ","
         .. (match["map"] or "") .. ","
         .. (match["duration"] or "") .. ","
         .. (match["won"] and "yes" or "no") .. ","
@@ -272,7 +272,7 @@ function ArenaAnalytics:getCsvFromDB()
         .. (match["enemyTeam"][5] and match["enemyTeam"][5]["name"] or "") .. ","
         .. (match["enemyRating"] or "") .. ","
         .. (match["enemyMmr"] or "") .. ","
-        CSVString = CSVString .. "\n";
+        .. "\n";
     end
     return CSVString;
 end

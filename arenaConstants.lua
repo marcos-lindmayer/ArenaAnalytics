@@ -8,36 +8,96 @@ core.Constants = Constants;
 
 Constants.currentSeasonStartInt = 1687219201;
 
+-- Addon specific spec IDs
+local addonSpecializationIDs = {
+    -- Druid
+    ["Druid|Restoration"] = 0,
+    ["Druid|Feral"] = 1,
+    ["Druid|Balance"] = 2,
+    
+    -- Paladin
+    ["Paladin|Holy"] = 10,
+    ["Paladin|Protection"] = 11,
+    ["Paladin|Preg"] = 12,
+    ["Paladin|Retribution"] = 13,
+    
+    -- Shaman
+    ["Shaman|Restoration"] = 20,
+    ["Shaman|Elemental"] = 21,
+    ["Shaman|Enhancement"] = 22,
+
+    -- Death Knight
+    ["Death Knight|Unholy"] = 30,
+    ["Death Knight|Frost"] = 31,
+    ["Death Knight|Blood"] = 32,
+
+    -- Hunter
+    ["Hunter|Beast Mastery"] = 40,
+    ["Hunter|Marksmanship"] = 41,
+    ["Hunter|Survival"] = 42,
+
+    -- Mage
+    ["Mage|Frost"] = 50,
+    ["Mage|Fire"] = 51,
+    ["Mage|Arcane"] = 52,
+
+    -- Rogue
+    ["Rogue|Subtlety"] = 60,
+    ["Rogue|Assassination"] = 61,
+    ["Rogue|Combat"] = 62,
+    ["Rogue|Outlaw"] = 63,
+
+    -- Warlock
+    ["Warlock|Affliction"] = 70,
+    ["Warlock|Destruction"] = 71,
+    ["Warlock|Demonology"] = 72,
+
+    -- Warrior
+    ["Warrior|Protection"] = 80,
+    ["Warrior|Arms"] = 81,
+    ["Warrior|Fury"] = 82,
+    
+    -- Priest
+    ["Priest|Discipline"] = 90,
+    ["Priest|Holy"] = 91,
+    ["Priest|Shadow"] = 92,
+    
+}
+function Constants:getAddonSpecializationID(spec)
+    if spec == nil then return nil end;
+    return addonSpecializationIDs[spec];
+end
+
 local specSpells = {
     -- DRUID
-    [ 33831 ] = "Balance", -- Force of Nature
-    [ 33983 ] = "Feral", -- Mangle (Cat)
-    [ 33987 ] = "Feral", -- Mangle (Bear)
     [ 18562 ] = "Restoration", -- Swiftmend
     [ 17116 ] = "Restoration", -- Nature's Swiftness
     [ 45283 ] = "Restoration", -- Natural Perfection
-    [ 24858 ] = "Balance", -- Moonkin Form
+    [ 33891 ] = "Restoration", -- Tree of Life
+    [ 33983 ] = "Feral", -- Mangle (Cat)
+    [ 33987 ] = "Feral", -- Mangle (Bear)
     [ 24932 ] = "Feral", -- Leader of the Pack
     [ 49376 ] = "Feral", -- Feral Charge: Cat
     [ 16979 ] = "Feral", -- Feral Charge: Bear
+    [ 33831 ] = "Balance", -- Force of Nature
+    [ 24858 ] = "Balance", -- Moonkin Form
     [ 24907 ] = "Balance", -- Moonkin Aura
     [ 48505 ] = "Balance", -- Starfall (Rank 1)
     [ 53199 ] = "Balance", -- Starfall (Rank 2)
     [ 53200 ] = "Balance", -- Starfall (Rank 3)
     [ 53201 ] = "Balance", -- Starfall (Rank 4)
-    [ 33891 ] = "Restoration", -- Tree of Life
 
     -- HUNTER
-    [ 19577 ] = "Beast Mastery", -- Intimidation
     [ 34490 ] = "Marksmanship", -- Silencing Shot
+    [ 19506 ] = "Marksmanship", -- Trueshot Aura
+    [ 53209 ] = "Marksmanship",  -- Chimera Shot
     [ 27068 ] = "Survival", -- Wyvern Sting
     [ 19306 ] = "Survival", -- Counterattack
     [ 60053 ] = "Survival", -- Explosive Shot
-    [ 19506 ] = "Marksmanship", -- Trueshot Aura
+    [ 19577 ] = "Beast Mastery", -- Intimidation
     [ 34692 ] = "Beast Mastery", -- The Beast Within
     [ 20895 ] = "Beast Mastery", -- Spirit Bond
     [ 34455 ] = "Beast Mastery", -- Ferocious Inspiration
-    [ 53209 ] = "Marksmanship",  -- Chimera Shot
 
     -- MAGE
     [ 12042 ] = "Arcane", -- Arcane Power
@@ -94,9 +154,6 @@ local specSpells = {
     [ 53595 ] = "Protection", -- Hammer of the Righteous
 
     -- PRIEST
-    [ 10060 ] = "Discipline", -- Power Infusion
-    [ 33206 ] = "Discipline", -- Pain Suppression
-    [ 14752 ] = "Discipline", -- Divine Spirit
     [ 33143 ] = "Holy", -- Blessed Resilience
     [ 20711 ] = "Holy", -- Spirit of Redemption
     [ 724 ] = "Holy", -- Lightwell
@@ -111,6 +168,9 @@ local specSpells = {
     [ 48160 ] = "Shadow", -- Vampiric Touch (Rank 5)
     [ 64044 ] = "Shadow", -- Psychic Horror
     [ 47585 ] = "Shadow", -- Dispersion
+    [ 10060 ] = "Discipline", -- Power Infusion
+    [ 33206 ] = "Discipline", -- Pain Suppression
+    [ 14752 ] = "Discipline", -- Divine Spirit
     [ 45234 ] = "Discipline", -- Focused Will
     [ 27811 ] = "Discipline", -- Blessed Recovery
     [ 14752 ] = "Discipline", -- Divine Spirit
@@ -120,7 +180,6 @@ local specSpells = {
     [ 53007 ] = "Discipline", -- Penance
 
     -- ROGUE
-    [ 14177 ] = "Assassination", -- Cold Blood
     [ 13750 ] = "Combat", -- Adrenaline Rush
     [ 51690 ] = "Combat", -- Killing Spree
     [ 14185 ] = "Subtlety", -- Preparation
@@ -133,29 +192,30 @@ local specSpells = {
     [ 14278 ] = "Subtlety", -- Ghostly Strike
     [ 31665 ] = "Subtlety", -- Master of Subtlety
     [ 51713 ] = "Subtlety", -- Shadow Dance
+    [ 14177 ] = "Assassination", -- Cold Blood
     [ 31233 ] = "Assassination", -- Find Weakness
     [ 48666 ] = "Assassination", -- Mutilate
     [ 57993 ] = "Assassination", -- Envenom
     [ 51662 ] = "Assassination", -- Hunger For Blood
 
     -- SHAMAN
-    [ 16166 ] = "Elemental", -- Elemental Mastery
-    [ 30823 ] = "Enhancement", -- Shamanistic Rage
-    [ 17364 ] = "Enhancement", -- Stormstrike
     [ 16190 ] = "Restoration", -- Mana Tide Totem
     [ 49284 ] = "Restoration", -- Earth Shield
     [ 16190 ] = "Restoration", -- Mana Tide Totem
-    [ 30823 ] = "Enhancement", -- Shamanistic Rage
     [ 61300 ] = "Restoration", -- Riptide
+    [ 30823 ] = "Enhancement", -- Shamanistic Rage
+    [ 17364 ] = "Enhancement", -- Stormstrike
+    [ 30823 ] = "Enhancement", -- Shamanistic Rage
+    [ 16166 ] = "Elemental", -- Elemental Mastery
     [ 59159 ] = "Elemental", -- Thunderstorm
 
     -- WARLOCK
-    [ 47843 ] = "Affliction", -- Unstable Affliction
     [ 47847 ] = "Destruction", -- Shadowfury
     [ 30302 ] = "Destruction", -- Nether Protection
     [ 34935 ] = "Destruction", -- Backlash
     [ 17962 ] = "Destruction", -- Conflagrate
     [ 59672 ] = "Demonology", -- Metamorphosis
+    [ 47843 ] = "Affliction", -- Unstable Affliction
     [ 59164 ] = "Affliction", -- Haunt
 
     -- WARRIOR

@@ -116,6 +116,11 @@ ArenaAnalyticsDB = ArenaAnalyticsDB ~= nil and ArenaAnalyticsDB or {
 };
 
 function ArenaAnalytics:hasStoredMatches()
+	-- Update when MatchHistoryDB is the primary
+	if(MatchHistoryDB ~= nil and #MatchHistoryDB > 0) then
+		return #MatchHistoryDB > 0;
+	end
+
 	-- Update to avoid nil values
 	if(ArenaAnalyticsDB == nil) then
         ArenaAnalyticsDB = {
@@ -155,7 +160,7 @@ end
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
 function AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec)
 	local classIcon = ArenaAnalyticsGetClassIcon(class)
-	spec = spec ~= nil and spec or "-";
+	spec = spec ~= nil and spec or "?";
 	local playerTable = {
 		["GUID"] = GUID,
 		["name"] = name,
@@ -355,9 +360,10 @@ end
 function AAmatch:assignSpec(class, oldSpec, newSpec)
 	if(oldSpec == newSpec) then 
 		return oldSpec 
-	end;
+	end
 
-	if(oldSpec == nil or oldSpec == "" or oldSpec == "-" or oldSpec == "Preg") then
+	-- TODO: Fixup data for a standardized format of missing specs
+	if(oldSpec == nil or oldSpec == "" or oldSpec == "-" or oldSpec == "?" or oldSpec == "Preg") then
 		return newSpec;
 	end
 
@@ -467,6 +473,14 @@ end
 -- Returns last saved rating on selected bracket (teamSize)
 function AAmatch:getLastRating(teamSize)
 	local bracket = ArenaAnalytics.Constants:GetBracketFromTeamSize(teamSize);
+
+	for i = #MatchHistoryDB, 1, -1 do
+		local match = MatchHistoryDB[i];
+		if(match ~= nil and match["bracket"] == bracket and match["rating"] ~= "SKIRMISH") end
+			return tonumber(match["rating"]);
+		end
+	end
+
 	if(ArenaAnalyticsDB[bracket] ~= nil) then
 		for i = 0, (#ArenaAnalyticsDB[bracket] - 1) do
 			local match = ArenaAnalyticsDB[bracket][#ArenaAnalyticsDB[bracket] - i];

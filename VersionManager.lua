@@ -12,14 +12,13 @@ end
 
 local function computeSeasonWhenMissing(season, date)
     if(season == nil) then
-
+        
     end
 
     return season
 end
 
 local function updateGroupDataToNewFormat(group, myName, myRealm)
-    -- Consider adding comp formatted for filters directly here
     local updatedGroup = {};
     for _, player in ipairs(group) do
         local name = player["name"];
@@ -29,20 +28,48 @@ local function updateGroupDataToNewFormat(group, myName, myRealm)
         end
 
         local updatedPlayerTable = {
-            ["GUID"] = player["GUID"],
-            ["name"] = name,
-            ["class"] = player["class"],
-            ["spec"] = player["spec"]
-            ["race"] = player["race"],
+            ["GUID"] = player["GUID"] or "",
+            ["name"] = name or "",
+            ["class"] = player["class"] or "",
+            ["spec"] = player["spec"] or "",
+            ["race"] = player["race"] or "",
             ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(player["race"]),
-            ["killingBlows"] = player["killingBlows"],
-            ["deaths"] = player["deaths"],
-            ["damageDone"] = player["damageDone"],
-            ["healingDone"] = player["healingDone"]
-        };
+            ["killingBlows"] = player["killingBlows"] or "",
+            ["deaths"] = player["deaths"] or "",
+            ["damageDone"] = player["damageDone"] or "",
+            ["healingDone"] = player["healingDone"] or ""
+        }
         table.insert(updatedGroup, updatedPlayerTable);
     end
     return group;
+end
+
+-- Convert long form string comp to addon spec ID comp
+local function convertCompToShortFormat(comp, bracket)
+    local size;
+    if(bracket:find("2")) then
+        size = 2;
+    elseif(bracket:find("3")) then
+        size = 3;
+    else
+        size = 5;
+    end
+    
+    local newComp = {}
+    for i=1, size do
+        local specID = ArenaAnalytics.Constants:getAddonSpecializationID(comp[i]);
+        if(specID == nil) then
+            return nil;
+        end
+
+        table.insert(newComp, specID);
+    end
+
+    table.sort(newComp, function(a, b)
+        return a < b;
+    end);
+
+    return table.concat(newComp, '|');
 end
 
 -- 0.3.0 conversion from ArenaAnalyticsDB per bracket to MatchHistoryDB
@@ -64,7 +91,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         for _, arena in ipairs(ArenaAnalyticsDB[bracket]) do
             local updatedArenaData = {
                 ["isRanked"] = arena["isRanked"],
-                ["unixDate"] = arena["dateInt"],
+                ["date"] = arena["dateInt"],
                 ["season"] = computeSeasonWhenMissing(arena["season"], arena["dateInt"]),
                 ["map"] = arena["map"], 
                 ["bracket"] = bracket,
@@ -77,8 +104,8 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                 ["enemyRating"] = arena["enemyRating"], 
                 ["enemyRatingDelta"] = arena["enemyRatingDelta"],
                 ["enemyMmr"] = arena["enemyMmr"],
-                ["comp"] = arena["comp"],
-                ["enemyComp"] = arena["enemyComp"],
+                ["comp"] = convertCompToShortFormat(arena["comp"], bracket),
+                ["enemyComp"] = convertCompToShortFormat(arena["enemyComp"], bracket),
                 ["won"] = arena["won"],
                 ["firstDeath"] = arena["firstDeath"]
             }

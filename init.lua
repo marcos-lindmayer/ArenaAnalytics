@@ -31,6 +31,12 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics.skipDebugForceNilError = true;
 		ArenaAnalytics:Print("Debugging disabled!");
 	end,
+
+	["convert"] = function()
+		ArenaAnalytics:Print("Converting ArenaAnalyticsDB to MatchHistoryDB");
+		MatchHistoryDB = {} -- Force resetting it for testing
+		ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
+	end,
 };
 
 local function HandleSlashCommands(str)	
