@@ -9,7 +9,7 @@ local filteredDB = nil;
 
 ArenaAnalytics.filteredMatchHistory = nil;
 
-local totalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #ArenaAnalyticsDB["5v5"] 
+local totalArenas = #MatchHistoryDB
 function AAtable:resetTotalArenas()
     totalArenas = 0;
 end
@@ -88,12 +88,13 @@ local function createDropdownButton(info, dropdownTable, filter, dropdown_width)
     return button;
 end
 
+-- TODO: Create updated function 
 -- Returns button string (icons) and tooltip for comp filter
-local function setIconsOnCompFilter(itext, itooltip, isEnemyComp, games) 
+local function setIconsOnCompFilter(itext, itooltip, isEnemyComp, compTable)
     local inlineIcons = ""
     local infoText = itext;
     local infoTooltip = itooltip;
-    if (string.find(infoText, "-") == nil) then
+    if (string.find(infoText, "|") == nil) then
         return "","";
     end
     for arenaClassSpec in string.gmatch(infoText, "([^%-]+)") do
@@ -107,24 +108,85 @@ local function setIconsOnCompFilter(itext, itooltip, isEnemyComp, games)
         infoTooltip = infoTooltip .. arenaClass .. "|" .. arenaSpec .."-"
     end
     infoTooltip = infoTooltip:sub(1, -2)
-    infoText = ArenaAnalytics.Filter:getCompTotalGames(infoText, isEnemyComp, games) .. " " .. inlineIcons .. " - " .. ArenaAnalytics.Filter:getCompWinrate(infoText, isEnemyComp, games);
+
+    local totalPlayed = compTable["played"] or 0;
+    local wins = compTable["wins"] or 0;
+
+    local winrate = (totalPlayed > 0) and math.floor(wins * 100 / totalPlayed) or 0
+    infoText = totalPlayed .. " " .. inlineIcons .. " - " .. winrate .. "%";
     return infoText, infoTooltip;
+end
+
+-- TODO: Replace the function above (setIconsOnCompFilter)
+-- Get a string representing the comp, 
+local function getCompIconString(comp, priorityClass)
+    if(comp == nil or comp:find('|') == nil) then
+        return "";
+    end
+
+    local classTable = { }
+
+    comp:gsub("([^|]+)", function(specID)
+        local class, spec = ArenaAnalytics.Constants:getClassAndSpec(specID);
+
+        if(specID and class and spec) then
+            tinsert(classTable, {specID, class, spec});
+        end
+    end);
+
+    table.sort(classTable, function(a, b)
+        local classA = a[2];
+        local classB = b[2];
+
+        if (priorityClass) then 
+            if(classA == priorityClass) then 
+                return true;
+            elseif(classB == priorityClass) then
+                return false;
+            end
+        end
+
+        local priorityValueA = ArenaAnalytics.Constants:getSpecPriorityValue(a[1]);
+        local priorityValueB = ArenaAnalytics.Constants:getSpecPriorityValue(b[1]);
+
+        return priorityValueA > priorityValueB;
+    end);
+
+    local output = "";
+
+    for _,entry in ipairs(classTable) do
+        local class, spec = entry[2], entry[3];
+        if(class and spec) then
+            --TODO: Add preg
+            -- Replace with game folder icons
+            local iconPath = ArenaAnalyticsGetSpecIcon(spec, class);
+
+            local iconPath = "Interface\\AddOns\\ArenaAnalytics\\icon\\" .. class .. "\\" .. spec;
+            local singleClassSpecIcon = IconClass(iconPath, 0, 0, 0, 0, 0, 0, 25, 25);
+
+            if(priorityClass and class == priorityClass) then
+                output = singleClassSpecIcon:GetIconString() .. " " .. output;
+            else
+                output = output .. singleClassSpecIcon:GetIconString() .. " ";
+            end
+        end
+    end
+    return output;
 end
 
 -- Returns a dropdown frame
 -- Used for match filters
 function AAtable:createDropdown(opts)
     local dropdownTable = {};
-    local dropdown_name ='$parent_' .. opts['name'] .. '_dropdown';
-    local menu_matches = opts['matches'] or {};
-    local games = opts['games'] or {};
+    local dropdown_name ="$parent_" .. opts["name"] .. "_dropdown";
+    local entries = opts["entries"] or {};
     local hasIcon = opts["hasIcon"];
-    local title_text = opts['title'] or '';
+    local title_text = opts["title"] or "";
     local dropdown_width = (title_text == "Comp: Games | Comp | Winrate" or title_text == "Enemy Comp: Games | Comp | Winrate") and 250 or 0;
-    local default_val = opts['defaultVal'] or '';
-    local change_func = opts['changeFunc'] or function (dropdown_val) end;
+    local default_val = opts["defaultVal"] or "";
+    local change_func = opts["changeFunc"] or function (dropdown_val) end;
 
-    local dropdown = CreateFrame("Frame", dropdown_name, opts['parent'])
+    local dropdown = CreateFrame("Frame", dropdown_name, opts["parent"])
     dropdownTable.dropdownFrame = dropdown;
     local dropdownList = CreateFrame("Frame", dropdown_name .. "_list", dropdownTable.dropdownFrame)
     dropdownTable.dropdownList = dropdownList
@@ -133,64 +195,63 @@ function AAtable:createDropdown(opts)
     local dd_title = dropdownTable.dropdownFrame:CreateFontString(nil, 'OVERLAY')
     dd_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
     dropdownTable.dd_title = dd_title;
-    isEnemyComp, _ = string.find(opts['name'], "Enemy")
+    isEnemyComp, _ = string.find(opts["name"], "Enemy")
     if (hasIcon) then
-        is2v2, _ = string.find(opts['name'], "2v2")
-        if (is2v2) then
-            dropdownTable.filterName = isEnemyComp and "enemycomps2v2" or "comps2v2"
-        else
-            is3v3, _ = string.find(opts['name'], "3v3")
-            if (is3v3) then
-                dropdownTable.filterName = isEnemyComp and "enemycomps3v3" or "comps3v3"
-            else
-                dropdownTable.filterName = isEnemyComp and "enemycomps5v5" or "comps5v5"
-            end
-        end
-        
+        dropdownTable.filterName = isEnemyComp and "enemyComp" or "comp";        
     else 
         dropdownTable.filterName = title_text;
     end
     
     dropdownTable.dd_title:SetPoint("TOPLEFT", 0, 15)
 
-    dropdownTable.buttons = {}
+    dropdownTable.entries = {}
     
-    for _, match in pairs(menu_matches) do 
-        dropdownTable.dd_title:SetText(match)
+    for _, entry in pairs(entries) do 
+        local text = entry["comp"] or entry;
+        dropdownTable.dd_title:SetText(text);
         local text_width = dropdownTable.dd_title:GetStringWidth() + 50
         if (text_width > dropdown_width and title_text ~= "Comp: Games | Comp | Winrate" and title_text ~= "Enemy Comp: Games | Comp | Winrate") then
             dropdown_width = text_width
         end
         local info = {}
-        info.text = match;
+        info.text = text;
         info.tooltip = "";
         if(hasIcon and info.text ~= "All") then
-            info.text, info.tooltip = setIconsOnCompFilter(info.text, info.tooltip, isEnemyComp, games)
+            info.tooltip = entry["comp"];
+            info.text = getCompIconString(entry["comp"], not isEnemyComp and UnitClass("player") or nil);
+
+            local totalPlayed = entry["played"] or 0;
+            local wins = entry["wins"] or 0;
+
+            local winrate = (totalPlayed > 0) and math.floor(wins * 100 / totalPlayed) or 0
+            info.text = totalPlayed .. " " .. info.text .. " - " .. winrate .. "%";
         end
-        table.insert(dropdownTable.buttons, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
+        table.insert(dropdownTable.entries, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
     end
+
     -- Order Comp filter by winrate
-    if(hasIcon) then
-        table.sort(dropdownTable.buttons, function (k1,k2)
+    if (hasIcon and false) then
+        table.sort(dropdownTable.entries, function(k1,k2)
             if k1 and k1:GetText() == "All" then return true end;
             if (k2 and k2:GetText() == "All") or k1 == nil or k2 == nil then return false end;
             if (k1:GetText() and k2:GetText()) then
-                local indexOfSeparatork1, _ = string.find(k1:GetText(), "-")
+                local indexOfSeparatork1 = string.find(k1:GetText(), "-")
                 local winratek1 = k1:GetText():sub(indexOfSeparatork1 + 2, string.len(k1:GetText()) - 1);
-                local indexOfSeparatork2, _ = string.find(k2:GetText(), "-")
+                local indexOfSeparatork2 = string.find(k2:GetText(), "-")
                 local winratek2 = k2:GetText():sub(indexOfSeparatork2 + 2, string.len(k2:GetText()) - 1);
                 return tonumber(winratek1) > tonumber(winratek2)
             end
             return true;
-        end)
+        end);
     end
+
     dropdownTable.dd_title:SetText(title_text)
-    dropdownTable.dropdownList:SetSize(dropdown_width, (#dropdownTable.buttons * 25));
+    dropdownTable.dropdownList:SetSize(dropdown_width, (#dropdownTable.entries * 25));
     dropdownTable.dropdownFrame:SetWidth(dropdown_width)
     
-    for i = 1, #dropdownTable.buttons do
-        dropdownTable.buttons[i]:SetPoint("TOPLEFT", 0, -(i - 1) * 25)
-        dropdownTable.buttons[i]:SetWidth(dropdown_width)
+    for i = 1, #dropdownTable.entries do
+        dropdownTable.entries[i]:SetPoint("TOPLEFT", 0, -(i - 1) * 25)
+        dropdownTable.entries[i]:SetWidth(dropdown_width)
     end
     
     local dropdownBg = dropdownTable.dropdownFrame:CreateTexture();
@@ -200,7 +261,7 @@ function AAtable:createDropdown(opts)
     
     local dropdownListBg = dropdownTable.dropdownList:CreateTexture();
     dropdownListBg:SetPoint("CENTER")
-    dropdownListBg:SetSize(dropdown_width, (#dropdownTable.buttons * 25));
+    dropdownListBg:SetSize(dropdown_width, (#dropdownTable.entries * 25));
     dropdownListBg:SetColorTexture(0, 0, 0, 0.9);
 
     dropdownTable.selected = CreateFrame("Button", dropdown_name .. "_selected", dropdownTable.dropdownFrame, "UIServiceButtonTemplate")
@@ -222,7 +283,7 @@ function AAtable:createDropdown(opts)
 
     dropdownTable.dropdownList:Hide();
 
-    return dropdownTable
+    return dropdownTable;
 end
 
 -- Returns a CSV-formatted string using ArenaAnalyticsDB info
@@ -245,15 +306,15 @@ function ArenaAnalytics:getCsvFromDB()
         table.insert(allArenas, ArenaAnalyticsDB["5v5"][arenaN5v5]);
     end
     table.sort(allArenas, function (k1,k2)
-        return k1["dateInt"] > k2["dateInt"];
+        return k1["date"] > k2["date"];
     end)
 
     for arenaN = 1, #allArenas do
-        local arenaDateString = date("%d/%m/%y %H:%M:%S", match["dateInt"]);
+        local arenaDateString = date("%d/%m/%y %H:%M:%S", match["date"]);
         
         local match = allArenas[arenaN];
         CSVString = CSVString
-        .. match["dateInt"] .. ","
+        .. match["date"] .. ","
         .. (match["map"] or "") .. ","
         .. (match["duration"] or "") .. ","
         .. (match["won"] and "yes" or "no") .. ","
@@ -370,24 +431,24 @@ function AAtable:OnLoad()
     end);
 
     local arenaBracket_opts = {
-        ['name']='Arena_Bracket',
-        ['parent'] = ArenaAnalyticsScrollFrame,
-        ['title']='Bracket',
-        ['icon']= false,
-        ['matches'] = {'All' ,'2v2', '3v3', '5v5' },
-        ['defaultVal'] ='All', 
+        ["name"] ='Arena_Bracket',
+        ["parent"] = ArenaAnalyticsScrollFrame,
+        ["title"] ='Bracket',
+        ["icon"] = false,
+        ["entries"] = {'All' ,'2v2', '3v3', '5v5' },
+        ["defaultVal"] ='All', 
     }
 
     ArenaAnalyticsScrollFrame.arenaTypeMenu = AAtable:createDropdown(arenaBracket_opts)
     ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 15, 0);
 
     local filterMap_opts = {
-        ['name']='Filter_Map',
-        ['parent'] = ArenaAnalyticsScrollFrame,
-        ['title']='Map',
-        ['icon']= false,
-        ['matches'] = {'All' ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena', 'Dalaran Arena'},
-        ['defaultVal'] ='All'
+        ["name"] ='Filter_Map',
+        ["parent"] = ArenaAnalyticsScrollFrame,
+        ["title"] ='Map',
+        ["icon"] = false,
+        ["entries"] = {'All' ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena', 'Dalaran Arena'},
+        ["defaultVal"] ='All'
     }
     
     ArenaAnalyticsScrollFrame.filterMap = AAtable:createDropdown(filterMap_opts)
@@ -739,7 +800,7 @@ function AAtable:ToggleSpecsAndDeathBg(match, visible)
 end
 
 -- Checks if 2 arenas have the same party members
-local function arenasHaveSameParty(arena, prevArena)
+function ArenaAnalytics:arenasHaveSameParty(arena, prevArena)
     if(arena["bracket"] ~= prevArena["bracket"]) then
         return false;
     end
@@ -759,12 +820,11 @@ local function setSessions(matches)
     local session = 1
     for i = 1, #matches do
         local prev = matches[i - 1]
-        if (prev and (matches[i]["dateInt"] + 3600 < prev["dateInt"] or (not arenasHaveSameParty(matches[i], prev) and (matches[i]["isRanked"] or prev["isRanked"])))) then
+        if (prev and (matches[i]["date"] + 3600 < prev["date"] or (not ArenaAnalytics:arenasHaveSameParty(matches[i], prev) and (matches[i]["isRated"] or prev["isRated"])))) then
             session = session + 1
         end
         matches[i]["session"] = session;
     end
-    
 end
 
 -- Sets button row's background according to session
@@ -775,125 +835,70 @@ local function setColorForSession(button, session)
 end
 
 -- Create dropdowns for the Comp filters
-function AAtable:createDropdownForFilterComps(bracket)
-    ArenaAnalytics.Filter.filterCompsOpts[bracket] = {
-        ['name']='Filter' .. bracket .. '_Comps',
-        ['parent'] = ArenaAnalyticsScrollFrame,
-        ['title']='Comp: Games | Comp | Winrate',
-        ['hasIcon']= true,
-        ['matches'] = ArenaAnalytics.Filter:getPlayerPlayedCompsAndGames(bracket, nil)[1],
-        ['games'] = ArenaAnalytics.Filter:getPlayerPlayedCompsAndGames(bracket, nil)[2],
-        ['defaultVal'] ='All'
+function AAtable:createDropdownForFilterComps(isEnemyComp)
+    local filterCompsOpts = {
+        ["name"] = isEnemyComp and "enemyComp" or "comp",
+        ["parent"] = ArenaAnalyticsScrollFrame,
+        ["title"] = "Comp: Games | Comp | Winrate",
+        ["hasIcon"]= true,
+        ["entries"] = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp),
+        ["defaultVal"] ="All"
     }
 
-    ArenaAnalyticsScrollFrame.filterComps[bracket] = AAtable:createDropdown(ArenaAnalytics.Filter.filterCompsOpts[bracket])
-    ArenaAnalyticsScrollFrame.filterComps[bracket].dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
+    if (isEnemyComp) then
+        ArenaAnalyticsScrollFrame.filterEnemyComps = AAtable:createDropdown(filterCompsOpts);
+        ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterComps.dropdownFrame, "RIGHT", 15, 0);
 
-    if(bracket == "2v2") then
-        -- Set tooltip when comp is disabled
-        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:Disable();
-        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:SetDisabledFontObject("GameFontDisableSmall")
-        ArenaAnalyticsScrollFrame.filterComps[bracket].selected:SetText("Select bracket");
+        if(ArenaAnalytics.Filter.currentFilters["bracket"] == "All") then
+            -- Set tooltip when comp is disabled
+            ArenaAnalyticsScrollFrame.filterEnemyComps.selected:Disable();
+            ArenaAnalyticsScrollFrame.filterEnemyComps.selected:SetDisabledFontObject("GameFontDisableSmall");
+            ArenaAnalyticsScrollFrame.filterEnemyComps.selected:SetText("Select bracket");
+        end
     else
-        ArenaAnalyticsScrollFrame.filterComps[bracket].dropdownFrame:Hide();
-    end
-end
-
--- Create dropdowns for the Comp Enemy filters
-function AAtable:createDropdownForFilterEnemyComps(bracket)
-    ArenaAnalytics.Filter.filterEnemyCompsOpts[bracket] = {
-        ['name']='Filter' .. bracket .. '_EnemyComps',
-        ['parent'] = ArenaAnalyticsScrollFrame,
-        ['title']='Enemy Comp: Games | Comp | Winrate',
-        ['hasIcon']= true,
-        ['matches'] = ArenaAnalytics.Filter:getEnemyPlayedCompsAndGames(bracket, nil)[1],
-        ['games'] = ArenaAnalytics.Filter:getEnemyPlayedCompsAndGames(bracket, nil)[2],
-        ['defaultVal'] ='All'
-    }
-
-    ArenaAnalyticsScrollFrame.filterEnemyComps[bracket] = AAtable:createDropdown(ArenaAnalytics.Filter.filterEnemyCompsOpts[bracket])
-    ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterComps["2v2"].dropdownFrame, "RIGHT", 15, 0);
+        ArenaAnalyticsScrollFrame.filterComps = AAtable:createDropdown(filterCompsOpts);
+        ArenaAnalyticsScrollFrame.filterComps.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterMap.dropdownFrame, "RIGHT", 15, 0);
     
-    if(bracket == "2v2") then
-        -- Set tooltip when comp is disabled
-        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].selected:Disable();
-        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].selected:SetDisabledFontObject("GameFontDisableSmall")
-        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].selected:SetText("Select bracket");
-        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].dropdownFrame:Show()
-    else
-        ArenaAnalyticsScrollFrame.filterEnemyComps[bracket].dropdownFrame:Hide();
+        if(ArenaAnalytics.Filter.currentFilters["bracket"] == "All") then
+            -- Set tooltip when comp is disabled
+            ArenaAnalyticsScrollFrame.filterComps.selected:Disable();
+            ArenaAnalyticsScrollFrame.filterComps.selected:SetDisabledFontObject("GameFontDisableSmall");
+            ArenaAnalyticsScrollFrame.filterComps.selected:SetText("Select bracket");
+        end
     end
 end
 
 -- Searches for a match by its dateInt
 -- returns match as table and bracket as string
 function AAtable:getDBMatchByDateInt(dateInt)
-    local DBmatch, bracket;
-    local brackets = {"2v2", "3v3", "5v5"}
-    for i = 1, #brackets do
-        for j = 1, #ArenaAnalyticsDB[brackets[i]] do
-            if (ArenaAnalyticsDB[brackets[i]][j]["dateInt"] == dateInt) then
-                DBmatch = ArenaAnalyticsDB[brackets[i]][j];
-                bracket = brackets[i];
-                break;
-            end
+    for i=1, #MatchHistoryDB do
+        local arena = MatchHistoryDB[i];
+        if(arena and arena["date"] == dateInt) then
+            return arena, arena["bracket"];
         end
-        if (DBmatch ~= nil) then break end;        
     end
-    return DBmatch, bracket
+    return nil, nil
 end
 
--- Returns array of last game played
-function AAtable:getLastGame()
-    local lastGame2v2 = ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] and ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]] or nil
-    local lastGame3v3 = ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]] and ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]] or nil
-    local lastGame5v5 = ArenaAnalyticsDB["5v5"][#ArenaAnalyticsDB["5v5"]] and ArenaAnalyticsDB["5v5"][#ArenaAnalyticsDB["5v5"]] or nil
-    if(lastGame2v2) then
-        if(lastGame3v3) then
-            if(lastGame5v5) then
-                if (lastGame2v2["dateInt"] > lastGame3v3["dateInt"] and lastGame2v2["dateInt"] > lastGame5v5["dateInt"]) then
-                    return lastGame2v2
-                elseif (lastGame3v3["dateInt"] > lastGame2v2["dateInt"] and lastGame3v3["dateInt"] > lastGame5v5["dateInt"]) then
-                    return lastGame3v3
-                else
-                    return lastGame5v5
-                end
-            elseif (lastGame2v2["dateInt"] > lastGame3v3["dateInt"]) then
-                return lastGame3v3
-            end
-        elseif (lastGame5v5 and lastGame2v2["dateInt"] > lastGame5v5["dateInt"]) then
-            return lastGame2v2
-        else
-            return lastGame2v2
+-- Returns last match played
+function AAtable:getLastGame(skipSkirmish)
+    for i=#MatchHistoryDB, 1, -1 do
+        local match = MatchHistoryDB[i];
+        if(match ~= nil and (not skipSkirmish or match["isRated"])) then
+            return match;
         end
-    elseif (lastGame3v3) then
-        if(lastGame5v5) then
-            if (lastGame3v3["dateInt"] > lastGame5v5["dateInt"]) then
-                return lastGame3v3
-            else
-                return lastGame5v5
-            end
-        else
-            return lastGame3v3
-        end
-    elseif (lastGame5v5) then
-        return lastGame5v5
     end
-    return nil
+    return nil;
 end
 
 -- Refreshes matches table
 function AAtable:RefreshLayout(updateFilter)
-    ArenaAnalyticsDB = ArenaAnalyticsDB["2v2"] ~= nil and ArenaAnalyticsDB or {
-        ["2v2"] = {},
-        ["3v3"] = {},
-        ["5v5"] = {},
-    };
+    MatchHistoryDB = MatchHistoryDB or { }
+
     local newArenaPlayed = false;
-    local currentTotalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #ArenaAnalyticsDB["5v5"]
-    if (currentTotalArenas > totalArenas) then
+    if (#MatchHistoryDB > totalArenas) then
         newArenaPlayed = true;
-        totalArenas = currentTotalArenas;
+        totalArenas = #MatchHistoryDB;
     end
 
     if(ArenaAnalytics:hasStoredMatches()) then
@@ -906,18 +911,18 @@ function AAtable:RefreshLayout(updateFilter)
     
     local lastGame = AAtable:getLastGame()
     
-    if (updateFilter or filteredDB == nil or newArenaPlayed) then
-        filteredDB = ArenaAnalytics.Filter:applyFilters(ArenaAnalyticsDB);
+    if (updateFilter or #ArenaAnalytics.filteredMatchHistory == 0 or newArenaPlayed) then
+        ArenaAnalytics.Filter:refreshFilters(MatchHistoryDB);
     end
     
-    ArenaAnalyticsScrollFrame.matches = filteredDB;
+    ArenaAnalyticsScrollFrame.matches = ArenaAnalytics.filteredMatchHistory;
 
     local matches = ArenaAnalyticsScrollFrame.matches;
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local offset = HybridScrollFrame_GetOffset(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local wins = 0;
 
-    setSessions(matches)
+    -- setSessions(matches)
 
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
@@ -926,7 +931,7 @@ function AAtable:RefreshLayout(updateFilter)
         if matchIndex <= #matches then
             local match = matches[matchIndex];
             setColorForSession(button, match["session"])
-            button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["dateInt"]) or "");
+            button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
             button.Map:SetText(match["map"] or "");
             button.Duration:SetText(match["duration"] or "");
 
@@ -997,30 +1002,15 @@ function AAtable:RefreshLayout(updateFilter)
         end
     end
 
-    if (ArenaAnalyticsScrollFrame.filterComps["2v2"] == nil) then
-        AAtable:createDropdownForFilterComps("2v2")
-    elseif (newArenaPlayed) then
-        Filter:checkForFilterUpdate("2v2");
-    end
-    if (ArenaAnalyticsScrollFrame.filterComps["3v3"] == nil) then
-        AAtable:createDropdownForFilterComps("3v3")
-    elseif (newArenaPlayed) then
-        Filter:checkForFilterUpdate("3v3");
-    end
-    if (ArenaAnalyticsScrollFrame.filterComps["5v5"] == nil) then
-        AAtable:createDropdownForFilterComps("5v5")
-    elseif (newArenaPlayed) then
-        Filter:checkForFilterUpdate("5v5");
-    end
-
-    if (ArenaAnalyticsScrollFrame.filterEnemyComps["2v2"] == nil) then
-        AAtable:createDropdownForFilterEnemyComps("2v2")
-    end
-    if (ArenaAnalyticsScrollFrame.filterEnemyComps["3v3"] == nil) then
-        AAtable:createDropdownForFilterEnemyComps("3v3")
-    end
-    if (ArenaAnalyticsScrollFrame.filterEnemyComps["5v5"] == nil) then
-        AAtable:createDropdownForFilterEnemyComps("5v5")
+    if (newArenaPlayed) then
+        Filter:checkForFilterUpdate();
+    else
+        if (ArenaAnalyticsScrollFrame.filterComps == nil) then
+            AAtable:createDropdownForFilterComps(false);
+        end
+        if (ArenaAnalyticsScrollFrame.filterEnemyComp == nil) then
+            AAtable:createDropdownForFilterComps(true);
+        end
     end
 
     -- Adjust Team bg
@@ -1056,8 +1046,6 @@ function AAtable:RefreshLayout(updateFilter)
     local sessionWinrate = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
     local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
     ArenaAnalyticsScrollFrame.sessionWinrate:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionWinrate .. "% Winrate");
-
-
 
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;
     local totalHeight = #matches * buttonHeight;

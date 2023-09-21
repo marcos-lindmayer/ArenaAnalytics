@@ -235,10 +235,10 @@ function AAmatch:insertArenaOnTable()
 
 	-- Setup table data to insert into ArenaAnalyticsDB
 	local arenaData = {
-		["dateInt"] = currentArena["timeStartInt"],
+		["date"] = currentArena["timeStartInt"],
 		["season"] = GetCurrentArenaSeason(),
 		["map"] = currentArena["mapName"], 
-		["bracket"] = ArenaAnalytics.Constants:GetBracketFromTeamSize(currentArena["size"]),
+		["bracket"] = ArenaAnalytics:getBracketFromTeamSize(currentArena["size"]),
 		["duration"] = currentArena["duration"], 
 		["team"] = currentArena["party"],
 		["rating"] = currentArena["partyRating"], 
@@ -472,11 +472,11 @@ end
 
 -- Returns last saved rating on selected bracket (teamSize)
 function AAmatch:getLastRating(teamSize)
-	local bracket = ArenaAnalytics.Constants:GetBracketFromTeamSize(teamSize);
+	local bracket = ArenaAnalytics:getBracketFromTeamSize(teamSize);
 
 	for i = #MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
-		if(match ~= nil and match["bracket"] == bracket and match["rating"] ~= "SKIRMISH") end
+		if(match ~= nil and match["bracket"] == bracket and match["rating"] ~= "SKIRMISH") then
 			return tonumber(match["rating"]);
 		end
 	end
@@ -509,7 +509,7 @@ function AAmatch:trackArena(...)
 	currentArena["isRanked"] = isRankedArena;
 	currentArena["size"] = teamSize;
 	
-	local bracketId = ArenaAnalytics.Constants:BracketIdFromTeamSize(teamSize);
+	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(teamSize);
 	if(isRankedArena and ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
 		ArenaAnalyticsCachedBracketRatings[bracketId] = AAmatch:getLastRating(teamSize);
 	end
@@ -643,7 +643,7 @@ function AAmatch:handleArenaExited()
 		return false;	
 	end
 
-	local bracketId = ArenaAnalytics.Constants:BracketIdFromTeamSize(currentArena["size"]);
+	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(currentArena["size"]);
 
 	if(currentArena["isRanked"] == true) then
 		local newRating = GetPersonalRatedInfo(bracketId);

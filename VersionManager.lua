@@ -46,14 +46,7 @@ end
 
 -- Convert long form string comp to addon spec ID comp
 local function convertCompToShortFormat(comp, bracket)
-    local size;
-    if(bracket:find("2")) then
-        size = 2;
-    elseif(bracket:find("3")) then
-        size = 3;
-    else
-        size = 5;
-    end
+    local size = ArenaAnalytics:getTeamSizeFromBracket(bracket);
     
     local newComp = {}
     for i=1, size do
@@ -82,7 +75,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     end
 
     local myName, myRealm = UnitFullName("player");
-    ForceDebugNilError(realm);
+    ForceDebugNilError(myRealm);
 
     for _, bracket in ipairs(brackets) do
         ForceDebugNilError(bracket);
@@ -90,7 +83,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         
         for _, arena in ipairs(ArenaAnalyticsDB[bracket]) do
             local updatedArenaData = {
-                ["isRanked"] = arena["isRanked"],
+                ["isRated"] = arena["isRanked"],
                 ["date"] = arena["dateInt"],
                 ["season"] = computeSeasonWhenMissing(arena["season"], arena["dateInt"]),
                 ["map"] = arena["map"], 
@@ -114,9 +107,8 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     end
 
     table.sort(MatchHistoryDB, function (k1,k2)
-        if (k1["dateInt"] and k2["dateInt"]) then
-            return k1["dateInt"] > k2["dateInt"];
+        if (k1["date"] and k2["date"]) then
+            return k1["date"] > k2["date"];
         end
-        return k1["dateInt"] ~= nil;
-    end)
+    end);
 end

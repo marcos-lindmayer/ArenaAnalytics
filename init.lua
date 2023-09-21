@@ -311,9 +311,7 @@ function ArenaAnalyticsSettingsFrame()
         function()
             ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
             ArenaAnalytics.AAtable:RefreshLayout(true);
-            ArenaAnalytics.Filter:checkForFilterUpdate("2v2")
-			ArenaAnalytics.Filter:checkForFilterUpdate("3v3")
-			ArenaAnalytics.Filter:checkForFilterUpdate("5v5")
+            ArenaAnalytics.Filter:checkForFilterUpdate();
         end
     );
 
@@ -326,9 +324,7 @@ function ArenaAnalyticsSettingsFrame()
         function()
             ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
             ArenaAnalytics.AAtable:RefreshLayout(true);
-            ArenaAnalytics.Filter:checkForFilterUpdate("2v2")
-			ArenaAnalytics.Filter:checkForFilterUpdate("3v3")
-			ArenaAnalytics.Filter:checkForFilterUpdate("5v5")
+            ArenaAnalytics.Filter:checkForFilterUpdate();
         end
     );
 
@@ -345,16 +341,12 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEnterPressed", function(self)
         self:ClearFocus();
         ArenaAnalytics.AAtable:RefreshLayout(true);
-        ArenaAnalytics.Filter:checkForFilterUpdate("2v2")
-        ArenaAnalytics.Filter:checkForFilterUpdate("3v3")
-        ArenaAnalytics.Filter:checkForFilterUpdate("5v5")
+        ArenaAnalytics.Filter:checkForFilterUpdate();
     end);
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEscapePressed", function(self)
         self:ClearFocus();
         ArenaAnalytics.AAtable:RefreshLayout(true);
-        ArenaAnalytics.Filter:checkForFilterUpdate("2v2")
-        ArenaAnalytics.Filter:checkForFilterUpdate("3v3")
-        ArenaAnalytics.Filter:checkForFilterUpdate("5v5")
+        ArenaAnalytics.Filter:checkForFilterUpdate();
     end);
 
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnTextChanged", function(self)

@@ -2,70 +2,142 @@
 	Thanks to Gladdy for spec detection db 
 ]]
 
-local _, core = ...; -- Namespace
+local _, ArenaAnalytics = ...; -- Namespace
 local Constants = {}
-core.Constants = Constants;
+ArenaAnalytics.Constants = Constants;
 
 Constants.currentSeasonStartInt = 1687219201;
 
--- Addon specific spec IDs
+-- Priority: Healer > Caster > Tank > Melee
+-- Addon specific spec IDs { ID, "class|spec", "class", "spec", priority value } (ID must never change to preserve data validity, priority is a runtime check)
 local addonSpecializationIDs = {
     -- Druid
-    ["Druid|Restoration"] = 0,
-    ["Druid|Feral"] = 1,
-    ["Druid|Balance"] = 2,
+    ["Druid|Restoration"] = 1,
+    ["Druid|Feral"] = 2,
+    ["Druid|Balance"] = 3,
     
     -- Paladin
-    ["Paladin|Holy"] = 10,
-    ["Paladin|Protection"] = 11,
-    ["Paladin|Preg"] = 12,
-    ["Paladin|Retribution"] = 13,
+    ["Paladin|Holy"] = 11,
+    ["Paladin|Protection"] = 12,
+    ["Paladin|Preg"] = 13,
+    ["Paladin|Retribution"] = 14,
     
     -- Shaman
-    ["Shaman|Restoration"] = 20,
-    ["Shaman|Elemental"] = 21,
-    ["Shaman|Enhancement"] = 22,
+    ["Shaman|Restoration"] = 21,
+    ["Shaman|Elemental"] = 22,
+    ["Shaman|Enhancement"] = 23,
 
     -- Death Knight
-    ["Death Knight|Unholy"] = 30,
-    ["Death Knight|Frost"] = 31,
-    ["Death Knight|Blood"] = 32,
+    ["Death Knight|Unholy"] = 31,
+    ["Death Knight|Frost"] = 32,
+    ["Death Knight|Blood"] = 33,
 
     -- Hunter
-    ["Hunter|Beast Mastery"] = 40,
-    ["Hunter|Marksmanship"] = 41,
-    ["Hunter|Survival"] = 42,
+    ["Hunter|Beast Mastery"] = 41,
+    ["Hunter|Marksmanship"] = 42,
+    ["Hunter|Survival"] = 43,
 
     -- Mage
-    ["Mage|Frost"] = 50,
-    ["Mage|Fire"] = 51,
-    ["Mage|Arcane"] = 52,
+    ["Mage|Frost"] = 51,
+    ["Mage|Fire"] = 52,
+    ["Mage|Arcane"] = 53,
 
     -- Rogue
-    ["Rogue|Subtlety"] = 60,
-    ["Rogue|Assassination"] = 61,
-    ["Rogue|Combat"] = 62,
-    ["Rogue|Outlaw"] = 63,
+    ["Rogue|Subtlety"] = 61,
+    ["Rogue|Assassination"] = 62,
+    ["Rogue|Combat"] = 63,
+    ["Rogue|Outlaw"] = 64,
 
     -- Warlock
-    ["Warlock|Affliction"] = 70,
-    ["Warlock|Destruction"] = 71,
-    ["Warlock|Demonology"] = 72,
+    ["Warlock|Affliction"] = 71,
+    ["Warlock|Destruction"] = 72,
+    ["Warlock|Demonology"] = 73,
 
     -- Warrior
-    ["Warrior|Protection"] = 80,
-    ["Warrior|Arms"] = 81,
-    ["Warrior|Fury"] = 82,
+    ["Warrior|Protection"] = 81,
+    ["Warrior|Arms"] = 82,
+    ["Warrior|Fury"] = 83,
     
     -- Priest
-    ["Priest|Discipline"] = 90,
-    ["Priest|Holy"] = 91,
-    ["Priest|Shadow"] = 92,
-    
+    ["Priest|Discipline"] = 91,
+    ["Priest|Holy"] = 92,
+    ["Priest|Shadow"] = 93,
 }
 function Constants:getAddonSpecializationID(spec)
     if spec == nil then return nil end;
-    return addonSpecializationIDs[spec];
+    return addonSpecializationIDs[spec] or nil;
+end
+
+-- ID to class and spec
+local classAndSpecByID = {
+    -- Druid
+    [1] = {"Druid|Restoration", "Druid", "Restoration"},
+    [2] = {"Druid|Feral", "Druid", "Feral"},
+    [3] = {"Druid|Balance", "Druid", "Balance"},
+    
+    -- Paladin
+    [11] = {"Paladin|Holy", "Paladin", "Holy"},
+    [12] = {"Paladin|Protection", "Paladin", "Protection"},
+    [13] = {"Paladin|Preg", "Paladin", "Preg"},
+    [14] = {"Paladin|Retribution", "Paladin", "Retribution"},
+    
+    -- Shaman
+    [21] = {"Shaman|Restoration", "Shaman", "Restoration"},
+    [22] = {"Shaman|Elemental", "Shaman", "Elemental"},
+    [23] = {"Shaman|Enhancement", "Shaman", "Enhancement"},
+
+    -- Death Knight
+    [31] = {"Death Knight|Unholy", "Death Knight", "Unholy"},
+    [32] = {"Death Knight|Frost", "Death Knight", "Frost"},
+    [33] = {"Death Knight|Blood", "Death Knight", "Blood"},
+
+    -- Hunter
+    [41] = {"Hunter|Beast Mastery", "Hunter", "Beast Mastery"},
+    [42] = {"Hunter|Marksmanship", "Hunter", "Marksmanship"},
+    [43] = {"Hunter|Survival", "Hunter", "Survival"},
+
+    -- Mage
+    [51] = {"Mage|Frost", "Mage", "Frost"},
+    [52] = {"Mage|Fire", "Mage", "Fire"},
+    [53] = {"Mage|Arcane", "Mage", "Arcane"},
+
+    -- Rogue
+    [61] = {"Rogue|Subtlety", "Rogue", "Subtlety"},
+    [62] = {"Rogue|Assassination", "Rogue", "Assassination"},
+    [63] = {"Rogue|Combat", "Rogue", "Combat"},
+    [64] = {"Rogue|Outlaw", "Rogue", "Outlaw"},
+
+    -- Warlock
+    [71] = {"Warlock|Affliction", "Warlock", "Affliction"},
+    [72] = {"Warlock|Destruction", "Warlock", "Destruction"},
+    [73] = {"Warlock|Demonology", "Warlock", "Demonology"},
+
+    -- Warrior
+    [81] = {"Warrior|Protection", "Warrior", "Protection"},
+    [82] = {"Warrior|Arms", "Warrior", "Arms"},
+    [83] = {"Warrior|Fury", "Warrior", "Fury"},
+    
+    -- Priest
+    [91] = {"Priest|Discipline", "Priest", "Discipline"},
+    [92] = {"Priest|Holy", "Priest", "Holy"},
+    [93] = {"Priest|Shadow", "Priest", "Shadow"},
+}
+
+-- FIX to fetch by ID as intended
+-- Add priority values
+function Constants:getSpecPriorityValue(specID)
+    return specID and tonumber(specID) or 0
+end
+
+function Constants:getClassAndSpec(specID)
+    local data = classAndSpecByID[tonumber(specID)];
+    if (not data) then 
+        ArenaAnalytics:Log("Failed to find spec for ID: ", specID)
+        return nil, nil;
+    end
+
+    -- class, spec
+    return data[2], data[3];
 end
 
 local specSpells = {
@@ -448,11 +520,11 @@ function ArenaAnalyticsGetSpecIcon(spec, class)
 	return specString;
 end
 
-function Constants:GetBracketFromTeamSize(teamSize)
+function ArenaAnalytics:getBracketFromTeamSize(teamSize)
     return teamSize .. "v" .. teamSize;
 end
 
-function Constants:BracketIdFromTeamSize(teamSize)
+function ArenaAnalytics:getBracketIdFromTeamSize(teamSize)
     if(teamSize == 2) then
         return 1;
     elseif(teamSize == 3) then
@@ -461,11 +533,24 @@ function Constants:BracketIdFromTeamSize(teamSize)
     return 3;
 end
 
-function Constants:TeamSizeFromBracketId(bracketId)
+function ArenaAnalytics:getTeamSizeFromBracketId(bracketId)
     if(bracketId == 1) then
         return 2;
     elseif(teamSize == 2) then
         return 3;
     end    
     return 5;
+end
+
+function ArenaAnalytics:getTeamSizeFromBracket(bracket)
+    if(bracket == "2v2") then
+        return 2;
+    elseif(bracket == "3v3") then
+        return 3;
+    elseif(bracket == "5v5") then
+        return 5;
+    end
+
+    ForceDebugNilError(nil);
+    return nil;
 end
