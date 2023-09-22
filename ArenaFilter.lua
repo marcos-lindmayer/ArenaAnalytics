@@ -5,37 +5,22 @@ local Filter = ArenaAnalytics.Filter;
 
 -- Currently applied filters
 Filter.currentFilters = {
-    ["search"] = { 
+    ["Filter_Search"] = { 
         ["raw"] = "",
         ["data"] = { }
     },
-    ["season"] = "All",
-    ["map"] = "All", 
-    ["bracket"] = "All", 
-    ["comp"] = "All",
-    ["enemyComp"] = "All"
+    ["Filter_Season"] = "All",
+    ["Filter_Map"] = "All", 
+    ["Filter_Bracket"] = "All", 
+    ["Filter_Comp"] = {
+        ["data"] = "All",
+        ["display"] = "All"
+    },
+    ["Filter_EnemyComp"] = {
+        ["data"] = "All",
+        ["display"] = "All"
+    }
 };
-
--- Updates comp filter if there's a new comp registered
--- and updates winrate
-function Filter:checkForFilterUpdate()
-    if(ArenaAnalyticsScrollFrame.filterComps.dropdownFrame ~= nil) then
-        -- Comp Filter
-        ArenaAnalyticsScrollFrame.filterComps.dropdownFrame:Hide();
-        ArenaAnalyticsScrollFrame.filterComps.dropdownFrame = nil;
-    end
-    ArenaAnalyticsScrollFrame.filterComps = nil
-    ArenaAnalytics.AAtable:createDropdownForFilterComps(false);
-
-    -- Enemy Comp Filter
-    if(ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame ~= nil) then
-        ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame:Hide();
-        ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame = nil;
-    end
-    ArenaAnalyticsScrollFrame.filterEnemyComps = nil;
-
-    ArenaAnalytics.AAtable:createDropdownForFilterComps(true);
-end
 
 function Filter:doesGameMatchSettings(arenaGame)
     local seasonCondition = false
@@ -55,61 +40,36 @@ function Filter:changeFilter(args)
     local selectedFilter = args:GetAttribute("value")
     local currentFilter = args:GetAttribute("dropdownTable")
     local filterName = currentFilter.filterName
+
     currentFilter.selected:SetText(selectedFilter);
 
-    ArenaAnalytics:Log(selectedFilter);
-
-    if (filterName:find("comp") and args:GetAttribute("tooltip") ~= nil) then
-        currentFilter.selected:SetText(selectedFilter)
-        selectedFilter = args:GetAttribute("tooltip")
+    if (filterName == "Filter_Bracket") then
+        Filter.currentFilters["Filter_Comp"] = {
+            ["data"] = "All",
+            ["display"] = "All"
+        };
+        Filter.currentFilters["Filter_EnemyComp"] = {
+            ["data"] = "All",
+            ["display"] = "All"
+        };
+    end
+    
+    if (filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
+        Filter.currentFilters[filterName] = {
+            ["data"] = args:GetAttribute("tooltip");
+            ["display"] = ArenaAnalytics.AAtable:getCompIconString(args:GetAttribute("tooltip"));
+        }
+    else
+        Filter.currentFilters[filterName] = selectedFilter;
     end
 
-    Filter.currentFilters[filterName:lower()] = selectedFilter;
-    
+    ArenaAnalytics.AAtable:forceCompFilterRefresh();
+
     if currentFilter.dropdownList:IsShown() then   
         currentFilter.dropdownList:Hide();
-    else
-        currentFilter.dropdownList:Show();
     end
-
-    if (filterName == "Bracket") then
-        Filter.currentFilters["comp"] = "All";
-        Filter.currentFilters["enemyComp"] = "All";
-        ArenaAnalyticsScrollFrame.filterComps.selected:SetText("All")
-        ArenaAnalyticsScrollFrame.filterEnemyComps.selected:SetText("All");
-
-        if (selectedFilter ~= "All") then
-            ArenaAnalyticsScrollFrame.filterComps.selected:Enable();
-            ArenaAnalyticsScrollFrame.filterComps.selected:SetText(Filter.currentFilters["comp"]);
-            ArenaAnalyticsScrollFrame.filterEnemyComps.selected:Enable();
-            ArenaAnalyticsScrollFrame.filterEnemyComps.selected:SetText(Filter.currentFilters["enemyComp"]);
-        else
-            ArenaAnalyticsScrollFrame.filterComps.dropdownFrame:Hide();
-            ArenaAnalyticsScrollFrame.filterComps.dropdownFrame = nil;
-            ArenaAnalyticsScrollFrame.filterComps.selected:Disable();
-            ArenaAnalyticsScrollFrame.filterComps.selected:SetText("Select bracket");
-            ArenaAnalyticsScrollFrame.filterComps.selected:SetDisabledFontObject("GameFontDisableSmall")
-            
-            ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame:Hide();
-            ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame = nil;
-            ArenaAnalyticsScrollFrame.filterEnemyComps.selected:Disable();
-            ArenaAnalyticsScrollFrame.filterEnemyComps.selected:SetText("Select bracket");
-            ArenaAnalyticsScrollFrame.filterEnemyComps.selected:SetDisabledFontObject("GameFontDisableSmall")
-        end
-        
-        Filter:checkForFilterUpdate();
-    end
-    
 
     ArenaAnalytics.AAtable:RefreshLayout(true);
-end
-
-function Filter:updateCompFilterFrame(isEnemyFilter)
-    --ArenaAnalyticsScrollFrame.filterComps.dropdownFrame:Hide();
-    --ArenaAnalyticsScrollFrame.filterComps.dropdownFrame = nil;
-    --ArenaAnalyticsScrollFrame.filterComps = nil
-
-    ArenaAnalytics.AAtable:createDropdownForFilterComps(isEnemyFilter);
 end
 
 local function findOrAddCompValues(comps, comp, isWin)
@@ -135,12 +95,12 @@ end
 
 -- Get all played comps with total played and total wins for matches that pass filters
 function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
-    local compKey = isEnemyComp and "enemyComp" or "comp";   
+    local compKey = isEnemyComp and "enemyComp" or "comp";
     local playedComps = {
         { ["comp"] = "All" }
     };
 
-    local bracket = ArenaAnalytics.Filter.currentFilters["bracket"];
+    local bracket = ArenaAnalytics.Filter.currentFilters["Filter_Bracket"];
     if(bracket ~= "All") then        
         for i=1, #MatchHistoryDB do
             local match = MatchHistoryDB[i];
@@ -175,7 +135,7 @@ function Filter:updateSearchFilterData(search)
     };
 
     -- Search didn't change
-    if(searchFilter["raw"] == Filter.currentFilters["search"]["raw"]) then
+    if(searchFilter["raw"] == Filter.currentFilters["Filter_Search"]["raw"]) then
         return;
     end
 
@@ -216,8 +176,9 @@ function Filter:updateSearchFilterData(search)
     end
 
     -- Commit search
-    if(searchFilter ~= Filter.currentFilters["search"]) then
-        Filter.currentFilters["search"] = searchFilter;
+    if(searchFilter ~= Filter.currentFilters["Filter_Search"]) then
+        Filter.currentFilters["Filter_Search"] = searchFilter;
+        ArenaAnalytics.AAtable:forceCompFilterRefresh();
         ArenaAnalytics.AAtable:RefreshLayout(true);
     end
 end
@@ -267,17 +228,17 @@ end
 local function doesMatchPassFilter_Search(match)
     if match == nil then return false end;
 
-    if(Filter.currentFilters["search"]["data"] == "") then
+    if(Filter.currentFilters["Filter_Search"]["data"] == "") then
         return true;
     end
 
     if(match ~= nil) then
-        if(Filter.currentFilters["search"]["data"] == nil) then
+        if(Filter.currentFilters["Filter_Search"]["data"] == nil) then
             return true;
         end
-        for k=1, #Filter.currentFilters["search"]["data"] do
+        for k=1, #Filter.currentFilters["Filter_Search"]["data"] do
             local foundMatch = false;
-            local search = Filter.currentFilters["search"]["data"][k];
+            local search = Filter.currentFilters["Filter_Search"]["data"][k];
             if(search ~= nil and search["alts"] ~= nil and #search["alts"] > 0) then
                 local teams = (search["explicitTeam"] ~= "any") and { search["explicitTeam"] } or {"team", "enemyTeam"};
                 for _, team in ipairs(teams) do
@@ -311,8 +272,7 @@ end
 local function doesMatchPassFilter_Map(match)
     if match == nil then return false end;
 
-    ForceDebugNilError(Filter.currentFilters["map"]);
-    if(Filter.currentFilters["map"] == "All") then
+    if(Filter.currentFilters["Filter_Map"] == "All") then
         return true;
     end
     
@@ -322,10 +282,13 @@ local function doesMatchPassFilter_Map(match)
         ["Blade Edge Arena"] = "BEA", 
         ["Dalaran Arena"] = "DA"
     }
-    local filterMap = arenaMaps[Filter.currentFilters["map"]];
+    local filterMap = arenaMaps[Filter.currentFilters["Filter_Map"]];
+    
     if(filterMap == nil) then
-        ArenaAnalytics:Log("Map filter did not match a valid map. Filter: ", Filter.currentFilters["map"]);
-        -- TODO: Set current filter to All
+        ArenaAnalytics:Log("Map filter did not match a valid map. Filter: ", Filter.currentFilters["Filter_Map"]);
+        filterMap = "All"
+        Filter.currentFilters["Filter_Map"] = filterMap;
+        ArenaAnalyticsScrollFrame.filterMap.selected = filterMap;
     end
 
     return match["map"] == filterMap;
@@ -335,17 +298,18 @@ end
 local function doesMatchPassFilter_Bracket(match)
     if match == nil then return false end;
 
-    if(Filter.currentFilters["bracket"] == "All") then
+    if(Filter.currentFilters["Filter_Bracket"] == "All") then
         return true;
     end
-    return match["bracket"] == Filter.currentFilters["bracket"];
+    
+    return match["bracket"] == Filter.currentFilters["Filter_Bracket"];
 end
 
 -- check skirmish filter
 local function doesMatchPassFilter_Skirmish(match)
     if match == nil then return false end;
 
-    ForceDebugNilError(Filter.currentFilters["map"]);
+    ForceDebugNilError(Filter.currentFilters["Filter_Map"]);
     if(ArenaAnalyticsSettings["skirmishIsChecked"]) then
         return true;
     end
@@ -356,29 +320,29 @@ end
 local function doesMatchPassFilter_Season(match)
     if match == nil then return false end;
 
-    ForceDebugNilError(Filter.currentFilters["map"]);
-    if(Filter.currentFilters["season"] == "All") then
+    ForceDebugNilError(Filter.currentFilters["Filter_Map"]);
+    if(Filter.currentFilters["Filter_Season"] == "All") then
         return true;
     end
-    return match["season"] == Filter.currentFilters["season"];
+    return match["season"] == Filter.currentFilters["Filter_Season"];
 end
 
 -- check comp filters (comp / enemy comp)
-local function doesMatchPassFilter_Comp(match, CompKey)
+local function doesMatchPassFilter_Comp(match, isEnemyComp)
     if match == nil then return false end;
 
     -- Skip comp filter when no bracket is selected
-    ForceDebugNilError(Filter.currentFilters["bracket"]);
-    if(Filter.currentFilters["bracket"] == "All") then
+    if(Filter.currentFilters["Filter_Bracket"] == "All") then
         return true;
     end
     
-    ArenaAnalytics:Log(Filter.currentFilters[CompKey]);
-    if(Filter.currentFilters[CompKey] == "All") then
+    local compFilterKey = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
+    if(Filter.currentFilters[compFilterKey]["data"] == "All") then
         return true;
     end
-
-    return match[CompKey] == Filter.currentFilters[CompKey];
+    
+    local compKey = isEnemyComp and "enemyComp" or "comp";
+    return match[compKey] == Filter.currentFilters[compFilterKey]["data"];
 end
 
 -- check all filters
@@ -404,12 +368,12 @@ function Filter:doesMatchPassAllFilters(match, excluded)
     end
 
     -- Comp
-    if(excluded ~= "comp" and not doesMatchPassFilter_Comp(match, "comp")) then
+    if(excluded ~= "comp" and not doesMatchPassFilter_Comp(match, false)) then
         return false;
     end
 
     -- Enemy Comp
-    if(excluded ~= "enemyComp" and not doesMatchPassFilter_Comp(match, "enemyComp")) then
+    if(excluded ~= "enemyComp" and not doesMatchPassFilter_Comp(match, true)) then
         return false;
     end
 
@@ -445,6 +409,4 @@ function Filter:refreshFilters()
         end
         ArenaAnalytics.filteredMatchHistory[i]["session"] = session;
     end
-
-    ArenaAnalytics:Log("refreshFilter() ", #ArenaAnalytics.filteredMatchHistory)
 end

@@ -311,7 +311,7 @@ function ArenaAnalyticsSettingsFrame()
         function()
             ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
             ArenaAnalytics.AAtable:RefreshLayout(true);
-            ArenaAnalytics.Filter:checkForFilterUpdate();
+            ArenaAnalytics.AAtable:forceCompFilterRefresh();
         end
     );
 
@@ -324,7 +324,7 @@ function ArenaAnalyticsSettingsFrame()
         function()
             ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
             ArenaAnalytics.AAtable:RefreshLayout(true);
-            ArenaAnalytics.Filter:checkForFilterUpdate();
+            ArenaAnalytics.AAtable:forceCompFilterRefresh();
         end
     );
 
@@ -341,12 +341,12 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEnterPressed", function(self)
         self:ClearFocus();
         ArenaAnalytics.AAtable:RefreshLayout(true);
-        ArenaAnalytics.Filter:checkForFilterUpdate();
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEscapePressed", function(self)
         self:ClearFocus();
         ArenaAnalytics.AAtable:RefreshLayout(true);
-        ArenaAnalytics.Filter:checkForFilterUpdate();
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
 
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnTextChanged", function(self)
@@ -366,7 +366,7 @@ function ArenaAnalyticsSettingsFrame()
 			["3v3"] = {},
 			["5v5"] = {},
 		};
-		ArenaAnalytics.AAtable:resetTotalArenas();
+		ArenaAnalytics.AAtable:resetCachedTotalArenas();
 		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
 		ArenaAnalyticsScrollFrame.resetBtn:Disable();
         ArenaAnalytics:Print("Match history deleted!");
