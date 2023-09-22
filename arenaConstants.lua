@@ -521,7 +521,16 @@ function ArenaAnalyticsGetSpecIcon(spec, class)
 end
 
 function ArenaAnalytics:getBracketFromTeamSize(teamSize)
-    return teamSize .. "v" .. teamSize;
+    if(teamSize == 5) then
+        return "5v5";
+    elseif(teamSize == 3) then
+        return "3v3";
+    elseif(teamSize == 5) then
+        return "5v5";
+    end
+    
+    ForceDebugNilError(nil);
+    return nil;
 end
 
 function ArenaAnalytics:getBracketIdFromTeamSize(teamSize)
@@ -529,17 +538,25 @@ function ArenaAnalytics:getBracketIdFromTeamSize(teamSize)
         return 1;
     elseif(teamSize == 3) then
         return 2;
-    end    
-    return 3;
+    elseif(teamSize == 5) then
+        return 3;
+    end
+
+    ForceDebugNilError(nil);
+    return nil;
 end
 
 function ArenaAnalytics:getTeamSizeFromBracketId(bracketId)
     if(bracketId == 1) then
         return 2;
-    elseif(teamSize == 2) then
+    elseif(bracketId == 2) then
         return 3;
-    end    
-    return 5;
+    elseif(bracketId == 3) then
+        return 5
+    end
+
+    ForceDebugNilError(nil);
+    return nil;
 end
 
 function ArenaAnalytics:getTeamSizeFromBracket(bracket)

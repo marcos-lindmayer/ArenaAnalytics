@@ -116,25 +116,7 @@ ArenaAnalyticsDB = ArenaAnalyticsDB ~= nil and ArenaAnalyticsDB or {
 };
 
 function ArenaAnalytics:hasStoredMatches()
-	-- Update when MatchHistoryDB is the primary
-	if(MatchHistoryDB ~= nil and #MatchHistoryDB > 0) then
-		return #MatchHistoryDB > 0;
-	end
-
-	-- Update to avoid nil values
-	if(ArenaAnalyticsDB == nil) then
-        ArenaAnalyticsDB = {
-            ["2v2"] = {},
-            ["3v3"] = {},
-            ["5v5"] = {},
-        };
-    else
-        ArenaAnalyticsDB["2v2"] = ArenaAnalyticsDB["2v2"] or { }
-        ArenaAnalyticsDB["3v3"] = ArenaAnalyticsDB["3v3"] or { }
-        ArenaAnalyticsDB["5v5"] = ArenaAnalyticsDB["5v5"] or { }
-    end
-
-	return #ArenaAnalyticsDB["2v2"] > 0 or #ArenaAnalyticsDB["3v3"] > 0 or #ArenaAnalyticsDB["5v5"] > 0;
+	return (MatchHistoryDB ~= nil and #MatchHistoryDB > 0);
 end
 
 -- Cached last rating per bracket ID
@@ -166,8 +148,8 @@ function AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, fil
 		["name"] = name,
 		["killingBlows"] = killingBlows,
 		["deaths"] = deaths,
-		["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
 		["race"] = race,
+		["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
 		["class"] = class,
 		["filename"] = filename,
 		["damageDone"] = damageDone,
@@ -179,15 +161,38 @@ function AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, fil
 end
 
 -- Returns a table with the selected arena's player comp
-function AAmatch:getArenaComp(teamTable)
-	local comp = {}
-	for i = 1, #teamTable do
-		table.insert(comp, teamTable[i]["class"] .. "|" .. teamTable[i]["spec"])
+function AAmatch:getArenaComp(teamTable, bracket)
+	local size = ArenaAnalytics:getTeamSizeFromBracket(bracket);
+	
+	if(size > #teamTable) then
+		return nil;
 	end
-	return comp;
+
+	local newComp = {}
+	for i=1, size do
+		local player = teamTable[i];
+
+		-- No comp with missing player
+		if(player == nil) then
+			return nil;
+		end
+
+		local specID = ArenaAnalytics.Constants:getAddonSpecializationID(player["class"] .. "|" .. player["spec"]);
+		if(specID == nil) then
+			return nil;
+		end
+
+		table.insert(newComp, specID);
+	end
+
+	table.sort(newComp, function(a, b)
+		return a < b;
+	end);
+
+	return table.concat(newComp, '|');
 end
 
--- Calculates arena duration, turns arena data into friendly strings, adds it to ArenaAnalyticsDB
+-- Calculates arena duration, turns arena data into friendly strings, adds it to MatchHistoryDB
 -- and triggers a layout refresh on ArenaAnalytics.arenaTable
 function AAmatch:insertArenaOnTable()
 	-- Calculate arena duration
@@ -197,9 +202,7 @@ function AAmatch:insertArenaOnTable()
 		currentArena["timeEnd"] = time();
 		local duration = (currentArena["timeEnd"] - currentArena["timeStartInt"]);
 		duration = duration < 0 and 0 or duration;
-		local minutes = duration >= 60 and (SecondsToTime(duration, true) .. " ") or "";
-		local seconds = math.floor(duration % 60);
-		currentArena["duration"] = minutes .. seconds .. " Sec";
+		currentArena["duration"] = duration;
 	end
 
 	-- Set data for skirmish
@@ -228,18 +231,19 @@ function AAmatch:insertArenaOnTable()
 
 	ArenaAnalytics.DataSync:requestMissingData(currentArena);
 
-	-- TODO: Look into converting this to the format used by comp filters directly
 	-- Get arena comp for each team
-	currentArena["comp"] = AAmatch:getArenaComp(currentArena["party"]);
-	currentArena["enemyComp"] = AAmatch:getArenaComp(currentArena["enemy"]);
+	local bracket = ArenaAnalytics:getBracketFromTeamSize(currentArena["size"]);
+	currentArena["comp"] = AAmatch:getArenaComp(currentArena["party"], bracket);
+	currentArena["enemyComp"] = AAmatch:getArenaComp(currentArena["enemy"], bracket);
 
-	-- Setup table data to insert into ArenaAnalyticsDB
+	-- Setup table data to insert into MatchHistoryDB
 	local arenaData = {
+		["isRated"] = currentArena["isRanked"],
 		["date"] = currentArena["timeStartInt"],
 		["season"] = GetCurrentArenaSeason(),
 		["map"] = currentArena["mapName"], 
-		["bracket"] = ArenaAnalytics:getBracketFromTeamSize(currentArena["size"]),
-		["duration"] = currentArena["duration"], 
+		["bracket"] = bracket,
+		["duration"] = currentArena["duration"],
 		["team"] = currentArena["party"],
 		["rating"] = currentArena["partyRating"], 
 		["ratingDelta"] = currentArena["partyRatingDelta"],
@@ -251,13 +255,17 @@ function AAmatch:insertArenaOnTable()
 		["comp"] = currentArena["comp"],
 		["enemyComp"] = currentArena["enemyComp"],
 		["won"] = currentArena["wonByPlayer"],
-		["isRanked"] = currentArena["isRanked"],
 		["firstDeath"] = currentArena["firstDeath"]
 	}
 
-	-- Insert arena data as a new ArenaAnalyticsDB row
-	local bracket = arenaData["bracket"];
-	table.insert(ArenaAnalyticsDB[bracket], arenaData);
+	-- Confirm update of the following:
+	tmp = {
+		["team"] = updateGroupDataToNewFormat(arena["team"], myName, myRealm),
+		["enemyTeam"] = updateGroupDataToNewFormat(arena["enemyTeam"], myName, myRealm),
+	}
+
+	-- Insert arena data as a new MatchHistoryDB entry
+	table.insert(MatchHistoryDB, arenaData);
 
 	ArenaAnalytics:Print("Arena recorded!");
 	
@@ -288,6 +296,10 @@ function AAmatch:fillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
 	initialValue = unitGroup == "party" and  0 or 1;
 	for i = initialValue, currentArena["size"] do
 		local name, realm = UnitName(unitGroup .. i);
+		if(realm == nil or realm == "") then
+			_,realm = UnitFullName("player"); -- Local player's realm
+		end
+
 		if (name ~= nil) then
 			if ( realm == nil or string.len(realm) < 4) then
 				realm = "";
@@ -397,8 +409,13 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 		if (logEventType == "UNIT_DIED" and currentArena["firstDeath"] == nil) then
 			if(destGUID:gsub("Player", "")) then
 				deathRegistered = true;
-				local _, _, _, _, _, name, _ = GetPlayerInfoByGUID(destGUID)
-				currentArena["firstDeath"] = name;
+				local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(destGUID)
+
+				if(realm == nil or realm == "") then
+					_,realm = UnitFullName("player"); -- Local player's realm
+				end
+
+				currentArena["firstDeath"] = name .. "-" .. realm;
 			end
 		end
 	else
@@ -459,12 +476,9 @@ function AAmatch:getPlayerSpec()
 	spec = spec == "Feral Combat" and "Feral" or spec
 
 	if (spec == nil) then -- Workaround for when GetTalentTabInfo returns nil
-		if (#ArenaAnalyticsDB["2v2"] > 0) then
-			spec = ArenaAnalyticsDB["2v2"][#ArenaAnalyticsDB["2v2"]]["team"][1]["spec"]
-		elseif (#ArenaAnalyticsDB["3v3"] > 0) then
-			spec = ArenaAnalyticsDB["3v3"][#ArenaAnalyticsDB["3v3"]]["team"][1]["spec"]
-		elseif (#ArenaAnalyticsDB["5v5"] > 0) then
-			spec = ArenaAnalyticsDB["5v5"][#ArenaAnalyticsDB["5v5"]]["team"][1]["spec"]
+		if(#MatchHistoryDB > 0) then
+			-- Get the player from last match (Assumes sorting to index 1)
+			spec = MatchHistoryDB[#MatchHistoryDB]["team"][1]["spec"];
 		end
 	end
 	return spec
@@ -481,15 +495,6 @@ function AAmatch:getLastRating(teamSize)
 		end
 	end
 
-	if(ArenaAnalyticsDB[bracket] ~= nil) then
-		for i = 0, (#ArenaAnalyticsDB[bracket] - 1) do
-			local match = ArenaAnalyticsDB[bracket][#ArenaAnalyticsDB[bracket] - i];
-			if(match ~= nil and match["rating"] ~= nil and match["rating"] ~= "SKIRMISH") then
-				return tonumber(match["rating"]);
-			end
-		end
-	end
-	
 	return 0;
 end
 
@@ -505,13 +510,16 @@ function AAmatch:trackArena(...)
 		return false
 	end
 
-	currentArena["playerName"] = UnitName("player");
+	local name,realm = UnitFullName("player");
+	currentArena["playerName"] = name.."-"..realm;
 	currentArena["isRanked"] = isRankedArena;
 	currentArena["size"] = teamSize;
 	
 	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(teamSize);
 	if(isRankedArena and ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
-		ArenaAnalyticsCachedBracketRatings[bracketId] = AAmatch:getLastRating(teamSize);
+		local lastRating = AAmatch:getLastRating(teamSize);
+		ArenaAnalytics:Log("Fallback: Updating cached rating to rating of last rated entry.");
+		ArenaAnalyticsCachedBracketRatings[bracketId] = lastRating;
 	end
 
 	if (#currentArena["party"] == 0) then
@@ -599,6 +607,11 @@ function AAmatch:handleArenaEnd()
 	currentArena["wonByPlayer"] = false;
 	for i=1, numScores do
 		local name, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, filename, damageDone, healingDone = GetBattlefieldScore(i);
+		if(not string.find(name, "-")) then
+			_,realm = UnitFullName("player"); -- Local player's realm
+			name = name.."-"..realm;
+		end
+
 		-- Get spec and GUID from existing data, if available
 		local spec = AAmatch:getCollectedValue("spec", name);
 		local GUID = AAmatch:getCollectedValue("GUID", name);

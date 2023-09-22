@@ -4,10 +4,37 @@ ArenaAnalytics.VersionManager = {};
 
 local VersionManager = ArenaAnalytics.VersionManager;
 
-local function convertFormatedDurationToSeconds(duration)
-    ArenaAnalytics:Log("Converting duration: " .. duration);
+local function convertFormatedDurationToSeconds(inDuration)
+    if(tonumber(inDuration)) then
+        return inDuration;
+    end
+    
+    if(inDuration ~= nil and inDuration ~= "") then
+        -- Sanitize the formatted time string
+        inDuration = inDuration:lower();
+        inDuration = inDuration:gsub("%s+", "");
+        
+        local minutes, seconds = 0,0
+        
+        if(string.find(inDuration, "|")) then
+            -- Get minutes before '|' and seconds between ';' and "sec"
+            minutes = tonumber(inDuration:match("(.+)|")) or 0;
+            seconds = tonumber(inDuration:match(";(.+)sec")) or 0;
+        elseif(inDuration:find("min") and inDuration:find("sec")) then
+            -- Get minutes before "min" and seconds between "min" and "sec
+            minutes = tonumber(inDuration:match("(.*)min")) or 0;
+            seconds = inDuration:match("min(.*)sec") or 0;
+        elseif(inDuration:find("sec")) then
+            -- Get seconds before "sec
+            seconds = tonumber(inDuration:match("(.*)sec")) or 0;
+        else
+            ArenaAnalytics:Print("ERROR: Converting duration failed (:", inDuration, ")")
+        end
+        
+        return 60*minutes + seconds;
+    end
 
-    return duration;
+    return 0;
 end
 
 local function computeSeasonWhenMissing(season, date)
@@ -78,31 +105,30 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     ForceDebugNilError(myRealm);
 
     for _, bracket in ipairs(brackets) do
-        ForceDebugNilError(bracket);
-        ForceDebugNilError(ArenaAnalyticsDB[bracket]);
-        
-        for _, arena in ipairs(ArenaAnalyticsDB[bracket]) do
-            local updatedArenaData = {
-                ["isRated"] = arena["isRanked"],
-                ["date"] = arena["dateInt"],
-                ["season"] = computeSeasonWhenMissing(arena["season"], arena["dateInt"]),
-                ["map"] = arena["map"], 
-                ["bracket"] = bracket,
-                ["duration"] = convertFormatedDurationToSeconds(arena["duration"]),
-                ["team"] = updateGroupDataToNewFormat(arena["team"], myName, myRealm),
-                ["rating"] = arena["rating"], 
-                ["ratingDelta"] = arena["ratingDelta"],
-                ["mmr"] = arena["mmr"], 
-                ["enemyTeam"] = updateGroupDataToNewFormat(arena["enemyTeam"], myName, myRealm),
-                ["enemyRating"] = arena["enemyRating"], 
-                ["enemyRatingDelta"] = arena["enemyRatingDelta"],
-                ["enemyMmr"] = arena["enemyMmr"],
-                ["comp"] = convertCompToShortFormat(arena["comp"], bracket),
-                ["enemyComp"] = convertCompToShortFormat(arena["enemyComp"], bracket),
-                ["won"] = arena["won"],
-                ["firstDeath"] = arena["firstDeath"]
-            }
-            table.insert(MatchHistoryDB, updatedArenaData);
+        if(ArenaAnalyticsDB[bracket] ~= nil) then
+            for _, arena in ipairs(ArenaAnalyticsDB[bracket]) do
+                local updatedArenaData = {
+                    ["isRated"] = arena["isRanked"],
+                    ["date"] = arena["dateInt"],
+                    ["season"] = computeSeasonWhenMissing(arena["season"], arena["dateInt"]),
+                    ["map"] = arena["map"], 
+                    ["bracket"] = bracket,
+                    ["duration"] = convertFormatedDurationToSeconds(arena["duration"]),
+                    ["team"] = updateGroupDataToNewFormat(arena["team"], myName, myRealm),
+                    ["rating"] = arena["rating"], 
+                    ["ratingDelta"] = arena["ratingDelta"],
+                    ["mmr"] = arena["mmr"], 
+                    ["enemyTeam"] = updateGroupDataToNewFormat(arena["enemyTeam"], myName, myRealm),
+                    ["enemyRating"] = arena["enemyRating"], 
+                    ["enemyRatingDelta"] = arena["enemyRatingDelta"],
+                    ["enemyMmr"] = arena["enemyMmr"],
+                    ["comp"] = convertCompToShortFormat(arena["comp"], bracket),
+                    ["enemyComp"] = convertCompToShortFormat(arena["enemyComp"], bracket),
+                    ["won"] = arena["won"],
+                    ["firstDeath"] = arena["firstDeath"]
+                }
+                table.insert(MatchHistoryDB, updatedArenaData);
+            end
         end
     end
 

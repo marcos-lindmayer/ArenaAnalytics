@@ -249,39 +249,23 @@ function AAtable:createDropdown(opts)
     return dropdownTable;
 end
 
--- Returns a CSV-formatted string using ArenaAnalyticsDB info
+-- Returns a CSV-formatted string using MatchHistoryDB info
 function ArenaAnalytics:getCsvFromDB()
     if(not ArenaAnalytics:hasStoredMatches()) then
-        return "";
+        return "No games to export!";
     end
 
     local CSVString = "date,map,duration,won,isRanked,team1Name,team2Name,team3Name,team4Name,team5Name,rating,mmr," .. 
     "enemyTeam1Name,enemyTeam2Name,enemyTeam3Name,enemyTeam4Name,enemyTeam5Name,enemyRating,enemyMMR" .. "\n";
-    -- Get all arenas ordered by date
-    local allArenas = {}
-    for arenaN2v2 = 1, #ArenaAnalyticsDB["2v2"] do
-        table.insert(allArenas, ArenaAnalyticsDB["2v2"][arenaN2v2]);
-    end
-    for arenaN3v3 = 1, #ArenaAnalyticsDB["3v3"] do
-        table.insert(allArenas, ArenaAnalyticsDB["3v3"][arenaN3v3]);
-    end
-    for arenaN5v5 = 1, #ArenaAnalyticsDB["5v5"] do
-        table.insert(allArenas, ArenaAnalyticsDB["5v5"][arenaN5v5]);
-    end
-    table.sort(allArenas, function (k1,k2)
-        return k1["date"] > k2["date"];
-    end)
 
-    for arenaN = 1, #allArenas do
-        local arenaDateString = date("%d/%m/%y %H:%M:%S", match["date"]);
-        
-        local match = allArenas[arenaN];
+    for arenaN = 1, #MatchHistoryDB do
+        local match = MatchHistoryDB[arenaN];
         CSVString = CSVString
         .. match["date"] .. ","
         .. (match["map"] or "") .. ","
         .. (match["duration"] or "") .. ","
-        .. (match["won"] and "yes" or "no") .. ","
-        .. (match["isRanked"] and "yes" or "no") .. ","
+        .. (match["won"] and "1" or "0") .. ","
+        .. (match["isRanked"] and "1" or "0") .. ","
         .. (match["team"][1]["name"] or "") .. ","
         .. (match["team"][2] and match["team"][2]["name"] or "") .. ","
         .. (match["team"][3] and match["team"][3]["name"] or "") .. ","
@@ -915,7 +899,7 @@ function AAtable:RefreshLayout(updateFilter)
             setColorForSession(button, match["session"])
             button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
             button.Map:SetText(match["map"] or "");
-            button.Duration:SetText(match["duration"] or "");
+            button.Duration:SetText(SecondsToTime(match["duration"]) or "");
 
             button:SetScript("OnEnter", function (args)
                 AAtable:ToggleSpecsAndDeathBg(args, true)
