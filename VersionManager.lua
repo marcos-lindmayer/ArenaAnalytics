@@ -101,8 +101,14 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         return;
     end
 
+    if(ArenaAnalyticsDB == nil) then
+        return;
+    end
+
     local myName, myRealm = UnitFullName("player");
     ForceDebugNilError(myRealm);
+
+    local requiresReload = false;
 
     for _, bracket in ipairs(brackets) do
         if(ArenaAnalyticsDB[bracket] ~= nil) then
@@ -127,14 +133,20 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                     ["won"] = arena["won"],
                     ["firstDeath"] = arena["firstDeath"]
                 }
+
                 table.insert(MatchHistoryDB, updatedArenaData);
+                requiresReload = true;
             end
         end
     end
 
     table.sort(MatchHistoryDB, function (k1,k2)
         if (k1["date"] and k2["date"]) then
-            return k1["date"] > k2["date"];
+            return k1["date"] < k2["date"];
         end
     end);
+
+    if(requiresReload and #MatchHistoryDB > 0) then
+        ReloadUI();
+    end
 end

@@ -55,9 +55,10 @@ function Filter:changeFilter(args)
     end
     
     if (filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
+        local tooltip = args:GetAttribute("tooltip");
         Filter.currentFilters[filterName] = {
-            ["data"] = args:GetAttribute("tooltip");
-            ["display"] = ArenaAnalytics.AAtable:getCompIconString(args:GetAttribute("tooltip"));
+            ["data"] = tooltip;
+            ["display"] = tooltip ~= "All" and ArenaAnalytics.AAtable:getCompIconString(args:GetAttribute("tooltip")) or "All";
         }
     else
         Filter.currentFilters[filterName] = selectedFilter;

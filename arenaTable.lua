@@ -158,11 +158,6 @@ function AAtable:createDropdown(opts)
     dd_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
     dropdownTable.dd_title = dd_title;
     isEnemyComp, _ = string.find(opts["name"]:lower(), "enemy")
-    if (hasIcon) then
-        dropdownTable.filterName = filterName;
-    else 
-        dropdownTable.filterName = title_text;
-    end
     dropdownTable.filterName = filterName;
     
     dropdownTable.dd_title:SetPoint("TOPLEFT", 0, 15)
@@ -179,15 +174,19 @@ function AAtable:createDropdown(opts)
         local info = {}
         info.text = text;
         info.tooltip = "";
-        if(hasIcon and info.text ~= "All") then
-            info.tooltip = entry["comp"];
-            info.text = AAtable:getCompIconString(entry["comp"], not isEnemyComp and UnitClass("player") or nil);
+        if(hasIcon) then
+            if(info.text ~= "All") then
+                info.tooltip = entry["comp"];
+                info.text = AAtable:getCompIconString(entry["comp"], not isEnemyComp and UnitClass("player") or nil);
 
-            local totalPlayed = entry["played"] or 0;
-            local wins = entry["wins"] or 0;
+                local totalPlayed = entry["played"] or 0;
+                local wins = entry["wins"] or 0;
 
-            local winrate = (totalPlayed > 0) and math.floor(wins * 100 / totalPlayed) or 0
-            info.text = totalPlayed .. " " .. info.text .. " - " .. winrate .. "%";
+                local winrate = (totalPlayed > 0) and math.floor(wins * 100 / totalPlayed) or 0
+                info.text = totalPlayed .. " " .. info.text .. " - " .. winrate .. "%";
+            else
+                info.tooltip = "All";
+            end
         end
         table.insert(dropdownTable.entries, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
     end
@@ -258,8 +257,8 @@ function ArenaAnalytics:getCsvFromDB()
     local CSVString = "date,map,duration,won,isRanked,team1Name,team2Name,team3Name,team4Name,team5Name,rating,mmr," .. 
     "enemyTeam1Name,enemyTeam2Name,enemyTeam3Name,enemyTeam4Name,enemyTeam5Name,enemyRating,enemyMMR" .. "\n";
 
-    for arenaN = 1, #MatchHistoryDB do
-        local match = MatchHistoryDB[arenaN];
+    for i = 1, #MatchHistoryDB do
+        local match = MatchHistoryDB[i];
         CSVString = CSVString
         .. match["date"] .. ","
         .. (match["map"] or "") .. ","
@@ -834,12 +833,12 @@ function AAtable:forceCompFilterRefresh(keepVisibility)
     end
 end
 
--- Searches for a match by its dateInt
+-- Searches for a match by its date (unix time)
 -- returns match as table and bracket as string
-function AAtable:getDBMatchByDateInt(dateInt)
+function AAtable:getDBMatchByDate(date)
     for i=1, #MatchHistoryDB do
         local arena = MatchHistoryDB[i];
-        if(arena and arena["date"] == dateInt) then
+        if(arena and arena["date"] == date) then
             return arena, arena["bracket"];
         end
     end
@@ -859,8 +858,6 @@ end
 
 -- Refreshes matches table
 function AAtable:RefreshLayout(updateFilter)
-    MatchHistoryDB = MatchHistoryDB or { }
-
     local newArenaPlayed = false;
     if (#MatchHistoryDB > cachedTotalArenas) then
         newArenaPlayed = true;
@@ -877,7 +874,7 @@ function AAtable:RefreshLayout(updateFilter)
     
     local lastGame = AAtable:getLastGame()
     
-    if (updateFilter or #ArenaAnalytics.filteredMatchHistory == 0 or newArenaPlayed) then
+    if (updateFilter or newArenaPlayed or #ArenaAnalytics.filteredMatchHistory == 0 and #MatchHistoryDB) then
         ArenaAnalytics.Filter:refreshFilters(MatchHistoryDB);
     end
     
@@ -888,14 +885,12 @@ function AAtable:RefreshLayout(updateFilter)
     local offset = HybridScrollFrame_GetOffset(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local wins = 0;
 
-    -- setSessions(matches)
-
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
-        local matchIndex = buttonIndex + offset;
+        local matchIndex = #ArenaAnalyticsScrollFrame.matches - (buttonIndex + offset - 1);
 
-        if matchIndex <= #matches then
-            local match = matches[matchIndex];
+        local match = matches[matchIndex];
+        if (match ~= nil) then
             setColorForSession(button, match["session"])
             button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
             button.Map:SetText(match["map"] or "");

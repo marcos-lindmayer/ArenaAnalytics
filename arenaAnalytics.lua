@@ -151,7 +151,6 @@ function AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, fil
 		["race"] = race,
 		["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
 		["class"] = class,
-		["filename"] = filename,
 		["damageDone"] = damageDone,
 		["healingDone"] = healingDone,
 		["classIcon"] = classIcon,
@@ -164,7 +163,7 @@ end
 function AAmatch:getArenaComp(teamTable, bracket)
 	local size = ArenaAnalytics:getTeamSizeFromBracket(bracket);
 	
-	if(size > #teamTable) then
+	if(teamTable == nil or size > #teamTable) then
 		return nil;
 	end
 
@@ -256,12 +255,6 @@ function AAmatch:insertArenaOnTable()
 		["enemyComp"] = currentArena["enemyComp"],
 		["won"] = currentArena["wonByPlayer"],
 		["firstDeath"] = currentArena["firstDeath"]
-	}
-
-	-- Confirm update of the following:
-	tmp = {
-		["team"] = updateGroupDataToNewFormat(arena["team"], myName, myRealm),
-		["enemyTeam"] = updateGroupDataToNewFormat(arena["enemyTeam"], myName, myRealm),
 	}
 
 	-- Insert arena data as a new MatchHistoryDB entry
@@ -407,15 +400,16 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 			AAmatch:detectSpec(sourceGUID, spellID, spellName)
 		end
 		if (logEventType == "UNIT_DIED" and currentArena["firstDeath"] == nil) then
-			if(destGUID:gsub("Player", "")) then
+			if(destGUID:find("Player")) then
 				deathRegistered = true;
 				local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(destGUID)
+				if(name ~= nil) then
+					if(realm == nil or realm == "") then
+						_,realm = UnitFullName("player"); -- Local player's realm
+					end
 
-				if(realm == nil or realm == "") then
-					_,realm = UnitFullName("player"); -- Local player's realm
+					currentArena["firstDeath"] = name .. "-" .. realm;
 				end
-
-				currentArena["firstDeath"] = name .. "-" .. realm;
 			end
 		end
 	else

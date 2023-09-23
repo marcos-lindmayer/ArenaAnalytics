@@ -21,21 +21,30 @@ ArenaAnalytics.commands = {
 
 	-- Debug command to 
 	["debug"] = function()
-		ArenaAnalytics.skipDebugLog = false;
-		ArenaAnalytics.skipDebugForceNilError = false;
-		ArenaAnalytics:Log("Debugging enabled!");
-	end,
-
-	["nodebug"] = function()
-		ArenaAnalytics.skipDebugLog = true;
-		ArenaAnalytics.skipDebugForceNilError = true;
-		ArenaAnalytics:Print("Debugging disabled!");
+		if(ArenaAnalytics.skipDebugLog and ArenaAnalytics.skipDebugForceNilError) then
+			ArenaAnalytics.skipDebugLog = false;
+			ArenaAnalytics.skipDebugForceNilError = false;
+			ArenaAnalytics:Log("Debugging enabled!");
+		else
+			ArenaAnalytics.skipDebugLog = true;
+			ArenaAnalytics.skipDebugForceNilError = true;
+			ArenaAnalytics:Print("Debugging disabled!");
+		end
 	end,
 
 	["convert"] = function()
 		ArenaAnalytics:Print("Converting ArenaAnalyticsDB to MatchHistoryDB");
 		MatchHistoryDB = {} -- Force resetting it for testing
 		ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
+	end,
+
+	["debugcleardb"] = function()
+		if(ArenaAnalytics.skipDebugLog and ArenaAnalytics.skipDebugForceNilError) then
+			ArenaAnalytics:Print("Clearing MatchHistoryDB requires enabling /aa debug. Not intended for users!");
+		else -- Debug mode is enabled, allow debug clearing the DB
+			ArenaAnalytics:Log("Clearing MatchHistoryDB.");
+			MatchHistoryDB = {}
+		end
 	end,
 };
 
@@ -202,13 +211,16 @@ function ArenaAnalytics:init(event, name, ...)
 	local versionText = version ~= 99999 and " (Version: " .. version .. ")" or ""
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", versionText);
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
-	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics")
+	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
 	
 	-- Update cached rating as soon as possible
 	ratedUpdateEvent = CreateFrame("Frame");
 	ratedUpdateEvent:RegisterEvent("PVP_RATED_STATS_UPDATE");
 	ratedUpdateEvent:SetScript("OnEvent", function() onRatedStatsReceived() end);
 	C_Timer.After(0, function() RequestRatedInfo() end);
+	
+	-- Try converting old matches to MatchHistoryDB
+	ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
 
 	ArenaAnalytics.AAmatch:EventRegister();
 	ArenaAnalytics.AAtable:OnLoad();
