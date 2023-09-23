@@ -10,6 +10,7 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print("List of slash commands:");
 		ArenaAnalytics:Print("|cff00cc66/aa|r");
+		ArenaAnalytics:Print("|cff00cc66/aa played|r Prints total duration of tracked arenas.");
 		ArenaAnalytics:Print("|cff00cc66/aa more|r");
 		print(" ");
 	end,
@@ -17,6 +18,17 @@ ArenaAnalytics.commands = {
 	--TODO: remove
 	["more"] = function()
 		ArenaAnalytics:Print("Wanna get more data? Web project coming soon...");
+	end,
+
+	["played"] = function()
+		local totalDurationInArenas = 0;
+		for i=1, #MatchHistoryDB do
+			local duration = tonumber(MatchHistoryDB[i]["duration"]);
+			if(duration and duration > 0) then
+				totalDurationInArenas = totalDurationInArenas + duration;
+			end
+		end
+		ArenaAnalytics:Print("You've spent a total of", SecondsToTime(totalDurationInArenas), "inside the arena!");
 	end,
 
 	-- Debug command to 
