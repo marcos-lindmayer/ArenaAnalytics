@@ -287,17 +287,19 @@ function AAmatch:fillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
 	initialValue = unitGroup == "party" and  0 or 1;
 	for i = initialValue, currentArena["size"] do
 		local name, realm = UnitName(unitGroup .. i);
-		if(realm == nil or realm == "") then
-			_,realm = UnitFullName("player"); -- Local player's realm
-		end
-
+		
 		if (name ~= nil and name ~= "Unknown") then
+			if(realm == nil or realm == "") then
+				_,realm = UnitFullName("player"); -- Local player's realm
+			end
+
 			if ( realm == nil or string.len(realm) < 4) then
 				realm = "";
 			else
 				realm = "-" .. realm;
 			end
 			name = name .. realm;
+			
 			-- Check if they were already added
 			local currentGroup = (unitGroup == "party") and currentArena["party"] or currentArena["enemy"];
 			if (not AAmatch:doesGroupContainMemberByName(currentGroup, name)) then
@@ -368,7 +370,7 @@ function AAmatch:assignSpec(class, oldSpec, newSpec)
 
 	-- TODO: Fixup data for a standardized format of missing specs
 	if(oldSpec == nil or oldSpec == "" or oldSpec == "-" or oldSpec == "?" or oldSpec == "Preg") then
-		ArenaAnalytics:Log("Assigning spec: ", newSpec, " (OldSpec: ", oldSpec, ")")
+		ArenaAnalytics:Log("Assigning spec: ", newSpec)
 		return newSpec;
 	end
 
@@ -404,7 +406,7 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 			if(destGUID:find("Player")) then
 				deathRegistered = true;
 				local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(destGUID)
-				if(name ~= nil) then
+				if(name ~= nil and name ~= "Unknown") then
 					if(realm == nil or realm == "") then
 						_,realm = UnitFullName("player"); -- Local player's realm
 					end
@@ -602,7 +604,7 @@ function AAmatch:handleArenaEnd()
 	currentArena["wonByPlayer"] = false;
 	for i=1, numScores do
 		local name, killingBlows, honorKills, deaths, honorGained, faction, rank, race, class, filename, damageDone, healingDone = GetBattlefieldScore(i);
-		if(not string.find(name, "-")) then
+		if(not name:find("-")) then
 			_,realm = UnitFullName("player"); -- Local player's realm
 			name = name.."-"..realm;
 		end
