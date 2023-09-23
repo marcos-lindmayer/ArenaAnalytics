@@ -424,30 +424,15 @@ end
 
 -- Returns class icon path string
 function ArenaAnalyticsGetClassIcon(className)
-	local currentClassName = className;
-	local classString;
-	if (currentClassName == "Mage") then
-		classString = [[Interface\Icons\classicon_mage]];
-	elseif (currentClassName == "Rogue") then
-		classString = [[Interface\Icons\classicon_rogue]];
-	elseif (currentClassName == "Priest") then
-		classString = [[Interface\Icons\classicon_priest]];
-	elseif (currentClassName == "Druid") then
-		classString = [[Interface\Icons\classicon_druid]];
-	elseif (currentClassName == "Paladin") then
-		classString = [[Interface\Icons\classicon_paladin]];
-	elseif (currentClassName == "Shaman") then
-		classString = [[Interface\Icons\classicon_shaman]];
-	elseif (currentClassName == "Hunter") then
-		classString = [[Interface\Icons\classicon_hunter]];
-	elseif (currentClassName == "Warrior") then
-		classString = [[Interface\Icons\classicon_warrior]];
-	elseif (currentClassName == "Warlock") then
-		classString = [[Interface\Icons\classicon_warlock]];
-	elseif (currentClassName == "Death Knight") then
-		classString = [[Interface\Icons\spell_deathknight_classicon]];
-	end
-	return classString;
+    if(className == nil or className == "") then
+        return "";
+    end
+    
+    if(className == "Death Knight") then
+        return "Interface\\Icons\\spell_deathknight_classicon";
+    else
+        return "Interface\\Icons\\classicon_" .. className:lower();
+    end
 end
 
 -- Returns spec icon path string

@@ -167,7 +167,7 @@ local function createMinimapButton()
 	minibtnBorderT:SetPoint("TOPLEFT", -2, 2);
 	minibtnBorderT:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 
-	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos and ArenaAnalyticsMapIconPos or 0
+	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos or 0
 	
 	-- Control movement
 	local function UpdateMapBtn()
@@ -180,6 +180,9 @@ local function createMinimapButton()
 		local offset = 57;
 		minibtn:SetPoint("TOPLEFT", Minimap, "TOPLEFT", offset - (80 * cos(ArenaAnalyticsMapIconPos)), (80 * sin(ArenaAnalyticsMapIconPos)) - offset);
 	end
+
+	-- Set position
+	UpdateMapBtn();
 	
 	minibtn:RegisterForDrag("LeftButton")
 	minibtn:SetScript("OnDragStart", function()
@@ -192,10 +195,6 @@ local function createMinimapButton()
 		minibtn:SetScript("OnUpdate", nil)
 		UpdateMapBtn();
 	end)
-	
-	-- Set position
-	minibtn:ClearAllPoints();
-	minibtn:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 52 - (80 * cos(ArenaAnalyticsMapIconPos)),(80 * sin(ArenaAnalyticsMapIconPos)) - 52)
 	
 	-- Control clicks
 	minibtn:SetScript("OnClick", function()

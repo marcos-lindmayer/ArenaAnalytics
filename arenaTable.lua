@@ -289,7 +289,8 @@ function AAtable:createDropdown(opts)
     dropdownTable.selected:SetAttribute("name", dropdownTable)
     dropdownTable.selected:SetScript("OnClick", function (args)
         local dropdownList = args:GetAttribute("name").dropdownList
-        if not dropdownList:IsShown() then   
+        if (not dropdownList:IsShown()) then
+            ArenaAnalytics.AAtable:closeFilterDropdowns(); -- TODO: Decide if this is desirable.
             dropdownList:Show();
         else
             dropdownList:Hide();
@@ -671,19 +672,18 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
             end
 
             -- Set texture (if classicon available)
-            local classIcon = nil;
-            if(player["class"]) then
-                if(player["class"] == "Death Knight") then
-                    classIcon = "Interface\\Icons\\spell_deathknight_classicon";
-                else
-                    classIcon = "Interface\\Icons\\classicon_"..player["class"]:lower();
-                end
-            end
+            local classIcon = ArenaAnalyticsGetClassIcon(player["class"]);
 
             teamIconFrame.texture:SetTexture(classIcon);
             teamIconFrame.tooltip = ""
 
             local playerName = player["name"] or ""
+
+            local _, realm = UnitFullName("player");
+            if(realm and playerName:find(realm)) then
+                playerName = playerName:match("(.*)-");
+            end
+
             teamIconFrame:SetAttribute("name", playerName)
 
             local function updateSearchForPlayer(previousSearch, prefix, search)
@@ -726,6 +726,7 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                         prefix = matchKey == "team" and '+' or '-';                        
                     end
 
+                    -- Include server with quick search shortcut? (Requires old data to be updated to be included)
                     if(IsShiftKeyDown()) then
                         -- Search for this player on any team
                         updateSearchForPlayer(ArenaAnalyticsScrollFrame.searchBox:GetText(), prefix, playerName);
@@ -744,12 +745,12 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                 addSpecFrame(button, teamIconFrame, spec, class);
                 local tooltipSpecText = #spec > 2 and spec or class;
                 local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class):upper(), tooltipSpecText);
-                teamIconFrame.tooltip = player["name"] .. " | " .. coloredSpecText;
+                teamIconFrame.tooltip = playerName .. " | " .. coloredSpecText;
             else
                 if (teamIconFrame.spec) then
                     teamIconFrame.spec = nil;
                 end
-                teamIconFrame.tooltip = player["name"];
+                teamIconFrame.tooltip = playerName;
             end
 
             -- Check if first to die
