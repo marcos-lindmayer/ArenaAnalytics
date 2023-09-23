@@ -308,7 +308,7 @@ function ArenaAnalyticsSettingsFrame()
 	local paddingLeft = 25;
 	ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
     ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
-    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 315)
+    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 340)
     ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("DIALOG");
     ArenaAnalyticsScrollFrame.settingsFrame:Hide();
 
@@ -352,6 +352,7 @@ function ArenaAnalyticsSettingsFrame()
         end
     );
 
+
     ArenaAnalyticsScrollFrame.outliers = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -100, "Minimum games required to appear on comp filter");
     ArenaAnalyticsScrollFrame.outliersInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
     ArenaAnalyticsScrollFrame.outliersInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -95);
@@ -377,10 +378,44 @@ function ArenaAnalyticsSettingsFrame()
         ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsScrollFrame.outliersInput:GetText()
     end);
 
-	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -135, "Data settings");
 
+	-- Limit for total comps to show
+	ArenaAnalyticsScrollFrame.compsLimit = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -125, "Maximum comps to appear in comp filter dropdowns (0 = unlimited)");
+    ArenaAnalyticsScrollFrame.compsLimitInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -120);
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetWidth(30);
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetHeight(20);
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetNumeric();
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetAutoFocus(false);
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetMaxLetters(3);
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetText(tonumber(ArenaAnalyticsSettings["compsLimit"]));
+    
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus();
+        ArenaAnalytics.AAtable:RefreshLayout(true);
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+    end);
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus();
+        ArenaAnalytics.AAtable:RefreshLayout(true);
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+    end);
 
-    ArenaAnalyticsScrollFrame.resetBtn = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -155, "Reset ALL DATA");
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnTextChanged", function(self)
+		local limit = tonumber(ArenaAnalyticsScrollFrame.compsLimitInput:GetText());
+		if(limit == nil) then
+			if(tonumber(ArenaAnalyticsSettings["compsLimit"]) == nil) then
+				ArenaAnalyticsSettings["compsLimit"] = 0;
+			end
+			ArenaAnalyticsScrollFrame.compsLimitInput:SetText(ArenaAnalyticsSettings["compsLimit"]);
+		end
+        ArenaAnalyticsSettings["compsLimit"] = tonumber(ArenaAnalyticsScrollFrame.compsLimitInput:GetText()) or 0;
+    end);
+
+	
+	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -160, "Data settings");
+
+    ArenaAnalyticsScrollFrame.resetBtn = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -180, "Reset ALL DATA");
     ArenaAnalyticsScrollFrame.resetWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.resetBtn, "TOPRIGHT", 5, -5, "Warning! This will reset all match history");
     ArenaAnalyticsScrollFrame.resetBtn:Disable()
     ArenaAnalyticsScrollFrame.resetBtn:SetDisabledFontObject("GameFontDisableSmall")
@@ -399,7 +434,7 @@ function ArenaAnalyticsSettingsFrame()
     end);
     
     ArenaAnalyticsScrollFrame.allowReset = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_allowReset", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.allowReset:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -180);
+    ArenaAnalyticsScrollFrame.allowReset:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -205);
     ArenaAnalyticsScrollFrame_allowResetText:SetText("Check to enable data reset (big scary button ^)");
     ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
 
@@ -413,10 +448,10 @@ function ArenaAnalyticsSettingsFrame()
         end
     );
 	
-	ArenaAnalyticsScrollFrame.moreOptionsTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -220, "More options");
+	ArenaAnalyticsScrollFrame.moreOptionsTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -245, "More options");
 
     ArenaAnalyticsScrollFrame.deathToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_deathToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -235);
+    ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -260);
     ArenaAnalyticsScrollFrame_deathToggleText:SetText("Always show red death bg on icon (else on mouse over only)");
     ArenaAnalyticsScrollFrame.deathToggle:SetChecked(ArenaAnalyticsSettings["alwaysShowDeathBg"]);
 

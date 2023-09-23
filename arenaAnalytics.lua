@@ -8,11 +8,11 @@ MatchHistoryDB = MatchHistoryDB or { }
 
 -- Debug function to force a nil error if input is nil
 ArenaAnalytics.skipDebugForceNilError = true;
-function ForceDebugNilError(value)
+function ForceDebugNilError(value, forceError)
 	if(value == nil) then
 		ArenaAnalytics:Log("Nil error detected.");
 		
-		if(not ArenaAnalytics.skipDebugForceNilError) then
+		if(not ArenaAnalytics.skipDebugForceNilError or forceError) then
 			local nilOperation = value + 666;
 		end
 	end
@@ -21,10 +21,16 @@ end
 -- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
 	["outliers"] = 0,
+	["compsLimit"] = 0,
 	["seasonIsChecked"] = false,
 	["skirmishIshChecked"] = false,
 	["alwaysShowDeathBg"] = false
-}; 
+};
+ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsSettings["outliers"] or 0;
+ArenaAnalyticsSettings["compsLimit"] = ArenaAnalyticsSettings["compsLimit"] or 0;
+ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsSettings["seasonIsChecked"] or false;
+ArenaAnalyticsSettings["skirmishIshChecked"] = ArenaAnalyticsSettings["skirmishIshChecked"] or false;
+ArenaAnalyticsSettings["alwaysShowDeathBg"] = ArenaAnalyticsSettings["alwaysShowDeathBg"] or false;
 
 ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {
 	-- Character specific settings

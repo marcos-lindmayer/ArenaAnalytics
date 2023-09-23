@@ -18,9 +18,12 @@ local selectedGames = {}
 
 -- Toggles addOn view/hide
 function AAtable:Toggle()
-    if not ArenaAnalyticsScrollFrame:IsShown() then  
+    if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         AAtable:ClearSelectedMatches();
         ArenaAnalytics.AAtable:RefreshLayout(true);
+
+        AAtable:closeFilterDropdowns();
+
         ArenaAnalyticsScrollFrame:Show();
     else
         ArenaAnalyticsScrollFrame:Hide();
@@ -73,18 +76,28 @@ end
 local function createDropdownButton(info, dropdownTable, filter, dropdown_width)
     local button = CreateFrame("Button", filter .. "_" .. info.text, dropdownTable.dropdownList, "UIServiceButtonTemplate");
     button.money:Hide();
-    button:SetPoint("LEFT", dropdownTable.dropdownList);
-    button:SetSize(dropdown_width, 25);
-    button:SetText(info.text);
+    button:SetHeight(25);
+    button:SetPoint("CENTER", dropdownTable.dropdownList);
     button:SetNormalFontObject("GameFontHighlight");
     button:SetHighlightFontObject("GameFontHighlight");
-    if (info.tooltip ~= "") then
-        button:SetAttribute("tooltip", info.tooltip);
-        button:SetHeight(30)
-    end
     button:SetAttribute("value", info.text);
     button:SetAttribute("dropdownTable", dropdownTable);
     button:SetScript("OnClick", function(args) ArenaAnalytics.Filter:changeFilter(args) end);
+
+    if (info.tooltip ~= "") then
+        -- Comp filter (Has icons)
+        button:SetAttribute("tooltip", info.tooltip);
+        button:SetHeight(27)
+        if(info.text == "All" or info.textOffsetX == nil) then
+            button:SetText(info.text);
+        else
+            button:SetText("");
+            button.text = ArenaAnalyticsCreateText(button, "CENTER", button, "CENTER", info.textOffsetX, 0, info.text);
+        end    
+    else
+        button:SetText(info.text);
+    end
+
     return button;
 end
 
@@ -153,7 +166,7 @@ function AAtable:createDropdown(opts)
     local dropdownList = CreateFrame("Frame", dropdown_name .. "_list", dropdownTable.dropdownFrame)
     dropdownTable.dropdownList = dropdownList
     dropdownTable.dropdownFrame:SetSize(500, 25);
-    dropdownTable.dropdownList:SetPoint("TOPLEFT", dropdownTable.dropdownFrame, "BOTTOMLEFT")
+    dropdownTable.dropdownList:SetPoint("TOP", dropdownTable.dropdownFrame, "BOTTOM")
     local dd_title = dropdownTable.dropdownFrame:CreateFontString(nil, 'OVERLAY')
     dd_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
     dropdownTable.dd_title = dd_title;
@@ -174,56 +187,96 @@ function AAtable:createDropdown(opts)
         local info = {}
         info.text = text;
         info.tooltip = "";
+        local winrate = nil;
+        local totalPlayed = nil;
         if(hasIcon) then
             if(info.text ~= "All") then
                 info.tooltip = entry["comp"];
                 info.text = AAtable:getCompIconString(entry["comp"], not isEnemyComp and UnitClass("player") or nil);
 
-                local totalPlayed = entry["played"] or 0;
+                totalPlayed = entry["played"] or 0;
                 local wins = entry["wins"] or 0;
 
-                local winrate = (totalPlayed > 0) and math.floor(wins * 100 / totalPlayed) or 0
+                winrate = (totalPlayed > 0) and math.floor(wins * 100 / totalPlayed) or 0
                 info.text = totalPlayed .. " " .. info.text .. " - " .. winrate .. "%";
+
+                -- Make a temp font string to calculate width of the left and right added strings.
+                local tmpWidthString = dropdownTable.dropdownFrame:CreateFontString(nil, 'OVERLAY')
+                tmpWidthString:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+                tmpWidthString:SetText("- " .. winrate .. "%");
+                winrateWidth = tmpWidthString:GetStringWidth();
+                tmpWidthString:SetText(totalPlayed);
+                totalPlayedWidth = tmpWidthString:GetStringWidth();
+                tmpWidthString = nil;
+
+                info.textOffsetX = (winrateWidth - totalPlayedWidth) / 2
             else
                 info.tooltip = "All";
             end
         end
-        table.insert(dropdownTable.entries, createDropdownButton(info, dropdownTable, title_text, dropdown_width))
+
+        local newEntry = createDropdownButton(info, dropdownTable, title_text, dropdown_width);
+        newEntry.winrate = winrate;
+        newEntry.totalPlayed = totalPlayed;
+        table.insert(dropdownTable.entries, newEntry);
     end
 
+    -- TODO: Fix sorting
     -- Order Comp filter by winrate
-    if (hasIcon and false) then
-        table.sort(dropdownTable.entries, function(k1,k2)
-            if k1 and k1:GetText() == "All" then return true end;
-            if (k2 and k2:GetText() == "All") or k1 == nil or k2 == nil then return false end;
-            if (k1:GetText() and k2:GetText()) then
-                local indexOfSeparatork1 = string.find(k1:GetText(), "-")
-                local winratek1 = k1:GetText():sub(indexOfSeparatork1 + 2, string.len(k1:GetText()) - 1);
-                local indexOfSeparatork2 = string.find(k2:GetText(), "-")
-                local winratek2 = k2:GetText():sub(indexOfSeparatork2 + 2, string.len(k2:GetText()) - 1);
-                return tonumber(winratek1) > tonumber(winratek2)
+    if (hasIcon and #dropdownTable.entries) then
+        table.sort(dropdownTable.entries, function(a,b)
+            if(a and a:GetText() == "All") then
+                return true;
+            elseif(b and b:GetText() == "All") then
+                return false;
             end
-            return true;
+
+            local winrate1 = a and tonumber(a.winrate) or -1;
+            local winrate2 = b and tonumber(b.winrate) or -1;
+            if(winrate1 and winrate2) then
+                return winrate1 > winrate2;
+            end
+            return winrate1 ~= nil;
         end);
+
+        -- Remove entries with lowest priority past the limit
+        local limit = tonumber(ArenaAnalyticsSettings["compsLimit"]);
+        ArenaAnalytics:Log("Comps limit: ", limit);
+        if(limit and limit > 0) then
+            limit = limit + 2;
+            if(#dropdownTable.entries > limit) then
+                for i=#dropdownTable.entries, limit, -1 do
+                    local entry = dropdownTable.entries[i]
+                    if(entry ~= nil) then
+                        entry:Hide();
+                        entry = nil;
+                    end
+                    tremove(dropdownTable.entries, i);
+                end
+            end
+        end
     end
 
     dropdownTable.dd_title:SetText(title_text)
     dropdownTable.dropdownList:SetSize(dropdown_width, (#dropdownTable.entries * 25));
     dropdownTable.dropdownFrame:SetWidth(dropdown_width)
     
+    local totalHeight = 0;
     for i = 1, #dropdownTable.entries do
-        dropdownTable.entries[i]:SetPoint("TOPLEFT", 0, -(i - 1) * 25)
-        dropdownTable.entries[i]:SetWidth(dropdown_width)
+        local entry = dropdownTable.entries[i];
+        totalHeight = totalHeight + entry:GetHeight();
+        entry:SetPoint("TOPLEFT", 0, -(i - 1) * entry:GetHeight())
+        entry:SetWidth(dropdown_width)
     end
     
     local dropdownBg = dropdownTable.dropdownFrame:CreateTexture();
     dropdownBg:SetPoint("CENTER")
     dropdownBg:SetSize(dropdown_width, 25);
-    dropdownBg:SetColorTexture(0, 0, 0, 0.5);
+    dropdownBg:SetColorTexture(0, 0, 0, 0.7);
     
     local dropdownListBg = dropdownTable.dropdownList:CreateTexture();
-    dropdownListBg:SetPoint("CENTER")
-    dropdownListBg:SetSize(dropdown_width, (#dropdownTable.entries * 25));
+    dropdownListBg:SetPoint("TOP")
+    dropdownListBg:SetSize(dropdown_width, totalHeight);
     dropdownListBg:SetColorTexture(0, 0, 0, 0.9);
 
     dropdownTable.selected = CreateFrame("Button", dropdown_name .. "_selected", dropdownTable.dropdownFrame, "UIServiceButtonTemplate")
@@ -314,6 +367,21 @@ function AAtable:UpdateSelected()
     ArenaAnalyticsScrollFrame.selectedWinrate:SetText(newSelectedText)
 end
 
+function AAtable:closeFilterDropdowns()
+    if(ArenaAnalyticsScrollFrame.filterMap) then
+        ArenaAnalyticsScrollFrame.filterMap.dropdownList:Hide();
+    end
+    if(ArenaAnalyticsScrollFrame.filterBracket) then
+        ArenaAnalyticsScrollFrame.filterBracket.dropdownList:Hide();
+    end
+    if(ArenaAnalyticsScrollFrame.filterComps) then
+        ArenaAnalyticsScrollFrame.filterComps.dropdownList:Hide();
+    end
+    if(ArenaAnalyticsScrollFrame.filterEnemyComps) then
+        ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownList:Hide();
+    end
+end
+
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
@@ -387,8 +455,8 @@ function AAtable:OnLoad()
         ["defaultVal"] ="All", 
     }
 
-    ArenaAnalyticsScrollFrame.arenaTypeMenu = AAtable:createDropdown(arenaBracket_opts)
-    ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 15, 0);
+    ArenaAnalyticsScrollFrame.filterBracket = AAtable:createDropdown(arenaBracket_opts)
+    ArenaAnalyticsScrollFrame.filterBracket.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 15, 0);
 
     local filterMap_opts = {
         ["name"] ='Filter_Map',
@@ -400,7 +468,7 @@ function AAtable:OnLoad()
     }
     
     ArenaAnalyticsScrollFrame.filterMap = AAtable:createDropdown(filterMap_opts)
-    ArenaAnalyticsScrollFrame.filterMap.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.arenaTypeMenu.dropdownFrame, "RIGHT", 15, 0);
+    ArenaAnalyticsScrollFrame.filterMap.dropdownFrame:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterBracket.dropdownFrame, "RIGHT", 15, 0);
 
     AAtable:forceCompFilterRefresh();
 
@@ -411,7 +479,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.settingsButton:SetHighlightFontObject("GameFontHighlight");
     ArenaAnalyticsScrollFrame.settingsButton:SetSize(24, 19);
     ArenaAnalyticsScrollFrame.settingsButton:SetScript("OnClick", function()
-        if not  ArenaAnalyticsScrollFrame.settingsFrame:IsShown() then  
+        if (not ArenaAnalyticsScrollFrame.settingsFrame:IsShown()) then  
             ArenaAnalyticsScrollFrame.settingsFrame:Show();
             ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
             ArenaAnalyticsScrollFrame.resetBtn:Disable();
@@ -578,7 +646,7 @@ local function addSpecFrame(button, classIconFrame, spec, class)
     local specIconString = ArenaAnalyticsGetSpecIcon(spec, class)
     classIconFrame.spec.texture:SetTexture(specIconString and specIconString or nil)
     classIconFrame.spec:Hide();
-    table.insert(ArenaAnalyticsScrollFrame.specFrames, {classIconFrame.spec, button})    
+    table.insert(ArenaAnalyticsScrollFrame.specFrames, {classIconFrame.spec, button})
 end
 
 -- Creates a icon-based string with the match's comp with name and spec tooltips
@@ -615,7 +683,7 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
             teamIconFrame.texture:SetTexture(classIcon);
             teamIconFrame.tooltip = ""
 
-            local playerName = player and player["name"] or ""
+            local playerName = player["name"] or ""
             teamIconFrame:SetAttribute("name", playerName)
 
             local function updateSearchForPlayer(previousSearch, prefix, search)
@@ -817,7 +885,7 @@ function AAtable:forceCompFilterRefresh(keepVisibility)
     local wasCompFilterVisible, wasEnemyCompFilterVisible = false, false
 
     -- Clear existing comp frame
-    if(ArenaAnalyticsScrollFrame.filterComps.dropdownFrame ~= nil) then
+    if(ArenaAnalyticsScrollFrame.filterComps and ArenaAnalyticsScrollFrame.filterComps.dropdownList) then
         wasCompFilterVisible = ArenaAnalyticsScrollFrame.filterComps.dropdownList:IsShown();
         ArenaAnalyticsScrollFrame.filterComps.dropdownFrame:Hide();
         ArenaAnalyticsScrollFrame.filterComps.dropdownFrame = nil;
@@ -825,7 +893,7 @@ function AAtable:forceCompFilterRefresh(keepVisibility)
     ArenaAnalyticsScrollFrame.filterComps = nil;
     
     -- Clear existing enemy comp frame
-    if(ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame ~= nil) then
+    if(ArenaAnalyticsScrollFrame.filterEnemyComps ~= nil and ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownList) then
         wasEnemyCompFilterVisible = ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownList:IsShown();
         ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame:Hide();
         ArenaAnalyticsScrollFrame.filterEnemyComps.dropdownFrame = nil;
