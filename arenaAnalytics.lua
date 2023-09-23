@@ -142,7 +142,6 @@ end
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
 function AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec)
 	local classIcon = ArenaAnalyticsGetClassIcon(class)
-	spec = spec ~= nil and spec or "?";
 	local playerTable = {
 		["GUID"] = GUID,
 		["name"] = name,
@@ -153,10 +152,9 @@ function AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, fil
 		["class"] = class,
 		["damageDone"] = damageDone,
 		["healingDone"] = healingDone,
-		["classIcon"] = classIcon,
-		["spec"] = spec
+		["spec"] = spec or ""
 	};
-	return 	playerTable;
+	return playerTable;
 end
 
 -- Returns a table with the selected arena's player comp
@@ -293,7 +291,7 @@ function AAmatch:fillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
 			_,realm = UnitFullName("player"); -- Local player's realm
 		end
 
-		if (name ~= nil) then
+		if (name ~= nil and name ~= "Unknown") then
 			if ( realm == nil or string.len(realm) < 4) then
 				realm = "";
 			else
@@ -302,7 +300,7 @@ function AAmatch:fillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
 			name = name .. realm;
 			-- Check if they were already added
 			local currentGroup = (unitGroup == "party") and currentArena["party"] or currentArena["enemy"];
-			if (not AAmatch:doesGroupContainMemberByName(currentGroup, name) and name ~= "Unknown") then
+			if (not AAmatch:doesGroupContainMemberByName(currentGroup, name)) then
 				local killingBlows, deaths, faction, filename, damageDone, healingDone;
 				local class = UnitClass(unitGroup .. i);
 				local race = UnitRace(unitGroup .. i);
@@ -357,6 +355,7 @@ function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 			if (unitGroup == nil) then
 				unitGroup = "arena";
 			end
+			ArenaAnalytics:Log("Adding unit with spec: ", spec)
 			AAmatch:fillGroupsByUnitReference(unitGroup, sourceGUID, spec);
 		end
 	end
@@ -369,9 +368,11 @@ function AAmatch:assignSpec(class, oldSpec, newSpec)
 
 	-- TODO: Fixup data for a standardized format of missing specs
 	if(oldSpec == nil or oldSpec == "" or oldSpec == "-" or oldSpec == "?" or oldSpec == "Preg") then
+		ArenaAnalytics:Log("Assigning spec: ", newSpec, " (OldSpec: ", oldSpec, ")")
 		return newSpec;
 	end
 
+	ArenaAnalytics:Log("Keeping spec: ", oldSpec)
 	return oldSpec;
 end
 

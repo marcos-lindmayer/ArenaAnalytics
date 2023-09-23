@@ -583,25 +583,40 @@ end
 
 -- Creates a icon-based string with the match's comp with name and spec tooltips
 local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, button)
+    if(match == nil or match[matchKey] == nil) then
+        return;
+    end
+    
     for teamIconIndex = 1, #teamIconsFrames do
-        if (match[matchKey][teamIconIndex]) then
-            if (teamIconsFrames[teamIconIndex].texture) then
+        local player = match[matchKey][teamIconIndex];
+        local teamIconFrame = teamIconsFrames[teamIconIndex];
+        if (player and teamIconFrame) then
+            if (teamIconFrame.texture) then
                 -- Reset textures
-                teamIconsFrames[teamIconIndex].texture:SetTexture(nil)
+                teamIconFrame.texture:SetTexture(nil)
             else
                 -- No textures? Set them
-                local teamTexture = teamIconsFrames[teamIconIndex]:CreateTexture();
-                teamIconsFrames[teamIconIndex].texture = teamTexture
-                teamIconsFrames[teamIconIndex].texture:SetPoint("LEFT", teamIconsFrames[teamIconIndex] ,"RIGHT", -26, 0);
-                teamIconsFrames[teamIconIndex].texture:SetSize(26,26)
+                local teamTexture = teamIconFrame:CreateTexture();
+                teamIconFrame.texture = teamTexture
+                teamIconFrame.texture:SetPoint("LEFT", teamIconFrame ,"RIGHT", -26, 0);
+                teamIconFrame.texture:SetSize(26,26)
             end
 
             -- Set texture (if classicon available)
-            teamIconsFrames[teamIconIndex].texture:SetTexture(match[matchKey][teamIconIndex] and match[matchKey][teamIconIndex]["classIcon"] or nil);
-            teamIconsFrames[teamIconIndex].tooltip = ""
+            local classIcon = nil;
+            if(player["class"]) then
+                if(player["class"] == "Death Knight") then
+                    classIcon = "Interface\\Icons\\spell_deathknight_classicon";
+                else
+                    classIcon = "Interface\\Icons\\classicon_"..player["class"]:lower();
+                end
+            end
 
-            local playerName = match[matchKey][teamIconIndex] and match[matchKey][teamIconIndex]["name"] or ""
-            teamIconsFrames[teamIconIndex]:SetAttribute("name", playerName)
+            teamIconFrame.texture:SetTexture(classIcon);
+            teamIconFrame.tooltip = ""
+
+            local playerName = player and player["name"] or ""
+            teamIconFrame:SetAttribute("name", playerName)
 
             local function updateSearchForPlayer(previousSearch, prefix, search)
                 previousSearch = previousSearch or "";
@@ -628,9 +643,9 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
             end
 
             -- Set click to copy name
-            if (teamIconsFrames[teamIconIndex]) then
-                teamIconsFrames[teamIconIndex]:RegisterForClicks("LeftButtonDown", "RightButtonDown");
-                teamIconsFrames[teamIconIndex]:SetScript("OnClick", function(frame, btn)
+            if (teamIconFrame) then
+                teamIconFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+                teamIconFrame:SetScript("OnClick", function(frame, btn)
                     -- Specify explicit team prefix for search
                     local prefix = '';
                     if(IsControlKeyDown()) then
@@ -654,43 +669,43 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
             end
 
             -- Add tooltip with player name and class colored spec/class
-            local spec = match[matchKey][teamIconIndex]["spec"]
-            local class = match[matchKey][teamIconIndex]["class"];
+            local spec = player["spec"]
+            local class = player["class"];
             ForceDebugNilError(class);
             if (class ~= nil and spec ~= nil) then
-                addSpecFrame(button, teamIconsFrames[teamIconIndex], spec, class);
+                addSpecFrame(button, teamIconFrame, spec, class);
                 local tooltipSpecText = #spec > 2 and spec or class;
                 local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class):upper(), tooltipSpecText);
-                teamIconsFrames[teamIconIndex].tooltip = match[matchKey][teamIconIndex]["name"] .. " | " .. coloredSpecText;
+                teamIconFrame.tooltip = player["name"] .. " | " .. coloredSpecText;
             else
-                if (teamIconsFrames[teamIconIndex].spec) then
-                    teamIconsFrames[teamIconIndex].spec = nil;
+                if (teamIconFrame.spec) then
+                    teamIconFrame.spec = nil;
                 end
-                teamIconsFrames[teamIconIndex].tooltip = match[matchKey][teamIconIndex]["name"];
+                teamIconFrame.tooltip = player["name"];
             end
 
             -- Check if first to die
-            if (teamIconsFrames[teamIconIndex].death) then
-                teamIconsFrames[teamIconIndex].death.texture:SetTexture(nil);
+            if (teamIconFrame.death) then
+                teamIconFrame.death.texture:SetTexture(nil);
             end
-            if (match["firstDeath"] and string.find(match[matchKey][teamIconIndex]["name"], match["firstDeath"])) then
-                local deathFrame = CreateFrame("Frame", nil, teamIconsFrames[teamIconIndex])
-                teamIconsFrames[teamIconIndex].death = deathFrame;
-                teamIconsFrames[teamIconIndex].death:SetPoint("BOTTOMRIGHT", teamIconsFrames[teamIconIndex], "BOTTOMRIGHT")
-                teamIconsFrames[teamIconIndex].death:SetSize(26,26)
-                local deathTexture = teamIconsFrames[teamIconIndex].death:CreateTexture()
-                teamIconsFrames[teamIconIndex].death.texture = deathTexture;
-                teamIconsFrames[teamIconIndex].death.texture:SetPoint("CENTER")
-                teamIconsFrames[teamIconIndex].death.texture:SetSize(26,26)
-                teamIconsFrames[teamIconIndex].death.texture:SetColorTexture(1, 0, 0, 0.2);
+            if (match["firstDeath"] and string.find(player["name"], match["firstDeath"])) then
+                local deathFrame = CreateFrame("Frame", nil, teamIconFrame)
+                teamIconFrame.death = deathFrame;
+                teamIconFrame.death:SetPoint("BOTTOMRIGHT", teamIconFrame, "BOTTOMRIGHT")
+                teamIconFrame.death:SetSize(26,26)
+                local deathTexture = teamIconFrame.death:CreateTexture()
+                teamIconFrame.death.texture = deathTexture;
+                teamIconFrame.death.texture:SetPoint("CENTER")
+                teamIconFrame.death.texture:SetSize(26,26)
+                teamIconFrame.death.texture:SetColorTexture(1, 0, 0, 0.2);
                 if (ArenaAnalyticsSettings["alwaysShowDeathBg"] == false) then
-                    teamIconsFrames[teamIconIndex].death:Hide();
+                    teamIconFrame.death:Hide();
                 end
-                table.insert(ArenaAnalyticsScrollFrame.deathFrames, {teamIconsFrames[teamIconIndex].death, button})  
+                table.insert(ArenaAnalyticsScrollFrame.deathFrames, {teamIconFrame.death, button})  
             end
-            teamIconsFrames[teamIconIndex]:Show()
+            teamIconFrame:Show()
         else
-            teamIconsFrames[teamIconIndex]:Hide()
+            teamIconFrame:Hide()
         end
     end
 end
