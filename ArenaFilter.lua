@@ -64,13 +64,11 @@ function Filter:changeFilter(args)
         Filter.currentFilters[filterName] = selectedFilter;
     end
 
-    ArenaAnalytics.AAtable:forceCompFilterRefresh();
+    ArenaAnalytics.AAtable:handleArenaCountChanged();
 
     if currentFilter.dropdownList:IsShown() then   
         currentFilter.dropdownList:Hide();
     end
-
-    ArenaAnalytics.AAtable:RefreshLayout(true);
 end
 
 local function findOrAddCompValues(comps, comp, isWin)
@@ -179,8 +177,7 @@ function Filter:updateSearchFilterData(search)
     -- Commit search
     if(searchFilter ~= Filter.currentFilters["Filter_Search"]) then
         Filter.currentFilters["Filter_Search"] = searchFilter;
-        ArenaAnalytics.AAtable:forceCompFilterRefresh();
-        ArenaAnalytics.AAtable:RefreshLayout(true);
+        ArenaAnalytics.AAtable:handleArenaCountChanged();
     end
 end
 

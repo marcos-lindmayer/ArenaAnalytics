@@ -348,11 +348,13 @@ function AAtable:UpdateSelected()
     local newSelectedText = ""
     local selectedGamesCount = 0;
     local selectedWins = 0;
-    for _,index in pairs(selectedGames) do 
-        selectedGamesCount = selectedGamesCount + 1 
-        if (selectedGames[index]:GetAttribute("won")) then
-            selectedWins = selectedWins + 1;
-        end 
+    for index in pairs(selectedGames) do 
+        if(selectedGames[index]) then
+            selectedGamesCount = selectedGamesCount + 1 
+            if (selectedGames[index]:GetAttribute("won")) then
+                selectedWins = selectedWins + 1;
+            end 
+        end
     end
     if (selectedGamesCount > 0) then
         local winrate = math.floor(selectedWins * 100 / selectedGamesCount)
@@ -496,7 +498,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 88, 0, "MMR");
     ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 67, 0, "Enemy Team");
     ArenaAnalyticsScrollFrame.enemyRatingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 141, 0, "Enemy MMR");
-    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 125, 0, "Enemy Rating");
+    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 110, 0, "Enemy Rating");
 
     -- Recorded arena number and winrate
     ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 15, 30, "");
@@ -505,8 +507,9 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.selectedWinrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.sessionWinrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
     ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear");
     ArenaAnalyticsScrollFrame.clearSelected:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.selectedWinrate, "TOPRIGHT", 20, 5);
+    ArenaAnalyticsScrollFrame.clearSelected:SetWidth(90)
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
-    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () AAtable:ClearSelectedMatches()end)
+    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () AAtable:ClearSelectedMatches() end);
 
     -- First time user import popup if no matches are stored
     AAtable:tryShowimportFrame();
@@ -953,6 +956,23 @@ function AAtable:handleArenaCountChanged()
     ArenaAnalyticsScrollFrame.sessionWinrate:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionWinrate .. "% Winrate");
 end
 
+local function ratingToText(rating, delta)
+    rating = tonumber(rating);
+    delta = tonumber(delta);
+    if(rating ~= nil) then
+        if(delta) then
+            if(delta > 0) then
+                delta = "+"..delta;
+            end
+            delta = " ("..delta..")";
+        else
+            delta = "";
+        end
+        return rating .. delta;
+    end
+    return nil;
+end
+
 local isRefreshing = false;
 local hasPendingRefresh = true;
 local hasPendingFilterRefresh = true;
@@ -999,27 +1019,20 @@ function AAtable:RefreshLayout(updateFilter)
             setupTeamPlayerFrames(enemyTeamIconsFrames, match, "enemyTeam", button);
 
             local enemyDelta
-            -- Paint winner green, loser red 
-            if (match["won"]) then
-                local delta = (match["ratingDelta"] and match["ratingDelta"] ~= "") and " (+" .. match["ratingDelta"] .. ")" or ""
-                enemyDelta = (match["enemyRatingDelta"] and match["enemyRatingDelta"] ~= "") and " (-" .. match["enemyRatingDelta"] .. ")" or ""
-                if (match["rating"]) then
-                    button.Rating:SetText("|cff00cc66" .. match["rating"] .. delta .. "|r");
-                end
-            else
-                local delta = (match["ratingDelta"] and match["ratingDelta"] ~= "") and " (" .. match["ratingDelta"] .. ")" or ""
-                enemyDelta = (match["enemyRatingDelta"] and match["enemyRatingDelta"] ~= "") and " (+" .. match["enemyRatingDelta"] .. ")" or ""
-                if (match["rating"]) then
-                    button.Rating:SetText("|cffff0000" .. match["rating"] .. delta .."|r");
-                end                
-            end
+            -- Paint winner green, loser red
+            local hex = match["won"] and "ff00cc66" or "ffff0000"
+            local ratingText = ratingToText(match["rating"], match["ratingDelta"]) or "SKIRMISH";
+            button.Rating:SetText("|c" .. hex .. ratingText .."|r");
+            
+            -- Team MMR
+            button.MMR:SetText(tonumber(match["mmr"]) or "-");
 
-            button.MMR:SetText(match["mmr"] or "");
+            -- Enemy Rating & Delta
+            local enemyRatingText = ratingToText(match["enemyRating"], match["enemyRatingDelta"]) or "-";
+            button.EnemyRating:SetText(enemyRatingText);
 
-
-            local enemyRating = match["enemyRating"] and match["enemyRating"] or ""
-            button.EnemyRating:SetText(enemyRating .. enemyDelta or "");
-            button.EnemyMMR:SetText(match["enemyMmr"] or "");
+            -- Enemy team MMR
+            button.EnemyMMR:SetText(tonumber(match["enemyMmr"]) or "-");
             
             button:SetAttribute("won", match["won"]);
 

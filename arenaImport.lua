@@ -228,7 +228,6 @@ function AAimport:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
             return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
         end)
 
-        
         table.insert(MatchHistoryDB, arena);
         arenasImportedThisFrame = arenasImportedThisFrame + 1;
 
@@ -251,7 +250,7 @@ function AAimport:completeImport_ArenaStats()
         end
     end);
 
-    ArenaAnalytics.AAtable:handleArenaCountChanged();
+    C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
 
     ArenaAnalytics:Print("Import complete. " .. #MatchHistoryDB .. " arenas added!");
 end
@@ -268,14 +267,14 @@ function AAimport:createGroupTable(arena, groupType, size)
             local player = {
                 ["GUID"] = "",
                 ["name"] = name or "",
-                ["killingBlows"] = "",
-                ["deaths"] = "",
+                ["killingBlows"] = nil,
+                ["deaths"] = nil,
                 ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
                 ["race"] = race,
                 ["class"] = isDK and "Death Knight" or string.lower(class):gsub("^%l", string.upper),
-                ["damageDone"] = "",
-                ["healingDone"] = "",
-                ["spec"] = ""
+                ["damageDone"] = nil,
+                ["healingDone"] = nil,
+                ["spec"] = nil
             }
             table.insert(group, player);
         end

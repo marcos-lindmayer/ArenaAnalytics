@@ -61,10 +61,10 @@ local function updateGroupDataToNewFormat(group, myName, myRealm)
             ["spec"] = player["spec"] or "",
             ["race"] = player["race"] or "",
             ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(player["race"]),
-            ["killingBlows"] = player["killingBlows"] or "",
-            ["deaths"] = player["deaths"] or "",
-            ["damageDone"] = player["damageDone"] or "",
-            ["healingDone"] = player["healingDone"] or ""
+            ["killingBlows"] = tonumber(player["killingBlows"]),
+            ["deaths"] = tonumber(player["deaths"]),
+            ["damageDone"] = tonumber(player["damageDone"]),
+            ["healingDone"] = tonumber(player["healingDone"])
         }
         table.insert(updatedGroup, updatedPlayerTable);
     end
@@ -121,13 +121,13 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                     ["bracket"] = bracket,
                     ["duration"] = convertFormatedDurationToSeconds(arena["duration"]),
                     ["team"] = updateGroupDataToNewFormat(arena["team"], myName, myRealm),
-                    ["rating"] = arena["rating"], 
-                    ["ratingDelta"] = arena["ratingDelta"],
-                    ["mmr"] = arena["mmr"], 
+                    ["rating"] = tonumber(arena["rating"]),
+                    ["ratingDelta"] = tonumber(arena["ratingDelta"]),
+                    ["mmr"] = tonumber(arena["mmr"]), 
                     ["enemyTeam"] = updateGroupDataToNewFormat(arena["enemyTeam"], myName, myRealm),
-                    ["enemyRating"] = arena["enemyRating"], 
-                    ["enemyRatingDelta"] = arena["enemyRatingDelta"],
-                    ["enemyMmr"] = arena["enemyMmr"],
+                    ["enemyRating"] = tonumber(arena["enemyRating"]), 
+                    ["enemyRatingDelta"] = tonumber(arena["enemyRatingDelta"]),
+                    ["enemyMmr"] = tonumber(arena["enemyMmr"]),
                     ["comp"] = convertCompToShortFormat(arena["comp"], bracket),
                     ["enemyComp"] = convertCompToShortFormat(arena["enemyComp"], bracket),
                     ["won"] = arena["won"],
