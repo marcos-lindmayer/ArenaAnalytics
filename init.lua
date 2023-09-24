@@ -218,6 +218,8 @@ function ArenaAnalytics:init(event, name, ...)
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
+	ArenaAnalyticsLoadSettings();
+
 	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 99999;
 	local versionText = version ~= 99999 and " (Version: " .. version .. ")" or ""
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", versionText);
@@ -307,7 +309,7 @@ function ArenaAnalyticsSettingsFrame()
 	local paddingLeft = 25;
 	ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
     ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
-    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 340)
+    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 375)
     ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("DIALOG");
     ArenaAnalyticsScrollFrame.settingsFrame:Hide();
 
@@ -401,16 +403,11 @@ function ArenaAnalyticsSettingsFrame()
     end);
 
     ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnTextChanged", function(self)
-		local limit = tonumber(ArenaAnalyticsScrollFrame.compsLimitInput:GetText());
-		if(limit == nil) then
-			if(tonumber(ArenaAnalyticsSettings["compsLimit"]) == nil) then
-				ArenaAnalyticsSettings["compsLimit"] = 0;
-			end
-			ArenaAnalyticsScrollFrame.compsLimitInput:SetText(ArenaAnalyticsSettings["compsLimit"]);
-		end
-        ArenaAnalyticsSettings["compsLimit"] = tonumber(ArenaAnalyticsScrollFrame.compsLimitInput:GetText()) or 0;
+		local oldValue = tonumber(ArenaAnalyticsSettings["compsLimit"]) or 0;
+		local newValue = tonumber(ArenaAnalyticsScrollFrame.compsLimitInput:GetText());
+        ArenaAnalyticsSettings["compsLimit"] = newValue or oldValue;
+		ArenaAnalyticsScrollFrame.compsLimitInput:SetText(ArenaAnalyticsSettings["compsLimit"]);
     end);
-
 	
 	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -160, "Data settings");
 
@@ -451,6 +448,7 @@ function ArenaAnalyticsSettingsFrame()
 	
 	ArenaAnalyticsScrollFrame.moreOptionsTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -245, "More options");
 
+	-- Always show First Death Overlay
     ArenaAnalyticsScrollFrame.deathToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_deathToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -260);
     ArenaAnalyticsScrollFrame_deathToggleText:SetText("Always show red death bg on icon (else on mouse over only)");
@@ -462,6 +460,31 @@ function ArenaAnalyticsSettingsFrame()
 			ArenaAnalytics.AAtable:RefreshLayout(true); 
         end
     );
+
+	-- Show warning when 
+    ArenaAnalyticsScrollFrame.unsavedThreshold = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 85, -290, "Unsaved games threshold before showing /reload warning.");
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -285);
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetWidth(50);
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetHeight(20);
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetNumeric();
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetAutoFocus(false);
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetMaxLetters(5);
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetText(ArenaAnalyticsSettings["unsavedWarningThreshold"])
+    
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus();
+    end);
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus();
+    end);
+
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetScript("OnTextChanged", function(self)
+		local oldValue = tonumber(ArenaAnalyticsSettings["unsavedWarningThreshold"]) or 213;
+		local newValue = tonumber(ArenaAnalyticsScrollFrame.unsavedThresholdInput:GetText());
+        ArenaAnalyticsSettings["unsavedWarningThreshold"] = newValue or oldValue;
+		ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetText(ArenaAnalyticsSettings["unsavedWarningThreshold"]);
+    end);
 
 	ArenaAnalyticsScrollFrame.exportBtn = ArenaAnalytics.AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.settingsFrame, "BOTTOM", 0, 22, "Export");
     ArenaAnalyticsScrollFrame.exportBtn:SetScript("OnClick", toggleExportFrame);

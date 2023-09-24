@@ -145,6 +145,8 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
             return k1["date"] < k2["date"];
         end
     end);
+    
+	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
 
     if(requiresReload and #MatchHistoryDB > 0) then
         ReloadUI();

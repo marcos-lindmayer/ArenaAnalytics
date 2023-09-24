@@ -364,7 +364,7 @@ function AAtable:UpdateSelected()
         newSelectedText = "Selected: (click matches to select)"
         ArenaAnalyticsScrollFrame.clearSelected:Hide();
     end
-    ArenaAnalyticsScrollFrame.selectedWinrate:SetText(newSelectedText)
+    ArenaAnalyticsScrollFrame.selectedStats:SetText(newSelectedText)
 end
 
 function AAtable:closeFilterDropdowns()
@@ -487,7 +487,7 @@ function AAtable:OnLoad()
     end);
 
     -- Settings window
-    ArenaAnalyticsSettingsFrame()    
+    ArenaAnalyticsSettingsFrame()
 
     -- Table headers
     ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "TOPLEFT", -5, -47, "Date");
@@ -501,12 +501,18 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 110, 0, "Enemy Rating");
 
     -- Recorded arena number and winrate
-    ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 15, 30, "");
+    ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 27, "");
     ArenaAnalyticsScrollFrame.winrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
-    ArenaAnalyticsScrollFrame.sessionWinrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.winrate, "TOPRIGHT", 20, 0, "");
-    ArenaAnalyticsScrollFrame.selectedWinrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.sessionWinrate, "TOPRIGHT", 20, 0, "Selected: (click matches to select)");
-    ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", 0, 0, "Clear");
-    ArenaAnalyticsScrollFrame.clearSelected:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.selectedWinrate, "TOPRIGHT", 20, 5);
+
+    ArenaAnalyticsScrollFrame.sessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 10, "");
+
+    ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -70, 27, "Selected: (click matches to select)");
+    --ArenaAnalyticsScrollFrame.selectedSessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -70, 10, "Selected Session: 666/1305 | 71% Winrate");
+
+    ArenaAnalyticsScrollFrame.unsavedWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -150, 13, "");
+    ArenaAnalyticsScrollFrame.unsavedWarning:Hide();
+
+    ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 10, "Clear");
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(90)
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () AAtable:ClearSelectedMatches() end);
@@ -909,6 +915,17 @@ function AAtable:getLastGame(skipSkirmish)
     return nil;
 end
 
+local function checkUnsavedWarningThreshold()
+    if(ArenaAnalytics.unsavedArenaCount >= ArenaAnalyticsSettings["unsavedWarningThreshold"]) then
+        -- Show and update unsaved arena threshold
+        local unsavedWarningText = "|cffff0000" .. ArenaAnalytics.unsavedArenaCount .." unsaved matches!\n |cff00cc66/reload|r |cffff0000to save!|r"
+        ArenaAnalyticsScrollFrame.unsavedWarning:SetText(unsavedWarningText);
+        ArenaAnalyticsScrollFrame.unsavedWarning:Show();
+    else
+        ArenaAnalyticsScrollFrame.unsavedWarning:Hide();
+    end
+end
+
 -- Updates the displayed data for a new match
 function AAtable:handleArenaCountChanged()
     AAtable:RefreshLayout(true);
@@ -951,9 +968,9 @@ function AAtable:handleArenaCountChanged()
     ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arenas");
     ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. "/" .. (totalArenas - wins) .. " | " .. winrate .. "% Winrate");
 
-    local sessionWinrate = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
+    local sessionStats = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
     local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
-    ArenaAnalyticsScrollFrame.sessionWinrate:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionWinrate .. "% Winrate");
+    ArenaAnalyticsScrollFrame.sessionStats:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionStats .. "% Winrate");
 end
 
 local function ratingToText(rating, delta)
@@ -988,6 +1005,8 @@ function AAtable:RefreshLayout(updateFilter)
     isRefreshing = true;
     hasPendingRefresh = false;
     hasPendingFilterRefresh = false;
+
+    checkUnsavedWarningThreshold();
 
     if (updateFilter or #ArenaAnalytics.filteredMatchHistory == 0 and #MatchHistoryDB) then
         -- TODO: Optimize this across multiple frames?

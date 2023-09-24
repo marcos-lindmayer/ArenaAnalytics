@@ -6,6 +6,8 @@ local AAmatch = ArenaAnalytics.AAmatch;
 -- Character SavedVariables match history
 MatchHistoryDB = MatchHistoryDB or { }
 
+ArenaAnalytics.unsavedArenaCount = 0;
+
 -- Debug function to force a nil error if input is nil
 ArenaAnalytics.skipDebugForceNilError = true;
 function ForceDebugNilError(value, forceError)
@@ -19,18 +21,16 @@ function ForceDebugNilError(value, forceError)
 end
 
 -- User settings
-ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {
-	["outliers"] = 0,
-	["compsLimit"] = 0,
-	["seasonIsChecked"] = false,
-	["skirmishIshChecked"] = false,
-	["alwaysShowDeathBg"] = false
-};
-ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsSettings["outliers"] or 0;
-ArenaAnalyticsSettings["compsLimit"] = ArenaAnalyticsSettings["compsLimit"] or 0;
-ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsSettings["seasonIsChecked"] or false;
-ArenaAnalyticsSettings["skirmishIshChecked"] = ArenaAnalyticsSettings["skirmishIshChecked"] or false;
-ArenaAnalyticsSettings["alwaysShowDeathBg"] = ArenaAnalyticsSettings["alwaysShowDeathBg"] or false;
+ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
+
+function ArenaAnalyticsLoadSettings()
+	ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsSettings["outliers"] or 0;
+	ArenaAnalyticsSettings["compsLimit"] = ArenaAnalyticsSettings["compsLimit"] or 0;
+	ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsSettings["seasonIsChecked"] or false;
+	ArenaAnalyticsSettings["skirmishIshChecked"] = ArenaAnalyticsSettings["skirmishIshChecked"] or false;
+	ArenaAnalyticsSettings["alwaysShowDeathBg"] = ArenaAnalyticsSettings["alwaysShowDeathBg"] or false;
+	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 13;
+end
 
 ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {
 	-- Character specific settings
@@ -263,6 +263,7 @@ function AAmatch:insertArenaOnTable()
 
 	-- Insert arena data as a new MatchHistoryDB entry
 	table.insert(MatchHistoryDB, arenaData);
+	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
 
 	ArenaAnalytics:Print("Arena recorded!");
 	
