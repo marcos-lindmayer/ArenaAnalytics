@@ -251,6 +251,8 @@ function AAimport:completeImport_ArenaStats()
         end
     end);
 
+    ArenaAnalytics.AAtable:handleArenaCountChanged();
+
     ArenaAnalytics:Print("Import complete. " .. #MatchHistoryDB .. " arenas added!");
 end
 

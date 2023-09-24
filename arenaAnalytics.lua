@@ -376,11 +376,11 @@ function AAmatch:assignSpec(class, oldSpec, newSpec)
 
 	-- TODO: Fixup data for a standardized format of missing specs
 	if(oldSpec == nil or oldSpec == "" or oldSpec == "-" or oldSpec == "?" or oldSpec == "Preg") then
-		ArenaAnalytics:Log("Assigning spec: ", newSpec)
+		ArenaAnalytics:Log("Assigning spec: ", newSpec);
 		return newSpec;
 	end
 
-	ArenaAnalytics:Log("Keeping spec: ", oldSpec)
+	ArenaAnalytics:Log("Keeping spec: ", oldSpec);
 	return oldSpec;
 end
 
@@ -684,6 +684,7 @@ function AAmatch:handleArenaExited()
 	AAmatch:updateCachedBracketRatings();
 
 	AAmatch:insertArenaOnTable();
+	ArenaAnalytics.AAtable:handleArenaCountChanged();
 	return true;
 end
 

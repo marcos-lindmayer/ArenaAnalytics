@@ -444,72 +444,72 @@ end
 
 -- Returns spec icon path string
 function ArenaAnalyticsGetSpecIcon(spec, class)
-	local currentSpecName = spec;
-	local specString;
-	if (currentSpecName == "Subtlety") then
-		specString = [[Interface\Icons\ability_stealth]];
-	elseif (currentSpecName == "Assassination") then
-		specString = [[Interface\Icons\ability_rogue_eviscerate]];
-	elseif (currentSpecName == "Combat") then
-		specString = [[Interface\Icons\ability_backstab]];
-	elseif (currentSpecName == "Blood") then
-		specString = [[Interface\Icons\spell_deathknight_bloodpresence]];
-	elseif (currentSpecName == "Frost" and class == "Death Knight") then
-		specString = [[Interface\Icons\spell_deathknight_frostpresence]];
-	elseif (currentSpecName == "Unholy") then
-		specString = [[Interface\Icons\spell_deathknight_unholypresence]];
-	elseif (currentSpecName == "Balance") then
-		specString = [[Interface\Icons\spell_nature_starfall]];
-	elseif (currentSpecName == "Feral") then
-		specString = [[Interface\Icons\ability_racial_bearform]];
-	elseif (currentSpecName == "Restoration" and class == "Druid") then
-		specString = [[Interface\Icons\spell_nature_healingtouch]];
-	elseif (currentSpecName == "Beast Mastery") then
-		specString = [[Interface\Icons\ability_hunter_beasttaming]];
-	elseif (currentSpecName == "Marksmanship") then
-		specString = [[Interface\Icons\ability_marksmanship]];
-	elseif (currentSpecName == "Survival") then
-		specString = [[Interface\Icons\ability_hunter_swiftstrike]];
-	elseif (currentSpecName == "Arcane") then
-		specString = [[Interface\Icons\spell_holy_magicalsentry]];
-	elseif (currentSpecName == "Fire") then
-		specString = [[Interface\Icons\spell_fire_firebolt02]];
-	elseif (currentSpecName == "Frost") then
-		specString = [[Interface\Icons\spell_frost_frostbolt02]];
-	elseif (currentSpecName == "Holy" and class == "Paladin") then
-		specString = [[Interface\Icons\spell_holy_holybolt]];
-	elseif (currentSpecName == "Protection" and class == "Paladin") then
-		specString = [[Interface\Icons\spell_holy_devotionaura]];
-	elseif (currentSpecName == "Retribution") then
-		specString = [[Interface\Icons\spell_holy_auraoflight]];
-    elseif (currentSpecName == "Preg") then
-        specString = [[Interface\Icons\ability_paladin_hammeroftherighteous]];
-	elseif (currentSpecName == "Discipline") then
-		specString = [[Interface\Icons\spell_holy_wordfortitude]];
-	elseif (currentSpecName == "Holy") then
-		specString = [[Interface\Icons\spell_holy_guardianspirit]];
-	elseif (currentSpecName == "Shadow") then
-		specString = [[Interface\Icons\spell_shadow_shadowwordpain]];
-	elseif (currentSpecName == "Elemental") then
-		specString = [[Interface\Icons\spell_nature_lightning]];
-	elseif (currentSpecName == "Enhancement") then
-		specString = [[Interface\Icons\spell_nature_lightningshield]];
-	elseif (currentSpecName == "Restoration") then
-		specString = [[Interface\Icons\spell_nature_magicimmunity]];
-	elseif (currentSpecName == "Affliction") then
-		specString = [[Interface\Icons\spell_shadow_deathcoil]];
-	elseif (currentSpecName == "Demonology") then
-		specString = [[Interface\Icons\spell_shadow_metamorphosis]];
-	elseif (currentSpecName == "Destruction") then
-		specString = [[Interface\Icons\spell_shadow_rainoffire]];
-	elseif (currentSpecName == "Arms") then
-		specString = [[Interface\Icons\ability_rogue_eviscerate]];
-	elseif (currentSpecName == "Fury") then
-		specString = [[Interface\Icons\ability_warrior_innerrage]];
-	elseif (currentSpecName == "Protection") then
-		specString = [[Interface\Icons\inv_shield_06]];
-	end
-	return specString;
+    if(spec ~= nil) then
+        if (spec == "Subtlety") then
+            return [[Interface\Icons\ability_stealth]];
+        elseif (spec == "Assassination") then
+            return [[Interface\Icons\ability_rogue_eviscerate]];
+        elseif (spec == "Combat") then
+            return [[Interface\Icons\ability_backstab]];
+        elseif (spec == "Blood") then
+            return [[Interface\Icons\spell_deathknight_bloodpresence]];
+        elseif (spec == "Frost" and class == "Death Knight") then
+            return [[Interface\Icons\spell_deathknight_frostpresence]];
+        elseif (spec == "Unholy") then
+            return [[Interface\Icons\spell_deathknight_unholypresence]];
+        elseif (spec == "Balance") then
+            return [[Interface\Icons\spell_nature_starfall]];
+        elseif (spec == "Feral") then
+            return [[Interface\Icons\ability_racial_bearform]];
+        elseif (spec == "Restoration" and class == "Druid") then
+            return [[Interface\Icons\spell_nature_healingtouch]];
+        elseif (spec == "Beast Mastery") then
+            return [[Interface\Icons\ability_hunter_beasttaming]];
+        elseif (spec == "Marksmanship") then
+            return [[Interface\Icons\ability_marksmanship]];
+        elseif (spec == "Survival") then
+            return [[Interface\Icons\ability_hunter_swiftstrike]];
+        elseif (spec == "Arcane") then
+            return [[Interface\Icons\spell_holy_magicalsentry]];
+        elseif (spec == "Fire") then
+            return [[Interface\Icons\spell_fire_firebolt02]];
+        elseif (spec == "Frost") then
+            return [[Interface\Icons\spell_frost_frostbolt02]];
+        elseif (spec == "Holy" and class == "Paladin") then
+            return [[Interface\Icons\spell_holy_holybolt]];
+        elseif (spec == "Protection" and class == "Paladin") then
+            return [[Interface\Icons\spell_holy_devotionaura]];
+        elseif (spec == "Retribution") then
+            return [[Interface\Icons\spell_holy_auraoflight]];
+        elseif (spec == "Preg") then
+            return [[Interface\Icons\ability_paladin_hammeroftherighteous]];
+        elseif (spec == "Discipline") then
+            return [[Interface\Icons\spell_holy_wordfortitude]];
+        elseif (spec == "Holy") then
+            return [[Interface\Icons\spell_holy_guardianspirit]];
+        elseif (spec == "Shadow") then
+            return [[Interface\Icons\spell_shadow_shadowwordpain]];
+        elseif (spec == "Elemental") then
+            return [[Interface\Icons\spell_nature_lightning]];
+        elseif (spec == "Enhancement") then
+            return [[Interface\Icons\spell_nature_lightningshield]];
+        elseif (spec == "Restoration") then
+            return [[Interface\Icons\spell_nature_magicimmunity]];
+        elseif (spec == "Affliction") then
+            return [[Interface\Icons\spell_shadow_deathcoil]];
+        elseif (spec == "Demonology") then
+            return [[Interface\Icons\spell_shadow_metamorphosis]];
+        elseif (spec == "Destruction") then
+            return [[Interface\Icons\spell_shadow_rainoffire]];
+        elseif (spec == "Arms") then
+            return [[Interface\Icons\ability_rogue_eviscerate]];
+        elseif (spec == "Fury") then
+            return [[Interface\Icons\ability_warrior_innerrage]];
+        elseif (spec == "Protection") then
+            return [[Interface\Icons\inv_shield_06]];
+        end
+    end
+	return "";
 end
 
 function ArenaAnalytics:getBracketFromTeamSize(teamSize)

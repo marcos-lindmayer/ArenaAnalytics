@@ -427,11 +427,10 @@ function ArenaAnalyticsSettingsFrame()
 		ArenaAnalyticsDB = nil;
 		
 		MatchHistoryDB = { }
-		ArenaAnalytics.AAtable:resetCachedTotalArenas();
 		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
 		ArenaAnalyticsScrollFrame.resetBtn:Disable();
         ArenaAnalytics:Print("Match history deleted!");
-        ArenaAnalytics.AAtable:RefreshLayout(true);
+        ArenaAnalytics.AAtable:handleArenaCountChanged();
 		ArenaAnalytics.AAtable:tryShowimportFrame();
     end);
     

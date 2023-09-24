@@ -9,11 +9,6 @@ local filteredDB = nil;
 
 ArenaAnalytics.filteredMatchHistory = nil;
 
-local cachedTotalArenas = #MatchHistoryDB
-function AAtable:resetCachedTotalArenas()
-    cachedTotalArenas = 0;
-end
-
 local selectedGames = {}
 
 -- Toggles addOn view/hide
@@ -42,8 +37,11 @@ function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOff
     return btn;
 end
 
+-- TODO: Move to updated setup & remove this
 -- Hides spec's icon on bottom-right class' icon and death highlight
 local function hideSpecIconsAndDeathBg()
+    if(true) then return end
+
     for specIconNumber = 1, #ArenaAnalyticsScrollFrame.specFrames do
         if (not ArenaAnalyticsScrollFrame.specFrames[specIconNumber][2]:GetAttribute("clicked")) then
             ArenaAnalyticsScrollFrame.specFrames[specIconNumber][1]:Hide()
@@ -241,7 +239,6 @@ function AAtable:createDropdown(opts)
 
         -- Remove entries with lowest priority past the limit
         local limit = tonumber(ArenaAnalyticsSettings["compsLimit"]);
-        ArenaAnalytics:Log("Comps limit: ", limit);
         if(limit and limit > 0) then
             limit = limit + 2;
             if(#dropdownTable.entries > limit) then
@@ -351,9 +348,9 @@ function AAtable:UpdateSelected()
     local newSelectedText = ""
     local selectedGamesCount = 0;
     local selectedWins = 0;
-    for timestamp in pairs(selectedGames) do 
+    for _,index in pairs(selectedGames) do 
         selectedGamesCount = selectedGamesCount + 1 
-        if (selectedGames[timestamp]:GetAttribute("won")) then
+        if (selectedGames[index]:GetAttribute("won")) then
             selectedWins = selectedWins + 1;
         end 
     end
@@ -386,8 +383,6 @@ end
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
-
-    cachedTotalArenas = #MatchHistoryDB;
 
     ArenaAnalyticsScrollFrame.filterComps = {}
     ArenaAnalyticsScrollFrame.filterEnemyComps = {}
@@ -540,6 +535,8 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.specFrames = {}
     ArenaAnalyticsScrollFrame.deathFrames = {}
 
+    HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListMatch");
+    AAtable:handleArenaCountChanged();
     AAtable:OnShow();
 end
 
@@ -624,58 +621,57 @@ function AAtable:tryShowimportFrame()
 end
 
 function AAtable:OnShow()
-    HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListMatch");
     AAtable:RefreshLayout(true);
     ArenaAnalyticsScrollFrame:Hide();
 end
 
--- Creates a frame and a texture with the class' spec
--- and places it on the bottom right corner of the class icon
-local function addSpecFrame(button, classIconFrame, spec, class)
-    if (classIconFrame.spec) then
-        classIconFrame.spec.texture:SetTexture(nil)
+local function updateSearchForPlayer(previousSearch, prefix, search)
+    previousSearch = previousSearch or "";
+    search = search or "";
+
+    local newSearch = prefix .. search;
+    local existingSearch = search:gsub("-", "%%-");
+    if(previousSearch ~= "" and previousSearch:find(search:gsub("-", "%%-")) ~= nil) then
+        -- Clear existing prefix
+        previousSearch = previousSearch:gsub("-"..existingSearch, search);
+        previousSearch = previousSearch:gsub("+"..existingSearch, search);
+
+        newSearch = previousSearch:gsub(existingSearch, newSearch);
     else
-        local specFrame = CreateFrame("Frame", nil, classIconFrame)
-        classIconFrame.spec = specFrame;
-        classIconFrame.spec:SetPoint("BOTTOMRIGHT", classIconFrame, "BOTTOMRIGHT")
-        classIconFrame.spec:SetSize(12,12)
-        local specTexture = classIconFrame.spec:CreateTexture()
-        classIconFrame.spec.texture = specTexture;
-        classIconFrame.spec.texture:SetPoint("CENTER")
-        classIconFrame.spec.texture:SetSize(12,12)
+        if(previousSearch ~= "" and previousSearch:sub(-1) ~= '|') then
+            previousSearch = previousSearch .. ", ";
+        end
+        
+        newSearch = previousSearch .. newSearch;
     end
-    local specIconString = ArenaAnalyticsGetSpecIcon(spec, class)
-    classIconFrame.spec.texture:SetTexture(specIconString and specIconString or nil)
-    classIconFrame.spec:Hide();
-    table.insert(ArenaAnalyticsScrollFrame.specFrames, {classIconFrame.spec, button})
+    
+    ArenaAnalytics.Filter:updateSearchFilterData(newSearch);
+    ArenaAnalyticsScrollFrame.searchBox:SetText(ArenaAnalytics.Filter.currentFilters["Filter_Search"]["raw"]);
 end
 
--- Creates a icon-based string with the match's comp with name and spec tooltips
-local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, button)
+local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEntry)
     if(match == nil or match[matchKey] == nil) then
         return;
     end
-    
-    for teamIconIndex = 1, #teamIconsFrames do
-        local player = match[matchKey][teamIconIndex];
-        local teamIconFrame = teamIconsFrames[teamIconIndex];
-        if (player and teamIconFrame) then
-            if (teamIconFrame.texture) then
-                -- Reset textures
-                teamIconFrame.texture:SetTexture(nil)
-            else
+
+    for i = 1, #teamPlayerFrames do
+        local player = match[matchKey][i];
+        local playerFrame = teamPlayerFrames[i];
+        if (player and playerFrame) then
+            local class = player["class"];
+            local spec = player["spec"];
+
+            if (playerFrame.texture == nil) then
                 -- No textures? Set them
-                local teamTexture = teamIconFrame:CreateTexture();
-                teamIconFrame.texture = teamTexture
-                teamIconFrame.texture:SetPoint("LEFT", teamIconFrame ,"RIGHT", -26, 0);
-                teamIconFrame.texture:SetSize(26,26)
+                local teamTexture = playerFrame:CreateTexture();
+                playerFrame.texture = teamTexture
+                playerFrame.texture:SetPoint("LEFT", playerFrame ,"RIGHT", -26, 0);
+                playerFrame.texture:SetSize(26,26)
             end
-
-            -- Set texture (if classicon available)
-            local classIcon = ArenaAnalyticsGetClassIcon(player["class"]);
-
-            teamIconFrame.texture:SetTexture(classIcon);
-            teamIconFrame.tooltip = ""
+            
+            -- Set texture
+            playerFrame.texture:SetTexture(ArenaAnalyticsGetClassIcon(class));
+            playerFrame.tooltip = ""
 
             local playerName = player["name"] or ""
 
@@ -684,36 +680,12 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                 playerName = playerName:match("(.*)-");
             end
 
-            teamIconFrame:SetAttribute("name", playerName)
-
-            local function updateSearchForPlayer(previousSearch, prefix, search)
-                previousSearch = previousSearch or "";
-                search = search or "";
-
-                local newSearch = prefix .. search;
-                local existingSearch = search:gsub("-", "%%-");
-                if(previousSearch ~= "" and previousSearch:find(search:gsub("-", "%%-")) ~= nil) then
-                    -- Clear existing prefix
-                    previousSearch = previousSearch:gsub("-"..existingSearch, search);
-                    previousSearch = previousSearch:gsub("+"..existingSearch, search);
-
-                    newSearch = previousSearch:gsub(existingSearch, newSearch);
-                else
-                    if(previousSearch ~= "" and previousSearch:sub(-1) ~= '|') then
-                        previousSearch = previousSearch .. ", ";
-                    end
-                    
-                    newSearch = previousSearch .. newSearch;
-                end
-                
-                ArenaAnalytics.Filter:updateSearchFilterData(newSearch);
-                ArenaAnalyticsScrollFrame.searchBox:SetText(ArenaAnalytics.Filter.currentFilters["Filter_Search"]["raw"]);
-            end
+            playerFrame:SetAttribute("name", playerName);
 
             -- Set click to copy name
-            if (teamIconFrame) then
-                teamIconFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
-                teamIconFrame:SetScript("OnClick", function(frame, btn)
+            if (playerFrame) then
+                playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+                playerFrame:SetScript("OnClick", function(frame, btn)
                     -- Specify explicit team prefix for search
                     local prefix = '';
                     if(IsControlKeyDown()) then
@@ -737,72 +709,66 @@ local function setClassTextureWithTooltip(teamIconsFrames, match, matchKey, butt
                 end);
             end
 
-            -- Add tooltip with player name and class colored spec/class
-            local spec = player["spec"]
-            local class = player["class"];
-            ForceDebugNilError(class);
-            if (class ~= nil and spec ~= nil) then
-                addSpecFrame(button, teamIconFrame, spec, class);
-                local tooltipSpecText = #spec > 2 and spec or class;
-                local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class):upper(), tooltipSpecText);
-                teamIconFrame.tooltip = playerName .. " | " .. coloredSpecText;
-            else
-                if (teamIconFrame.spec) then
-                    teamIconFrame.spec = nil;
+            -- Add spec info
+            if(class and spec) then
+                if (playerFrame.specOverlay == nil) then
+                    playerFrame.specOverlay = playerFrame:CreateTexture();
+                    playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT");
+                    playerFrame.specOverlay:SetSize(12,12);
                 end
-                teamIconFrame.tooltip = playerName;
+                playerFrame.specOverlay:SetTexture(ArenaAnalyticsGetSpecIcon(spec, class));
+                playerFrame.specOverlay:Hide();
+
+                local tooltipSpecText = #spec > 2 and spec or class;
+                local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class), tooltipSpecText);
+                playerFrame.tooltip = playerName .. " | " .. coloredSpecText;
+            else
+                if (playerFrame.specOverlay) then
+                    playerFrame.specOverlay:SetTexture(nil);
+                    playerFrame.specOverlay:Hide();
+                end
+                playerFrame.tooltip = playerName;
             end
 
-            -- Check if first to die
-            if (teamIconFrame.death) then
-                teamIconFrame.death.texture:SetTexture(nil);
-            end
+            -- Add death overlay
             if (match["firstDeath"] and string.find(player["name"], match["firstDeath"])) then
-                local deathFrame = CreateFrame("Frame", nil, teamIconFrame)
-                teamIconFrame.death = deathFrame;
-                teamIconFrame.death:SetPoint("BOTTOMRIGHT", teamIconFrame, "BOTTOMRIGHT")
-                teamIconFrame.death:SetSize(26,26)
-                local deathTexture = teamIconFrame.death:CreateTexture()
-                teamIconFrame.death.texture = deathTexture;
-                teamIconFrame.death.texture:SetPoint("CENTER")
-                teamIconFrame.death.texture:SetSize(26,26)
-                teamIconFrame.death.texture:SetColorTexture(1, 0, 0, 0.2);
-                if (ArenaAnalyticsSettings["alwaysShowDeathBg"] == false) then
-                    teamIconFrame.death:Hide();
+                if (playerFrame.deathOverlay == nil) then
+                    playerFrame.deathOverlay = playerFrame:CreateTexture();
+                    playerFrame.deathOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")
+                    playerFrame.deathOverlay:SetSize(26,26)
+                    playerFrame.deathOverlay:SetColorTexture(1, 0, 0, 0.2);
                 end
-                table.insert(ArenaAnalyticsScrollFrame.deathFrames, {teamIconFrame.death, button})  
+                if (ArenaAnalyticsSettings["alwaysShowDeathBg"] == false) then
+                    playerFrame.deathOverlay:Hide();
+                end
             end
-            teamIconFrame:Show()
+
+            playerFrame:Show()
         else
-            teamIconFrame:Hide()
+            playerFrame:Hide();
         end
     end
 end
 
 -- Hide/Shows Spec icons on the class' bottom-right corner
-function AAtable:ToggleSpecsAndDeathBg(match, visible)
-    local matchData = { match:GetChildren() };
+function AAtable:ToggleSpecsAndDeathBg(entry)
+    local matchData = { entry:GetChildren() };
+    local visible = entry:GetAttribute("clicked") or entry:GetAttribute("hovered");
+
     for i = 1, #matchData do
-        if (matchData[i].spec) then
+        if (matchData[i].specOverlay) then
             if (visible) then
-                matchData[i].spec:Show();
-            elseif (match:GetAttribute("clicked")) then
-                matchData[i].spec:Show();
+                matchData[i].specOverlay:Show();
             else
-                matchData[i].spec:Hide();
+                matchData[i].specOverlay:Hide();
             end
         end
-        if (matchData[i].death) then
-            if (visible) then
-                matchData[i].death:Show();
-            elseif (match:GetAttribute("clicked")) then
-                matchData[i].death:Show();
+        if (matchData[i].deathOverlay) then
+            if (visible or ArenaAnalyticsSettings["alwaysShowDeathBg"]) then
+                matchData[i].deathOverlay:Show();
             else
-                matchData[i].death:Hide();
+                matchData[i].deathOverlay:Hide();
             end
-        end
-        if (matchData[i].death and ArenaAnalyticsSettings["alwaysShowDeathBg"]) then
-            matchData[i].death:Show();
         end
     end
 end
@@ -940,13 +906,10 @@ function AAtable:getLastGame(skipSkirmish)
     return nil;
 end
 
--- Refreshes matches table
-function AAtable:RefreshLayout(updateFilter)
-    local newArenaPlayed = false;
-    if (#MatchHistoryDB > cachedTotalArenas) then
-        newArenaPlayed = true;
-        cachedTotalArenas = #MatchHistoryDB;
-    end
+-- Updates the displayed data for a new match
+function AAtable:handleArenaCountChanged()
+    AAtable:RefreshLayout(true);
+    AAtable:forceCompFilterRefresh(true);
 
     if(ArenaAnalytics:hasStoredMatches()) then
         ArenaAnalyticsScrollFrame.exportBtn:Enable();
@@ -955,10 +918,59 @@ function AAtable:RefreshLayout(updateFilter)
         ArenaAnalyticsScrollFrame.exportFrame:SetText("");
         ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
     end
-    
-    local lastGame = AAtable:getLastGame()
-    
-    if (updateFilter or newArenaPlayed or #ArenaAnalytics.filteredMatchHistory == 0 and #MatchHistoryDB) then
+
+    local wins = 0;
+    local sessionGames = 0;
+    local sessionWins = 0;
+
+    local matches = ArenaAnalytics.filteredMatchHistory;
+
+    -- Update arena count & winrate
+    for i = 1, #ArenaAnalytics.filteredMatchHistory do
+        local match = ArenaAnalytics.filteredMatchHistory[i];
+        if(match) then 
+            if(match["won"]) then 
+                wins = wins + 1; 
+            end
+            
+            if (match["session"] == 1 ) then
+                sessionGames = sessionGames + 1;
+                if (match["won"]) then
+                    sessionWins = sessionWins + 1;
+                end
+            end
+        end
+    end
+
+    local totalArenas = #ArenaAnalyticsScrollFrame.matches;
+    local winrate = totalArenas > 0 and math.floor(wins * 100 / totalArenas) or 0;
+    local winsColoured =  "|cff00cc66" .. wins .. "|r";
+    ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arenas");
+    ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. "/" .. (totalArenas - wins) .. " | " .. winrate .. "% Winrate");
+
+    local sessionWinrate = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
+    local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
+    ArenaAnalyticsScrollFrame.sessionWinrate:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionWinrate .. "% Winrate");
+end
+
+local isRefreshing = false;
+local hasPendingRefresh = true;
+local hasPendingFilterRefresh = true;
+
+-- Refreshes matches table
+function AAtable:RefreshLayout(updateFilter)
+    if(isRefreshing) then
+        hasPendingRefresh = true;
+        hasPendingFilterRefresh = updateFilter;
+        return;
+    end
+
+    isRefreshing = true;
+    hasPendingRefresh = false;
+    hasPendingFilterRefresh = false;
+
+    if (updateFilter or #ArenaAnalytics.filteredMatchHistory == 0 and #MatchHistoryDB) then
+        -- TODO: Optimize this across multiple frames?
         ArenaAnalytics.Filter:refreshFilters(MatchHistoryDB);
     end
     
@@ -967,7 +979,6 @@ function AAtable:RefreshLayout(updateFilter)
     local matches = ArenaAnalyticsScrollFrame.matches;
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local offset = HybridScrollFrame_GetOffset(ArenaAnalyticsScrollFrame.ListScrollFrame);
-    local wins = 0;
 
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
@@ -980,16 +991,13 @@ function AAtable:RefreshLayout(updateFilter)
             button.Map:SetText(match["map"] or "");
             button.Duration:SetText(SecondsToTime(match["duration"]) or "");
 
-            button:SetScript("OnEnter", function (args)
-                AAtable:ToggleSpecsAndDeathBg(args, true)
-            end)
-            button:SetScript("OnLeave", function (args)
-                AAtable:ToggleSpecsAndDeathBg(args, false)
-            end)
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
             
-            setClassTextureWithTooltip(teamIconsFrames, match, "team", button)
+            -- Setup player class frames
+            setupTeamPlayerFrames(teamIconsFrames, match, "team", button);
+            setupTeamPlayerFrames(enemyTeamIconsFrames, match, "enemyTeam", button);
+
             local enemyDelta
             -- Paint winner green, loser red 
             if (match["won"]) then
@@ -1008,14 +1016,14 @@ function AAtable:RefreshLayout(updateFilter)
 
             button.MMR:SetText(match["mmr"] or "");
 
-            setClassTextureWithTooltip(enemyTeamIconsFrames, match, "enemyTeam", button)
+
             local enemyRating = match["enemyRating"] and match["enemyRating"] or ""
             button.EnemyRating:SetText(enemyRating .. enemyDelta or "");
             button.EnemyMMR:SetText(match["enemyMmr"] or "");
             
             button:SetAttribute("won", match["won"]);
 
-            if (selectedGames[button.Date:GetText()]) then
+            if (selectedGames[matchIndex]) then
                 button:SetAttribute("clicked", true)
                 button.Tooltip:Show()
             else
@@ -1023,32 +1031,39 @@ function AAtable:RefreshLayout(updateFilter)
                 button.Tooltip:Hide()
             end
 
-            button:SetScript("OnClick", function (args)
-                if (not args:GetAttribute("clicked")) then
-                    args:SetAttribute("clicked", true)
-                    args.Tooltip:Show();
-                    selectedGames[args.Date:GetText()] = args;
+            button:SetScript("OnEnter", function(self)
+                self:SetAttribute("hovered", true);
+                AAtable:ToggleSpecsAndDeathBg(self);
+            end);
+
+            button:SetScript("OnLeave", function(self) 
+                self:SetAttribute("hovered", false);
+                AAtable:ToggleSpecsAndDeathBg(self);
+            end);
+            
+            button:SetScript("OnClick", function (self)
+                if (self:GetAttribute("clicked")) then
+                    self:SetAttribute("clicked", false)
+                    selectedGames[matchIndex] = nil;
+                    self.Tooltip:Hide();
                     AAtable:UpdateSelected();
-                    AAtable:ToggleSpecsAndDeathBg(args, true)
+                    AAtable:ToggleSpecsAndDeathBg(self);
                 else
-                    args:SetAttribute("clicked", false)
-                    selectedGames[args.Date:GetText()] = nil;
-                    args.Tooltip:Hide();
+                    self:SetAttribute("clicked", true)
+                    self.Tooltip:Show();
+                    selectedGames[matchIndex] = self;
                     AAtable:UpdateSelected();
-                    AAtable:ToggleSpecsAndDeathBg(args, false)
+                    AAtable:ToggleSpecsAndDeathBg(self);
                 end
-            end
-            )
+            end);
+
+            AAtable:ToggleSpecsAndDeathBg(button);
 
             button:SetWidth(ArenaAnalyticsScrollFrame.ListScrollFrame.scrollChild:GetWidth());
             button:Show();
         else
             button:Hide();
         end
-    end
-
-    if (newArenaPlayed) then
-        AAtable:forceCompFilterRefresh(true);
     end
 
     -- Adjust Team bg
@@ -1060,37 +1075,20 @@ function AAtable:RefreshLayout(updateFilter)
         ArenaAnalyticsScrollFrame.teamBgT:SetHeight(413);
         ArenaAnalyticsScrollFrame.teamBg:SetHeight(413);
     end
-    
-    local sessionWins = 0;
-    local sessionGames = 0;
 
-    -- Update arena count & winrate
-    for n = 1, #matches do
-        if(matches[n]["won"]) then wins = wins + 1; end
-        if (matches[n]["session"] == 1 ) then
-            sessionGames = sessionGames + 1;
-            if (matches[n]["won"]) then
-                sessionWins = sessionWins + 1;
-            end
-        end
-    end
-
-    local totalArenas = #ArenaAnalyticsScrollFrame.matches;
-    local winrate = totalArenas > 0 and math.floor(wins * 100 / totalArenas) or 0;
-    local winsColoured =  "|cff00cc66" .. wins .. "|r";
-    ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arenas");
-    ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. "/" .. (totalArenas - wins) .. " | " .. winrate .. "% Winrate");
-
-    local sessionWinrate = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
-    local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
-    ArenaAnalyticsScrollFrame.sessionWinrate:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionWinrate .. "% Winrate");
+    -- TODO: Optimize
+    -- Hide spec icons
+    hideSpecIconsAndDeathBg()
 
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;
     local totalHeight = #matches * buttonHeight;
     local shownHeight = #buttons * buttonHeight;
-
-    -- Hide spec icons
-    hideSpecIconsAndDeathBg()
-
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
+
+    -- Run pending refresh next frame
+    if(hasPendingRefresh) then
+        C_Timer.After(1, function() AAtable:RefreshLayout(hasPendingFilterRefresh) end);
+    else
+        isRefreshing = false;
+    end
 end
