@@ -420,10 +420,13 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.resetBtn:SetDisabledFontObject("GameFontDisableSmall")
     ArenaAnalyticsScrollFrame.resetBtn:SetScript("OnClick", function (i) 
         ArenaAnalyticsDB = {
-			["2v2"] = {},
-			["3v3"] = {},
-			["5v5"] = {},
+			["2v2"] = nil,
+			["3v3"] = nil,
+			["5v5"] = nil,
 		};
+		ArenaAnalyticsDB = nil;
+		
+		MatchHistoryDB = { }
 		ArenaAnalytics.AAtable:resetCachedTotalArenas();
 		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
 		ArenaAnalyticsScrollFrame.resetBtn:Disable();

@@ -37,12 +37,12 @@ local function convertFormatedDurationToSeconds(inDuration)
     return 0;
 end
 
-local function computeSeasonWhenMissing(season, date)
-    if(season == nil) then
-        
+local function computeSeasonWhenMissing(season, unixDate)
+    if(season == nil or season == 0) then
+        return ArenaAnalytics:computeSeasonFromMatchDate(unixDate);
     end
 
-    return season
+    return season;
 end
 
 local function updateGroupDataToNewFormat(group, myName, myRealm)

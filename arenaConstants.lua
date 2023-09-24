@@ -8,6 +8,13 @@ ArenaAnalytics.Constants = Constants;
 
 Constants.currentSeasonStartInt = 1687219201;
 
+-- TODO: Implement
+function ArenaAnalytics:computeSeasonFromMatchDate(unixDate)
+    if (true) then 
+        return 0 
+    end
+end
+
 -- Priority: Healer > Caster > Tank > Melee
 -- Addon specific spec IDs { ID, "class|spec", "class", "spec", priority value } (ID must never change to preserve data validity, priority is a runtime check)
 local addonSpecializationIDs = {

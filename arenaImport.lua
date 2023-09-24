@@ -5,8 +5,7 @@ local AAimport = ArenaAnalytics.AAimport;
 
 local isImporting = false;
 local cachedValues = {};
-local cachedArenas = {};
-local cachedBracketDB = {};
+local cachedArenas_ArenaStats = {};
 
 ArenaImportPasteString = "";
 
@@ -35,8 +34,7 @@ function AAimport:reset()
     ArenaAnalytics.AAtable:RefreshLayout(true);
 
     cachedValues = {};
-    cachedArenas = {};
-    cachedBracketDB = {};
+    cachedArenas_ArenaStats = {};
     isImporting = false;
 end
 
@@ -86,7 +84,7 @@ function AAimport:parseRawData(data)
                 table.insert(cachedValues, c)
             end);
 
-            local cachedArenas = {}
+            local cachedArenas_ArenaStats = {}
             AAimport:parseCachedValues_ArenaStats(1);
         end        
     end
@@ -112,7 +110,7 @@ function AAimport:parseCachedValues_ArenaStats(nextIndex)
             table.insert(arena, cachedValues[i])
         else 
             local arenaTable = {
-                ["isRanked"] = arena[1],
+                ["isRated"] = arena[1],
                 ["startTime"] = arena[2],
                 ["endTime"] = arena[3],
                 ["zoneId"] = arena[4],
@@ -163,7 +161,7 @@ function AAimport:parseCachedValues_ArenaStats(nextIndex)
             }
 
             arenasParsedThisFrame = arenasParsedThisFrame + 1;
-            table.insert(cachedArenas, arenaTable)
+            table.insert(cachedArenas_ArenaStats, arenaTable)
             arena = {}
 
             if(arenasParsedThisFrame >= 500 and i < #cachedValues) then
@@ -177,55 +175,52 @@ function AAimport:parseCachedValues_ArenaStats(nextIndex)
     end
 
     if(finishedParsing) then
-        AAimport:addCachedArenasToBracketDB_ArenaStats(1);
+        AAimport:addCachedArenasToMatchHistory_ArenaStats(1);
     end
 end
 
-function AAimport:addCachedArenasToBracketDB_ArenaStats(nextIndex)
+function AAimport:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
     if(nextIndex == nil) then
         nextIndex = 1;
     end
 
     local arenasImportedThisFrame = 0;
 
-    for i = nextIndex, #cachedArenas do
-        local arena = cachedArenas[i]
+    for i = nextIndex, #cachedArenas_ArenaStats do
+        local arena = cachedArenas_ArenaStats[i]
         local size = 0
         for i = 1, 5 do
             if (arena["teamPlayerName" .. i] ~= "" or arena["enemyPlayerName" .. i] ~= "") then
-                size = i
-            else
-                break
+                size = i;
             end
         end
         size = size == 1 and 2 or size;
         size = size == 4 and 5 or size;
 
-        local hasRating = (arena["newTeamRating"] ~= nil and arena["newTeamRating"] ~= "");
-        local hasMmr = (arena["mmr"] ~= nil and arena["mmr"] ~= "");
-        local hasEnemyRating = (arena["enemyNewTeamRating"] ~= nil and arena["enemyNewTeamRating"] ~= "");
-        local hasEnemyMmr = (arena["enemyMmr"] ~= nil and arena["enemyMmr"] ~= "");
-        
-        local arenaDB = {
-            ["dateInt"] = tonumber(arena["startTime"]),
+        local unixDate = tonumber(arena["startTime"])    
+
+        local arena = {
+            ["isRated"] = arena["isRanked"] == "YES" and true or false,
+            ["date"] = unixDate,
+            ["season"] = ArenaAnalytics:computeSeasonFromMatchDate(unixDate),
             ["map"] = ArenaAnalytics.AAmatch:getMapNameById(tonumber(arena["zoneId"])), 
-            ["duration"] = AAimport:getDuration(tonumber(arena["duration"])),
+            ["bracket"] = ArenaAnalytics:getBracketFromTeamSize(size),
+            ["duration"] = tonumber(arena["duration"]),
             ["team"] = AAimport:createGroupTable(arena, "team", size),
-            ["rating"] = hasRating and tonumber(arena["newTeamRating"]) or "SKIRMISH", 
+            ["rating"] = tonumber(arena["newTeamRating"]), 
             ["ratingDelta"] = tonumber(arena["diffRating"]),
-            ["mmr"] = hasMmr and tonumber(arena["mmr"]) or "", 
+            ["mmr"] = tonumber(arena["mmr"]), 
             ["enemyTeam"] = AAimport:createGroupTable(arena, "enemy", size),
-            ["enemyRating"] = hasEnemyRating and tonumber(arena["enemyNewTeamRating"]) or "-", 
-            ["enemyRatingDelta"] = hasEnemyRating and tonumber(arena["enemyDiffRating"]) or "",
-            ["enemyMmr"] = hasEnemyMmr and tonumber(arena["enemyMmr"]) or "-",
-            ["comp"] = {"",""},
-            ["enemyComp"] = {"",""},
+            ["enemyRating"] = tonumber(arena["enemyNewTeamRating"]), 
+            ["enemyRatingDelta"] = tonumber(arena["enemyDiffRating"]),
+            ["enemyMmr"] = tonumber(arena["enemyMmr"]),
+            ["comp"] = nil,
+            ["enemyComp"] = nil,
             ["won"] = arena["teamColor"] == arena["winnerColor"] and true or false,
-            ["isRanked"] = arena["isRanked"] == "YES" and true or false,
-            ["check"] = false
+            ["firstDeath"] = nil
         }
 
-        table.sort(arenaDB["team"], function(a, b)
+        table.sort(arena["team"], function(a, b)
             local name = UnitName("player");
             local prioA = a["name"] == name and 1 or 2;
             local prioB = b["name"] == name and 1 or 2;
@@ -233,11 +228,12 @@ function AAimport:addCachedArenasToBracketDB_ArenaStats(nextIndex)
             return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
         end)
 
-        table.insert(ArenaAnalyticsDB[size .. "v" .. size], arenaDB);
+        
+        table.insert(MatchHistoryDB, arena);
         arenasImportedThisFrame = arenasImportedThisFrame + 1;
 
-        if(arenasImportedThisFrame >= 500 and i < #cachedArenas) then
-            C_Timer.After(0, function() AAimport:addCachedArenasToBracketDB_ArenaStats(i + 1) end);
+        if(arenasImportedThisFrame >= 500 and i < #cachedArenas_ArenaStats) then
+            C_Timer.After(0, function() AAimport:addCachedArenasToMatchHistory_ArenaStats(i + 1) end);
             return;
         end        
     end
@@ -249,49 +245,61 @@ function AAimport:completeImport_ArenaStats()
     AAimport:reset();
     AAimport:tryHide();
 
-    local totalArenas = #ArenaAnalyticsDB["2v2"] + #ArenaAnalyticsDB["3v3"] + #ArenaAnalyticsDB["5v5"];
-    ArenaAnalytics:Print("Import complete. " .. totalArenas .. " arenas added!");
+    table.sort(MatchHistoryDB, function (k1,k2)
+        if (k1["date"] and k2["date"]) then
+            return k1["date"] < k2["date"];
+        end
+    end);
+
+    ArenaAnalytics:Print("Import complete. " .. #MatchHistoryDB .. " arenas added!");
 end
 
 function AAimport:createGroupTable(arena, groupType, size)
     local group = {}
     for i = 1, size do
-        local isDK = arena[groupType .. "PlayerClass" .. i] == "DEATHKNIGHT" and true or false;
-        local player = {
-            ["GUID"] = "",
-            ["name"] = arena[groupType .. "PlayerName" .. i],
-            ["killingBlows"] = "",
-            ["deaths"] = "",
-            ["faction"] = "",
-            ["race"] = arena[groupType .. "PlayerRace" .. i],
-            ["class"] = isDK and "Death Knight" or string.lower(arena[groupType .. "PlayerClass" .. i]):gsub("^%l", string.upper),
-            ["filename"] = "",
-            ["damageDone"] = "",
-            ["healingDone"] = "",
-            ["classIcon"] = isDK and ArenaAnalyticsGetClassIcon("Death Knight") or ArenaAnalyticsGetClassIcon(string.lower(arena[groupType .. "PlayerClass" .. i]):gsub("^%l", string.upper)),
-            ["spec"] = ""
-        }
-        table.insert(group, player)
+        local name = arena[groupType .. "PlayerName" .. i];
+        local race = arena[groupType .. "PlayerRace" .. i];
+        local class = arena[groupType .. "PlayerClass" .. i];
+        local isDK = class == "DEATHKNIGHT" and true or false;
+
+        if(name ~= "" and race ~= "" and class ~= "") then 
+            local player = {
+                ["GUID"] = "",
+                ["name"] = name or "",
+                ["killingBlows"] = "",
+                ["deaths"] = "",
+                ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
+                ["race"] = race,
+                ["class"] = isDK and "Death Knight" or string.lower(class):gsub("^%l", string.upper),
+                ["damageDone"] = "",
+                ["healingDone"] = "",
+                ["spec"] = ""
+            }
+            table.insert(group, player);
+        end
     end
 
     -- Place player first in the arena party group, sort rest 
 	table.sort(group, function(a, b)
         local name = UnitName("player");
-		local prioA = a["name"] == name and 1 or 2;
-		local prioB = b["name"] == name and 1 or 2;
+		local prioA = string.find(a["name"], name) and 1 or 2;
+		local prioB = string.find(b["name"], name) and 1 or 2;
 		local sameClass = a["class"] == b["class"]
-		return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
+
+        if (prioA < prioB) then
+            return true;
+        end
+
+        if (prioA == prioB and a["class"] < b["class"]) then
+            return true;
+        end
+
+		if (prioA == prioB and sameClass and a["name"] < b["name"]) then
+            return true;
+        end
+
+        return false;
 	end);
 
     return group;
-end
-
-function AAimport:getDuration(duration)
-    if(duration >= 60) then
-        local mins = math.floor(duration/60)
-        local secs = duration - (mins * 60)
-        return mins .. " Min " .. secs .. " Sec"
-    else
-        return duration .. " Sec"
-    end
 end
