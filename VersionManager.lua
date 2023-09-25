@@ -168,13 +168,20 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         end
     end
 
+    local oldTotal = (ArenaAnalyticsDB["2v2"] and #ArenaAnalyticsDB["2v2"] or 0) + (ArenaAnalyticsDB["3v3"] and #ArenaAnalyticsDB["3v3"] or 0) + (ArenaAnalyticsDB["5v5"] and #ArenaAnalyticsDB["5v5"] or 0);
+    if(oldTotal ~= #MatchHistoryDB) then
+    end
+    ArenaAnalytics:Print("Converted data from old database. Old total: ", oldTotal, " New total: ", #MatchHistoryDB);
+
     table.sort(MatchHistoryDB, function (k1,k2)
         if (k1["date"] and k2["date"]) then
             return k1["date"] < k2["date"];
         end
     end);
-    
+
+    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
-    ArenaAnalytics.AAtable.checkUnsavedWarningThreshold();
-    ArenaAnalytics.AAtable.handleArenaCountChanged();
+    ArenaAnalytics.AAimport:tryHide()
+        
+    C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
 end

@@ -65,7 +65,6 @@ function Filter:changeFilter(args)
     end
 
     ArenaAnalytics.AAtable:handleArenaCountChanged();
-
     if currentFilter.dropdownList:IsShown() then   
         currentFilter.dropdownList:Hide();
     end
@@ -177,7 +176,7 @@ function Filter:updateSearchFilterData(search)
     -- Commit search
     if(searchFilter ~= Filter.currentFilters["Filter_Search"]) then
         Filter.currentFilters["Filter_Search"] = searchFilter;
-        ArenaAnalytics.AAtable:handleArenaCountChanged();
+		ArenaAnalytics.AAtable:handleArenaCountChanged();
     end
 end
 
@@ -402,9 +401,9 @@ function Filter:refreshFilters()
         local current = ArenaAnalytics.filteredMatchHistory[i];
         local prev = ArenaAnalytics.filteredMatchHistory[i - 1];
 
-        if (prev and ((current["date"] + 3600 < prev["date"]) or not ArenaAnalytics:arenasHaveSameParty(current, prev))) then
+        if (prev and (prev["session"] ~= current["session"]) and ((current["date"] + 3600 < prev["date"]) or not ArenaAnalytics:arenasHaveSameParty(current, prev))) then
             session = session + 1;
         end
-        ArenaAnalytics.filteredMatchHistory[i]["session"] = session;
+        ArenaAnalytics.filteredMatchHistory[i]["filteredSession"] = session;
     end
 end

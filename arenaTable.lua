@@ -523,7 +523,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.deathFrames = {}
 
     HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListMatch");
-    AAtable:handleArenaCountChanged();
+    ArenaAnalytics.AAtable:handleArenaCountChanged();
     AAtable:OnShow();
 end
 
@@ -795,20 +795,6 @@ function ArenaAnalytics:arenasHaveSameParty(arena, prevArena)
     return true;
 end
 
--- Adds value(int) ["session"] to each match
--- If the previous match was more than 1h ago, or
--- with different teammates (ranked only) then a new session is assigned
-local function setSessions(matches)
-    local session = 1
-    for i = 1, #matches do
-        local prev = matches[i - 1]
-        if (prev and (matches[i]["date"] + 3600 < prev["date"] or (not ArenaAnalytics:arenasHaveSameParty(matches[i], prev) and (matches[i]["isRated"] or prev["isRated"])))) then
-            session = session + 1
-        end
-        matches[i]["session"] = session;
-    end
-end
-
 -- Sets button row's background according to session
 local function setColorForSession(button, session)
     local c = session%2/10;
@@ -952,7 +938,7 @@ function AAtable:handleArenaCountChanged()
                 wins = wins + 1; 
             end
             
-            if (match["session"] == 1 ) then
+            if (match["filteredSession"] == 1) then
                 sessionGames = sessionGames + 1;
                 if (match["won"]) then
                     sessionWins = sessionWins + 1;
@@ -970,6 +956,8 @@ function AAtable:handleArenaCountChanged()
     local sessionStats = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
     local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
     ArenaAnalyticsScrollFrame.sessionStats:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionStats .. "% Winrate");
+
+    ArenaAnalytics.AAtable.checkUnsavedWarningThreshold();
 end
 
 local function ratingToText(rating, delta)
@@ -1005,8 +993,6 @@ function AAtable:RefreshLayout(updateFilter)
     hasPendingRefresh = false;
     hasPendingFilterRefresh = false;
 
-    AAtable:checkUnsavedWarningThreshold();
-
     if (updateFilter or #ArenaAnalytics.filteredMatchHistory == 0 and #MatchHistoryDB) then
         ArenaAnalytics.Filter:refreshFilters(MatchHistoryDB);
     end
@@ -1020,7 +1006,7 @@ function AAtable:RefreshLayout(updateFilter)
 
         local match = ArenaAnalytics.filteredMatchHistory[matchIndex];
         if (match ~= nil) then
-            setColorForSession(button, match["session"])
+            setColorForSession(button, match["filteredSession"])
             button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
             button.Map:SetText(match["map"] or "");
             button.Duration:SetText(SecondsToTime(match["duration"]) or "");

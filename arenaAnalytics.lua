@@ -114,6 +114,21 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["pendingSyncData"] = nil;
 end
 
+function ArenaAnalytics:recomputeSessionsForMatchHistoryDB()
+	-- Assign session to filtered matches
+	local session = 1
+	for i = 1, #MatchHistoryDB do
+		local current = MatchHistoryDB[i];
+		local prev = MatchHistoryDB[i - 1];
+
+		if (prev and current and ((current["date"] + 3600 < prev["date"]) or not ArenaAnalytics:arenasHaveSameParty(current, prev))) then
+			session = session + 1;
+		end
+		MatchHistoryDB[i]["session"] = session;
+		ArenaAnalytics:Log(session);
+	end
+end
+
 -- Arena DB
 ArenaAnalyticsDB = ArenaAnalyticsDB ~= nil and ArenaAnalyticsDB or {
 	["2v2"] = {},
@@ -685,7 +700,7 @@ function AAmatch:handleArenaExited()
 	AAmatch:updateCachedBracketRatings();
 
 	AAmatch:insertArenaOnTable();
-	ArenaAnalytics.AAtable:handleArenaCountChanged();
+	C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
 	return true;
 end
 

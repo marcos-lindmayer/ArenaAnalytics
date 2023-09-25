@@ -50,12 +50,19 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
 	end,
 
+	["updatesessions"] = function()
+		ArenaAnalytics:Print("Updating sessions in MatchHistoryDB");
+		ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+	end,
+
 	["debugcleardb"] = function()
 		if(ArenaAnalytics.skipDebugLog and ArenaAnalytics.skipDebugForceNilError) then
 			ArenaAnalytics:Print("Clearing MatchHistoryDB requires enabling /aa debug. Not intended for users!");
 		else -- Debug mode is enabled, allow debug clearing the DB
 			ArenaAnalytics:Log("Clearing MatchHistoryDB.");
 			MatchHistoryDB = {}
+			ArenaAnalytics.AAtable:tryShowimportFrame();
+			C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
 		end
 	end,
 };
@@ -210,6 +217,12 @@ function ArenaAnalytics:init(event, name, ...)
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
 	end
 	
+	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 99999;
+	local versionText = version ~= 99999 and " (Version: " .. version .. ")" or ""
+	ArenaAnalytics:Print("Early Access: Bugs are expected!", versionText);
+    ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
+	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
+
 	----------------------------------
 	-- Register Slash Commands
 	----------------------------------
@@ -218,14 +231,9 @@ function ArenaAnalytics:init(event, name, ...)
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
+
 	ArenaAnalyticsLoadSettings();
 
-	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 99999;
-	local versionText = version ~= 99999 and " (Version: " .. version .. ")" or ""
-	ArenaAnalytics:Print("Early Access: Bugs are expected!", versionText);
-    ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
-	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
-	
 	-- Update cached rating as soon as possible
 	ratedUpdateEvent = CreateFrame("Frame");
 	ratedUpdateEvent:RegisterEvent("PVP_RATED_STATS_UPDATE");
@@ -427,7 +435,7 @@ function ArenaAnalyticsSettingsFrame()
 		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
 		ArenaAnalyticsScrollFrame.resetBtn:Disable();
         ArenaAnalytics:Print("Match history deleted!");
-        ArenaAnalytics.AAtable:handleArenaCountChanged();
+		C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
 		ArenaAnalytics.AAtable:tryShowimportFrame();
     end);
     

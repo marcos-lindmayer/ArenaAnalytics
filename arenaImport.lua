@@ -250,6 +250,8 @@ function AAimport:completeImport_ArenaStats()
         end
     end);
 
+    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+
     C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
     
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
