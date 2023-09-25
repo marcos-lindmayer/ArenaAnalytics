@@ -37,27 +37,6 @@ function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOff
     return btn;
 end
 
--- TODO: Move to updated setup & remove this
--- Hides spec's icon on bottom-right class' icon and death highlight
-local function hideSpecIconsAndDeathBg()
-    if(true) then return end
-
-    for specIconNumber = 1, #ArenaAnalyticsScrollFrame.specFrames do
-        if (not ArenaAnalyticsScrollFrame.specFrames[specIconNumber][2]:GetAttribute("clicked")) then
-            ArenaAnalyticsScrollFrame.specFrames[specIconNumber][1]:Hide()
-        else
-            ArenaAnalyticsScrollFrame.specFrames[specIconNumber][1]:Show()
-        end
-    end
-    for deathIconNumber = 1, #ArenaAnalyticsScrollFrame.deathFrames do
-        if (not ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][2]:GetAttribute("clicked") and ArenaAnalyticsSettings["alwaysShowDeathBg"] == false) then
-            ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][1]:Hide()
-        else
-            ArenaAnalyticsScrollFrame.deathFrames[deathIconNumber][1]:Show()
-        end
-    end
-end
-
 -- Clears current selection of matches
 function AAtable:ClearSelectedMatches()
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame)
@@ -65,7 +44,6 @@ function AAtable:ClearSelectedMatches()
         buttons[i]:SetAttribute("clicked", false)
         buttons[i].Tooltip:Hide();
     end
-    hideSpecIconsAndDeathBg()
     selectedGames = {}
     AAtable:UpdateSelected()
 end
@@ -686,7 +664,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
 
             local _, realm = UnitFullName("player");
             if(realm and playerName:find(realm)) then
-                playerName = playerName:match("(.*)-");
+                playerName = playerName:match("(.*)-") or "";
             end
 
             playerFrame:SetAttribute("name", playerName);
@@ -719,16 +697,24 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
             end
 
             -- Add spec info
-            if(class and spec) then
+            if(class) then
                 if (playerFrame.specOverlay == nil) then
-                    playerFrame.specOverlay = playerFrame:CreateTexture();
-                    playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT");
-                    playerFrame.specOverlay:SetSize(12,12);
+                    playerFrame.specOverlay = CreateFrame("Frame", nil, playerFrame);
+                    playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")
+                    playerFrame.specOverlay:SetSize(12,12)
+                    
+                    playerFrame.specOverlay.texture = playerFrame.specOverlay:CreateTexture();
+                    playerFrame.specOverlay.texture:SetPoint("CENTER")
+                    playerFrame.specOverlay.texture:SetSize(12,12)
+                else
+                    playerFrame.specOverlay.texture:SetTexture(nil);
                 end
-                playerFrame.specOverlay:SetTexture(ArenaAnalyticsGetSpecIcon(spec, class));
+
+                local specIcon = spec and ArenaAnalyticsGetSpecIcon(spec, class) or nil;
+                playerFrame.specOverlay.texture:SetTexture(specIcon);
                 playerFrame.specOverlay:Hide();
 
-                local tooltipSpecText = #spec > 2 and spec or class;
+                local tooltipSpecText = (spec and #spec > 2) and spec or class;
                 local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class), tooltipSpecText);
                 playerFrame.tooltip = playerName .. " | " .. coloredSpecText;
             else
@@ -739,17 +725,26 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
                 playerFrame.tooltip = playerName;
             end
 
-            -- Add death overlay
-            if (match["firstDeath"] and string.find(player["name"], match["firstDeath"])) then
+            -- Add death overlay            
+            local firstDeath = match["firstDeath"] and match["firstDeath"]:gsub("-", "%%-") or nil;
+            if (firstDeath and string.find(player["name"], firstDeath)) then
                 if (playerFrame.deathOverlay == nil) then
-                    playerFrame.deathOverlay = playerFrame:CreateTexture();
+                    playerFrame.deathOverlay = CreateFrame("Frame", nil, playerFrame);
                     playerFrame.deathOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")
                     playerFrame.deathOverlay:SetSize(26,26)
-                    playerFrame.deathOverlay:SetColorTexture(1, 0, 0, 0.2);
+
+                    playerFrame.deathOverlay.texture = playerFrame.deathOverlay:CreateTexture();
+                    playerFrame.deathOverlay.texture:SetPoint("CENTER")
+                    playerFrame.deathOverlay.texture:SetSize(26,26)
+                    playerFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.27);
                 end
                 if (ArenaAnalyticsSettings["alwaysShowDeathBg"] == false) then
                     playerFrame.deathOverlay:Hide();
                 end
+            elseif (playerFrame.deathOverlay ~= nil) then
+                playerFrame.deathOverlay:Hide();
+                playerFrame.deathOverlay.texture:SetTexture(nil);
+                playerFrame.deathOverlay = nil;
             end
 
             playerFrame:Show()
@@ -760,7 +755,11 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
 end
 
 -- Hide/Shows Spec icons on the class' bottom-right corner
-function AAtable:ToggleSpecsAndDeathBg(entry)
+function AAtable:ToggleSpecsAndDeathOverlay(entry)
+    if (entry == nil) then
+        return;
+    end
+
     local matchData = { entry:GetChildren() };
     local visible = entry:GetAttribute("clicked") or entry:GetAttribute("hovered");
 
@@ -915,7 +914,7 @@ function AAtable:getLastGame(skipSkirmish)
     return nil;
 end
 
-local function checkUnsavedWarningThreshold()
+function AAtable:checkUnsavedWarningThreshold()
     if(ArenaAnalytics.unsavedArenaCount >= ArenaAnalyticsSettings["unsavedWarningThreshold"]) then
         -- Show and update unsaved arena threshold
         local unsavedWarningText = "|cffff0000" .. ArenaAnalytics.unsavedArenaCount .." unsaved matches!\n |cff00cc66/reload|r |cffff0000to save!|r"
@@ -962,7 +961,7 @@ function AAtable:handleArenaCountChanged()
         end
     end
 
-    local totalArenas = #ArenaAnalyticsScrollFrame.matches;
+    local totalArenas = #ArenaAnalytics.filteredMatchHistory;
     local winrate = totalArenas > 0 and math.floor(wins * 100 / totalArenas) or 0;
     local winsColoured =  "|cff00cc66" .. wins .. "|r";
     ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arenas");
@@ -1006,24 +1005,20 @@ function AAtable:RefreshLayout(updateFilter)
     hasPendingRefresh = false;
     hasPendingFilterRefresh = false;
 
-    checkUnsavedWarningThreshold();
+    AAtable:checkUnsavedWarningThreshold();
 
     if (updateFilter or #ArenaAnalytics.filteredMatchHistory == 0 and #MatchHistoryDB) then
-        -- TODO: Optimize this across multiple frames?
         ArenaAnalytics.Filter:refreshFilters(MatchHistoryDB);
     end
     
-    ArenaAnalyticsScrollFrame.matches = ArenaAnalytics.filteredMatchHistory;
-
-    local matches = ArenaAnalyticsScrollFrame.matches;
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local offset = HybridScrollFrame_GetOffset(ArenaAnalyticsScrollFrame.ListScrollFrame);
 
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
-        local matchIndex = #ArenaAnalyticsScrollFrame.matches - (buttonIndex + offset - 1);
+        local matchIndex = #ArenaAnalytics.filteredMatchHistory - (buttonIndex + offset - 1);
 
-        local match = matches[matchIndex];
+        local match = ArenaAnalytics.filteredMatchHistory[matchIndex];
         if (match ~= nil) then
             setColorForSession(button, match["session"])
             button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
@@ -1063,33 +1058,33 @@ function AAtable:RefreshLayout(updateFilter)
                 button.Tooltip:Hide()
             end
 
-            button:SetScript("OnEnter", function(self)
-                self:SetAttribute("hovered", true);
-                AAtable:ToggleSpecsAndDeathBg(self);
+            button:SetScript("OnEnter", function(args)
+                args:SetAttribute("hovered", true);
+                AAtable:ToggleSpecsAndDeathOverlay(args);
             end);
 
-            button:SetScript("OnLeave", function(self) 
-                self:SetAttribute("hovered", false);
-                AAtable:ToggleSpecsAndDeathBg(self);
+            button:SetScript("OnLeave", function(args) 
+                args:SetAttribute("hovered", false);
+                AAtable:ToggleSpecsAndDeathOverlay(args);
             end);
             
-            button:SetScript("OnClick", function (self)
-                if (self:GetAttribute("clicked")) then
-                    self:SetAttribute("clicked", false)
+            button:SetScript("OnClick", function(args)
+                if (args:GetAttribute("clicked")) then
+                    args:SetAttribute("clicked", false)
                     selectedGames[matchIndex] = nil;
-                    self.Tooltip:Hide();
+                    args.Tooltip:Hide();
                     AAtable:UpdateSelected();
-                    AAtable:ToggleSpecsAndDeathBg(self);
+                    AAtable:ToggleSpecsAndDeathOverlay(args);
                 else
-                    self:SetAttribute("clicked", true)
-                    self.Tooltip:Show();
-                    selectedGames[matchIndex] = self;
+                    args:SetAttribute("clicked", true)
+                    args.Tooltip:Show();
+                    selectedGames[matchIndex] = args;
                     AAtable:UpdateSelected();
-                    AAtable:ToggleSpecsAndDeathBg(self);
+                    AAtable:ToggleSpecsAndDeathOverlay(args);
                 end
             end);
 
-            AAtable:ToggleSpecsAndDeathBg(button);
+            AAtable:ToggleSpecsAndDeathOverlay(button);
 
             button:SetWidth(ArenaAnalyticsScrollFrame.ListScrollFrame.scrollChild:GetWidth());
             button:Show();
@@ -1099,8 +1094,8 @@ function AAtable:RefreshLayout(updateFilter)
     end
 
     -- Adjust Team bg
-    if (#matches < 15) then
-        local newHeight = (#matches * 28) - 1;
+    if (#ArenaAnalytics.filteredMatchHistory < 15) then
+        local newHeight = (#ArenaAnalytics.filteredMatchHistory * 28) - 1;
         ArenaAnalyticsScrollFrame.teamBgT:SetHeight(newHeight);
         ArenaAnalyticsScrollFrame.teamBg:SetHeight(newHeight);
     else
@@ -1108,12 +1103,8 @@ function AAtable:RefreshLayout(updateFilter)
         ArenaAnalyticsScrollFrame.teamBg:SetHeight(413);
     end
 
-    -- TODO: Optimize
-    -- Hide spec icons
-    hideSpecIconsAndDeathBg()
-
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;
-    local totalHeight = #matches * buttonHeight;
+    local totalHeight = #ArenaAnalytics.filteredMatchHistory * buttonHeight;
     local shownHeight = #buttons * buttonHeight;
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
 

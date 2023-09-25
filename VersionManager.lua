@@ -28,7 +28,7 @@ local function convertFormatedDurationToSeconds(inDuration)
             -- Get seconds before "sec
             seconds = tonumber(inDuration:match("(.*)sec")) or 0;
         else
-            ArenaAnalytics:Print("ERROR: Converting duration failed (:", inDuration, ")")
+            ArenaAnalytics:Print("ERROR: Converting duration failed (:", inDuration, ")");
         end
         
         return 60*minutes + seconds;
@@ -54,12 +54,15 @@ local function updateGroupDataToNewFormat(group, myName, myRealm)
             name = name .. "-" .. myRealm;
         end
 
+        local class = (player["class"] and #player["class"] > 2) and player["class"] or nil;
+        local spec = (player["spec"] and #player["spec"] > 2) and player["spec"] or nil;
+
         local updatedPlayerTable = {
             ["GUID"] = player["GUID"] or "",
             ["name"] = name or "",
-            ["class"] = player["class"] or "",
-            ["spec"] = player["spec"] or "",
-            ["race"] = player["race"] or "",
+            ["class"] = class,
+            ["spec"] = spec,
+            ["race"] = player["race"],
             ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(player["race"]),
             ["killingBlows"] = tonumber(player["killingBlows"]),
             ["deaths"] = tonumber(player["deaths"]),
@@ -68,7 +71,7 @@ local function updateGroupDataToNewFormat(group, myName, myRealm)
         }
         table.insert(updatedGroup, updatedPlayerTable);
     end
-    return group;
+    return updatedGroup;
 end
 
 -- Convert long form string comp to addon spec ID comp
@@ -92,6 +95,29 @@ local function convertCompToShortFormat(comp, bracket)
     return table.concat(newComp, '|');
 end
 
+local function getFullFirstDeathName(firstDeathName, team, enemyTeam)
+    if(firstDeathName == nil or #firstDeathName < 3) then
+        return nil;
+    end
+
+    for _,player in ipairs(team) do
+        local name = player and player["name"] or nil;
+        if(name and name:find(firstDeathName)) then
+            return name;
+        end
+    end
+
+    for _,player in ipairs(enemyTeam) do
+        local name = player and player["name"] or nil;
+        if(name and name:find(firstDeathName)) then
+            return name;
+        end
+    end
+
+    ArenaAnalytics:Log("getFullDeathName failed to find matching player name.", firstDeathName);
+    return nil;
+end
+
 -- 0.3.0 conversion from ArenaAnalyticsDB per bracket to MatchHistoryDB
 function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     local brackets = { "2v2", "3v3", "5v5" }
@@ -108,11 +134,13 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     local myName, myRealm = UnitFullName("player");
     ForceDebugNilError(myRealm);
 
-    local requiresReload = false;
-
     for _, bracket in ipairs(brackets) do
         if(ArenaAnalyticsDB[bracket] ~= nil) then
             for _, arena in ipairs(ArenaAnalyticsDB[bracket]) do
+                
+                local team = updateGroupDataToNewFormat(arena["team"], myName, myRealm);
+                local enemyTeam = updateGroupDataToNewFormat(arena["enemyTeam"], myName, myRealm);
+
                 local updatedArenaData = {
                     ["isRated"] = arena["isRanked"],
                     ["date"] = arena["dateInt"],
@@ -120,18 +148,18 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                     ["map"] = arena["map"], 
                     ["bracket"] = bracket,
                     ["duration"] = convertFormatedDurationToSeconds(arena["duration"]),
-                    ["team"] = updateGroupDataToNewFormat(arena["team"], myName, myRealm),
+                    ["team"] = team,
                     ["rating"] = tonumber(arena["rating"]),
                     ["ratingDelta"] = tonumber(arena["ratingDelta"]),
                     ["mmr"] = tonumber(arena["mmr"]), 
-                    ["enemyTeam"] = updateGroupDataToNewFormat(arena["enemyTeam"], myName, myRealm),
+                    ["enemyTeam"] = enemyTeam,
                     ["enemyRating"] = tonumber(arena["enemyRating"]), 
                     ["enemyRatingDelta"] = tonumber(arena["enemyRatingDelta"]),
                     ["enemyMmr"] = tonumber(arena["enemyMmr"]),
                     ["comp"] = convertCompToShortFormat(arena["comp"], bracket),
                     ["enemyComp"] = convertCompToShortFormat(arena["enemyComp"], bracket),
                     ["won"] = arena["won"],
-                    ["firstDeath"] = arena["firstDeath"]
+                    ["firstDeath"] = getFullFirstDeathName(arena["firstDeath"], team, enemyTeam)
                 }
 
                 table.insert(MatchHistoryDB, updatedArenaData);
@@ -147,8 +175,6 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     end);
     
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
-
-    if(requiresReload and #MatchHistoryDB > 0) then
-        ReloadUI();
-    end
+    ArenaAnalytics.AAtable.checkUnsavedWarningThreshold();
+    ArenaAnalytics.AAtable.handleArenaCountChanged();
 end

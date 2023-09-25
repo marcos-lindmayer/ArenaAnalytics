@@ -364,21 +364,21 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.outliersInput:SetMaxLetters(3);
     ArenaAnalyticsScrollFrame.outliersInput:SetText(ArenaAnalyticsSettings["outliers"])
     
+    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEditFocusLost", function(self)
+        ArenaAnalyticsSettings["outliers"] = tonumber(ArenaAnalyticsScrollFrame.outliersInput:GetText()) or ArenaAnalyticsSettings["outliers"];
+		ArenaAnalytics.AAtable:RefreshLayout(true);
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+		ArenaAnalyticsScrollFrame.outliersInput:SetText(ArenaAnalyticsSettings["outliers"]);
+    end);
+
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEnterPressed", function(self)
         self:ClearFocus();
-        ArenaAnalytics.AAtable:RefreshLayout(true);
-		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
+	
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEscapePressed", function(self)
+        ArenaAnalyticsScrollFrame.outliersInput:SetText(ArenaAnalyticsSettings["outliers"]);
         self:ClearFocus();
-        ArenaAnalytics.AAtable:RefreshLayout(true);
-		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
-
-    ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnTextChanged", function(self)
-        ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsScrollFrame.outliersInput:GetText()
-    end);
-
 
 	-- Limit for total comps to show
 	ArenaAnalyticsScrollFrame.compsLimit = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -125, "Maximum comps to appear in comp filter dropdowns (0 = unlimited)");
@@ -391,24 +391,24 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.compsLimitInput:SetMaxLetters(3);
     ArenaAnalyticsScrollFrame.compsLimitInput:SetText(tonumber(ArenaAnalyticsSettings["compsLimit"]));
     
-    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnEnterPressed", function(self)
-        self:ClearFocus();
-        ArenaAnalytics.AAtable:RefreshLayout(true);
-		ArenaAnalytics.AAtable:forceCompFilterRefresh();
-    end);
-    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnEscapePressed", function(self)
-        self:ClearFocus();
-        ArenaAnalytics.AAtable:RefreshLayout(true);
-		ArenaAnalytics.AAtable:forceCompFilterRefresh();
-    end);
-
-    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnTextChanged", function(self)
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnEditFocusLost", function(self)
 		local oldValue = tonumber(ArenaAnalyticsSettings["compsLimit"]) or 0;
 		local newValue = tonumber(ArenaAnalyticsScrollFrame.compsLimitInput:GetText());
         ArenaAnalyticsSettings["compsLimit"] = newValue or oldValue;
 		ArenaAnalyticsScrollFrame.compsLimitInput:SetText(ArenaAnalyticsSettings["compsLimit"]);
+        ArenaAnalytics.AAtable:RefreshLayout(true);
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
 	
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus();
+    end);
+	
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetScript("OnEscapePressed", function(self)
+		ArenaAnalyticsScrollFrame.compsLimitInput:SetText(ArenaAnalyticsSettings["compsLimit"] or 0);
+        self:ClearFocus();
+    end);
+
 	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -160, "Data settings");
 
     ArenaAnalyticsScrollFrame.resetBtn = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -180, "Reset ALL DATA");
@@ -475,15 +475,19 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetScript("OnEnterPressed", function(self)
         self:ClearFocus();
     end);
+	
     ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetScript("OnEscapePressed", function(self)
+		ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetText(ArenaAnalyticsSettings["unsavedWarningThreshold"] or "");
         self:ClearFocus();
     end);
 
-    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetScript("OnTextChanged", function(self)
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetScript("OnEditFocusLost", function(self)
 		local oldValue = tonumber(ArenaAnalyticsSettings["unsavedWarningThreshold"]) or 213;
 		local newValue = tonumber(ArenaAnalyticsScrollFrame.unsavedThresholdInput:GetText());
         ArenaAnalyticsSettings["unsavedWarningThreshold"] = newValue or oldValue;
-		ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetText(ArenaAnalyticsSettings["unsavedWarningThreshold"]);
+		ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetText(tonumber(ArenaAnalyticsSettings["unsavedWarningThreshold"]));
+		
+		ArenaAnalytics.AAtable:checkUnsavedWarningThreshold();
     end);
 
 	ArenaAnalyticsScrollFrame.exportBtn = ArenaAnalytics.AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.settingsFrame, "BOTTOM", 0, 22, "Export");

@@ -158,7 +158,7 @@ function AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, fil
 		["class"] = class,
 		["damageDone"] = damageDone,
 		["healingDone"] = healingDone,
-		["spec"] = spec or ""
+		["spec"] = spec or nil
 	};
 	return playerTable;
 end
