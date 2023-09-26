@@ -11,13 +11,13 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print("List of slash commands:");
 		ArenaAnalytics:Print("|cff00cc66/aa|r");
 		ArenaAnalytics:Print("|cff00cc66/aa played|r Prints total duration of tracked arenas.");
-		ArenaAnalytics:Print("|cff00cc66/aa more|r");
 		print(" ");
 	end,
 	
-	--TODO: remove
-	["more"] = function()
-		ArenaAnalytics:Print("Wanna get more data? Web project coming soon...");
+	["test"] = function()
+		local lastMatch = MatchHistoryDB[#MatchHistoryDB];
+		local secondLastMatch = MatchHistoryDB[#MatchHistoryDB - 1];
+		ArenaAnalytics:Print("Last two is same session: ", ArenaAnalytics:isMatchesSameSession(secondLastMatch, lastMatch));
 	end,
 
 	["played"] = function()

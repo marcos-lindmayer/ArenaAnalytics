@@ -792,7 +792,7 @@ end
 
 -- Sets button row's background according to session
 local function setColorForSession(button, session)
-    local c = session%2/10;
+    local c = (session or 0) % 2 / 10;
     local a = 0.5;
     button.Background:SetColorTexture(c, c, c, a)
 end
@@ -949,7 +949,7 @@ function AAtable:handleArenaCountChanged()
     end
 
     -- Update displayed session stats text
-    local expired, session = ArenaAnalytics:getLastSession(time());
+    local _, expired = ArenaAnalytics:getLastSession();
     local sessionText = expired and "Last session: " or "Current session: ";
     local sessionStats = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
     local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
@@ -1012,7 +1012,7 @@ function AAtable:RefreshLayout()
 
         local match = ArenaAnalytics.filteredMatchHistory[matchIndex];
         if (match ~= nil) then
-            setColorForSession(button, match["filteredSession"])
+            setColorForSession(button, match["filteredSession"]);
             button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
             button.Map:SetText(match["map"] or "");
             button.Duration:SetText(SecondsToTime(match["duration"]) or "");

@@ -142,7 +142,21 @@ end
 
 -- Check if 2 arenas are in the same session
 function ArenaAnalytics:isMatchesSameSession(first, second)
-	return (first and second and (second["date"] - first["date"]) < 3600 and ArenaAnalytics:arenasHaveSameParty(first, second));
+	if(not first or not second) then
+		return false;
+	end
+
+	if(second["date"] - first["date"] > 3600) then
+		return false;
+	end
+	
+	if(not ArenaAnalytics:arenasHaveSameParty(first, second)) then
+		return false;
+	end
+
+	-- TODO: Add skirm diff to filter logic?
+
+	return true;
 end
 
 -- Checks if 2 arenas have the same party members
@@ -155,7 +169,7 @@ function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
         return false;
     end
 
-    if(#arena1 ~= #arena2) then
+    if(#arena1["team"] ~= #arena2["team"]) then
         return false;
     end
 
@@ -168,19 +182,19 @@ function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
     return true;
 end
 
--- Returns the whether last session has expired and it's session number
-function ArenaAnalytics:getLastSession(now)
+-- Returns the whether last session and whether it has expired by time
+function ArenaAnalytics:getLastSession()
 	for i=#MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
-		if(match) then
-			now = tonumber(now) or time();
-
+		if(match and tonumber(match["session"])) then
 			local session = match["session"];
-			local expired = (now - match["date"]) > 3600;
-			return expired, session;
+			local expired = (time() - match["date"]) > 3600;
+
+			ArenaAnalytics:Log("Get last session: ", session, " ", expired);
+			return session, expired;
 		end
 	end
-	return false, 1;
+	return 1, false;
 end
 
 -- Cached last rating per bracket ID
@@ -302,15 +316,10 @@ function AAmatch:insertArenaOnTable()
 	currentArena["comp"] = AAmatch:getArenaComp(currentArena["party"], bracket);
 	currentArena["enemyComp"] = AAmatch:getArenaComp(currentArena["enemy"], bracket);
 
-	local expired, session = ArenaAnalytics:getLastSession(currentArena["timeStartInt"]);
-	if (expired) then
-		session = session + 1;
-	end
-
 	-- Setup table data to insert into MatchHistoryDB
 	local arenaData = {
 		["isRated"] = currentArena["isRanked"],
-		["date"] = currentArena["timeStartInt"],
+		["date"] = tonumber(currentArena["timeStartInt"]) or time(),
 		["season"] = GetCurrentArenaSeason(),
 		["session"] = session,
 		["map"] = currentArena["mapName"], 
@@ -330,24 +339,29 @@ function AAmatch:insertArenaOnTable()
 		["firstDeath"] = currentArena["firstDeath"]
 	}
 
+	-- Assign session
+	local session = ArenaAnalytics:getLastSession();
+	local lastMatch = MatchHistoryDB[#MatchHistoryDB];
+	if (not ArenaAnalytics:isMatchesSameSession(lastMatch, arenaData)) then
+		session = session + 1;
+	end
+	arenaData["session"] = session;
+
 	-- Insert arena data as a new MatchHistoryDB entry
 	table.insert(MatchHistoryDB, arenaData);
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
 
-	if (ArenaAnalytics.Filter:doesMatchPassAllFilters(arenaData)) then
-		table.insert(ArenaAnalytics.filteredMatchHistory, arenaData);
-	end
-
 	ArenaAnalytics:Print("Arena recorded!");
 	
+	-- This may update match data at a delay
 	if (currentArena["pendingSync"]) then
 		ArenaAnalytics.DataSync:handleSync(currentArena["pendingSyncData"])
 	end
-
+	
 	-- Refresh and reset current arena
 	AAmatch:resetCurrentArenaValues();
-
-	C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
+	
+	ArenaAnalytics.Filter:refreshFilters();
 end
 
 -- Returns bool for input group containing a character (by name) in it
