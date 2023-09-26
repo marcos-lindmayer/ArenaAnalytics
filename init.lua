@@ -2,6 +2,8 @@ local _, ArenaAnalytics = ...; -- Namespace
 
 local ratedUpdateEvent = nil;
 
+local version = "";
+
 --------------------------------------
 -- Custom Slash Command
 --------------------------------------
@@ -14,12 +16,10 @@ ArenaAnalytics.commands = {
 		print(" ");
 	end,
 	
-	["test"] = function()
-		local lastMatch = MatchHistoryDB[#MatchHistoryDB];
-		local secondLastMatch = MatchHistoryDB[#MatchHistoryDB - 1];
-		ArenaAnalytics:Print("Last two is same session: ", ArenaAnalytics:isMatchesSameSession(secondLastMatch, lastMatch));
+	["version"] = function()
+		ArenaAnalytics:Print("Current version: ", version);
 	end,
-
+	
 	["played"] = function()
 		local totalDurationInArenas = 0;
 		for i=1, #MatchHistoryDB do
@@ -217,7 +217,7 @@ function ArenaAnalytics:init(event, name, ...)
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
 	end
 	
-	local version = GetAddOnMetadata("ArenaAnalytics", "Version") or 99999;
+	version = GetAddOnMetadata("ArenaAnalytics", "Version") or 99999;
 	local versionText = version ~= 99999 and " (Version: " .. version .. ")" or ""
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", versionText);
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
