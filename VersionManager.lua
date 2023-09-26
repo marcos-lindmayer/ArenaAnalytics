@@ -135,8 +135,9 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 
     local myName, myRealm = UnitFullName("player");
     if (myRealm == nil) then
-        ArenaAnalytics:Print("Unable to find your realm for converting matches for 0.3.0+");
-        C_Timer.After(1, VersionManager:convertArenaAnalyticsDBToMatchHistoryDB());
+        ArenaAnalytics:Print("Unable to find your realm for converting matches for 0.3.0+ (Trying again in a second)");
+        C_Timer.After(1, function() VersionManager:convertArenaAnalyticsDBToMatchHistoryDB() end);
+        return;
     end
 
     for _, bracket in ipairs(brackets) do

@@ -62,7 +62,8 @@ ArenaAnalytics.commands = {
 			ArenaAnalytics:Log("Clearing MatchHistoryDB.");
 			MatchHistoryDB = {}
 			ArenaAnalytics.AAtable:tryShowimportFrame();
-			C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
+			ArenaAnalytics.Filter:refreshFilters();
+			ArenaAnalytics.unsavedArenaCount = 0;
 		end
 	end,
 };

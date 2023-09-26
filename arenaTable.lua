@@ -5,7 +5,7 @@ ArenaAnalytics.AAtable = HybridScrollMixin;
 local AAtable = ArenaAnalytics.AAtable
 local Filter = ArenaAnalytics.Filter;
 
-local filteredDB = nil;
+local hasLoaded = false;
 
 ArenaAnalytics.filteredMatchHistory = { };
 
@@ -529,6 +529,9 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.deathFrames = {}
 
     HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListMatch");
+
+    hasLoaded = true;
+
     ArenaAnalytics.Filter:refreshFilters();
     AAtable:OnShow();
 end
@@ -796,6 +799,10 @@ end
 
 -- Create dropdowns for the Comp filters
 function AAtable:createDropdownForFilterComps(isEnemyComp)
+    if(not hasLoaded) then
+        return;
+    end
+
     local isDisabled = ArenaAnalytics.Filter.currentFilters["Filter_Bracket"] == "All";
     local disabledText = "Select bracket to enable filter"
 
@@ -905,6 +912,11 @@ end
 
 -- Updates the displayed data for a new match
 function AAtable:handleArenaCountChanged()
+    if(not hasLoaded) then
+        -- Load will trigger call soon
+        return;
+    end
+
     AAtable:RefreshLayout();
     AAtable:forceCompFilterRefresh();
 
@@ -977,6 +989,11 @@ local hasPendingRefresh = true;
 
 -- Refreshes matches table
 function AAtable:RefreshLayout()
+    if(not hasLoaded) then
+        -- Load will trigger call soon
+        return;
+    end
+
     if(isRefreshing) then
         hasPendingRefresh = true;
         ArenaAnalytics:Log("Adding pending refresh..");
