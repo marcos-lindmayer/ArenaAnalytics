@@ -121,11 +121,11 @@ function ArenaAnalytics:recomputeSessionsForMatchHistoryDB()
 		local current = MatchHistoryDB[i];
 		local prev = MatchHistoryDB[i - 1];
 
-		if (prev and current and ((current["date"] + 3600 < prev["date"]) or not ArenaAnalytics:arenasHaveSameParty(current, prev))) then
+		if(prev and not ArenaAnalytics:isMatchesSameSession(prev, current)) then
 			session = session + 1;
 		end
-		MatchHistoryDB[i]["session"] = session;
-		ArenaAnalytics:Log(session);
+
+		current["session"] = session;
 	end
 end
 
@@ -138,6 +138,49 @@ ArenaAnalyticsDB = ArenaAnalyticsDB ~= nil and ArenaAnalyticsDB or {
 
 function ArenaAnalytics:hasStoredMatches()
 	return (MatchHistoryDB ~= nil and #MatchHistoryDB > 0);
+end
+
+-- Check if 2 arenas are in the same session
+function ArenaAnalytics:isMatchesSameSession(first, second)
+	return (first and second and (second["date"] - first["date"]) < 3600 and ArenaAnalytics:arenasHaveSameParty(first, second));
+end
+
+-- Checks if 2 arenas have the same party members
+function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
+    if(arena1["bracket"] ~= arena2["bracket"]) then
+        return false;
+    end
+
+    if(arena1 == nil or arena2 == nil or arena1["team"] == nil or arena2["team"] == nil) then
+        return false;
+    end
+
+    if(#arena1 ~= #arena2) then
+        return false;
+    end
+
+    for i = 1, #arena1["team"] do
+        if (arena2["team"][i] and arena1["team"][i]["name"] ~= arena2["team"][i]["name"]) then
+            return false;
+        end
+    end
+
+    return true;
+end
+
+-- Returns the whether last session has expired and it's session number
+function ArenaAnalytics:getLastSession(now)
+	for i=#MatchHistoryDB, 1, -1 do
+		local match = MatchHistoryDB[i];
+		if(match) then
+			now = tonumber(now) or time();
+
+			local session = match["session"];
+			local expired = (now - match["date"]) > 3600;
+			return expired, session;
+		end
+	end
+	return false, 1;
 end
 
 -- Cached last rating per bracket ID
@@ -192,6 +235,11 @@ function AAmatch:getArenaComp(teamTable, bracket)
 
 		-- No comp with missing player
 		if(player == nil) then
+			return nil;
+		end
+
+		local class, spec = player["class"], player["spec"];
+		if(not class or #class < 3 or not spec or #spec < 3) then
 			return nil;
 		end
 
@@ -254,11 +302,17 @@ function AAmatch:insertArenaOnTable()
 	currentArena["comp"] = AAmatch:getArenaComp(currentArena["party"], bracket);
 	currentArena["enemyComp"] = AAmatch:getArenaComp(currentArena["enemy"], bracket);
 
+	local expired, session = ArenaAnalytics:getLastSession(currentArena["timeStartInt"]);
+	if (expired) then
+		session = session + 1;
+	end
+
 	-- Setup table data to insert into MatchHistoryDB
 	local arenaData = {
 		["isRated"] = currentArena["isRanked"],
 		["date"] = currentArena["timeStartInt"],
 		["season"] = GetCurrentArenaSeason(),
+		["session"] = session,
 		["map"] = currentArena["mapName"], 
 		["bracket"] = bracket,
 		["duration"] = currentArena["duration"],
@@ -280,6 +334,10 @@ function AAmatch:insertArenaOnTable()
 	table.insert(MatchHistoryDB, arenaData);
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
 
+	if (ArenaAnalytics.Filter:doesMatchPassAllFilters(arenaData)) then
+		table.insert(ArenaAnalytics.filteredMatchHistory, arenaData);
+	end
+
 	ArenaAnalytics:Print("Arena recorded!");
 	
 	if (currentArena["pendingSync"]) then
@@ -288,6 +346,8 @@ function AAmatch:insertArenaOnTable()
 
 	-- Refresh and reset current arena
 	AAmatch:resetCurrentArenaValues();
+
+	C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
 end
 
 -- Returns bool for input group containing a character (by name) in it
@@ -700,7 +760,6 @@ function AAmatch:handleArenaExited()
 	AAmatch:updateCachedBracketRatings();
 
 	AAmatch:insertArenaOnTable();
-	C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
 	return true;
 end
 

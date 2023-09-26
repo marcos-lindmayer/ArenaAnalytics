@@ -7,7 +7,10 @@ local Filter = ArenaAnalytics.Filter;
 
 local filteredDB = nil;
 
-ArenaAnalytics.filteredMatchHistory = nil;
+ArenaAnalytics.filteredMatchHistory = { };
+
+-- Filtered stats
+local wins, sessionGames, sessionWins = 0, 0, 0;
 
 local selectedGames = {}
 
@@ -15,7 +18,7 @@ local selectedGames = {}
 function AAtable:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         AAtable:ClearSelectedMatches();
-        ArenaAnalytics.AAtable:RefreshLayout(true);
+        AAtable:RefreshLayout();
 
         AAtable:closeFilterDropdowns();
 
@@ -77,6 +80,7 @@ local function createDropdownButton(info, dropdownTable, filter, dropdown_width)
     return button;
 end
 
+-- TODO: Prioritize spec too
 -- Get a string representing the comp, 
 function AAtable:getCompIconString(comp, priorityClass, prioritySpec)
     if(comp == nil or comp:find('|') == nil) then
@@ -336,7 +340,9 @@ function AAtable:UpdateSelected()
     end
     if (selectedGamesCount > 0) then
         local winrate = math.floor(selectedWins * 100 / selectedGamesCount)
-        newSelectedText = "Selected: " .. selectedGamesCount .. " arenas " .. selectedWins .. "/" .. (selectedGamesCount - selectedWins) .. " | " .. winrate .. "% Winrate"
+        local winsColoured =  "|cff00cc66" .. selectedWins .. "|r";
+        local lossesColoured =  "|cffff0000" .. (selectedGamesCount - selectedWins) .. "|r";
+        newSelectedText = "Selected: " .. selectedGamesCount .. " arenas   " .. winsColoured .. " / " .. lossesColoured .. "   " .. winrate .. "% Winrate"
         ArenaAnalyticsScrollFrame.clearSelected:Show();
     else
         newSelectedText = "Selected: (click matches to select)"
@@ -523,7 +529,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.deathFrames = {}
 
     HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListMatch");
-    ArenaAnalytics.AAtable:handleArenaCountChanged();
+    ArenaAnalytics.Filter:refreshFilters();
     AAtable:OnShow();
 end
 
@@ -608,7 +614,7 @@ function AAtable:tryShowimportFrame()
 end
 
 function AAtable:OnShow()
-    AAtable:RefreshLayout(true);
+    AAtable:RefreshLayout();
     ArenaAnalyticsScrollFrame:Hide();
 end
 
@@ -781,20 +787,6 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
     end
 end
 
--- Checks if 2 arenas have the same party members
-function ArenaAnalytics:arenasHaveSameParty(arena, prevArena)
-    if(arena["bracket"] ~= prevArena["bracket"]) then
-        return false;
-    end
-
-    for i = 1, #arena["team"] do
-        if (prevArena["team"][i] and arena["team"][i]["name"] ~= prevArena["team"][i]["name"]) then
-            return false;
-        end
-    end
-    return true;
-end
-
 -- Sets button row's background according to session
 local function setColorForSession(button, session)
     local c = session%2/10;
@@ -913,8 +905,8 @@ end
 
 -- Updates the displayed data for a new match
 function AAtable:handleArenaCountChanged()
-    AAtable:RefreshLayout(true);
-    AAtable:forceCompFilterRefresh(true);
+    AAtable:RefreshLayout();
+    AAtable:forceCompFilterRefresh();
 
     if(ArenaAnalytics:hasStoredMatches()) then
         ArenaAnalyticsScrollFrame.exportBtn:Enable();
@@ -924,14 +916,11 @@ function AAtable:handleArenaCountChanged()
         ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
     end
 
-    local wins = 0;
-    local sessionGames = 0;
-    local sessionWins = 0;
-
     local matches = ArenaAnalytics.filteredMatchHistory;
 
+    wins, sessionGames, sessionWins = 0,0,0;
     -- Update arena count & winrate
-    for i = 1, #ArenaAnalytics.filteredMatchHistory do
+    for i=#ArenaAnalytics.filteredMatchHistory, 1, -1 do
         local match = ArenaAnalytics.filteredMatchHistory[i];
         if(match) then 
             if(match["won"]) then 
@@ -947,15 +936,21 @@ function AAtable:handleArenaCountChanged()
         end
     end
 
+    -- Update displayed session stats text
+    local expired, session = ArenaAnalytics:getLastSession(time());
+    local sessionText = expired and "Last session: " or "Current session: ";
+    local sessionStats = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
+    local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
+    local sessionLossesColoured =  "|cffff0000" .. (sessionGames - sessionWins) .. "|r";
+    ArenaAnalyticsScrollFrame.sessionStats:SetText(sessionText .. sessionGames .. " arena" .. (sessionGames ~= 1 and "s" or "") .. "   " .. sessionWinsColoured .. " / " .. sessionLossesColoured .. "  " .. sessionStats .. "% Winrate");
+
+    -- Update the 
     local totalArenas = #ArenaAnalytics.filteredMatchHistory;
     local winrate = totalArenas > 0 and math.floor(wins * 100 / totalArenas) or 0;
     local winsColoured =  "|cff00cc66" .. wins .. "|r";
-    ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arenas");
-    ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. "/" .. (totalArenas - wins) .. " | " .. winrate .. "% Winrate");
-
-    local sessionStats = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
-    local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
-    ArenaAnalyticsScrollFrame.sessionStats:SetText("Current session: " .. sessionGames .. " arenas   " .. sessionWinsColoured .. "/" .. (sessionGames - sessionWins) .. " | " .. sessionStats .. "% Winrate");
+    local lossesColoured =  "|cffff0000" .. (totalArenas - wins) .. "|r";
+    ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arena" .. (totalArenas ~= 1 and "s" or ""));
+    ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. " / " .. lossesColoured .. "   " .. winrate .. "% Winrate");
 
     ArenaAnalytics.AAtable.checkUnsavedWarningThreshold();
 end
@@ -979,24 +974,18 @@ end
 
 local isRefreshing = false;
 local hasPendingRefresh = true;
-local hasPendingFilterRefresh = true;
 
 -- Refreshes matches table
-function AAtable:RefreshLayout(updateFilter)
+function AAtable:RefreshLayout()
     if(isRefreshing) then
         hasPendingRefresh = true;
-        hasPendingFilterRefresh = updateFilter;
+        ArenaAnalytics:Log("Adding pending refresh..");
         return;
     end
 
     isRefreshing = true;
     hasPendingRefresh = false;
-    hasPendingFilterRefresh = false;
 
-    if (updateFilter or #ArenaAnalytics.filteredMatchHistory == 0 and #MatchHistoryDB) then
-        ArenaAnalytics.Filter:refreshFilters(MatchHistoryDB);
-    end
-    
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local offset = HybridScrollFrame_GetOffset(ArenaAnalyticsScrollFrame.ListScrollFrame);
 
@@ -1096,7 +1085,7 @@ function AAtable:RefreshLayout(updateFilter)
 
     -- Run pending refresh next frame
     if(hasPendingRefresh) then
-        C_Timer.After(1, function() AAtable:RefreshLayout(hasPendingFilterRefresh) end);
+        C_Timer.After(0, function() AAtable:RefreshLayout() end);
     else
         isRefreshing = false;
     end

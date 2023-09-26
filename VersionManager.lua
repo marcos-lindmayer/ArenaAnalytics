@@ -50,7 +50,7 @@ local function updateGroupDataToNewFormat(group, myName, myRealm)
     for _, player in ipairs(group) do
         local name = player["name"];
 
-        if(name == myName and name:find("%-") == nil) then
+        if(myRealm and name == myName and name:find("%-") == nil) then
             name = name .. "-" .. myRealm;
         end
 
@@ -122,6 +122,8 @@ end
 function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     local brackets = { "2v2", "3v3", "5v5" }
 
+    MatchHistoryDB = MatchHistoryDB or { }
+
     if(#MatchHistoryDB > 0) then
         ArenaAnalytics:Log("Non-empty MatchHistoryDB.");
         return;
@@ -132,7 +134,10 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     end
 
     local myName, myRealm = UnitFullName("player");
-    ForceDebugNilError(myRealm);
+    if (myRealm == nil) then
+        ArenaAnalytics:Print("Unable to find your realm for converting matches for 0.3.0+");
+        C_Timer.After(1, VersionManager:convertArenaAnalyticsDBToMatchHistoryDB());
+    end
 
     for _, bracket in ipairs(brackets) do
         if(ArenaAnalyticsDB[bracket] ~= nil) then
@@ -179,9 +184,10 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         end
     end);
 
-    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
-    ArenaAnalytics.AAimport:tryHide()
-        
-    C_Timer.After(0, function() ArenaAnalytics.AAtable:handleArenaCountChanged() end);
+    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+    ArenaAnalytics.AAimport:tryHide();
+
+    -- Refresh filters
+    ArenaAnalytics.Filter:refreshFilters();
 end

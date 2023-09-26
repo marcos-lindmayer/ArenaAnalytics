@@ -64,10 +64,12 @@ function Filter:changeFilter(args)
         Filter.currentFilters[filterName] = selectedFilter;
     end
 
-    ArenaAnalytics.AAtable:handleArenaCountChanged();
     if currentFilter.dropdownList:IsShown() then   
         currentFilter.dropdownList:Hide();
     end
+    
+    ArenaAnalytics:Log("Change Filter: ", filterName, " to: ", selectedFilter);
+    Filter:refreshFilters();
 end
 
 local function findOrAddCompValues(comps, comp, isWin)
@@ -397,13 +399,17 @@ function Filter:refreshFilters()
 
     -- Assign session to filtered matches
     local session = 1
-    for i = 1, #ArenaAnalytics.filteredMatchHistory do
+    for i = #ArenaAnalytics.filteredMatchHistory, 1, -1 do
         local current = ArenaAnalytics.filteredMatchHistory[i];
         local prev = ArenaAnalytics.filteredMatchHistory[i - 1];
 
-        if (prev and (prev["session"] ~= current["session"]) and ((current["date"] + 3600 < prev["date"]) or not ArenaAnalytics:arenasHaveSameParty(current, prev))) then
+        ArenaAnalytics.filteredMatchHistory[i]["filteredSession"] = session;
+
+        if ((not prev or prev["session"] ~= current["session"])) then
             session = session + 1;
         end
-        ArenaAnalytics.filteredMatchHistory[i]["filteredSession"] = session;
     end
+
+    ArenaAnalytics.AAtable:forceCompFilterRefresh();
+    ArenaAnalytics.AAtable:handleArenaCountChanged();
 end

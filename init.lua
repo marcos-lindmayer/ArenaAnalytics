@@ -122,7 +122,6 @@ function ArenaAnalytics:Log(...)
 	print(prefix, ...);
 end
 
-
 -- Returns devault theme color
 function ArenaAnalytics:GetThemeColor()
 	local defaults = {
@@ -230,7 +229,6 @@ function ArenaAnalytics:init(event, name, ...)
 	SLASH_AuraTracker1 = "/aa";
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
-
 
 	ArenaAnalyticsLoadSettings();
 
@@ -343,7 +341,7 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", 
         function()
             ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
-            ArenaAnalytics.AAtable:RefreshLayout(true);
+        	ArenaAnalytics.Filter:refreshFilters();
             ArenaAnalytics.AAtable:forceCompFilterRefresh();
         end
     );
@@ -356,7 +354,7 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", 
         function()
             ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
-            ArenaAnalytics.AAtable:RefreshLayout(true);
+        	ArenaAnalytics.Filter:refreshFilters();
             ArenaAnalytics.AAtable:forceCompFilterRefresh();
         end
     );
@@ -374,8 +372,7 @@ function ArenaAnalyticsSettingsFrame()
     
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEditFocusLost", function(self)
         ArenaAnalyticsSettings["outliers"] = tonumber(ArenaAnalyticsScrollFrame.outliersInput:GetText()) or ArenaAnalyticsSettings["outliers"];
-		ArenaAnalytics.AAtable:RefreshLayout(true);
-		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+		ArenaAnalytics.Filter:refreshFilters();
 		ArenaAnalyticsScrollFrame.outliersInput:SetText(ArenaAnalyticsSettings["outliers"]);
     end);
 
