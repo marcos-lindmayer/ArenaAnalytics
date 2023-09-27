@@ -187,6 +187,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
     ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+	ArenaAnalytics.updateLastSession();
     ArenaAnalytics.AAimport:tryHide();
 
     -- Refresh filters

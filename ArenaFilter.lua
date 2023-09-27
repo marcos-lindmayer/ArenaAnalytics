@@ -340,8 +340,7 @@ function Filter:doesMatchPassGameSettings(match)
         return false;
     end
 
-    local lastSession = ArenaAnalytics:getLastSession();
-    if(ArenaAnalyticsSettings["sessionOnly"] and match["session"] ~= lastSession) then
+    if(ArenaAnalyticsSettings["sessionOnly"] and match["session"] ~= ArenaAnalytics.lastSession) then
         return false;
     end
 

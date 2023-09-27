@@ -250,8 +250,9 @@ function AAimport:completeImport_ArenaStats()
         end
     end);
 
+    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+    ArenaAnalytics:updateLastSession();    
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
-    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();    
     ArenaAnalytics.Filter:refreshFilters();
 
     ArenaAnalytics:Print("Import complete. " .. #MatchHistoryDB .. " arenas added!");

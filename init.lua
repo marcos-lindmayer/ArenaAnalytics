@@ -20,6 +20,10 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print("Current version: ", version);
 	end,
 	
+	["total"] = function()
+		ArenaAnalytics:Print("Total arenas stored: ", #MatchHistoryDB);
+	end,
+	
 	["played"] = function()
 		local totalDurationInArenas = 0;
 		for i=1, #MatchHistoryDB do
@@ -231,6 +235,8 @@ function ArenaAnalytics:init(event, name, ...)
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
+	ArenaAnalytics:updateLastSession();
+
 	ArenaAnalyticsLoadSettings();
 
 	-- Update cached rating as soon as possible
@@ -342,6 +348,7 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", 
         function()
             ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
+			ArenaAnalytics:Log("Show Skirmish: ", ArenaAnalyticsSettings["sessionOnly"]);
         	ArenaAnalytics.Filter:refreshFilters();
             ArenaAnalytics.AAtable:forceCompFilterRefresh();
         end
@@ -352,27 +359,25 @@ function ArenaAnalyticsSettingsFrame()
     ArenaAnalyticsScrollFrame_seasonToggleText:SetText("Show Previous Seasons");
     ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(ArenaAnalyticsSettings["seasonIsChecked"]);
 
-    ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", 
-        function()
-            ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
-        	ArenaAnalytics.Filter:refreshFilters();
-            ArenaAnalytics.AAtable:forceCompFilterRefresh();
-        end
-    );
+    ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", function()
+		ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
+		ArenaAnalytics:Log("Show Previous Seasons: ", ArenaAnalyticsSettings["sessionOnly"]);
+		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+	end);
 
 	-- Current session only
     ArenaAnalyticsScrollFrame.sessionToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_sessionToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.sessionToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -90);
     ArenaAnalyticsScrollFrame_sessionToggleText:SetText("Show Latest Session Only");
-    ArenaAnalyticsScrollFrame.sessionToggle:SetChecked(ArenaAnalyticsSettings["seasonIsChecked"]);
+    ArenaAnalyticsScrollFrame.sessionToggle:SetChecked(ArenaAnalyticsSettings["sessionOnly"]);
 
-    ArenaAnalyticsScrollFrame.sessionToggle:SetScript("OnClick", 
-        function()
-            ArenaAnalyticsSettings["sessionOnly"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
-        	ArenaAnalytics.Filter:refreshFilters();
-            ArenaAnalytics.AAtable:forceCompFilterRefresh();
-        end
-    );
+    ArenaAnalyticsScrollFrame.sessionToggle:SetScript("OnClick", function()
+		ArenaAnalyticsSettings["sessionOnly"] = ArenaAnalyticsScrollFrame.sessionToggle:GetChecked();
+		ArenaAnalytics:Log("Session Only: ", ArenaAnalyticsSettings["sessionOnly"]);
+		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+    end);
 
     ArenaAnalyticsScrollFrame.outliers = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -120, "Minimum games required to appear on comp filter");
     ArenaAnalyticsScrollFrame.outliersInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")

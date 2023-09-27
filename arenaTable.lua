@@ -9,6 +9,12 @@ local hasLoaded = false;
 
 ArenaAnalytics.filteredMatchHistory = { };
 
+ArenaAnalytics.lastSession = 1;
+
+function ArenaAnalytics:updateLastSession()
+	ArenaAnalytics.lastSession = ArenaAnalytics:getLastSession();
+end
+
 -- Filtered stats
 local wins, sessionGames, sessionWins = 0, 0, 0;
 

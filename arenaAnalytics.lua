@@ -28,7 +28,7 @@ function ArenaAnalyticsLoadSettings()
 	ArenaAnalyticsSettings["compsLimit"] = ArenaAnalyticsSettings["compsLimit"] or 0;
 	ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsSettings["seasonIsChecked"] or false;
 	ArenaAnalyticsSettings["skirmishIshChecked"] = ArenaAnalyticsSettings["skirmishIshChecked"] or false;
-	ArenaAnalyticsSettings["sessionOnly"] = ArenaAnalyticsSettings["sessionOnly"] or false;
+	ArenaAnalyticsSettings["sessionOnly"] = false; -- Treat as an unsaved filter for now
 	ArenaAnalyticsSettings["alwaysShowDeathBg"] = ArenaAnalyticsSettings["alwaysShowDeathBg"] or false;
 	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 13;
 end
@@ -347,6 +347,7 @@ function AAmatch:insertArenaOnTable()
 		session = session + 1;
 	end
 	arenaData["session"] = session;
+	ArenaAnalytics.lastSession = session;
 
 	-- Insert arena data as a new MatchHistoryDB entry
 	table.insert(MatchHistoryDB, arenaData);
