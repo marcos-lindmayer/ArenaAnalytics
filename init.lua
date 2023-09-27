@@ -17,7 +17,7 @@ ArenaAnalytics.commands = {
 	end,
 	
 	["version"] = function()
-		ArenaAnalytics:Print("Current version: ", version);
+		ArenaAnalytics:Print("Current version: ", version, " (Early Access)");
 	end,
 	
 	["total"] = function()
