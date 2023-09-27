@@ -413,7 +413,7 @@ function AAtable:OnLoad()
         
     ArenaAnalyticsScrollFrame.searchBox:SetScript('OnTextSet', function(self) 
         if(self:GetText() == "" and ArenaAnalytics.Filter.currentFilters["Filter_Search"]["raw"] ~= "") then
-            ArenaAnalytics.Filter:updateSearchFilterData("");
+            ArenaAnalytics.Filter:commitSearch("");
             self:SetText("");
         end
     end);
@@ -422,7 +422,7 @@ function AAtable:OnLoad()
         -- Clear white spaces
         local search = ArenaAnalyticsScrollFrame.searchBox:GetText();
 
-        ArenaAnalytics.Filter:updateSearchFilterData(search);
+        ArenaAnalytics.Filter:commitSearch(search);
 
         -- Compact double spaces to single spaces in the search box
         ArenaAnalyticsScrollFrame.searchBox:SetText(ArenaAnalytics.Filter.currentFilters["Filter_Search"]["raw"]);
@@ -485,10 +485,11 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyRatingTitle, "TOPLEFT", 110, 0, "Enemy Rating");
 
     -- Recorded arena number and winrate
-    ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 27, "");
+    ArenaAnalyticsScrollFrame.sessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 27, "");
+    
+    ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 10, "");
     ArenaAnalyticsScrollFrame.winrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
 
-    ArenaAnalyticsScrollFrame.sessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 10, "");
 
     ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -70, 27, "Selected: (click matches to select)");
     --ArenaAnalyticsScrollFrame.selectedSessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -70, 10, "Selected Session: 666/1305 | 71% Winrate");
@@ -621,16 +622,16 @@ function AAtable:OnShow()
     ArenaAnalyticsScrollFrame:Hide();
 end
 
-local function updateSearchForPlayer(previousSearch, prefix, search)
+local function addPlayerToQuickSearch(previousSearch, prefix, playerToAdd)
     previousSearch = previousSearch or "";
-    search = search or "";
+    playerToAdd = playerToAdd or "";
 
-    local newSearch = prefix .. search;
-    local existingSearch = search:gsub("-", "%%-");
-    if(previousSearch ~= "" and previousSearch:find(search:gsub("-", "%%-")) ~= nil) then
+    local newSearch = prefix .. playerToAdd;
+    local existingSearch = playerToAdd:gsub("-", "%%-");
+    if(previousSearch ~= "" and previousSearch:find(playerToAdd:gsub("-", "%%-")) ~= nil) then
         -- Clear existing prefix
-        previousSearch = previousSearch:gsub("-"..existingSearch, search);
-        previousSearch = previousSearch:gsub("+"..existingSearch, search);
+        previousSearch = previousSearch:gsub("-"..existingSearch, playerToAdd);
+        previousSearch = previousSearch:gsub("+"..existingSearch, playerToAdd);
 
         newSearch = previousSearch:gsub(existingSearch, newSearch);
     else
@@ -641,7 +642,7 @@ local function updateSearchForPlayer(previousSearch, prefix, search)
         newSearch = previousSearch .. newSearch;
     end
     
-    ArenaAnalytics.Filter:updateSearchFilterData(newSearch);
+    ArenaAnalytics.Filter:commitSearch(newSearch);
     ArenaAnalyticsScrollFrame.searchBox:SetText(ArenaAnalytics.Filter.currentFilters["Filter_Search"]["raw"]);
 end
 
@@ -697,10 +698,10 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
                     -- Include server with quick search shortcut? (Requires old data to be updated to be included)
                     if(IsShiftKeyDown()) then
                         -- Search for this player on any team
-                        updateSearchForPlayer(ArenaAnalyticsScrollFrame.searchBox:GetText(), prefix, playerName);
+                        addPlayerToQuickSearch(ArenaAnalyticsScrollFrame.searchBox:GetText(), prefix, playerName);
                     else
                         -- Search for the player
-                        updateSearchForPlayer("", prefix, playerName);
+                        addPlayerToQuickSearch("", prefix, playerName);
                     end
                 end);
             end
@@ -961,7 +962,7 @@ function AAtable:handleArenaCountChanged()
     local winrate = totalArenas > 0 and math.floor(wins * 100 / totalArenas) or 0;
     local winsColoured =  "|cff00cc66" .. wins .. "|r";
     local lossesColoured =  "|cffff0000" .. (totalArenas - wins) .. "|r";
-    ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Total: " .. totalArenas .. " arena" .. (totalArenas ~= 1 and "s" or ""));
+    ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Filtered total: " .. totalArenas .. " arena" .. (totalArenas ~= 1 and "s" or ""));
     ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. " / " .. lossesColoured .. "   " .. winrate .. "% Winrate");
 
     ArenaAnalytics.AAtable.checkUnsavedWarningThreshold();
@@ -993,15 +994,6 @@ function AAtable:RefreshLayout()
         -- Load will trigger call soon
         return;
     end
-
-    if(isRefreshing) then
-        hasPendingRefresh = true;
-        ArenaAnalytics:Log("Adding pending refresh..");
-        return;
-    end
-
-    isRefreshing = true;
-    hasPendingRefresh = false;
 
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame);
     local offset = HybridScrollFrame_GetOffset(ArenaAnalyticsScrollFrame.ListScrollFrame);
@@ -1099,11 +1091,4 @@ function AAtable:RefreshLayout()
     local totalHeight = #ArenaAnalytics.filteredMatchHistory * buttonHeight;
     local shownHeight = #buttons * buttonHeight;
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
-
-    -- Run pending refresh next frame
-    if(hasPendingRefresh) then
-        C_Timer.After(0, function() AAtable:RefreshLayout() end);
-    else
-        isRefreshing = false;
-    end
 end

@@ -22,18 +22,6 @@ Filter.currentFilters = {
     }
 };
 
-function Filter:doesGameMatchSettings(arenaGame)
-    local seasonCondition = false
-    if ((ArenaAnalyticsSettings["seasonIsChecked"] == false and arenaGame["dateInt"] > ArenaAnalytics.Constants.currentSeasonStartInt) or ArenaAnalyticsSettings["seasonIsChecked"]) then
-        seasonCondition = true
-    end
-    local skirmishCondition = false
-    if ((ArenaAnalyticsSettings["skirmishIsChecked"] == false and arenaGame["isRanked"]) or ArenaAnalyticsSettings["skirmishIsChecked"]) then
-        skirmishCondition = true
-    end
-    return seasonCondition and skirmishCondition
-end
-
 -- Changes the current filter upon selecting one from its dropdown
 function Filter:changeFilter(args)
     ArenaAnalytics.AAtable:ClearSelectedMatches()
@@ -125,7 +113,7 @@ function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
     return playedComps;
 end
 
-function Filter:updateSearchFilterData(search)
+function Filter:commitSearch(search)
     search = search or "";
     
     -- Get search table from search
@@ -178,7 +166,7 @@ function Filter:updateSearchFilterData(search)
     -- Commit search
     if(searchFilter ~= Filter.currentFilters["Filter_Search"]) then
         Filter.currentFilters["Filter_Search"] = searchFilter;
-		ArenaAnalytics.AAtable:handleArenaCountChanged();
+		Filter:refreshFilters();
     end
 end
 
@@ -344,8 +332,28 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
     return match[compKey] == Filter.currentFilters[compFilterKey]["data"];
 end
 
+function Filter:doesMatchPassGameSettings(match)
+    if (not ArenaAnalyticsSettings["seasonIsChecked"] and match["date"] < ArenaAnalytics.Constants.currentSeasonStartInt) then
+        return false;
+    end
+    if (not ArenaAnalyticsSettings["skirmishIsChecked"] and not match["isRated"]) then
+        return false;
+    end
+
+    local lastSession = ArenaAnalytics:getLastSession();
+    if(ArenaAnalyticsSettings["sessionOnly"] and match["session"] ~= lastSession) then
+        return false;
+    end
+
+    return true;
+end
+
 -- check all filters
 function Filter:doesMatchPassAllFilters(match, excluded)
+    if(not Filter:doesMatchPassGameSettings(match)) then
+        return false;
+    end
+
     -- Map
     if(not doesMatchPassFilter_Map(match)) then
         return false;
