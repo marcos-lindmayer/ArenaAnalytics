@@ -24,6 +24,17 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print("Total arenas stored: ", #MatchHistoryDB);
 	end,
 	
+	["oldtotal"] = function()
+		local total = 0;
+		if(ArenaAnalyticsDB) then
+			if(ArenaAnalyticsDB["2v2"]) then total = total + #ArenaAnalyticsDB["2v2"] end;
+			if(ArenaAnalyticsDB["3v3"]) then total = total + #ArenaAnalyticsDB["3v3"] end;
+			if(ArenaAnalyticsDB["5v5"]) then total = total + #ArenaAnalyticsDB["5v5"] end;
+		end
+
+		ArenaAnalytics:Print("Old total arenas: ", total);
+	end,
+	
 	["played"] = function()
 		local totalDurationInArenas = 0;
 		for i=1, #MatchHistoryDB do
