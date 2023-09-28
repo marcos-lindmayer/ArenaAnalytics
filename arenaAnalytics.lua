@@ -317,11 +317,23 @@ function AAmatch:insertArenaOnTable()
 	currentArena["comp"] = AAmatch:getArenaComp(currentArena["party"], bracket);
 	currentArena["enemyComp"] = AAmatch:getArenaComp(currentArena["enemy"], bracket);
 
+	local name, realm = UnitFullName("player");
+	if(name and realm) then
+		name = name .. "-" .. realm;
+	end
+	arenaData = name or nil;
+
+	local season = GetCurrentArenaSeason();
+	if (season == 0) then
+		ArenaAnalytics:Log("Failed to get valid season for new match.");
+	end
+
 	-- Setup table data to insert into MatchHistoryDB
 	local arenaData = {
+		["player"] = name,
 		["isRated"] = currentArena["isRanked"],
 		["date"] = tonumber(currentArena["timeStartInt"]) or time(),
-		["season"] = GetCurrentArenaSeason(),
+		["season"] = season,
 		["session"] = session,
 		["map"] = currentArena["mapName"], 
 		["bracket"] = bracket,

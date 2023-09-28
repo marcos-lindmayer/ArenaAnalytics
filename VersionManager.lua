@@ -31,7 +31,11 @@ local function convertFormatedDurationToSeconds(inDuration)
             ArenaAnalytics:Print("ERROR: Converting duration failed (:", inDuration, ")");
         end
         
-        return 60*minutes + seconds;
+        if(minutes and seconds) then
+            return 60*minutes + seconds;
+        else
+            return seconds or 0;
+        end
     end
 
     return 0;
@@ -45,21 +49,15 @@ local function computeSeasonWhenMissing(season, unixDate)
     return season;
 end
 
-local function updateGroupDataToNewFormat(group, myName, myRealm)
+local function updateGroupDataToNewFormat(group)
     local updatedGroup = {};
     for _, player in ipairs(group) do
-        local name = player["name"];
-
-        if(myRealm and name == myName and name:find("%-") == nil) then
-            name = name .. "-" .. myRealm;
-        end
-
         local class = (player["class"] and #player["class"] > 2) and player["class"] or nil;
         local spec = (player["spec"] and #player["spec"] > 2) and player["spec"] or nil;
 
         local updatedPlayerTable = {
             ["GUID"] = player["GUID"] or "",
-            ["name"] = name or "",
+            ["name"] = player["name"] or "",
             ["class"] = class,
             ["spec"] = spec,
             ["race"] = player["race"],
@@ -120,8 +118,6 @@ end
 
 -- 0.3.0 conversion from ArenaAnalyticsDB per bracket to MatchHistoryDB
 function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
-    local brackets = { "2v2", "3v3", "5v5" }
-
     MatchHistoryDB = MatchHistoryDB or { }
 
     if(#MatchHistoryDB > 0) then
@@ -133,19 +129,12 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         return;
     end
 
-    local myName, myRealm = UnitFullName("player");
-    if (myRealm == nil) then
-        ArenaAnalytics:Print("Unable to find your realm for converting matches for 0.3.0+ (Trying again in a second)");
-        C_Timer.After(1, function() VersionManager:convertArenaAnalyticsDBToMatchHistoryDB() end);
-        return;
-    end
-
+    local brackets = { "2v2", "3v3", "5v5" }
     for _, bracket in ipairs(brackets) do
         if(ArenaAnalyticsDB[bracket] ~= nil) then
             for _, arena in ipairs(ArenaAnalyticsDB[bracket]) do
-                
-                local team = updateGroupDataToNewFormat(arena["team"], myName, myRealm);
-                local enemyTeam = updateGroupDataToNewFormat(arena["enemyTeam"], myName, myRealm);
+                local team = updateGroupDataToNewFormat(arena["team"]);
+                local enemyTeam = updateGroupDataToNewFormat(arena["enemyTeam"]);
 
                 local updatedArenaData = {
                     ["isRated"] = arena["isRanked"],
@@ -175,8 +164,6 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     end
 
     local oldTotal = (ArenaAnalyticsDB["2v2"] and #ArenaAnalyticsDB["2v2"] or 0) + (ArenaAnalyticsDB["3v3"] and #ArenaAnalyticsDB["3v3"] or 0) + (ArenaAnalyticsDB["5v5"] and #ArenaAnalyticsDB["5v5"] or 0);
-    if(oldTotal ~= #MatchHistoryDB) then
-    end
     ArenaAnalytics:Print("Converted data from old database. Old total: ", oldTotal, " New total: ", #MatchHistoryDB);
 
     table.sort(MatchHistoryDB, function (k1,k2)

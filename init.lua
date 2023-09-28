@@ -70,6 +70,23 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
 	end,
 
+	["updateseasons"] = function()
+		ArenaAnalytics:Print("Updating seasons in MatchHistoryDB");
+		for i=1, #MatchHistoryDB do
+			local match = MatchHistoryDB[i];
+			local season = match["season"];
+			if(season == nil or season == 0) then
+				season = ArenaAnalytics:computeSeasonFromMatchDate(match["date"]);
+				if(season) then
+					ArenaAnalytics:Log("Updated season at index: ", i, " to season: ", season);
+					MatchHistoryDB[i]["season"] = season;
+				else
+					ArenaAnalytics:Log("Updating seasons got nil season for date: ", date("%d/%m/%y %H:%M:%S", match["date"]), " (", match["date"], ")");
+				end
+			end
+		end
+	end,
+
 	["debugcleardb"] = function()
 		if(ArenaAnalytics.skipDebugLog and ArenaAnalytics.skipDebugForceNilError) then
 			ArenaAnalytics:Print("Clearing MatchHistoryDB requires enabling /aa debug. Not intended for users!");

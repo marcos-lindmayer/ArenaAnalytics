@@ -205,7 +205,7 @@ function AAimport:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
             ["season"] = ArenaAnalytics:computeSeasonFromMatchDate(unixDate),
             ["map"] = ArenaAnalytics.AAmatch:getMapNameById(tonumber(arena["zoneId"])), 
             ["bracket"] = ArenaAnalytics:getBracketFromTeamSize(size),
-            ["duration"] = tonumber(arena["duration"]),
+            ["duration"] = tonumber(arena["duration"]) or 0,
             ["team"] = AAimport:createGroupTable(arena, "team", size),
             ["rating"] = tonumber(arena["newTeamRating"]), 
             ["ratingDelta"] = tonumber(arena["diffRating"]),
