@@ -288,9 +288,9 @@ end
 
 -- Toggle Export DB frame
 local function toggleExportFrame()
-	if (not ArenaAnalyticsScrollFrame.exportFrameContainer:IsShown() and ArenaAnalytics:hasStoredMatches() or true) then
+	if (not ArenaAnalyticsScrollFrame.exportFrameContainer:IsShown() and ArenaAnalytics:hasStoredMatches()) then
         ArenaAnalyticsScrollFrame.exportFrameContainer:Show();
-        ArenaAnalyticsScrollFrame.exportFrame:SetText(ArenaAnalytics:getCsvFromDB());
+        ArenaAnalyticsScrollFrame.exportFrame:SetText(ArenaAnalytics.Export:getCsvFromDB());
         ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
     else
         ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
@@ -544,7 +544,7 @@ function ArenaAnalyticsSettingsFrame()
     end);
 
 	ArenaAnalyticsScrollFrame.exportBtn = ArenaAnalytics.AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.settingsFrame, "BOTTOM", 0, 22, "Export");
-    ArenaAnalyticsScrollFrame.exportBtn:SetScript("OnClick", toggleExportFrame);
+    ArenaAnalyticsScrollFrame.exportBtn:SetScript("OnClick", function() ArenaAnalytics.Export:combineExportCSV() end);
 
     -- Set export DB CSV frame layout
     createExportFrame();

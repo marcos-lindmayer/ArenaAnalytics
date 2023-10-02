@@ -11,7 +11,7 @@ arenaConstants.lua
 arenaAnalytics.lua
 ArenaDataSync.lua
 ArenaFilter.lua
-arenaImport.lua
+ArenaImportExport.lua
 iconClass.lua
 arenaTable.lua
 HybridScroll.xml

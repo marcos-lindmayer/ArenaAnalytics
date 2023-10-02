@@ -20,6 +20,7 @@ function ForceDebugNilError(value, forceError)
 	end
 end
 
+-- TODO: Consider making the settings character specific (For cases like one char having lots of games desiring different comp filter limits)
 -- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
 
@@ -629,6 +630,7 @@ function AAmatch:trackArena(...)
 		ArenaAnalyticsCachedBracketRatings[bracketId] = lastRating;
 	end
 
+	-- TODO (v0.4.0): Update to depend on whether local player has been added, in case data 
 	if (#currentArena["party"] == 0) then
 		-- Add player
 		local killingBlows, faction, filename, damageDone, healingDone, spec;
@@ -639,6 +641,10 @@ function AAmatch:trackArena(...)
 		local spec = AAmatch:getPlayerSpec();
 		local player = AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec);
 		table.insert(currentArena["party"], player);
+
+		if (spec ~= nil) then
+			-- TODO (v0.4.0) Broadcast spec to party
+		end
 	end
 	
 	-- Not using mapName since string is lang based (unreliable) 

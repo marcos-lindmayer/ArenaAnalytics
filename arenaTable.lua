@@ -287,42 +287,6 @@ function AAtable:createDropdown(opts)
     return dropdownTable;
 end
 
--- Returns a CSV-formatted string using MatchHistoryDB info
-function ArenaAnalytics:getCsvFromDB()
-    if(not ArenaAnalytics:hasStoredMatches()) then
-        return "No games to export!";
-    end
-
-    local CSVString = "date,map,duration,won,isRanked,team1Name,team2Name,team3Name,team4Name,team5Name,rating,mmr," .. 
-    "enemyTeam1Name,enemyTeam2Name,enemyTeam3Name,enemyTeam4Name,enemyTeam5Name,enemyRating,enemyMMR" .. "\n";
-
-    for i = 1, #MatchHistoryDB do
-        local match = MatchHistoryDB[i];
-        CSVString = CSVString
-        .. match["date"] .. ","
-        .. (match["map"] or "") .. ","
-        .. (match["duration"] or "") .. ","
-        .. (match["won"] and "1" or "0") .. ","
-        .. (match["isRanked"] and "1" or "0") .. ","
-        .. (match["team"][1]["name"] or "") .. ","
-        .. (match["team"][2] and match["team"][2]["name"] or "") .. ","
-        .. (match["team"][3] and match["team"][3]["name"] or "") .. ","
-        .. (match["team"][4] and match["team"][4]["name"] or "") .. ","
-        .. (match["team"][5] and match["team"][5]["name"] or "") .. ","
-        .. (match["rating"] or "").. ","
-        .. (match["mmr"] or "") .. ","
-        .. (match["enemyTeam"][1] and match["enemyTeam"][1]["name"] or "") .. ","
-        .. (match["enemyTeam"][2] and match["enemyTeam"][2]["name"] or "") .. ","
-        .. (match["enemyTeam"][3] and match["enemyTeam"][3]["name"] or "") .. ","
-        .. (match["enemyTeam"][4] and match["enemyTeam"][4]["name"] or "") .. ","
-        .. (match["enemyTeam"][5] and match["enemyTeam"][5]["name"] or "") .. ","
-        .. (match["enemyRating"] or "") .. ","
-        .. (match["enemyMmr"] or "") .. ","
-        .. "\n";
-    end
-    return CSVString;
-end
-
 -- Returns string frame
 function ArenaAnalyticsCreateText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text)
     local fontString = relativeFrame:CreateFontString(nil, "OVERLAY");
@@ -583,14 +547,21 @@ function AAtable:tryShowimportFrame()
                     ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
 
                     C_Timer.After(0, function()
-                        ArenaAnalyticsScrollFrame.importDataBox:Enable();
-                        ArenaImportPasteString = string.trim(table.concat(pasteBuffer));
+                        ArenaAnalytics:Log("Finalizing import paste.");
+                        ArenaImportPasteStringTable = {}
+                        tinsert(ArenaImportPasteStringTable, (string.trim(table.concat(pasteBuffer)) or ""));
+                        ArenaAnalytics:Log(#ArenaImportPasteStringTable);
+
+                        if(#ArenaImportPasteStringTable[1] > 0) then
+                            ArenaAnalyticsScrollFrame.importDataBox:Enable();
+                        end
+
                         pasteBuffer = {}
                         index = 0;
 
                         -- Update text: 1) Prevent OnChar for changing text
                         ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', nil);
-                        ArenaAnalyticsScrollFrame.importDataBox:SetText(ArenaAnalytics.AAimport:determineImportSource(ArenaImportPasteString) .. " import detected...");
+                        ArenaAnalyticsScrollFrame.importDataBox:SetText(ArenaAnalytics.Import:determineImportSource(ArenaImportPasteStringTable) .. " import detected...");
                         ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
                     end);
                 end
@@ -606,8 +577,8 @@ function AAtable:tryShowimportFrame()
 
             ArenaAnalyticsScrollFrame.importDataBtn:SetScript("OnClick", function (i) 
                 ArenaAnalyticsScrollFrame.importDataBtn:Disable();
-                ArenaAnalytics.AAimport:parseRawData(ArenaImportPasteString);
-                ArenaImportPasteString = "";
+                ArenaAnalytics.Import:parseRawData(ArenaImportPasteStringTable);
+                ArenaImportPasteStringTable = {};
             end);
 
             ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)
