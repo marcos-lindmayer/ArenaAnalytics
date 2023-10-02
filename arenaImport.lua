@@ -200,7 +200,7 @@ function AAimport:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
         local unixDate = tonumber(arena["startTime"])    
 
         local arena = {
-            ["isRated"] = arena["isRanked"] == "YES" and true or false,
+            ["isRated"] = (arena["isRated"] == "YES"),
             ["date"] = unixDate,
             ["season"] = ArenaAnalytics:computeSeasonFromMatchDate(unixDate),
             ["map"] = ArenaAnalytics.AAmatch:getMapNameById(tonumber(arena["zoneId"])), 
