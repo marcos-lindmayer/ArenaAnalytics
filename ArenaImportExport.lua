@@ -13,7 +13,7 @@ ArenaImportPasteString = "";
 
 local function checkDataSource_ArenaStats(data)
     local dataFormat = data[1]:sub(1, 711);
-    local ArenaStatsFormat = "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,"..
+    local ArenaStatsFormat = "isRated,startTime,endTime,zoneId,duration,teamName,teamColor,"..
     "winnerColor,teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5,"..
     "teamPlayerClass1,teamPlayerClass2,teamPlayerClass3,teamPlayerClass4,teamPlayerClass5,"..
     "teamPlayerRace1,teamPlayerRace2,teamPlayerRace3,teamPlayerRace4,teamPlayerRace5,oldTeamRating,"..
@@ -41,8 +41,6 @@ end
 
 function Import:determineImportSource(data)
     if(data and #data[1] > 0) then
-        ArenaAnalytics:Log(type(data[1]), #data[1]);
-
         -- Identify ArenaAnalytics
         if(checkDataSource_ArenaAnalytics(data)) then
             return "ArenaAnalytics";
@@ -117,7 +115,7 @@ function Import:parseRawData(data)
                     table.insert(cachedValues, c)
                 end);
 
-                Import:parseCachedValues_ArenaStats(cachedArenas, 1);
+                Import:parseCachedValues_ArenaStats(1);
             end
         elseif(dataSource == "ArenaAnalytics") then
             -- Remove heading
@@ -226,7 +224,7 @@ function Import:parseCachedValues_ArenaStats(nextIndex)
 
             if(arenasParsedThisFrame >= 500 and i < #cachedValues) then
                 -- Call function to continue next frame
-                C_Timer.After(0, function() Import:parseCachedValues_ArenaStats(cachedArena, i + 1) end);
+                C_Timer.After(0, function() Import:parseCachedValues_ArenaStats(i + 1) end);
                 return;
             else
                 finishedParsing = true;
@@ -610,7 +608,6 @@ function Import:createGroupTable_ArenaAnalytics(arena, groupType, size)
     return group;
 end
 
--- TODO: Update to include all desired export data
 local exportTable = {}
 -- Returns a CSV-formatted string using MatchHistoryDB info
 function Export:combineExportCSV()
@@ -659,8 +656,6 @@ function Export:addMatchesToExport(nextIndex)
 
     for i = nextIndex, #MatchHistoryDB do
         local match = MatchHistoryDB[i];
-
-        ArenaAnalytics:Log(match["rating"], match["mmr"], match["enemyRating"], match["enemyMmr"])
         
         -- Add match data
         local matchCSV = match["date"] .. ","
@@ -696,7 +691,6 @@ function Export:addMatchesToExport(nextIndex)
         arenasAddedThisFrame = arenasAddedThisFrame + 1;
 
         if(arenasAddedThisFrame >= 500 and i < #MatchHistoryDB) then
-            ArenaAnalytics:Log(i);
             C_Timer.After(0, function() Export:addMatchesToExport(i + 1) end);
             return;
         end
@@ -705,11 +699,21 @@ function Export:addMatchesToExport(nextIndex)
     Export:FinalizeExportCSV();
 end
 
+local function formatNumber(num)
+    ForceDebugNilError(num);
+    local left,num,right = string.match(num,'^([^%d]*%d)(%d*)(.-)')
+    return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
+end
+
 function Export:FinalizeExportCSV()
     -- Show export with the new CSV string
     if (ArenaAnalytics:hasStoredMatches()) then
         ArenaAnalyticsScrollFrame.exportFrameContainer:Show();
         ArenaAnalyticsScrollFrame.exportFrame:SetText(table.concat(exportTable, "\n"));
+	    ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
+
+        ArenaAnalyticsScrollFrame.exportFrameContainer.totalText:SetText("Total arenas: " .. formatNumber(#exportTable - 1));
+        ArenaAnalyticsScrollFrame.exportFrameContainer.lengthText:SetText("Export length: " .. formatNumber(#ArenaAnalyticsScrollFrame.exportFrame:GetText()));
     else
         ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
     end
