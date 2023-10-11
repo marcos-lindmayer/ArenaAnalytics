@@ -286,17 +286,6 @@ function ArenaAnalytics:init(event, name, ...)
 	end
 end
 
--- Toggle Export DB frame
-local function toggleExportFrame()
-	if (not ArenaAnalyticsScrollFrame.exportFrameContainer:IsShown() and ArenaAnalytics:hasStoredMatches() or true) then
-        ArenaAnalyticsScrollFrame.exportFrameContainer:Show();
-        ArenaAnalyticsScrollFrame.exportFrame:SetText(ArenaAnalytics:getCsvFromDB());
-        ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
-    else
-        ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
-    end    
-end
-
 -- Creates the Export DB frame
 local function createExportFrame()
 	if(ArenaAnalyticsScrollFrame.exportFrameContainer == nil) then
@@ -306,43 +295,53 @@ local function createExportFrame()
 		ArenaAnalyticsScrollFrame.exportFrameContainer:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
 		ArenaAnalyticsScrollFrame.exportFrameContainer:SetSize(400, 150);
 
-		ArenaAnalyticsScrollFrame.exportFrameTitle = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateFontString(nil, "OVERLAY");
-		ArenaAnalyticsScrollFrame.exportFrameTitle:SetPoint("TOP", ArenaAnalyticsScrollFrame.exportFrameContainer, "TOP", -10, -5);
-		ArenaAnalyticsScrollFrame.exportFrameTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-		ArenaAnalyticsScrollFrame.exportFrameTitle:SetText("ArenaAnalytics Export");
-
-		ArenaAnalyticsScrollFrame.exportFrameScroll = CreateFrame("ScrollFrame", "exportFrameScroll", ArenaAnalyticsScrollFrame.exportFrameContainer, "UIPanelScrollFrameTemplate");
-		ArenaAnalyticsScrollFrame.exportFrameScroll:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameContainer, "CENTER", -10, -11);
-		ArenaAnalyticsScrollFrame.exportFrameScroll:SetSize(355, 110);
-		ArenaAnalyticsScrollFrame.exportFrameScroll.ScrollBar:Hide();
-
-		ArenaAnalyticsScrollFrame.exportFrameScrollBg = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateTexture()
-		ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetSize(380, 110);
-		ArenaAnalyticsScrollFrame.exportFrameScrollBg:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameScroll, "CENTER");
-
-		ArenaAnalyticsScrollFrame.exportFrame = CreateFrame("EditBox", "exportFrameScroll", nil, "BackdropTemplate");
-		ArenaAnalyticsScrollFrame.exportFrameScroll:SetScrollChild(ArenaAnalyticsScrollFrame.exportFrame);
-		ArenaAnalyticsScrollFrame.exportFrame:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth()-18);
-		ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(true);
-		ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(true);
-		ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
-		ArenaAnalyticsScrollFrame.exportFrame:SetJustifyH("LEFT");
-		ArenaAnalyticsScrollFrame.exportFrame:SetJustifyV("CENTER");
-		ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
-		ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
-
-		-- Escape to close
-		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEscapePressed", function(self)
-			self:SetText("");
-			ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
-		end);
-		
 		-- Make frame draggable
 		ArenaAnalyticsScrollFrame.exportFrameContainer:SetMovable(true)
 		ArenaAnalyticsScrollFrame.exportFrameContainer:EnableMouse(true)
 		ArenaAnalyticsScrollFrame.exportFrameContainer:RegisterForDrag("LeftButton")
 		ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.exportFrameContainer.StartMoving)
 		ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.exportFrameContainer.StopMovingOrSizing)
+
+		ArenaAnalyticsScrollFrame.exportFrameContainer.Title = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateFontString(nil, "OVERLAY");
+		ArenaAnalyticsScrollFrame.exportFrameContainer.Title:SetPoint("TOP", ArenaAnalyticsScrollFrame.exportFrameContainer, "TOP", -10, -5);
+		ArenaAnalyticsScrollFrame.exportFrameContainer.Title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
+		ArenaAnalyticsScrollFrame.exportFrameContainer.Title:SetText("ArenaAnalytics Export");
+
+		ArenaAnalyticsScrollFrame.exportFrame = CreateFrame("EditBox", "exportFrameEditbox", ArenaAnalyticsScrollFrame.exportFrameContainer, "InputBoxTemplate");
+		ArenaAnalyticsScrollFrame.exportFrame:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameContainer, "CENTER");
+		ArenaAnalyticsScrollFrame.exportFrame:SetSize(350, 25);
+		ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(true);
+		ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
+		ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(false);
+		ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+		
+		ArenaAnalyticsScrollFrame.exportFrameContainer.WarningText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportFrameContainer,"BOTTOM", ArenaAnalyticsScrollFrame.exportFrame, "TOP", 13, 0, "|cffff0000Warning:|r Pasting long string here will crash WoW!");
+		ArenaAnalyticsScrollFrame.exportFrameContainer.totalText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportFrameContainer,"TOPLEFT", ArenaAnalyticsScrollFrame.exportFrame, "BOTTOMLEFT", -3, 0, "Total arenas: " .. #MatchHistoryDB);
+		ArenaAnalyticsScrollFrame.exportFrameContainer.lengthText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportFrameContainer,"TOPRIGHT", ArenaAnalyticsScrollFrame.exportFrame, "BOTTOMRIGHT", -3, 0, "Export length: 0");
+
+		ArenaAnalyticsScrollFrame.exportFrameContainer.selectBtn = ArenaAnalytics.AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.exportFrameContainer, "BOTTOM", 0, 17, "Select All");
+		ArenaAnalyticsScrollFrame.exportFrameContainer.selectBtn:SetScript("OnClick", function() ArenaAnalyticsScrollFrame.exportFrame:HighlightText() end);
+		
+		-- Escape to close
+		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEscapePressed", function(self)
+			ArenaAnalyticsScrollFrame.exportFrame:ClearFocus();
+			ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+		end);
+
+		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEnterPressed", function(self)
+			self:ClearFocus();
+		end);
+
+		-- Highlight on focus gained
+		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEditFocusGained", function(self)
+			self:HighlightText();
+		end);
+		
+		-- Clear text
+		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnHide", function(self)
+			-- Garbage collect
+			self:SetText("");
+		end);
 	end
 end
 
@@ -350,7 +349,7 @@ function ArenaAnalyticsSettingsFrame()
 	local paddingLeft = 25;
 	ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
     ArenaAnalyticsScrollFrame.settingsFrame:SetPoint("CENTER")
-    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 395)
+    ArenaAnalyticsScrollFrame.settingsFrame:SetSize(600, 415)
     ArenaAnalyticsScrollFrame.settingsFrame:SetFrameStrata("DIALOG");
     ArenaAnalyticsScrollFrame.settingsFrame:Hide();
 
@@ -370,21 +369,19 @@ function ArenaAnalyticsSettingsFrame()
 
     ArenaAnalyticsScrollFrame.skirmishToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_skirmishToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.skirmishToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -50);
-    ArenaAnalyticsScrollFrame_skirmishToggleText:SetText("Show Skirmish");
+    ArenaAnalyticsScrollFrame.skirmishToggle.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.skirmishToggle, "RIGHT", 5, 0, "Show Skirmish");
     ArenaAnalyticsScrollFrame.skirmishToggle:SetChecked(ArenaAnalyticsSettings["skirmishIsChecked"]);
 
-    ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", 
-        function()
-            ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
-			ArenaAnalytics:Log("Show Skirmish: ", ArenaAnalyticsSettings["sessionOnly"]);
-        	ArenaAnalytics.Filter:refreshFilters();
-            ArenaAnalytics.AAtable:forceCompFilterRefresh();
-        end
-    );
+    ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", function()
+		ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
+		ArenaAnalytics:Log("Show Skirmish: ", ArenaAnalyticsSettings["sessionOnly"]);
+		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+	end);
 
     ArenaAnalyticsScrollFrame.seasonToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_seasonToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.seasonToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -70);
-    ArenaAnalyticsScrollFrame_seasonToggleText:SetText("Show Previous Seasons");
+    ArenaAnalyticsScrollFrame.seasonToggle.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.seasonToggle, "RIGHT", 5, 0, "Show Previous Seasons");
     ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(ArenaAnalyticsSettings["seasonIsChecked"]);
 
     ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", function()
@@ -397,7 +394,7 @@ function ArenaAnalyticsSettingsFrame()
 	-- Current session only
     ArenaAnalyticsScrollFrame.sessionToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_sessionToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.sessionToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -90);
-    ArenaAnalyticsScrollFrame_sessionToggleText:SetText("Show Latest Session Only");
+    ArenaAnalyticsScrollFrame.sessionToggle.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.sessionToggle, "RIGHT", 5, 0, "Show Latest Session Only");
     ArenaAnalyticsScrollFrame.sessionToggle:SetChecked(ArenaAnalyticsSettings["sessionOnly"]);
 
     ArenaAnalyticsScrollFrame.sessionToggle:SetScript("OnClick", function()
@@ -407,9 +404,22 @@ function ArenaAnalyticsSettingsFrame()
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
 
-    ArenaAnalyticsScrollFrame.outliers = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -120, "Minimum games required to appear on comp filter");
+	-- Current session only
+    ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_sessionToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
+    ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -110);
+    ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle, "RIGHT", 5, 0, "Sort comp filter dropdowns by total played");
+    ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle:SetChecked(ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"]);
+
+    ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle:SetScript("OnClick", function()
+		ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle:GetChecked();
+		ArenaAnalytics:Log("Sort comp filter by total: ", ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"]);
+		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+    end);
+
+    ArenaAnalyticsScrollFrame.outliers = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -145, "Minimum games required to appear on comp filter");
     ArenaAnalyticsScrollFrame.outliersInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
-    ArenaAnalyticsScrollFrame.outliersInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -115);
+    ArenaAnalyticsScrollFrame.outliersInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -140);
     ArenaAnalyticsScrollFrame.outliersInput:SetWidth(30);
     ArenaAnalyticsScrollFrame.outliersInput:SetHeight(20);
     ArenaAnalyticsScrollFrame.outliersInput:SetNumeric();
@@ -433,9 +443,9 @@ function ArenaAnalyticsSettingsFrame()
     end);
 
 	-- Limit for total comps to show
-	ArenaAnalyticsScrollFrame.compsLimit = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -145, "Maximum comps to appear in comp filter dropdowns (0 = unlimited)");
+	ArenaAnalyticsScrollFrame.compsLimit = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 65, -170, "Maximum comps to appear in comp filter dropdowns (0 = unlimited)");
     ArenaAnalyticsScrollFrame.compsLimitInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
-    ArenaAnalyticsScrollFrame.compsLimitInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -140);
+    ArenaAnalyticsScrollFrame.compsLimitInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -165);
     ArenaAnalyticsScrollFrame.compsLimitInput:SetWidth(30);
     ArenaAnalyticsScrollFrame.compsLimitInput:SetHeight(20);
     ArenaAnalyticsScrollFrame.compsLimitInput:SetNumeric();
@@ -461,9 +471,9 @@ function ArenaAnalyticsSettingsFrame()
         self:ClearFocus();
     end);
 
-	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -180, "Data settings");
+	ArenaAnalyticsScrollFrame.settingsFiltersTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -205, "Data settings");
 
-    ArenaAnalyticsScrollFrame.resetBtn = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -200, "Reset ALL DATA");
+    ArenaAnalyticsScrollFrame.resetBtn = ArenaAnalytics.AAtable:CreateButton("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -225, "Reset ALL DATA");
     ArenaAnalyticsScrollFrame.resetWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.resetBtn, "TOPRIGHT", 5, -5, "Warning! This will reset all match history");
     ArenaAnalyticsScrollFrame.resetBtn:Disable()
     ArenaAnalyticsScrollFrame.resetBtn:SetDisabledFontObject("GameFontDisableSmall")
@@ -485,8 +495,8 @@ function ArenaAnalyticsSettingsFrame()
     end);
     
     ArenaAnalyticsScrollFrame.allowReset = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_allowReset", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.allowReset:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -225);
-    ArenaAnalyticsScrollFrame_allowResetText:SetText("Check to enable data reset (big scary button ^)");
+    ArenaAnalyticsScrollFrame.allowReset:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -250);
+    ArenaAnalyticsScrollFrame.allowReset.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.allowReset, "RIGHT", 5, 0, "Check to enable data reset (big scary button ^)");
     ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
 
     ArenaAnalyticsScrollFrame.allowReset:SetScript("OnClick", 
@@ -499,12 +509,12 @@ function ArenaAnalyticsSettingsFrame()
         end
     );
 	
-	ArenaAnalyticsScrollFrame.moreOptionsTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -265, "More options");
+	ArenaAnalyticsScrollFrame.moreOptionsTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -290, "More options");
 
 	-- Always show First Death Overlay
     ArenaAnalyticsScrollFrame.deathToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_deathToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
-    ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -280);
-    ArenaAnalyticsScrollFrame_deathToggleText:SetText("Always show red death bg on icon (else on mouse over only)");
+    ArenaAnalyticsScrollFrame.deathToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -305);
+    ArenaAnalyticsScrollFrame.deathToggle.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.deathToggle, "RIGHT", 5, 0, "Always show red death bg on icon (else on mouse over only)");
     ArenaAnalyticsScrollFrame.deathToggle:SetChecked(ArenaAnalyticsSettings["alwaysShowDeathBg"]);
 
     ArenaAnalyticsScrollFrame.deathToggle:SetScript("OnClick", 
@@ -515,9 +525,9 @@ function ArenaAnalyticsSettingsFrame()
     );
 
 	-- Show warning when 
-    ArenaAnalyticsScrollFrame.unsavedThreshold = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 85, -310, "Unsaved games threshold before showing /reload warning.");
+    ArenaAnalyticsScrollFrame.unsavedThreshold = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", 85, -335, "Unsaved games threshold before showing /reload warning.");
     ArenaAnalyticsScrollFrame.unsavedThresholdInput = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.settingsFrame, "InputBoxTemplate")
-    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -305);
+    ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft + 5, -330);
     ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetWidth(50);
     ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetHeight(20);
     ArenaAnalyticsScrollFrame.unsavedThresholdInput:SetNumeric();
@@ -544,11 +554,10 @@ function ArenaAnalyticsSettingsFrame()
     end);
 
 	ArenaAnalyticsScrollFrame.exportBtn = ArenaAnalytics.AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.settingsFrame, "BOTTOM", 0, 22, "Export");
-    ArenaAnalyticsScrollFrame.exportBtn:SetScript("OnClick", toggleExportFrame);
+    ArenaAnalyticsScrollFrame.exportBtn:SetScript("OnClick", function() ArenaAnalytics.Export:combineExportCSV() end);
 
     -- Set export DB CSV frame layout
     createExportFrame();
-
 end
 
 local events = CreateFrame("Frame");

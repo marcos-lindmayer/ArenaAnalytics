@@ -16,7 +16,7 @@ local seasonStartAndEndTimes = {
     {1652313601, 1661731201}, -- season 4 (May 12, 2022 - Aug. 29, 2022)
     {1664841601, 1673226001}, -- season 5 (Oct. 4, 2022 - Jan. 9, 2023)
     {1673917201, 1685318401}, -- season 6 (Jan. 17, 2023 - May 29, 2023)
-    {1687219201, 1696197601}, -- season 7 (June 20, 2023 - Oct 2, 2023)
+    {1687219201, 1696363200}, -- season 7 (June 20, 2023 - Oct 3, 2023)
     {nil, nil}, -- season 8 (Unknown start)
 }
 

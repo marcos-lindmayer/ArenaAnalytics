@@ -128,6 +128,11 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     if(ArenaAnalyticsDB == nil) then
         return;
     end
+    
+    local oldTotal = (ArenaAnalyticsDB["2v2"] and #ArenaAnalyticsDB["2v2"] or 0) + (ArenaAnalyticsDB["3v3"] and #ArenaAnalyticsDB["3v3"] or 0) + (ArenaAnalyticsDB["5v5"] and #ArenaAnalyticsDB["5v5"] or 0);
+    if(oldTotal == 0) then
+        return;
+    end
 
     local brackets = { "2v2", "3v3", "5v5" }
     for _, bracket in ipairs(brackets) do
@@ -163,7 +168,6 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         end
     end
 
-    local oldTotal = (ArenaAnalyticsDB["2v2"] and #ArenaAnalyticsDB["2v2"] or 0) + (ArenaAnalyticsDB["3v3"] and #ArenaAnalyticsDB["3v3"] or 0) + (ArenaAnalyticsDB["5v5"] and #ArenaAnalyticsDB["5v5"] or 0);
     ArenaAnalytics:Print("Converted data from old database. Old total: ", oldTotal, " New total: ", #MatchHistoryDB);
 
     table.sort(MatchHistoryDB, function (k1,k2)
@@ -175,7 +179,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
     ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
 	ArenaAnalytics.updateLastSession();
-    ArenaAnalytics.AAimport:tryHide();
+    ArenaAnalytics.Import:tryHide();
 
     -- Refresh filters
     ArenaAnalytics.Filter:refreshFilters();

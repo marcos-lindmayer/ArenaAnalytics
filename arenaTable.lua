@@ -207,22 +207,22 @@ function AAtable:createDropdown(opts)
         table.insert(dropdownTable.entries, newEntry);
     end
 
-    -- TODO: Fix sorting
     -- Order Comp filter by winrate
     if (hasIcon and #dropdownTable.entries) then
         table.sort(dropdownTable.entries, function(a,b)
-            if(a and a:GetText() == "All") then
+            if(a and a:GetText() == "All" or b == nil) then
                 return true;
-            elseif(b and b:GetText() == "All") then
+            elseif(b and b:GetText() == "All" or a == nil) then
                 return false;
             end
 
-            local winrate1 = a and tonumber(a.winrate) or -1;
-            local winrate2 = b and tonumber(b.winrate) or -1;
-            if(winrate1 and winrate2) then
-                return winrate1 > winrate2;
+            local sortByTotal = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"];
+            local value1 = tonumber(sortByTotal and a.totalPlayed or a.winrate);
+            local value2 = tonumber(sortByTotal and b.totalPlayed or b.winrate);
+            if(value1 and value2) then
+                return value1 > value2;
             end
-            return winrate1 ~= nil;
+            return value1 ~= nil;
         end);
 
         -- Remove entries with lowest priority past the limit
@@ -287,42 +287,6 @@ function AAtable:createDropdown(opts)
     return dropdownTable;
 end
 
--- Returns a CSV-formatted string using MatchHistoryDB info
-function ArenaAnalytics:getCsvFromDB()
-    if(not ArenaAnalytics:hasStoredMatches()) then
-        return "No games to export!";
-    end
-
-    local CSVString = "date,map,duration,won,isRanked,team1Name,team2Name,team3Name,team4Name,team5Name,rating,mmr," .. 
-    "enemyTeam1Name,enemyTeam2Name,enemyTeam3Name,enemyTeam4Name,enemyTeam5Name,enemyRating,enemyMMR" .. "\n";
-
-    for i = 1, #MatchHistoryDB do
-        local match = MatchHistoryDB[i];
-        CSVString = CSVString
-        .. match["date"] .. ","
-        .. (match["map"] or "") .. ","
-        .. (match["duration"] or "") .. ","
-        .. (match["won"] and "1" or "0") .. ","
-        .. (match["isRanked"] and "1" or "0") .. ","
-        .. (match["team"][1]["name"] or "") .. ","
-        .. (match["team"][2] and match["team"][2]["name"] or "") .. ","
-        .. (match["team"][3] and match["team"][3]["name"] or "") .. ","
-        .. (match["team"][4] and match["team"][4]["name"] or "") .. ","
-        .. (match["team"][5] and match["team"][5]["name"] or "") .. ","
-        .. (match["rating"] or "").. ","
-        .. (match["mmr"] or "") .. ","
-        .. (match["enemyTeam"][1] and match["enemyTeam"][1]["name"] or "") .. ","
-        .. (match["enemyTeam"][2] and match["enemyTeam"][2]["name"] or "") .. ","
-        .. (match["enemyTeam"][3] and match["enemyTeam"][3]["name"] or "") .. ","
-        .. (match["enemyTeam"][4] and match["enemyTeam"][4]["name"] or "") .. ","
-        .. (match["enemyTeam"][5] and match["enemyTeam"][5]["name"] or "") .. ","
-        .. (match["enemyRating"] or "") .. ","
-        .. (match["enemyMmr"] or "") .. ","
-        .. "\n";
-    end
-    return CSVString;
-end
-
 -- Returns string frame
 function ArenaAnalyticsCreateText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text)
     local fontString = relativeFrame:CreateFontString(nil, "OVERLAY");
@@ -375,7 +339,7 @@ end
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
-
+    
     ArenaAnalyticsScrollFrame.filterComps = {}
     ArenaAnalyticsScrollFrame.filterEnemyComps = {}
 
@@ -548,13 +512,13 @@ function AAtable:tryShowimportFrame()
         if(ArenaAnalyticsScrollFrame.importFrame == nil) then
             ArenaAnalyticsScrollFrame.importFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
             ArenaAnalyticsScrollFrame.importFrame:SetPoint("CENTER")
-            ArenaAnalyticsScrollFrame.importFrame:SetSize(475, 150)
+            ArenaAnalyticsScrollFrame.importFrame:SetSize(475, 145)
             ArenaAnalyticsScrollFrame.importFrame:SetFrameStrata("HIGH");
             ArenaAnalyticsScrollFrame.importFrametitle = ArenaAnalyticsScrollFrame.importFrame:CreateFontString(nil, "OVERLAY");
             ArenaAnalyticsScrollFrame.importFrametitle:SetPoint("TOP", ArenaAnalyticsScrollFrame.importFrame, "TOP", -10, -5);
             ArenaAnalyticsScrollFrame.importFrametitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-            ArenaAnalyticsScrollFrame.importFrametitle:SetText("Import from ArenaStats");
-            ArenaAnalyticsScrollFrame.importDataText1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "CENTER", ArenaAnalyticsScrollFrame.importFrame, "TOP", 0, -45, "Paste the ArenaStats export on the text box below.");
+            ArenaAnalyticsScrollFrame.importFrametitle:SetText("Import");
+            ArenaAnalyticsScrollFrame.importDataText1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "CENTER", ArenaAnalyticsScrollFrame.importFrame, "TOP", 0, -45, "Paste the ArenaStats or ArenaAnalytics export on the text box below.");
             ArenaAnalyticsScrollFrame.importDataText2 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importFrame, "CENTER", ArenaAnalyticsScrollFrame.importFrame, "TOP", 0, -60, "Note: ArenaStats data won't be available for comp filters.");
                 
             ArenaAnalyticsScrollFrame.importDataBtn = ArenaAnalytics.AAtable:CreateButton("TOPRIGHT", ArenaAnalyticsScrollFrame.importFrame, "TOPRIGHT", -70, -80, "Import");
@@ -583,14 +547,21 @@ function AAtable:tryShowimportFrame()
                     ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
 
                     C_Timer.After(0, function()
-                        ArenaAnalyticsScrollFrame.importDataBox:Enable();
-                        ArenaImportPasteString = string.trim(table.concat(pasteBuffer));
+                        ArenaAnalytics:Log("Finalizing import paste.");
+                        ArenaImportPasteStringTable = {}
+                        tinsert(ArenaImportPasteStringTable, (string.trim(table.concat(pasteBuffer)) or ""));
+                        ArenaAnalytics:Log(#ArenaImportPasteStringTable);
+
+                        if(#ArenaImportPasteStringTable[1] > 0) then
+                            ArenaAnalyticsScrollFrame.importDataBox:Enable();
+                        end
+
                         pasteBuffer = {}
                         index = 0;
 
                         -- Update text: 1) Prevent OnChar for changing text
                         ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', nil);
-                        ArenaAnalyticsScrollFrame.importDataBox:SetText(ArenaAnalytics.AAimport:determineImportSource(ArenaImportPasteString) .. " import detected...");
+                        ArenaAnalyticsScrollFrame.importDataBox:SetText(ArenaAnalytics.Import:determineImportSource(ArenaImportPasteStringTable) .. " import detected...");
                         ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
                     end);
                 end
@@ -606,8 +577,8 @@ function AAtable:tryShowimportFrame()
 
             ArenaAnalyticsScrollFrame.importDataBtn:SetScript("OnClick", function (i) 
                 ArenaAnalyticsScrollFrame.importDataBtn:Disable();
-                ArenaAnalytics.AAimport:parseRawData(ArenaImportPasteString);
-                ArenaImportPasteString = "";
+                ArenaAnalytics.Import:parseRawData(ArenaImportPasteStringTable);
+                ArenaImportPasteStringTable = {};
             end);
 
             ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEnterPressed", function(self)
