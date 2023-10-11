@@ -32,6 +32,7 @@ function ArenaAnalyticsLoadSettings()
 	ArenaAnalyticsSettings["sessionOnly"] = false; -- Treat as an unsaved filter for now
 	ArenaAnalyticsSettings["alwaysShowDeathBg"] = ArenaAnalyticsSettings["alwaysShowDeathBg"] or false;
 	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 13;
+	ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] or true;
 end
 
 ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {

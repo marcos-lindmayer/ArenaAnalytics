@@ -207,22 +207,22 @@ function AAtable:createDropdown(opts)
         table.insert(dropdownTable.entries, newEntry);
     end
 
-    -- TODO: Fix sorting
     -- Order Comp filter by winrate
     if (hasIcon and #dropdownTable.entries) then
         table.sort(dropdownTable.entries, function(a,b)
-            if(a and a:GetText() == "All") then
+            if(a and a:GetText() == "All" or b == nil) then
                 return true;
-            elseif(b and b:GetText() == "All") then
+            elseif(b and b:GetText() == "All" or a == nil) then
                 return false;
             end
 
-            local winrate1 = a and tonumber(a.winrate) or -1;
-            local winrate2 = b and tonumber(b.winrate) or -1;
-            if(winrate1 and winrate2) then
-                return winrate1 > winrate2;
+            local sortByTotal = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"];
+            local value1 = tonumber(sortByTotal and a.totalPlayed or a.winrate);
+            local value2 = tonumber(sortByTotal and b.totalPlayed or b.winrate);
+            if(value1 and value2) then
+                return value1 > value2;
             end
-            return winrate1 ~= nil;
+            return value1 ~= nil;
         end);
 
         -- Remove entries with lowest priority past the limit
@@ -339,7 +339,7 @@ end
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
-
+    
     ArenaAnalyticsScrollFrame.filterComps = {}
     ArenaAnalyticsScrollFrame.filterEnemyComps = {}
 
