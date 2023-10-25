@@ -21,7 +21,7 @@ ArenaAnalytics.commands = {
 	end,
 	
 	["version"] = function()
-		ArenaAnalytics:Print("Current version: ", version, " (Early Access)");
+		ArenaAnalytics:Print("Current version: ", ArenaAnalytics:getVersion(), " (Early Access)");
 	end,
 	
 	["total"] = function()
@@ -48,6 +48,7 @@ ArenaAnalytics.commands = {
 			end
 		end
 		ArenaAnalytics:Print("You've spent a total of", SecondsToTime(totalDurationInArenas), "inside the arena!");
+		ArenaAnalytics:Print("Average arena duration: ", SecondsToTime(math.floor(totalDurationInArenas / #MatchHistoryDB)));
 	end,
 
 	-- Debug command to 
@@ -102,6 +103,14 @@ ArenaAnalytics.commands = {
 			ArenaAnalytics.unsavedArenaCount = 0;
 		end
 	end,
+
+	["test"] = function()
+		ArenaAnalytics:Log("Testing...");
+		-- TEMP: Testing
+		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
+		local status = GetBattlefieldStatus(1);
+		ArenaAnalytics:Log(status);
+	end,	
 };
 
 local function HandleSlashCommands(str)	
@@ -253,11 +262,15 @@ function ArenaAnalytics:init(event, name, ...)
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
 	end
 	
-	version = GetAddOnMetadata("ArenaAnalytics", "Version") or 99999;
-	local versionText = version ~= 99999 and " (Version: " .. version .. ")" or ""
+	local version = ArenaAnalytics:getVersion();
+	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", versionText);
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
+
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
+	if(not successfulRequest) then
+		ArenaAnalytics:Log("Failed to register Addon Message Prefix: 'ArenaAnalytics'!")
+	end
 
 	----------------------------------
 	-- Register Slash Commands

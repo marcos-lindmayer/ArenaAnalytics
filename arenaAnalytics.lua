@@ -81,9 +81,7 @@ local currentArena = {
 	["ended"] = false,
 	["endedProperly"] = false,
 	["wonByPlayer"] = nil,
-	["firstDeath"] = nil,
-	["pendingSync"] = false,
-	["pendingSyncData"] = nil
+	["firstDeath"] = nil
 }
 
 -- Reset current arena values
@@ -113,8 +111,10 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["endedProperly"] = false;
 	currentArena["wonByPlayer"] = nil;
 	currentArena["firstDeath"] = nil;
-	currentArena["pendingSync"] = false;
-	currentArena["pendingSyncData"] = nil;
+end
+
+function AAmatch:getCurrentArena()
+	return currentArena;
 end
 
 function ArenaAnalytics:recomputeSessionsForMatchHistoryDB()
@@ -192,8 +192,6 @@ function ArenaAnalytics:getLastSession()
 		if(match and tonumber(match["session"])) then
 			local session = match["session"];
 			local expired = (time() - match["date"]) > 3600;
-
-			ArenaAnalytics:Log("Get last session: ", session, " ", expired);
 			return session, expired;
 		end
 	end
@@ -312,8 +310,6 @@ function AAmatch:insertArenaOnTable()
 		return (sameClass and a["name"] < b["name"]) or a["class"] < b["class"]
 	end);
 
-	ArenaAnalytics.DataSync:requestMissingData(currentArena);
-
 	-- Get arena comp for each team
 	local bracket = ArenaAnalytics:getBracketFromTeamSize(currentArena["size"]);
 	currentArena["comp"] = AAmatch:getArenaComp(currentArena["party"], bracket);
@@ -368,11 +364,6 @@ function AAmatch:insertArenaOnTable()
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
 
 	ArenaAnalytics:Print("Arena recorded!");
-	
-	-- This may update match data at a delay
-	if (currentArena["pendingSync"]) then
-		ArenaAnalytics.DataSync:handleSync(currentArena["pendingSyncData"])
-	end
 	
 	-- Refresh and reset current arena
 	AAmatch:resetCurrentArenaValues();
@@ -609,6 +600,42 @@ function AAmatch:getLastRating(teamSize)
 	return 0;
 end
 
+local function isArenaPreparationStateActive()
+	local auraIndex = 1;
+	local aura = UnitAura("player", auraIndex)
+	
+	if(aura ~= nil) then
+		repeat
+			local auraID = tonumber(select(10, UnitAura("player", auraIndex)));
+			ArenaAnalytics:Log("Aura: ", auraID);
+			if(auraID ~= nil and (auraID == 32728 or auraID == 32727)) then
+				return true;
+			end
+
+			auraIndex = auraIndex + 1;
+			aura = UnitAura("player", auraIndex);
+		until (aura == nil)
+	end
+
+	return false;
+end
+
+function AAmatch:getArenaStatus()
+	if(not IsActiveBattlefieldArena()) then
+		return "None";
+	end
+
+	if(GetBattlefieldWinner() ~= nil) then
+		return "Ended";
+	end
+
+	if(isArenaPreparationStateActive()) then
+		return "Preparation";
+	end
+
+	return "Active";
+end
+
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
 function AAmatch:trackArena(...)
@@ -644,11 +671,9 @@ function AAmatch:trackArena(...)
 		local spec = AAmatch:getPlayerSpec();
 		local player = AAmatch:createPlayerTable(GUID, name, deaths, faction, race, class, filename, damageDone, healingDone, spec);
 		table.insert(currentArena["party"], player);
-
-		if (spec ~= nil) then
-			-- TODO (v0.4.0) Broadcast spec to party
-		end
 	end
+
+	ArenaAnalytics.DataSync:sendMatchGreetingMessage();
 	
 	-- Not using mapName since string is lang based (unreliable) 
 	-- TODO update to WOTLK values and add backwards compatibility
@@ -879,16 +904,11 @@ local function handleEvents(prefix, eventType, ...)
 			AAmatch:handleArenaExited();
 		end
 	end
-
-	if (eventType == "CHAT_MSG_ADDON" and ... == "ArenaAnalytics") then
-		ArenaAnalytics.DataSync:handleSync(...);
-	end
 end
 
 -- Creates "global" events
 function AAmatch:EventRegister()
 	eventTracker["UPDATE_BATTLEFIELD_STATUS"] = eventFrame:RegisterEvent("UPDATE_BATTLEFIELD_STATUS");
 	eventTracker["ZONE_CHANGED_NEW_AREA"] = eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA");
-	eventTracker["CHAT_MSG_ADDON"] = eventFrame:RegisterEvent("CHAT_MSG_ADDON");
 	eventFrame:SetScript("OnEvent", handleEvents);
 end

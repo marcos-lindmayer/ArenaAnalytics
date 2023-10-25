@@ -9,7 +9,6 @@
 
 arenaConstants.lua
 arenaAnalytics.lua
-ArenaDataSync.lua
 ArenaFilter.lua
 ArenaImportExport.lua
 iconClass.lua

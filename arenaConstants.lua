@@ -53,112 +53,143 @@ end
 -- Addon specific spec IDs { ID, "class|spec", "class", "spec", priority value } (ID must never change to preserve data validity, priority is a runtime check)
 local addonSpecializationIDs = {
     -- Druid
+    ["Druid"] = 0,
     ["Druid|Restoration"] = 1,
     ["Druid|Feral"] = 2,
     ["Druid|Balance"] = 3,
     
     -- Paladin
+    ["Paladin"] = 10,
     ["Paladin|Holy"] = 11,
     ["Paladin|Protection"] = 12,
     ["Paladin|Preg"] = 13,
     ["Paladin|Retribution"] = 14,
     
     -- Shaman
+    ["Shaman"] = 20,
     ["Shaman|Restoration"] = 21,
     ["Shaman|Elemental"] = 22,
     ["Shaman|Enhancement"] = 23,
 
     -- Death Knight
+    ["Death Knight"] = 30,
     ["Death Knight|Unholy"] = 31,
     ["Death Knight|Frost"] = 32,
     ["Death Knight|Blood"] = 33,
 
     -- Hunter
+    ["Hunter"] = 40,
     ["Hunter|Beast Mastery"] = 41,
     ["Hunter|Marksmanship"] = 42,
     ["Hunter|Survival"] = 43,
 
     -- Mage
+    ["Mage"] = 50,
     ["Mage|Frost"] = 51,
     ["Mage|Fire"] = 52,
     ["Mage|Arcane"] = 53,
 
     -- Rogue
+    ["Rogue"] = 60,
     ["Rogue|Subtlety"] = 61,
     ["Rogue|Assassination"] = 62,
     ["Rogue|Combat"] = 63,
     ["Rogue|Outlaw"] = 64,
 
     -- Warlock
+    ["Warlock"] = 70,
     ["Warlock|Affliction"] = 71,
     ["Warlock|Destruction"] = 72,
     ["Warlock|Demonology"] = 73,
 
     -- Warrior
+    ["Warrior"] = 80,
     ["Warrior|Protection"] = 81,
     ["Warrior|Arms"] = 82,
     ["Warrior|Fury"] = 83,
     
     -- Priest
+    ["Priest"] = 90,
     ["Priest|Discipline"] = 91,
     ["Priest|Holy"] = 92,
     ["Priest|Shadow"] = 93,
 }
 function Constants:getAddonSpecializationID(spec)
     if spec == nil then return nil end;
-    return addonSpecializationIDs[spec] or nil;
+    return tonumber(addonSpecializationIDs[spec]);
+end
+function Constants:getAddonClassID(class)
+    if class == nil then return nil end;
+    local classID = tonumber(addonSpecializationIDs[class]);
+
+    if(classID) then
+        classID = math.floor((classID / 10) * 10);
+        ArenaAnalytics:Log("Class ID: ", classID);
+    end
+
+    return classID;
 end
 
 -- ID to class and spec
 local classAndSpecByID = {
     -- Druid
+    [0] = {nil, "Druid", nil},
     [1] = {"Druid|Restoration", "Druid", "Restoration"},
     [2] = {"Druid|Feral", "Druid", "Feral"},
     [3] = {"Druid|Balance", "Druid", "Balance"},
     
     -- Paladin
+    [10] = {nil, "Paladin", nil},
     [11] = {"Paladin|Holy", "Paladin", "Holy"},
     [12] = {"Paladin|Protection", "Paladin", "Protection"},
     [13] = {"Paladin|Preg", "Paladin", "Preg"},
     [14] = {"Paladin|Retribution", "Paladin", "Retribution"},
     
     -- Shaman
+    [20] = {nil, "Shaman", nil},
     [21] = {"Shaman|Restoration", "Shaman", "Restoration"},
     [22] = {"Shaman|Elemental", "Shaman", "Elemental"},
     [23] = {"Shaman|Enhancement", "Shaman", "Enhancement"},
 
     -- Death Knight
+    [30] = {nil, "Death Knight", nil},
     [31] = {"Death Knight|Unholy", "Death Knight", "Unholy"},
     [32] = {"Death Knight|Frost", "Death Knight", "Frost"},
     [33] = {"Death Knight|Blood", "Death Knight", "Blood"},
 
     -- Hunter
+    [40] = {nil, "Hunter", nil},
     [41] = {"Hunter|Beast Mastery", "Hunter", "Beast Mastery"},
     [42] = {"Hunter|Marksmanship", "Hunter", "Marksmanship"},
     [43] = {"Hunter|Survival", "Hunter", "Survival"},
 
     -- Mage
+    [50] = {nil, "Mage", nil},
     [51] = {"Mage|Frost", "Mage", "Frost"},
     [52] = {"Mage|Fire", "Mage", "Fire"},
     [53] = {"Mage|Arcane", "Mage", "Arcane"},
 
     -- Rogue
+    [60] = {nil, "Rogue", nil},
     [61] = {"Rogue|Subtlety", "Rogue", "Subtlety"},
     [62] = {"Rogue|Assassination", "Rogue", "Assassination"},
     [63] = {"Rogue|Combat", "Rogue", "Combat"},
     [64] = {"Rogue|Outlaw", "Rogue", "Outlaw"},
 
     -- Warlock
+    [70] = {nil, "Warlock", nil},
     [71] = {"Warlock|Affliction", "Warlock", "Affliction"},
     [72] = {"Warlock|Destruction", "Warlock", "Destruction"},
     [73] = {"Warlock|Demonology", "Warlock", "Demonology"},
 
     -- Warrior
+    [80] = {nil, "Warrior", nil},
     [81] = {"Warrior|Protection", "Warrior", "Protection"},
     [82] = {"Warrior|Arms", "Warrior", "Arms"},
     [83] = {"Warrior|Fury", "Warrior", "Fury"},
     
     -- Priest
+    [90] = {nil, "Priest", nil},
     [91] = {"Priest|Discipline", "Priest", "Discipline"},
     [92] = {"Priest|Holy", "Priest", "Holy"},
     [93] = {"Priest|Shadow", "Priest", "Shadow"},
