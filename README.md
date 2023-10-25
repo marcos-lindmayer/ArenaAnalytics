@@ -9,7 +9,8 @@ Hydra, Itrulia, and Permok.
 *Inspired by ArenaStatsTBC.*
 Credit to Gladdy for spec spells and translations tables.
 
-Open layout with */aa*
+Open layout with */aa* or */arenaanalytics*
+Optional keybind to toggle set in Addons category of the game keybindings menu.
 
 Player Search functionality:
 The search field takes in a comma separated list of players.

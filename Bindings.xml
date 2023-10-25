@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="Toggle ArenaAnalytics" category="ADDONS">
+        ArenaAnalyticsToggle();
+    </Binding>
+</Bindings>

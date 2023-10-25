@@ -21,7 +21,7 @@ local wins, sessionGames, sessionWins = 0, 0, 0;
 local selectedGames = {}
 
 -- Toggles addOn view/hide
-function AAtable:Toggle()
+function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         AAtable:ClearSelectedMatches();
         AAtable:RefreshLayout();

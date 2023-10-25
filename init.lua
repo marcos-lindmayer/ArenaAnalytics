@@ -4,6 +4,10 @@ local ratedUpdateEvent = nil;
 
 local version = "";
 
+function ArenaAnalyticsToggle()
+	ArenaAnalytics:Toggle();
+end
+
 --------------------------------------
 -- Custom Slash Command
 --------------------------------------
@@ -103,7 +107,7 @@ ArenaAnalytics.commands = {
 local function HandleSlashCommands(str)	
 	if (#str == 0) then	
 		-- User just entered "/aa" with no additional args.
-		ArenaAnalytics.AAtable.Toggle();
+		ArenaAnalytics:Toggle();
 		return;		
 	end	
 	
@@ -237,7 +241,7 @@ local function createMinimapButton()
 	
 	-- Control clicks
 	minibtn:SetScript("OnClick", function()
-		ArenaAnalytics.AAtable.Toggle()
+		ArenaAnalytics:Toggle();
 	end)
 end
 
