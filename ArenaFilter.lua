@@ -26,7 +26,7 @@ Filter.currentFilters = {
 function Filter:changeFilter(args)
     ArenaAnalytics.AAtable:ClearSelectedMatches()
     local selectedFilter = args:GetAttribute("value")
-    local currentFilter = args:GetAttribute("dropdownTable")
+    local currentFilter = args:GetAttribute("dropdown")
     local filterName = currentFilter.filterName
 
     currentFilter.selected:SetText(selectedFilter);
@@ -52,8 +52,8 @@ function Filter:changeFilter(args)
         Filter.currentFilters[filterName] = selectedFilter;
     end
 
-    if currentFilter.dropdownList:IsShown() then   
-        currentFilter.dropdownList:Hide();
+    if currentFilter.list:IsShown() then   
+        currentFilter.list:Hide();
     end
     
     ArenaAnalytics:Log("Change Filter: ", filterName, " to: ", selectedFilter);
