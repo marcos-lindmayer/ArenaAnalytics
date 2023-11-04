@@ -18,12 +18,10 @@ end
 -- Filtered stats
 local wins, sessionGames, sessionWins = 0, 0, 0;
 
-local selectedGames = {}
-
 -- Toggles addOn view/hide
 function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
-        AAtable:ClearSelectedMatches();
+        ArenaAnalytics.Selection:ClearSelectedMatches();
         AAtable:RefreshLayout();
 
         AAtable:closeFilterDropdowns();
@@ -45,17 +43,6 @@ function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOff
     btn:SetHighlightFontObject("GameFontHighlight");
     btn:SetDisabledFontObject("GameFontDisableSmall");
     return btn;
-end
-
--- Clears current selection of matches
-function AAtable:ClearSelectedMatches()
-    local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame)
-    for i = 1, #buttons do
-        buttons[i]:SetAttribute("clicked", false)
-        buttons[i].Tooltip:Hide();
-    end
-    selectedGames = {}
-    AAtable:UpdateSelected()
 end
 
 -- Returns buttons for filter lists
@@ -298,16 +285,32 @@ end
 
 function AAtable:UpdateSelected()
     local newSelectedText = ""
-    local selectedGamesCount = 0;
-    local selectedWins = 0;
-    for index in pairs(selectedGames) do 
-        if(selectedGames[index]) then
-            selectedGamesCount = selectedGamesCount + 1 
-            if (selectedGames[index]:GetAttribute("won")) then
-                selectedWins = selectedWins + 1;
-            end 
+    local selectedGamesCount, selectedWins = 0, 0;
+    
+    local deselectedCache = ArenaAnalytics.Selection.latestDeselect;
+    local selectedTables = { ArenaAnalytics.Selection.latestMultiSelect, ArenaAnalytics.Selection.selectedGames }
+
+    -- Merge the selected tables to prevent duplicates, excluding deselected
+    local uniqueSelected = {}
+    for _, selectedTable in ipairs(selectedTables) do
+        for index in pairs(selectedTable) do 
+            if (not deselectedCache[index]) then
+                uniqueSelected[index] = true;
+            end
         end
     end
+
+    for index in pairs(uniqueSelected) do
+        if(ArenaAnalytics.filteredMatchHistory[index]) then
+            selectedGamesCount = selectedGamesCount + 1;
+            if (ArenaAnalytics.filteredMatchHistory[index]["won"]) then
+                selectedWins = selectedWins + 1;
+            end
+        else
+            ArenaAnalytics:Log("Debug: Updating selected found index: ", index, " not found in filtered match history!")
+        end
+    end
+
     if (selectedGamesCount > 0) then
         local winrate = math.floor(selectedWins * 100 / selectedGamesCount)
         local winsColoured =  "|cff00cc66" .. selectedWins .. "|r";
@@ -408,17 +411,17 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterBracketDropdown = AAtable:createDropdown(arenaBracket_opts)
     ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);
 
-    local filterMap_opts = {
-        ["name"] ='Filter_Map',
-        ["title"] ='Map',
-        ["entries"] = {"All" ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena', 'Dalaran Arena'},
-        ["defaultVal"] ="All"
-    }
+--    local filterMap_opts = {
+--        ["name"] ='Filter_Map',
+--        ["title"] ='Map',
+--        ["entries"] = {"All" ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena', 'Dalaran Arena'},
+--        ["defaultVal"] ="All"
+--    }
     
     --ArenaAnalyticsScrollFrame.filterMapDropdown = AAtable:createDropdown(filterMap_opts)
     --ArenaAnalyticsScrollFrame.filterMapDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterBracketDropdown, "RIGHT", 15, 0);
 
-    AAtable:forceCompFilterRefresh();
+    --AAtable:forceCompFilterRefresh();
 
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
     ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
@@ -462,7 +465,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 10, "Clear Selected");
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(110)
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
-    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () AAtable:ClearSelectedMatches() end);
+    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () ArenaAnalytics.Selection:ClearSelectedMatches() end);
     
     ArenaAnalyticsScrollFrame.unsavedWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -160, 13, unsavedWarningText);
     ArenaAnalyticsScrollFrame.unsavedWarning:Hide();
@@ -501,13 +504,14 @@ function AAtable:OnLoad()
 
     ArenaAnalytics.Filter:refreshFilters();
 
-    ArenaAnalyticsScrollFrame.filterBtn_MoreOptions = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.selected, "RIGHT", 10, 0, "More Filters");
-    ArenaAnalyticsScrollFrame.filterBtn_MoreOptions:SetWidth(90);
-    ArenaAnalyticsScrollFrame.filterBtn_MoreOptions:SetScript("OnClick", function() ArenaAnalytics:Log("Show more filters!") end);
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame, "RIGHT", 10, 0, "More Filters");
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown, "RIGHT", 10, 0);
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetWidth(90);
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetScript("OnClick", function() ArenaAnalytics:Log("Show more filters!") end);
 
-    ArenaAnalyticsScrollFrame.filterBtn_MoreOptions = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.filterBtn_MoreOptions, "RIGHT", 10, 0, "Clear");
-    ArenaAnalyticsScrollFrame.filterBtn_MoreOptions:SetWidth(50);
-    ArenaAnalyticsScrollFrame.filterBtn_MoreOptions:SetScript("OnClick", function() ArenaAnalytics:Log("Clear Filter") end);
+    ArenaAnalyticsScrollFrame.filterBtn_ClearFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.filterBtn_MoreFilters, "RIGHT", 10, 0, "Clear");
+    ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetWidth(50);
+    ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() ArenaAnalytics:Log("Clear Filter") end);
     
     AAtable:OnShow();
 end
@@ -752,7 +756,7 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
     end
 
     local matchData = { entry:GetChildren() };
-    local visible = entry:GetAttribute("clicked") or entry:GetAttribute("hovered");
+    local visible = entry:GetAttribute("selected") or entry:GetAttribute("hovered");
 
     for i = 1, #matchData do
         if (matchData[i].specOverlay) then
@@ -852,6 +856,10 @@ function AAtable:forceCompFilterRefresh(keepVisibility)
         if(wasEnemyCompFilterVisible == true) then
             ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Show();
         end
+    end
+
+    if(ArenaAnalyticsScrollFrame.filterBtn_MoreFilters ~= nil) then
+        ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown, "RIGHT", 10, 0);
     end
 end
 
@@ -963,9 +971,6 @@ local function ratingToText(rating, delta)
     return nil;
 end
 
-local isRefreshing = false;
-local hasPendingRefresh = true;
-
 -- Refreshes matches table
 function AAtable:RefreshLayout()
     if(not hasLoaded) then
@@ -1012,12 +1017,13 @@ function AAtable:RefreshLayout()
             
             button:SetAttribute("won", match["won"]);
 
-            if (selectedGames[matchIndex]) then
-                button:SetAttribute("clicked", true)
-                button.Tooltip:Show()
+            local isSelected = ArenaAnalytics.Selection:isMatchSelected(matchIndex);
+            button:SetAttribute("selected", isSelected);
+            if(isSelected) then
+                button.Tooltip:Show();
+                AAtable:ToggleSpecsAndDeathOverlay(button);
             else
-                button:SetAttribute("clicked", false)
-                button.Tooltip:Hide()
+                button.Tooltip:Hide();
             end
 
             button:SetScript("OnEnter", function(args)
@@ -1030,20 +1036,15 @@ function AAtable:RefreshLayout()
                 AAtable:ToggleSpecsAndDeathOverlay(args);
             end);
             
-            button:SetScript("OnClick", function(args)
-                if (args:GetAttribute("clicked")) then
-                    args:SetAttribute("clicked", false)
-                    selectedGames[matchIndex] = nil;
-                    args.Tooltip:Hide();
-                    AAtable:UpdateSelected();
-                    AAtable:ToggleSpecsAndDeathOverlay(args);
-                else
-                    args:SetAttribute("clicked", true)
-                    args.Tooltip:Show();
-                    selectedGames[matchIndex] = args;
-                    AAtable:UpdateSelected();
-                    AAtable:ToggleSpecsAndDeathOverlay(args);
+            button:RegisterForClicks("LeftButtonDown", "RightButtonDown", "LeftButtonUp", "RightButtonUp");
+            button:SetScript("OnClick", function(args, key, down)
+                if down then
+                    ArenaAnalytics.Selection:handleMatchEntryClicked(key, false, matchIndex);
                 end
+            end);
+
+            button:SetScript("OnDoubleClick", function(args, key)
+                ArenaAnalytics.Selection:handleMatchEntryClicked(key, true, matchIndex);
             end);
 
             AAtable:ToggleSpecsAndDeathOverlay(button);

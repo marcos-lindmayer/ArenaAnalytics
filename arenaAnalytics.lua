@@ -33,6 +33,8 @@ function ArenaAnalyticsLoadSettings()
 	ArenaAnalyticsSettings["alwaysShowDeathBg"] = ArenaAnalyticsSettings["alwaysShowDeathBg"] or false;
 	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 13;
 	ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] or true;
+	ArenaAnalyticsSettings["stickySelection"] = ArenaAnalyticsSettings["stickySelection"] or true;
+
 end
 
 ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {
@@ -183,6 +185,15 @@ function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
     end
 
     return true;
+end
+
+-- Returns the session for a given match index
+function ArenaAnalytics:getMatchSessionByIndex(matchIndex)
+	local match = MatchHistoryDB[matchIndex];
+	if (match) then
+		return tonumber(match["session"]);
+	end
+	return nil;
 end
 
 -- Returns the whether last session and whether it has expired by time

@@ -4,27 +4,32 @@ ArenaAnalytics.Filter = {}
 local Filter = ArenaAnalytics.Filter;
 
 -- Currently applied filters
-Filter.currentFilters = {
-    ["Filter_Search"] = { 
-        ["raw"] = "",
-        ["data"] = { }
-    },
-    ["Filter_Season"] = "All",
-    ["Filter_Map"] = "All", 
-    ["Filter_Bracket"] = "All", 
-    ["Filter_Comp"] = {
-        ["data"] = "All",
-        ["display"] = "All"
-    },
-    ["Filter_EnemyComp"] = {
-        ["data"] = "All",
-        ["display"] = "All"
-    }
-};
+Filter.currentFilters = {}
+
+function Filter:resetFilters()
+    Filter.currentFilters = {
+        ["Filter_Search"] = { 
+            ["raw"] = "",
+            ["data"] = { }
+        },
+        ["Filter_Season"] = "All",
+        ["Filter_Map"] = "All", 
+        ["Filter_Bracket"] = "All", 
+        ["Filter_Comp"] = {
+            ["data"] = "All",
+            ["display"] = "All"
+        },
+        ["Filter_EnemyComp"] = {
+            ["data"] = "All",
+            ["display"] = "All"
+        }
+    };
+end
+Filter:resetFilters();
 
 -- Changes the current filter upon selecting one from its dropdown
 function Filter:changeFilter(args)
-    ArenaAnalytics.AAtable:ClearSelectedMatches()
+    ArenaAnalytics.Selection:ClearSelectedMatches()
     local selectedFilter = args:GetAttribute("value")
     local currentFilter = args:GetAttribute("dropdown")
     local filterName = currentFilter.filterName
@@ -417,6 +422,6 @@ function Filter:refreshFilters()
         end
     end
 
-    ArenaAnalytics.AAtable:forceCompFilterRefresh();
+    -- This will also call AAtable:forceCompFilterRefresh()
     ArenaAnalytics.AAtable:handleArenaCountChanged();
 end
