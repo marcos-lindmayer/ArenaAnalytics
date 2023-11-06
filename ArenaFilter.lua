@@ -28,13 +28,14 @@ end
 Filter:resetFilters();
 
 -- Changes the current filter upon selecting one from its dropdown
-function Filter:changeFilter(args)
-    ArenaAnalytics.Selection:ClearSelectedMatches()
-    local selectedFilter = args:GetAttribute("value")
-    local currentFilter = args:GetAttribute("dropdown")
-    local filterName = currentFilter.filterName
+function Filter:changeFilter(dropdown, value, tooltip)
+    ArenaAnalytics.Selection:ClearSelectedMatches();
+    
+    --local selectedFilter = args:GetAttribute("value")
+    --local currentFilter = args:GetAttribute("dropdown")
+    local filterName = dropdown.filterName
 
-    currentFilter.selected:SetText(selectedFilter);
+    dropdown.selected:SetText(value);
 
     if (filterName == "Filter_Bracket") then
         Filter.currentFilters["Filter_Comp"] = {
@@ -48,20 +49,19 @@ function Filter:changeFilter(args)
     end
     
     if (filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
-        local tooltip = args:GetAttribute("tooltip");
         Filter.currentFilters[filterName] = {
             ["data"] = tooltip;
-            ["display"] = tooltip ~= "All" and ArenaAnalytics.AAtable:getCompIconString(args:GetAttribute("tooltip")) or "All";
+            ["display"] = tooltip ~= "All" and ArenaAnalytics.AAtable:getCompIconString(tooltip) or "All";
         }
     else
-        Filter.currentFilters[filterName] = selectedFilter;
+        Filter.currentFilters[filterName] = value;
     end
 
-    if currentFilter.list:IsShown() then   
-        currentFilter.list:Hide();
+    if dropdown.list:IsShown() then   
+        dropdown.list:Hide();
     end
     
-    ArenaAnalytics:Log("Change Filter: ", filterName, " to: ", selectedFilter);
+    ArenaAnalytics:Log("Change Filter: ", filterName, " to: ", value);
     Filter:refreshFilters();
 end
 

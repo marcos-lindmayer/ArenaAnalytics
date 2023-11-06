@@ -55,8 +55,7 @@ local function createDropdownButton(info, dropdown, filter, width)
     button:SetHighlightFontObject("GameFontHighlight");
     button:SetAttribute("value", info.text);
     button:SetAttribute("dropdown", dropdown);
-    button:SetScript("OnClick", function(args) ArenaAnalytics.Filter:changeFilter(args) end);
-
+    
     if (info.tooltip ~= "") then
         -- Comp filter (Has icons)
         button:SetAttribute("tooltip", info.tooltip);
@@ -70,6 +69,8 @@ local function createDropdownButton(info, dropdown, filter, width)
     else
         button:SetText(info.text);
     end
+
+    button:SetScript("OnClick", function(args) ArenaAnalytics.Filter:changeFilter(dropdown, info.text, info.tooltip) end);
 
     return button;
 end
@@ -269,6 +270,10 @@ function AAtable:createDropdown(opts)
         end
     end);
 
+    dropdown.reset = function(self)
+        ArenaAnalytics.Filter:changeFilter(dropdown, default_val);
+    end
+
     dropdown.list:Hide();
 
     return dropdown;
@@ -465,7 +470,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 10, "Clear Selected");
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(110)
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
-    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function () ArenaAnalytics.Selection:ClearSelectedMatches() end);
+    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function() ArenaAnalytics.Selection:ClearSelectedMatches() end);
     
     ArenaAnalyticsScrollFrame.unsavedWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -160, 13, unsavedWarningText);
     ArenaAnalyticsScrollFrame.unsavedWarning:Hide();
@@ -511,7 +516,16 @@ function AAtable:OnLoad()
 
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.filterBtn_MoreFilters, "RIGHT", 10, 0, "Clear");
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetWidth(50);
-    ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() ArenaAnalytics:Log("Clear Filter") end);
+
+    -- Clear all filters
+    ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() 
+        ArenaAnalytics:Log("Clearing filters..");
+
+        ArenaAnalyticsScrollFrame.filterBracketDropdown:reset();
+        AAtable:forceCompFilterRefresh();
+               
+        ArenaAnalytics.Filter:refreshFilters();
+    end);
     
     AAtable:OnShow();
 end

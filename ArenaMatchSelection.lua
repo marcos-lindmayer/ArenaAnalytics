@@ -143,13 +143,14 @@ local function selectSessionByIndex(index, autoCommit, isDeselect)
     end
 end 
 
--- TODO: Move to ArenaMatchSelection.lua
 -- Clears current selection of matches
 function Selection:ClearSelectedMatches()
     Selection.selectedGames = {}
     Selection.latestMultiSelect = {}
-    resetLatestSelection();
+    resetLatestSelection(false, true);
 
+    -- Update UI
+    ArenaAnalytics.AAtable:UpdateSelected();
     ArenaAnalytics.AAtable:RefreshLayout();
 end
 
