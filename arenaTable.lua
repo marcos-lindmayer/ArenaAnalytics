@@ -53,9 +53,9 @@ local function createDropdownButton(info, dropdown, filter, width)
     button:SetPoint("CENTER", dropdown.list);
     button:SetNormalFontObject("GameFontHighlight");
     button:SetHighlightFontObject("GameFontHighlight");
-    button:SetAttribute("value", info.text);
     button:SetAttribute("dropdown", dropdown);
     
+
     if (info.tooltip ~= "") then
         -- Comp filter (Has icons)
         button:SetAttribute("tooltip", info.tooltip);
@@ -70,7 +70,9 @@ local function createDropdownButton(info, dropdown, filter, width)
         button:SetText(info.text);
     end
 
-    button:SetScript("OnClick", function(args) ArenaAnalytics.Filter:changeFilter(dropdown, info.text, info.tooltip) end);
+    button:SetScript("OnClick", function(args) 
+        ArenaAnalytics.Filter:changeFilter(dropdown, info.text, info.tooltip);
+    end);
 
     return button;
 end
@@ -139,16 +141,16 @@ function AAtable:createDropdown(opts)
     dropdown.list = CreateFrame("Frame", dropdown_name .. "_list", dropdown)
     dropdown:SetSize(500, 25);
     dropdown.list:SetPoint("TOP", dropdown, "BOTTOM")
-    dropdown.title = dropdown:CreateFontString(nil, 'OVERLAY')
+    dropdown.title = dropdown:CreateFontString(nil, "OVERLAY")
     dropdown.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+    dropdown.title:SetPoint("TOPLEFT", 0, 15)
     isEnemyComp, _ = string.find(opts["name"]:lower(), "enemy")
     dropdown.filterName = filterName;
     
-    dropdown.title:SetPoint("TOPLEFT", 0, 15)
 
     dropdown.entries = {}
     
-    for _, entry in pairs(entries) do 
+    for _, entry in ipairs(entries) do 
         local text = entry["comp"] or entry;
         dropdown.title:SetText(text);
         local text_width = dropdown.title:GetStringWidth() + 50
@@ -173,7 +175,7 @@ function AAtable:createDropdown(opts)
                 info.text = totalPlayed .. " " .. info.text .. " - " .. winrate .. "%";
 
                 -- Make a temp font string to calculate width of the left and right added strings.
-                local tmpWidthString = dropdown:CreateFontString(nil, 'OVERLAY')
+                local tmpWidthString = dropdown:CreateFontString(nil, "OVERLAY")
                 tmpWidthString:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
                 tmpWidthString:SetText("- " .. winrate .. "%");
                 winrateWidth = tmpWidthString:GetStringWidth();
@@ -181,7 +183,7 @@ function AAtable:createDropdown(opts)
                 totalPlayedWidth = tmpWidthString:GetStringWidth();
                 tmpWidthString = nil;
 
-                info.textOffsetX = (winrateWidth - totalPlayedWidth) / 2
+                info.textOffsetX = (winrateWidth - totalPlayedWidth) / 2;
             else
                 info.tooltip = "All";
             end
@@ -375,28 +377,28 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
     ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(513);
 
-    ArenaAnalyticsScrollFrame.searchTitle = ArenaAnalyticsScrollFrame.searchBox:CreateFontString(nil, 'OVERLAY');
+    ArenaAnalyticsScrollFrame.searchTitle = ArenaAnalyticsScrollFrame.searchBox:CreateFontString(nil, "OVERLAY");
     ArenaAnalyticsScrollFrame.searchTitle:SetPoint("TOPLEFT", -4, 0);
     ArenaAnalyticsScrollFrame.searchTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
     ArenaAnalyticsScrollFrame.searchTitle:SetText("Player Search");
 
-    ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEnterPressed', function()
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEnterPressed", function()
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
     end);
 
-    ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEscapePressed', function() 
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEscapePressed", function() 
         ArenaAnalyticsScrollFrame.searchBox:SetText(ArenaAnalytics.Filter.currentFilters["Filter_Search"]["raw"]);
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
     end);
         
-    ArenaAnalyticsScrollFrame.searchBox:SetScript('OnTextSet', function(self) 
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextSet", function(self) 
         if(self:GetText() == "" and ArenaAnalytics.Filter.currentFilters["Filter_Search"]["raw"] ~= "") then
             ArenaAnalytics.Filter:commitSearch("");
             self:SetText("");
         end
     end);
         
-    ArenaAnalyticsScrollFrame.searchBox:SetScript('OnEditFocusLost', function() 
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEditFocusLost", function() 
         -- Clear white spaces
         local search = ArenaAnalyticsScrollFrame.searchBox:GetText();
 
@@ -407,26 +409,14 @@ function AAtable:OnLoad()
     end);
 
     local arenaBracket_opts = {
-        ["name"] ='Filter_Bracket',
-        ["title"] ='Bracket',
-        ["entries"] = {"All" ,'2v2', '3v3', '5v5' },
+        ["name"] ="Filter_Bracket",
+        ["title"] ="Bracket",
+        ["entries"] = { "All", "2v2", "3v3", "5v5" },
         ["defaultVal"] ="All", 
     }
 
     ArenaAnalyticsScrollFrame.filterBracketDropdown = AAtable:createDropdown(arenaBracket_opts)
     ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);
-
---    local filterMap_opts = {
---        ["name"] ='Filter_Map',
---        ["title"] ='Map',
---        ["entries"] = {"All" ,'Nagrand Arena' ,'Ruins of Lordaeron', 'Blade Edge Arena', 'Dalaran Arena'},
---        ["defaultVal"] ="All"
---    }
-    
-    --ArenaAnalyticsScrollFrame.filterMapDropdown = AAtable:createDropdown(filterMap_opts)
-    --ArenaAnalyticsScrollFrame.filterMapDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterBracketDropdown, "RIGHT", 15, 0);
-
-    --AAtable:forceCompFilterRefresh();
 
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
     ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
@@ -492,6 +482,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:SetScript("OnHide", function()
 		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
 		ArenaAnalyticsScrollFrame.resetBtn:Disable();
+        CloseDropDownMenus();
     end);
 
     ArenaAnalyticsScrollFrame:SetScript("OnShow", function()
@@ -512,7 +503,16 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame, "RIGHT", 10, 0, "More Filters");
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown, "RIGHT", 10, 0);
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetWidth(90);
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetScript("OnClick", function() ArenaAnalytics:Log("Show more filters!") end);
+
+    -- TODO: Add active filters count text above "More Filters" button.
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title = ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:CreateFontString(nil, "OVERLAY")
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetPoint("TOP", 0, 15);
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetText("");
+
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetScript("OnClick", function()
+        ToggleDropDownMenu(1, nil, ArenaAnalytics.MoreFilters.dropdown, "cursor", 3, -10);
+    end);
 
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.filterBtn_MoreFilters, "RIGHT", 10, 0, "Clear");
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetWidth(50);
@@ -521,10 +521,15 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() 
         ArenaAnalytics:Log("Clearing filters..");
 
+        ArenaAnalytics.Filter:resetFilters();
+
+        -- Reset filters UI
+        ArenaAnalyticsScrollFrame.searchBox:SetText("");
         ArenaAnalyticsScrollFrame.filterBracketDropdown:reset();
         AAtable:forceCompFilterRefresh();
-               
+        
         ArenaAnalytics.Filter:refreshFilters();
+        CloseDropDownMenus();
     end);
     
     AAtable:OnShow();
@@ -564,9 +569,9 @@ function AAtable:tryShowimportFrame()
                     ArenaAnalyticsScrollFrame.importDataBox:Disable();
                     pasteBuffer, index = {}, 0;
 
-                    ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', nil);
+                    ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnChar", nil);
                     ArenaAnalyticsScrollFrame.importDataBox:SetText("");
-                    ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
+                    ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnChar", onCharAdded);
 
                     C_Timer.After(0, function()
                         ArenaAnalytics:Log("Finalizing import paste.");
@@ -582,9 +587,9 @@ function AAtable:tryShowimportFrame()
                         index = 0;
 
                         -- Update text: 1) Prevent OnChar for changing text
-                        ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', nil);
+                        ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnChar", nil);
                         ArenaAnalyticsScrollFrame.importDataBox:SetText(ArenaAnalytics.Import:determineImportSource(ArenaImportPasteStringTable) .. " import detected...");
-                        ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
+                        ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnChar", onCharAdded);
                     end);
                 end
 
@@ -592,8 +597,8 @@ function AAtable:tryShowimportFrame()
                 pasteBuffer[index] = c;
             end
 
-            ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnChar', onCharAdded);
-            ArenaAnalyticsScrollFrame.importDataBox:SetScript('OnEditFocusGained', function()
+            ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnChar", onCharAdded);
+            ArenaAnalyticsScrollFrame.importDataBox:SetScript("OnEditFocusGained", function()
                 ArenaAnalyticsScrollFrame.importDataBox:HighlightText();
             end);
 
@@ -920,6 +925,7 @@ function AAtable:handleArenaCountChanged()
 
     AAtable:RefreshLayout();
     AAtable:forceCompFilterRefresh();
+        
 
     if(ArenaAnalytics:hasStoredMatches()) then
         ArenaAnalyticsScrollFrame.exportBtn:Enable();
@@ -990,6 +996,17 @@ function AAtable:RefreshLayout()
     if(not hasLoaded) then
         -- Load will trigger call soon
         return;
+    end
+
+    if(ArenaAnalyticsScrollFrame.filterBtn_ClearFilters) then
+        local activeFilterCount = ArenaAnalytics.Filter:getActiveFilterCount();
+        if(activeFilterCount > 0) then
+            ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetText("(" .. activeFilterCount .." active)");
+            ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Enable();
+        else
+            ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetText("");
+            ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Disable();
+        end
     end
 
     local buttons = HybridScrollFrame_GetButtons(ArenaAnalyticsScrollFrame.ListScrollFrame);

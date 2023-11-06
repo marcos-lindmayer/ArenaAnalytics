@@ -6,38 +6,93 @@ local Filter = ArenaAnalytics.Filter;
 -- Currently applied filters
 Filter.currentFilters = {}
 
+local defaults = {
+    ["Filter_Date"] = "All Time",
+    ["Filter_Season"] = "All",
+    ["Filter_Map"] = "All",
+    ["Filter_Bracket"] = "All",
+    ["Filter_Comp"] = "All",
+}
+
 function Filter:resetFilters()
     Filter.currentFilters = {
         ["Filter_Search"] = { 
             ["raw"] = "",
-            ["data"] = { }
+            ["data"] = {}
         },
-        ["Filter_Season"] = "All",
-        ["Filter_Map"] = "All", 
-        ["Filter_Bracket"] = "All", 
+        ["Filter_Date"] = defaults["Filter_Date"],
+        ["Filter_Season"] = defaults["Filter_Season"],
+        ["Filter_Map"] = defaults["Filter_Map"], 
+        ["Filter_Bracket"] = defaults["Filter_Bracket"], 
         ["Filter_Comp"] = {
-            ["data"] = "All",
-            ["display"] = "All"
+            ["data"] = defaults["Filter_Comp"],
+            ["display"] = defaults["Filter_Comp"]
         },
         ["Filter_EnemyComp"] = {
-            ["data"] = "All",
-            ["display"] = "All"
+            ["data"] = defaults["Filter_Comp"],
+            ["display"] = defaults["Filter_Comp"]
         }
     };
 end
 Filter:resetFilters();
 
+function Filter:isFilterActive(filterName)
+    if(filterName == "Filter_Search") then
+        return Filter.currentFilters["Filter_Search"]["raw"] ~= "";
+    elseif(filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
+        return Filter.currentFilters[filterName]["data"] ~= defaults["Filter_Comp"];
+    end
+    
+    local filter = Filter.currentFilters[filterName];
+    if (filter) then
+        return filter ~= defaults[filterName];
+    end
+
+    ArenaAnalytics:Log("isFilterActive failed to find filter: ", filterName);
+    return false;
+end
+
+function Filter:getActiveFilterCount()
+    local count = 0;
+    if(Filter:isFilterActive("Filter_Search")) then 
+        count = count + 1;
+    end
+    if(Filter:isFilterActive("Filter_Date")) then
+        count = count + 1;
+    end
+    if(Filter:isFilterActive("Filter_Season")) then
+        count = count + 1;
+    end
+    if(Filter:isFilterActive("Filter_Map")) then
+        count = count + 1;
+    end
+    if(Filter:isFilterActive("Filter_Bracket")) then
+        count = count + 1;
+    end
+    if(Filter:isFilterActive("Filter_Comp")) then
+        count = count + 1;
+    end
+    if(Filter:isFilterActive("Filter_EnemyComp")) then
+        count = count + 1; 
+    end
+    return count;
+end
+
 -- Changes the current filter upon selecting one from its dropdown
 function Filter:changeFilter(dropdown, value, tooltip)
     ArenaAnalytics.Selection:ClearSelectedMatches();
-    
-    --local selectedFilter = args:GetAttribute("value")
-    --local currentFilter = args:GetAttribute("dropdown")
-    local filterName = dropdown.filterName
 
     dropdown.selected:SetText(value);
+    
+    Filter:updateFilter(dropdown.filterName, value, tooltip);
 
-    if (filterName == "Filter_Bracket") then
+    if dropdown.list:IsShown() then   
+        dropdown.list:Hide();
+    end    
+end
+
+function Filter:updateFilter(filter, value, tooltip)
+    if (filter == "Filter_Bracket") then
         Filter.currentFilters["Filter_Comp"] = {
             ["data"] = "All",
             ["display"] = "All"
@@ -48,20 +103,16 @@ function Filter:changeFilter(dropdown, value, tooltip)
         };
     end
     
-    if (filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
-        Filter.currentFilters[filterName] = {
+    if (filter == "Filter_Comp" or filter == "Filter_EnemyComp") then
+        Filter.currentFilters[filter] = {
             ["data"] = tooltip;
             ["display"] = tooltip ~= "All" and ArenaAnalytics.AAtable:getCompIconString(tooltip) or "All";
         }
     else
-        Filter.currentFilters[filterName] = value;
+        Filter.currentFilters[filter] = value;
     end
 
-    if dropdown.list:IsShown() then   
-        dropdown.list:Hide();
-    end
-    
-    ArenaAnalytics:Log("Change Filter: ", filterName, " to: ", value);
+    ArenaAnalytics:Log("Change Filter: ", filter, " to: ", value);
     Filter:refreshFilters();
 end
 
@@ -309,14 +360,47 @@ local function doesMatchPassFilter_Skirmish(match)
 end
 
 -- check season filter
+local function doesMatchPassFilter_Date(match)
+    if match == nil then return false end;
+
+    local value = Filter.currentFilters["Filter_Date"] and Filter.currentFilters["Filter_Date"] or "";
+    local seconds = 0;
+    if(value == "All Time" or value == "") then
+        return true;
+    elseif(value == "Current Session") then        
+        return match["session"] == ArenaAnalytics:getLastSession();
+    elseif(value == "Last Day") then
+        seconds = 86400;
+    elseif(value == "Last Week") then
+        seconds = 604800;
+    elseif(value == "Last Month") then -- 31 days
+        seconds = 2678400;        
+    elseif(value == "Last 3 months") then
+        seconds = 7889400;
+    elseif(value == "Last 6 months") then
+        seconds = 15778800;
+    elseif(value == "Last year") then
+        seconds = 31536000;
+    end
+    
+    return match["date"] > (time() - seconds);
+end
+
+-- check season filter
 local function doesMatchPassFilter_Season(match)
     if match == nil then return false end;
 
-    ForceDebugNilError(Filter.currentFilters["Filter_Map"]);
-    if(Filter.currentFilters["Filter_Season"] == "All") then
+    local season = Filter.currentFilters["Filter_Season"];
+    ForceDebugNilError(season);
+    if(season == "All") then
         return true;
     end
-    return match["season"] == Filter.currentFilters["Filter_Season"];
+    
+    if(season == "Current Season") then
+        return match["season"] == GetCurrentArenaSeason();
+    end
+    
+    return match["season"] == tonumber(season);
 end
 
 -- check comp filters (comp / enemy comp)
@@ -385,6 +469,11 @@ function Filter:doesMatchPassAllFilters(match, excluded)
 
     -- Enemy Comp
     if(excluded ~= "enemyComp" and not doesMatchPassFilter_Comp(match, true)) then
+        return false;
+    end
+
+    -- Time frame
+    if(not doesMatchPassFilter_Date(match)) then
         return false;
     end
 

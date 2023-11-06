@@ -168,6 +168,16 @@ function ArenaAnalytics:Log(...)
 	print(prefix, ...);
 end
 
+-- Debug function to force a nil error if input is nil
+ArenaAnalytics.skipDebugForceNilError = true;
+function ForceDebugNilError(value, forceError)
+	if(value == nil) then		
+		if(not ArenaAnalytics.skipDebugForceNilError or forceError) then
+			local nilOperation = value + 666;
+		end
+	end
+end
+
 -- Returns devault theme color
 function ArenaAnalytics:GetThemeColor()
 	local defaults = {

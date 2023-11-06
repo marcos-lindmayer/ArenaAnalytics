@@ -8,18 +8,6 @@ MatchHistoryDB = MatchHistoryDB or { }
 
 ArenaAnalytics.unsavedArenaCount = 0;
 
--- Debug function to force a nil error if input is nil
-ArenaAnalytics.skipDebugForceNilError = true;
-function ForceDebugNilError(value, forceError)
-	if(value == nil) then
-		ArenaAnalytics:Log("Nil error detected.");
-		
-		if(not ArenaAnalytics.skipDebugForceNilError or forceError) then
-			local nilOperation = value + 666;
-		end
-	end
-end
-
 -- TODO: Consider making the settings character specific (For cases like one char having lots of games desiring different comp filter limits)
 -- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
@@ -209,6 +197,32 @@ function ArenaAnalytics:getLastSession()
 	return 1, false;
 end
 
+-- Returns last saved rating on selected bracket (teamSize)
+function ArenaAnalytics:getLastSeason()
+	for i = #MatchHistoryDB, 1, -1 do
+		local match = MatchHistoryDB[i];
+		if(match ~= nil and match["season"] and match["season"] ~= 0) then
+			return tonumber(match["season"]);
+		end
+	end
+
+	return 0;
+end
+
+-- Returns last saved rating on selected bracket (teamSize)
+function ArenaAnalytics:getLastRating(teamSize)
+	local bracket = ArenaAnalytics:getBracketFromTeamSize(teamSize);
+
+	for i = #MatchHistoryDB, 1, -1 do
+		local match = MatchHistoryDB[i];
+		if(match ~= nil and match["bracket"] == bracket and match["rating"] ~= "SKIRMISH") then
+			return tonumber(match["rating"]);
+		end
+	end
+
+	return 0;
+end
+
 -- Cached last rating per bracket ID
 ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {
 	[1] = nil,
@@ -219,9 +233,9 @@ ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil a
 -- Updates the cached bracket rating for each bracket
 function AAmatch:updateCachedBracketRatings()
 	if(IsActiveBattlefieldArena()) then
-		ArenaAnalyticsCachedBracketRatings[1] = AAmatch:getLastRating(2); -- 2v2
-		ArenaAnalyticsCachedBracketRatings[2] = AAmatch:getLastRating(3); -- 3v3
-		ArenaAnalyticsCachedBracketRatings[3] = AAmatch:getLastRating(4); -- 5v5
+		ArenaAnalyticsCachedBracketRatings[1] = ArenaAnalytics:getLastRating(2); -- 2v2
+		ArenaAnalyticsCachedBracketRatings[2] = ArenaAnalytics:getLastRating(3); -- 3v3
+		ArenaAnalyticsCachedBracketRatings[3] = ArenaAnalytics:getLastRating(4); -- 5v5
 	else
 		ArenaAnalyticsCachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
 		ArenaAnalyticsCachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
@@ -597,20 +611,6 @@ function AAmatch:getPlayerSpec()
 	return spec
 end
 
--- Returns last saved rating on selected bracket (teamSize)
-function AAmatch:getLastRating(teamSize)
-	local bracket = ArenaAnalytics:getBracketFromTeamSize(teamSize);
-
-	for i = #MatchHistoryDB, 1, -1 do
-		local match = MatchHistoryDB[i];
-		if(match ~= nil and match["bracket"] == bracket and match["rating"] ~= "SKIRMISH") then
-			return tonumber(match["rating"]);
-		end
-	end
-
-	return 0;
-end
-
 local function isArenaPreparationStateActive()
 	local auraIndex = 1;
 	local aura = UnitAura("player", auraIndex)
@@ -666,7 +666,7 @@ function AAmatch:trackArena(...)
 	
 	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(teamSize);
 	if(isRated and ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
-		local lastRating = AAmatch:getLastRating(teamSize);
+		local lastRating = ArenaAnalytics:getLastRating(teamSize);
 		ArenaAnalytics:Log("Fallback: Updating cached rating to rating of last rated entry.");
 		ArenaAnalyticsCachedBracketRatings[bracketId] = lastRating;
 	end
@@ -818,7 +818,7 @@ function AAmatch:handleArenaExited()
 		ForceDebugNilError(ArenaAnalyticsCachedBracketRatings[bracketId]);
 		
 		if(oldRating == nil or oldRating == "SKIRMISH") then
-			oldRating = AAmatch:getLastRating();
+			oldRating = ArenaAnalytics:getLastRating();
 			ForceDebugNilError(nil);
 		end
 		
