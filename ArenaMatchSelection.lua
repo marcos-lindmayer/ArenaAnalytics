@@ -99,7 +99,7 @@ function Selection:isMatchesSameSession(index, otherIndex)
 end
 
 function Selection:isMatchSelected(matchIndex)
-    return not Selection.latestDeselect[matchIndex] and (Selection.selectedGames[matchIndex] or Selection.latestMultiSelect[matchIndex]);
+    return (not Selection.latestDeselect[matchIndex] and (Selection.selectedGames[matchIndex] or Selection.latestMultiSelect[matchIndex])) or false;
 end
 
 -- Helper function to select a range of matches
@@ -178,11 +178,14 @@ function Selection:handleMatchEntryClicked(key, isDoubleClick, index)
     local isStartSessionSelect = latestSelectionInfo["start"] and latestSelectionInfo["start"]["isSessionSelect"];
     local selectedByStartSession = isStartSessionSelect and Selection:isMatchesSameSession(index, startIndex);
 
-    local changeMultiSelectEndpoint = IsShiftKeyDown() and tonumber(startIndex) ~= nil and not selectedByStartSession and isDeselect == wasDeselecting;
-    local existingIsDeselect = changeMultiSelectEndpoint and latestSelectionInfo["isDeselecting"] and false; -- TODO: FIX
+    local changeMultiSelectEndpoint = IsShiftKeyDown() and tonumber(startIndex) ~= nil and not selectedByStartSession;
 
-    local isDeselect = (existingIsDeselect or (key == "RightButton") or Selection:isMatchSelected(index)) or false;
-    local session = ArenaAnalytics.filteredMatchHistory[index]["session"]
+    local isDeselect;
+    if(changeMultiSelectEndpoint) then
+        isDeselect = latestSelectionInfo["isDeselecting"]
+    else
+        isDeselect = (key == "RightButton") or Selection:isMatchSelected(index) or false;
+    end
 
     -- If Ctrl is not pressed, clear the previous selection and latestMultiSelect.
     if not IsControlKeyDown() and not IsShiftKeyDown() and not ArenaAnalyticsSettings["stickySelection"] then
@@ -193,9 +196,8 @@ function Selection:handleMatchEntryClicked(key, isDoubleClick, index)
     -- Single or session select? (Single vs double click)
     local isSessionSelect = isDoubleClick or IsAltKeyDown();
     
-    local wasDeselecting = latestSelectionInfo["isDeselecting"];
-    if (isDeselect ~= wasDeselecting) then
-        latestSelectionInfo["isDeselecting"] = isDeselect;
+    if (isDeselect ~= latestSelectionInfo["isDeselecting"]) then
+        latestSelectionInfo["isDeselecting"] = isDeselect or false;
     end
     
     -- Clear the last uncommitted multiselect endpoint and selection
