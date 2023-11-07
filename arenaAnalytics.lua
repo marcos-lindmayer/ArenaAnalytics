@@ -197,6 +197,31 @@ function ArenaAnalytics:getLastSession()
 	return 1, false;
 end
 
+-- Returns the start and end times of the last session
+function ArenaAnalytics:getLastSessionStartAndEndTime()
+	local lastSession, expired, bestStartTime, endTime;
+
+	for i=#MatchHistoryDB, 1, -1 do
+		local match = MatchHistoryDB[i];
+		if(match and tonumber(match["session"])) then
+			if(lastSession == nil) then
+				lastSession = tonumber(match["session"]);
+				expired = (time() - match["date"]) > 3600;
+				endTime = expired and match["date"] or time();
+			end
+			ForceDebugNilError(lastSession, true);
+						
+			if(lastSession == tonumber(match["session"])) then
+				bestStartTime = match["date"] - match["duration"];
+			else
+				break;
+			end
+		end
+	end
+
+	return lastSession, expired, bestStartTime, endTime;
+end
+
 -- Returns last saved rating on selected bracket (teamSize)
 function ArenaAnalytics:getLastSeason()
 	for i = #MatchHistoryDB, 1, -1 do
@@ -394,6 +419,8 @@ function AAmatch:insertArenaOnTable()
 	AAmatch:resetCurrentArenaValues();
 	
 	ArenaAnalytics.Filter:refreshFilters();
+
+	AAtable:tryStartSessionDurationTimer();
 end
 
 -- Returns bool for input group containing a character (by name) in it

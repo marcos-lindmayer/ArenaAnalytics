@@ -7,6 +7,11 @@ local Filter = ArenaAnalytics.Filter;
 
 local hasLoaded = false;
 
+local bottomStatsPrefixColor = "FF909090"
+local function colorText(text, color)
+    return "|c" .. color .. text .. "|r"
+end
+
 ArenaAnalytics.filteredMatchHistory = { };
 
 ArenaAnalytics.lastSession = 1;
@@ -318,14 +323,15 @@ function AAtable:UpdateSelected()
         end
     end
 
+    local selectedPrefixText = colorText("Selected: ", bottomStatsPrefixColor);
     if (selectedGamesCount > 0) then
         local winrate = math.floor(selectedWins * 100 / selectedGamesCount)
         local winsColoured =  "|cff00cc66" .. selectedWins .. "|r";
         local lossesColoured =  "|cffff0000" .. (selectedGamesCount - selectedWins) .. "|r";
-        newSelectedText = "Selected: " .. selectedGamesCount .. " arenas   " .. winsColoured .. " / " .. lossesColoured .. "   " .. winrate .. "% Winrate"
+        newSelectedText = selectedPrefixText .. selectedGamesCount .. " arenas   " .. winsColoured .. " / " .. lossesColoured .. "   " .. winrate .. "% Winrate"
         ArenaAnalyticsScrollFrame.clearSelected:Show();
     else
-        newSelectedText = "Selected: (click matches to select)"
+        newSelectedText = selectedPrefixText .. "(click matches to select)"
         ArenaAnalyticsScrollFrame.clearSelected:Hide();
     end
     ArenaAnalyticsScrollFrame.selectedStats:SetText(newSelectedText)
@@ -454,8 +460,10 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 10, "");
     ArenaAnalyticsScrollFrame.winrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
 
-    ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 27, "Selected: (click matches to select)");
-    --ArenaAnalyticsScrollFrame.selectedSessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 10, "Selected Session: 666/1305 | 71% Winrate");
+    ArenaAnalyticsScrollFrame.sessionDuration = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 27, "Session Duration: 2h 13m");
+    ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 10, "Selected: (click matches to select)");
+    
+    AAtable:tryStartSessionDurationTimer();
 
     ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 10, "Clear Selected");
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(110)
@@ -958,6 +966,7 @@ function AAtable:handleArenaCountChanged()
     -- Update displayed session stats text
     local _, expired = ArenaAnalytics:getLastSession();
     local sessionText = expired and "Last session: " or "Current session: ";
+    sessionText = colorText(sessionText, bottomStatsPrefixColor);
     local sessionStats = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
     local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
     local sessionLossesColoured =  "|cffff0000" .. (sessionGames - sessionWins) .. "|r";
@@ -968,7 +977,8 @@ function AAtable:handleArenaCountChanged()
     local winrate = totalArenas > 0 and math.floor(wins * 100 / totalArenas) or 0;
     local winsColoured =  "|cff00cc66" .. wins .. "|r";
     local lossesColoured =  "|cffff0000" .. (totalArenas - wins) .. "|r";
-    ArenaAnalyticsScrollFrame.totalArenaNumber:SetText("Filtered total: " .. totalArenas .. " arena" .. (totalArenas ~= 1 and "s" or ""));
+    local text = colorText("Filtered total: ", bottomStatsPrefixColor);
+    ArenaAnalyticsScrollFrame.totalArenaNumber:SetText(text .. totalArenas .. " arena" .. (totalArenas ~= 1 and "s" or ""));
     ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. " / " .. lossesColoured .. "   " .. winrate .. "% Winrate");
 
     ArenaAnalytics.AAtable.checkUnsavedWarningThreshold();
@@ -1101,4 +1111,61 @@ function AAtable:RefreshLayout()
     local totalHeight = #ArenaAnalytics.filteredMatchHistory * buttonHeight;
     local shownHeight = #buttons * buttonHeight;
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
+end
+
+----------------------------------------------------------------------------------------------------------------------------
+-- Session Duration
+
+local function formatSessionDuration(duration)
+    if(tonumber(duration) == nil) then
+        return "";
+    end
+
+    local hours = math.floor(duration / 3600) .. "h"
+    local minutes = string.format("%02dm", math.floor((duration % 3600) / 60));
+    local seconds = string.format("%02ds", duration % 60);
+
+    ArenaAnalytics:Print("Session Duration: ", hours, minutes, seconds, " for ", duration);
+
+    if duration < 3600 then
+        return minutes .. " " .. seconds;
+    else
+        return hours .. " " .. minutes;
+    end
+end
+
+local function setLatestSessionDurationText(expired, startTime, endTime)
+    endTime = expired and endTime or time();
+    local duration = endTime - startTime;
+
+    local text = expired and "Last Session Duration: " or "Session Duration: ";
+    text = colorText(text, bottomStatsPrefixColor);
+    ArenaAnalyticsScrollFrame.sessionDuration:SetText(text .. formatSessionDuration(duration));
+end
+
+local function handleSessionDurationTimer()
+    local _,expired, startTime, endTime = ArenaAnalytics:getLastSessionStartAndEndTime();
+    
+    -- Update text
+    setLatestSessionDurationText(expired, startTime, endTime);
+
+    local desiredInterval = (duration > 3600) and 60 or 1;
+    C_Timer.After(desiredInterval, function() handleSessionDurationTimer() end);
+end
+
+function AAtable:tryStartSessionDurationTimer()
+    local _,expired, startTime, endTime = ArenaAnalytics:getLastSessionStartAndEndTime();
+    
+    -- Update text
+    setLatestSessionDurationText(expired, startTime, endTime);
+    
+    if (not expired) then
+        ForceDebugNilError(tonumber(startTime), true);
+        
+        local duration = time() - startTime;
+        
+        local desiredInterval = (duration > 3600) and 60 or 1;
+        local firstInterval = duration % desiredInterval;
+        C_Timer.After(firstInterval, function() handleSessionDurationTimer() end);
+    end
 end
