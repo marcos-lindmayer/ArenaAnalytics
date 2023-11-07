@@ -189,7 +189,8 @@ function Selection:handleMatchEntryClicked(key, isDoubleClick, index)
     end
 
     -- If Ctrl is not pressed, clear the previous selection and latestMultiSelect.
-    if not IsControlKeyDown() and not IsShiftKeyDown() and not ArenaAnalyticsSettings["stickySelection"] then
+    local isControlModInversed = ArenaAnalyticsSettings["selectionControlModInversed"] or false;
+    if (IsControlKeyDown() == isControlModInversed) and not IsShiftKeyDown() then
         Selection.selectedGames = {}
         resetLatestSelection(true);
     end
