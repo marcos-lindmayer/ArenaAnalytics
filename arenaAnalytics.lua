@@ -673,7 +673,9 @@ function AAmatch:trackArena(...)
 		table.insert(currentArena["party"], player);
 	end
 
-	ArenaAnalytics.DataSync:sendMatchGreetingMessage();
+	if(ArenaAnalytics.DataSync) then
+		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
+	end
 	
 	-- Not using mapName since string is lang based (unreliable) 
 	-- TODO update to WOTLK values and add backwards compatibility
