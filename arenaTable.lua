@@ -1115,7 +1115,7 @@ end
 
 ----------------------------------------------------------------------------------------------------------------------------
 -- Session Duration
-
+local isSessionTimerActive = false;
 local function formatSessionDuration(duration)
     if(tonumber(duration) == nil) then
         return "";
@@ -1124,8 +1124,6 @@ local function formatSessionDuration(duration)
     local hours = math.floor(duration / 3600) .. "h"
     local minutes = string.format("%02dm", math.floor((duration % 3600) / 60));
     local seconds = string.format("%02ds", duration % 60);
-
-    ArenaAnalytics:Print("Session Duration: ", hours, minutes, seconds, " for ", duration);
 
     if duration < 3600 then
         return minutes .. " " .. seconds;
@@ -1145,12 +1143,19 @@ end
 
 local function handleSessionDurationTimer()
     local _,expired, startTime, endTime = ArenaAnalytics:getLastSessionStartAndEndTime();
+    ArenaAnalytics:Log()
+
+    isSessionTimerActive = false;
     
     -- Update text
     setLatestSessionDurationText(expired, startTime, endTime);
 
-    local desiredInterval = (duration > 3600) and 60 or 1;
-    C_Timer.After(desiredInterval, function() handleSessionDurationTimer() end);
+    if (not expired and not isSessionTimerActive) then
+        local duration = endTime - startTime;
+        local desiredInterval = (duration > 3600) and 60 or 1;
+        isSessionTimerActive = true;
+        C_Timer.After(desiredInterval, function() handleSessionDurationTimer() end);
+    end
 end
 
 function AAtable:tryStartSessionDurationTimer()
@@ -1159,13 +1164,12 @@ function AAtable:tryStartSessionDurationTimer()
     -- Update text
     setLatestSessionDurationText(expired, startTime, endTime);
     
-    if (not expired) then
-        ForceDebugNilError(tonumber(startTime), true);
-        
+    if (not expired and not isSessionTimerActive) then
         local duration = time() - startTime;
-        
         local desiredInterval = (duration > 3600) and 60 or 1;
-        local firstInterval = duration % desiredInterval;
+        local firstInterval = desiredInterval - duration % desiredInterval;
+        isSessionTimerActive = true;
+        ArenaAnalytics:Print(firstInterval);
         C_Timer.After(firstInterval, function() handleSessionDurationTimer() end);
     end
 end

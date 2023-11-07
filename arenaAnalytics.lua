@@ -420,7 +420,7 @@ function AAmatch:insertArenaOnTable()
 	
 	ArenaAnalytics.Filter:refreshFilters();
 
-	AAtable:tryStartSessionDurationTimer();
+	ArenaAnalytics.AAtable:tryStartSessionDurationTimer();
 end
 
 -- Returns bool for input group containing a character (by name) in it
