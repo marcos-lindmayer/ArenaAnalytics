@@ -241,6 +241,48 @@
         </Frames>
     </Frame>
 
+    <Slider name="ArenaAnalyticsScrollBarTemplate" parentKey="scrollBar" virtual="true">
+		<Size x="22" y="0"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentTrack" parentKey="trackBG">
+					<Anchors>
+						<Anchor point="TOPLEFT" x="0" y="0"/>
+						<Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+					</Anchors>
+					<Color r="0" g="0" b="0" a="1"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentScrollUpButton" inherits="UIPanelScrollUpButtonTemplate">
+				<Anchors>
+					<Anchor point="TOP" x="0" y="15"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad function="HybridScrollFrameScrollUp_OnLoad"/>
+					<OnClick function="HybridScrollFrameScrollButton_OnClick"/>
+				</Scripts>
+			</Button>
+			<Button name="$parentScrollDownButton" inherits="UIPanelScrollDownButtonTemplate">
+				<Anchors>
+					<Anchor point="BOTTOM" x="0" y="-15"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad function="HybridScrollFrameScrollDown_OnLoad"/>
+					<OnClick function="HybridScrollFrameScrollButton_OnClick"/>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnValueChanged function="HybridScrollFrame_OnValueChanged"/>
+		</Scripts>
+		<ThumbTexture name="$parentThumbTexture" inherits="HybridScrollBarButton" file="Interface\Buttons\UI-ScrollBar-Knob" parentKey="thumbTexture">
+			<Size x="18" y="24"/>
+			<TexCoords left="0.20" right="0.80" top="0.125" bottom="0.875"/>
+		</ThumbTexture>
+	</Slider>
+
     <Frame name="ArenaAnalyticsScrollFrame" parent="UIParent" inherits="BasicFrameTemplate" mixin="HybridScrollMixin">
         <Size x="1000" y="550"/>
         <Anchors>
@@ -253,10 +295,11 @@
                     <Anchor point="BOTTOMRIGHT" x="-25" y="47"/>
                 </Anchors>
                 <Frames>
-                    <Slider parentKey="scrollBar" inherits="HybridScrollBarTemplate">
+                    <Slider parentKey="scrollBar" inherits="ArenaAnalyticsScrollBarTemplate">
+                    	<Size x="5" y="10"/>
                         <Anchors>
-                            <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="1" y="-16"/>
-                            <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="1" y="12"/>
+                            <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="9" y="0"/>
+                            <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="9" y="12"/>
                         </Anchors>
                     </Slider>
                 </Frames>
