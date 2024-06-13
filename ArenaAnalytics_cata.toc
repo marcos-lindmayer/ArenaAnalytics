@@ -1,4 +1,4 @@
-## Interface: 30402
+## Interface: 40400
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
 ## Author: Lingo
@@ -9,6 +9,7 @@
 
 init.lua
 arenaConstants.lua
+arenaSpecSpells_cata.lua
 arenaAnalytics.lua
 ArenaFilter.lua
 ArenaImportExport.lua

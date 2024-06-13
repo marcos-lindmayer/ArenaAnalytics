@@ -473,7 +473,7 @@ end
 -- caster if they weren't defined yet, or adds a new unit with it
 function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 	-- Check if spell belongs to spec defining spells
-	local spec = ArenaAnalytics.Constants:GetSpecBySpellID(spellID);
+	local spec = ArenaAnalytics.SpecSpells:GetSpec(spellID);
 	if (spec ~= nil) then
 		local unitIsParty = false;
 		local unitIsEnemy = false;
