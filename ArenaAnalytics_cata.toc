@@ -10,6 +10,7 @@
 init.lua
 arenaConstants.lua
 arenaSpecSpells_cata.lua
+arenaAPI_cata.lua
 arenaAnalytics.lua
 ArenaFilter.lua
 ArenaImportExport.lua

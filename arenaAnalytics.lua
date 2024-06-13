@@ -617,16 +617,7 @@ end
 
 -- Returns the player's spec
 function AAmatch:getPlayerSpec()
-	local currentSpecNumber = 0
-	local spec
-	for i = 1, 3 do
-		local name,_ ,pointsSpent = GetTalentTabInfo(i)
-		if (pointsSpent > currentSpecNumber) then
-			currentSpecNumber = pointsSpent;
-			spec = name;
-		end
- 	end
-	spec = spec == "Feral Combat" and "Feral" or spec
+	local spec = API:GetMySpec();
 
 	if (spec == nil) then -- Workaround for when GetTalentTabInfo returns nil
 		if(#MatchHistoryDB > 0) then
@@ -634,6 +625,7 @@ function AAmatch:getPlayerSpec()
 			spec = MatchHistoryDB[#MatchHistoryDB]["team"][1]["spec"];
 		end
 	end
+	
 	return spec
 end
 
