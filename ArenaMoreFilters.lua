@@ -28,6 +28,12 @@ local function addDynamicOptions_Season(self, level, filter, info, settings)
         {"The Burning Crusade", 1},
         {"Wrath of the Lich King", 5},
         {"Cataclysm", 9},
+        {"Mists of Pandaria", 12},
+        {"Warlords of Draenor", 16},
+        {"Legion", 19},
+        {"Battle for Azeroth", 26},
+        {"Shadowlands", 30},
+        {"Dragonflight", 34},
     }
 
     -- Add seasons

@@ -1169,7 +1169,6 @@ function AAtable:tryStartSessionDurationTimer()
         local desiredInterval = (duration > 3600) and 60 or 1;
         local firstInterval = desiredInterval - duration % desiredInterval;
         isSessionTimerActive = true;
-        ArenaAnalytics:Print(firstInterval);
         C_Timer.After(firstInterval, function() handleSessionDurationTimer() end);
     end
 end

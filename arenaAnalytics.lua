@@ -617,7 +617,7 @@ end
 
 -- Returns the player's spec
 function AAmatch:getPlayerSpec()
-	local spec = API:GetMySpec();
+	local spec = ArenaAnalytics.API:GetMySpec();
 
 	if (spec == nil) then -- Workaround for when GetTalentTabInfo returns nil
 		if(#MatchHistoryDB > 0) then
