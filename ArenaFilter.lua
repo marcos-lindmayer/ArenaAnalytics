@@ -394,10 +394,6 @@ local function doesMatchPassFilter_Season(match)
     local season = Filter.currentFilters["Filter_Season"];
     ForceDebugNilError(season);
     if(season == "All") then
-        if (not ArenaAnalyticsSettings["seasonIsChecked"] and match["season"] == GetCurrentArenaSeason()) then
-            return false;
-        end
-
         return true;
     end
     

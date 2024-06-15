@@ -87,11 +87,11 @@ function Options_OLD:createSettingsFrame()
     ArenaAnalyticsScrollFrame.skirmishToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_skirmishToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.skirmishToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -50);
     ArenaAnalyticsScrollFrame.skirmishToggle.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.skirmishToggle, "RIGHT", 5, 0, "Show Skirmish");
-    ArenaAnalyticsScrollFrame.skirmishToggle:SetChecked(ArenaAnalyticsSettings["skirmishIsChecked"]);
+    ArenaAnalyticsScrollFrame.skirmishToggle:SetChecked(ArenaAnalyticsSettings["showSkirmish"]);
 
     ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", function()
-		ArenaAnalyticsSettings["skirmishIsChecked"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
-		ArenaAnalytics:Log("Show Skirmish: ", ArenaAnalyticsSettings["sessionOnly"]);
+		ArenaAnalyticsSettings["showSkirmish"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
+		ArenaAnalytics:Log("Show Skirmish: ", ArenaAnalyticsSettings["defaultCurrentSessionFilter"]);
 		ArenaAnalytics.Filter:refreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
 	end);
@@ -99,11 +99,11 @@ function Options_OLD:createSettingsFrame()
     ArenaAnalyticsScrollFrame.seasonToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_seasonToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.seasonToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -70);
     ArenaAnalyticsScrollFrame.seasonToggle.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.seasonToggle, "RIGHT", 5, 0, "Show Previous Seasons");
-    ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(ArenaAnalyticsSettings["seasonIsChecked"]);
+    ArenaAnalyticsScrollFrame.seasonToggle:SetChecked(ArenaAnalyticsSettings["defaultCurrentSeasonFilter"]);
 
     ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", function()
-		ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
-		ArenaAnalytics:Log("Show Previous Seasons: ", ArenaAnalyticsSettings["sessionOnly"]);
+		ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
+		ArenaAnalytics:Log("Show Previous Seasons: ", ArenaAnalyticsSettings["defaultCurrentSessionFilter"]);
 		ArenaAnalytics.Filter:refreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
 	end);
@@ -112,11 +112,11 @@ function Options_OLD:createSettingsFrame()
     ArenaAnalyticsScrollFrame.sessionToggle = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_sessionToggle", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");
     ArenaAnalyticsScrollFrame.sessionToggle:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.settingsFrame, "TOPLEFT", paddingLeft, -90);
     ArenaAnalyticsScrollFrame.sessionToggle.text = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.settingsFrame, "LEFT", ArenaAnalyticsScrollFrame.sessionToggle, "RIGHT", 5, 0, "Show Latest Session Only");
-    ArenaAnalyticsScrollFrame.sessionToggle:SetChecked(ArenaAnalyticsSettings["sessionOnly"]);
+    ArenaAnalyticsScrollFrame.sessionToggle:SetChecked(ArenaAnalyticsSettings["defaultCurrentSessionFilter"]);
 
     ArenaAnalyticsScrollFrame.sessionToggle:SetScript("OnClick", function()
-		ArenaAnalyticsSettings["sessionOnly"] = ArenaAnalyticsScrollFrame.sessionToggle:GetChecked();
-		ArenaAnalytics:Log("Session Only: ", ArenaAnalyticsSettings["sessionOnly"]);
+		ArenaAnalyticsSettings["defaultCurrentSessionFilter"] = ArenaAnalyticsScrollFrame.sessionToggle:GetChecked();
+		ArenaAnalytics:Log("Session Only: ", ArenaAnalyticsSettings["defaultCurrentSessionFilter"]);
 		ArenaAnalytics.Filter:refreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
