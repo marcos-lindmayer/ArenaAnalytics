@@ -31,8 +31,6 @@ local function InitializeTab(parent)
     addonNameText:SetTextHeight(TabTitleSize);
     addonNameText:SetText("Arena|cff00ccffAnalytics|r   |cff666666v" .. ArenaAnalytics:getVersion() .. "|r");
     
-    --ArenaAnalytics:Print(addonNameText:GetLineHeight())
-
     -- Reset Y offset
     offsetY = 0;
 end
@@ -90,8 +88,6 @@ local function createInputBox(setting, parent, x, text)
     inputBox:SetText(tonumber(ArenaAnalyticsSettings[setting]));
     inputBox:SetCursorPosition(0);
     inputBox:HighlightText(0,0);    
-
-    ArenaAnalytics:Print(ArenaAnalyticsSettings[setting])
     
     -- Text
     inputBox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
