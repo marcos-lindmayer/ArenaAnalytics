@@ -14,14 +14,15 @@ local defaults = {
     ["Filter_Comp"] = "All",
 }
 
-function Filter:resetFilters()
+-- Clearing filters, optionally keeping filters explicitly applied through options
+function Filter:resetFilters(forceDefaults)
     Filter.currentFilters = {
         ["Filter_Search"] = { 
             ["raw"] = "",
             ["data"] = {}
         },
-        ["Filter_Date"] = defaults["Filter_Date"],
-        ["Filter_Season"] = defaults["Filter_Season"],
+        ["Filter_Date"] = not forceDefaults and ArenaAnalyticsSettings["defaultCurrentSessionFilter"] and "Current Session" or defaults["Filter_Date"],
+        ["Filter_Season"] = not forceDefaults and ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] and "Current Season" or defaults["Filter_Season"],
         ["Filter_Map"] = defaults["Filter_Map"], 
         ["Filter_Bracket"] = defaults["Filter_Bracket"], 
         ["Filter_Comp"] = {
@@ -34,7 +35,7 @@ function Filter:resetFilters()
         }
     };
 end
-Filter:resetFilters();
+Filter:resetFilters(false);
 
 function Filter:isFilterActive(filterName)
     if(filterName == "Filter_Search") then
@@ -353,7 +354,7 @@ local function doesMatchPassFilter_Skirmish(match)
     if match == nil then return false end;
 
     ForceDebugNilError(Filter.currentFilters["Filter_Map"]);
-    if(ArenaAnalyticsSettings["skirmishIsChecked"]) then
+    if(ArenaAnalyticsSettings["showSkirmish"]) then
         return true;
     end
     return match["isRated"];
@@ -393,6 +394,10 @@ local function doesMatchPassFilter_Season(match)
     local season = Filter.currentFilters["Filter_Season"];
     ForceDebugNilError(season);
     if(season == "All") then
+        if (not ArenaAnalyticsSettings["seasonIsChecked"] and match["season"] == GetCurrentArenaSeason()) then
+            return false;
+        end
+
         return true;
     end
     
@@ -422,14 +427,7 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
 end
 
 function Filter:doesMatchPassGameSettings(match)
-    if (not ArenaAnalyticsSettings["seasonIsChecked"] and match["date"] < ArenaAnalytics.Constants.currentSeasonStartInt) then
-        return false;
-    end
-    if (not ArenaAnalyticsSettings["skirmishIsChecked"] and not match["isRated"]) then
-        return false;
-    end
-
-    if(ArenaAnalyticsSettings["sessionOnly"] and match["session"] ~= ArenaAnalytics.lastSession) then
+    if (not ArenaAnalyticsSettings["showSkirmish"] and not match["isRated"]) then
         return false;
     end
 

@@ -15,11 +15,11 @@ ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {}
 function ArenaAnalyticsLoadSettings()
 	ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsSettings["outliers"] or 0;
 	ArenaAnalyticsSettings["compsLimit"] = ArenaAnalyticsSettings["compsLimit"] or 0;
-	ArenaAnalyticsSettings["seasonIsChecked"] = ArenaAnalyticsSettings["seasonIsChecked"] or false;
-	ArenaAnalyticsSettings["skirmishIshChecked"] = ArenaAnalyticsSettings["skirmishIshChecked"] or false;
-	ArenaAnalyticsSettings["sessionOnly"] = false; -- Treat as an unsaved filter for now
-	ArenaAnalyticsSettings["alwaysShowDeathBg"] = ArenaAnalyticsSettings["alwaysShowDeathBg"] or false;
-	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 13;
+	ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] = ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] or false;
+	ArenaAnalyticsSettings["defaultCurrentSessionFilter"] = ArenaAnalyticsSettings["defaultCurrentSessionFilter"] or false;
+	ArenaAnalyticsSettings["showSkirmish"] = ArenaAnalyticsSettings["showSkirmish"] or false;
+	ArenaAnalyticsSettings["alwaysShowDeathOverlay"] = ArenaAnalyticsSettings["alwaysShowDeathOverlay"] or false;
+	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 10;
 	ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] or true;
 	ArenaAnalyticsSettings["selectionControlModInversed"] = ArenaAnalyticsSettings["selectionControlModInversed"] or true;
 end
@@ -187,7 +187,7 @@ end
 function ArenaAnalytics:getLastSession()
 	for i=#MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
-		if(match and tonumber(match["session"])) then
+		if(match and tonumber(match["session"]) and tonumber(match["date"]) and match["date"] > 0) then
 			local session = match["session"];
 			local expired = (time() - match["date"]) > 3600;
 			return session, expired;

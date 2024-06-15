@@ -27,6 +27,7 @@ local wins, sessionGames, sessionWins = 0, 0, 0;
 function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         ArenaAnalytics.Selection:ClearSelectedMatches();
+        ArenaAnalytics.Filter:refreshFilters();
         AAtable:RefreshLayout();
 
         AAtable:closeFilterDropdowns();
@@ -441,7 +442,7 @@ function AAtable:OnLoad()
     end);
 
     -- Settings window
-    ArenaAnalytics.Options:createSettingsFrame();
+    ArenaAnalytics.Options_OLD:createSettingsFrame();
 
     -- Table headers
     ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "TOPLEFT", -5, -47, "Date");
@@ -529,7 +530,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() 
         ArenaAnalytics:Log("Clearing filters..");
 
-        ArenaAnalytics.Filter:resetFilters();
+        ArenaAnalytics.Filter:resetFilters(IsShiftKeyDown());
 
         -- Reset filters UI
         ArenaAnalyticsScrollFrame.searchBox:SetText("");
@@ -760,7 +761,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
                     playerFrame.deathOverlay.texture:SetSize(26,26)
                     playerFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.27);
                 end
-                if (ArenaAnalyticsSettings["alwaysShowDeathBg"] == false) then
+                if (ArenaAnalyticsSettings["alwaysShowDeathOverlay"] == false) then
                     playerFrame.deathOverlay:Hide();
                 end
             elseif (playerFrame.deathOverlay ~= nil) then
@@ -794,7 +795,7 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
             end
         end
         if (matchData[i].deathOverlay) then
-            if (visible or ArenaAnalyticsSettings["alwaysShowDeathBg"]) then
+            if (visible or ArenaAnalyticsSettings["alwaysShowDeathOverlay"]) then
                 matchData[i].deathOverlay:Show();
             else
                 matchData[i].deathOverlay:Hide();
@@ -1015,7 +1016,10 @@ function AAtable:RefreshLayout()
             ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Enable();
         else
             ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetText("");
-            ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Disable();
+
+            if(not ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] and not ArenaAnalyticsSettings["defaultCurrentSessionFilter"]) then
+                ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Disable();
+            end
         end
     end
 

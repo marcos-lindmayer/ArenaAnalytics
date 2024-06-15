@@ -20,4 +20,5 @@ HybridScroll.xml
 VersionManager.lua
 ArenaMoreFilters.lua
 ArenaOptions.lua
+ArenaOptions_OLD.lua
 ArenaMatchSelection.lua

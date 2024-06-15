@@ -214,7 +214,7 @@ local function createMinimapButton()
 	minibtn:SetScript("OnEnter", function ()
 		GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
 		local hex = select(4, ArenaAnalytics:GetThemeColor());
-		local tooltip = string.format("|cff%s%s|r", hex:upper(), "ArenaAnalytics") .. " \nClick to open";	
+		local tooltip = string.format("|cff%s%s|r", hex:upper(), "ArenaAnalytics") .. " \nClick to open";
 		GameTooltip:SetText(tooltip, nil, nil, nil, nil, (ArenaAnalyticsMinimapButton.tooltipStyle or true));
 	end);
 	minibtn:SetScript("OnLeave", function ()
@@ -245,8 +245,10 @@ local function createMinimapButton()
 
 	-- Set position
 	UpdateMapBtn();
-	
+
+	minibtn:RegisterForClicks("LeftButtonDown", "RightButtonDown");
 	minibtn:RegisterForDrag("LeftButton")
+
 	minibtn:SetScript("OnDragStart", function()
 		minibtn:StartMoving()
 		minibtn:SetScript("OnUpdate", UpdateMapBtn)
@@ -259,8 +261,13 @@ local function createMinimapButton()
 	end)
 	
 	-- Control clicks
-	minibtn:SetScript("OnClick", function()
-		ArenaAnalytics:Toggle();
+	minibtn:SetScript("OnClick", function(self, button)
+		if(button == "RightButton") then
+			-- Open ArenaAnalytics Options
+			ArenaAnalytics.Options:Open();
+		else
+			ArenaAnalytics:Toggle();
+		end
 	end)
 end
 
@@ -305,30 +312,20 @@ function ArenaAnalytics:init(event, name, ...)
 
 	ArenaAnalytics.AAmatch:EventRegister();
 	ArenaAnalytics.AAtable:OnLoad();
-	createMinimapButton();
-
+	
 	if(IsInInstance() or IsInGroup(1)) then
 		local channel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
 		local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, channel)
 	end
+
+	-- Initialize options menu
+	ArenaAnalytics.Options.Initialzie();
+
+	ArenaAnalytics.Filter:resetFilters(false);
+
+	createMinimapButton();
 end
 
 local events = CreateFrame("Frame");
 events:RegisterEvent("ADDON_LOADED");
 events:SetScript("OnEvent", ArenaAnalytics.init);
-
---⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
---⠀⠀⠀⠀⠀⣀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
---⠀⠀⢀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⢀⣀⡀⠀⠀⠀⠀⠀
---⠀⠀⠉⠉⠉⠉⠙⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⣰⣿⣿⡃⠀⠀⠀⠀⠀
---⠀⠀⠀⠀⠀⠀⠀⠀ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⣠⣾⣿⣿⣿⣿⣷⣦⠀⠀⠀
---⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⠟⠋⣀⣼⣿⣿⣿⣿⣿⣿⣀⣿⣇⠀⠀
---⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⠟⢁⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
---⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⠃⣠⣿⣿⣿⣿⣿⣿⣿⣿⡟⠁⠉⠉⠙⠉⠀⠀
---⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⠃⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⣀⠀⠀⠀⠀⠀
---⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⢰⣿⣿⣿⣿⠟⠋⣉⣭⣭⣉⠛⠻⠿⠟⠃⠀⠀⠀
---⠀⠀⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢃⣴⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀
---⠀⠀⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣸⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀
---⠀⠀⠀⠀⠈⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⠀
---⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣤⡀⠀⠀⠀⠀⠀⠀
---⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀
