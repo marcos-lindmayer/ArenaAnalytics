@@ -362,20 +362,21 @@ function AAtable:OnLoad()
 
     HybridScrollFrame_SetDoNotHideScrollBar(ArenaAnalyticsScrollFrame.ListScrollFrame, true);
     ArenaAnalyticsScrollFrame.Bg:SetTexture(nil)
-    ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.5)
+    ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.8)
     ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
     ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, 0);
     ArenaAnalyticsScrollFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
     ArenaAnalyticsScrollFrame.title:SetText("Arena Analytics");
-
     ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8)
+
     ArenaAnalyticsScrollFrame.teamBg = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame)
-    ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 340, -90);
+    ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.TitleBg, "TOPLEFT", 340, -90);
     ArenaAnalyticsScrollFrame.teamBg:SetFrameStrata("LOW");
-    ArenaAnalyticsScrollFrame.teamBgT = ArenaAnalyticsScrollFrame.teamBg:CreateTexture()
+    ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 413);
+    
+    ArenaAnalyticsScrollFrame.teamBgT = ArenaAnalyticsScrollFrame:CreateTexture()
     ArenaAnalyticsScrollFrame.teamBgT:SetColorTexture(0, 0, 0, 0.3)
     ArenaAnalyticsScrollFrame.teamBgT:SetSize(270, 413);
-    ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 413);
     ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
 
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
@@ -739,7 +740,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
 
                 local tooltipSpecText = (spec and #spec > 2) and spec or class;
                 local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class), tooltipSpecText);
-                playerFrame.tooltip = playerName .. " | " .. coloredSpecText;
+                playerFrame.tooltip = playerName .. " | " .. coloredSpecText; -- TODO: Update to improved tooltip
             else
                 if (playerFrame.specOverlay) then
                     playerFrame.specOverlay:SetTexture(nil);
@@ -805,9 +806,17 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
 end
 
 -- Sets button row's background according to session
-local function setColorForSession(button, session)
-    local c = (session or 0) % 2 / 10;
-    local a = 0.5;
+local function setColorForSession(button, session, index)
+    local isOddSession = (session or 0) % 2 == 1;
+    local oddColor, evenColor = 0.05, 0;
+
+    local c = isOddSession and oddColor or evenColor;
+
+    if((index or 0) % 2 == 1) then
+        c = c + 0.013;
+    end
+
+    local a = 0.4;
     button.Background:SetColorTexture(c, c, c, a)
 end
 
@@ -1032,7 +1041,7 @@ function AAtable:RefreshLayout()
 
         local match = ArenaAnalytics.filteredMatchHistory[matchIndex];
         if (match ~= nil) then
-            setColorForSession(button, match["filteredSession"]);
+            setColorForSession(button, match["filteredSession"], matchIndex);
             button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
             button.Map:SetText(match["map"] or "");
             button.Duration:SetText(SecondsToTime(match["duration"]) or "");
@@ -1138,7 +1147,7 @@ end
 
 local function setLatestSessionDurationText(expired, startTime, endTime)
     endTime = expired and endTime or time();
-    local duration = endTime - startTime;
+    local duration = startTime and endTime - startTime or nil;
 
     local text = expired and "Last Session Duration: " or "Session Duration: ";
     text = colorText(text, bottomStatsPrefixColor);
@@ -1147,12 +1156,16 @@ end
 
 local function handleSessionDurationTimer()
     local _,expired, startTime, endTime = ArenaAnalytics:getLastSessionStartAndEndTime();
-    ArenaAnalytics:Log()
 
     isSessionTimerActive = false;
     
     -- Update text
     setLatestSessionDurationText(expired, startTime, endTime);
+
+    -- No active session
+    if(not startTime) then
+        return;
+    end
 
     if (not expired and not isSessionTimerActive) then
         local duration = endTime - startTime;
@@ -1168,6 +1181,11 @@ function AAtable:tryStartSessionDurationTimer()
     -- Update text
     setLatestSessionDurationText(expired, startTime, endTime);
     
+    -- No active session
+    if(not startTime) then
+        return;
+    end
+
     if (not expired and not isSessionTimerActive) then
         local duration = time() - startTime;
         local desiredInterval = (duration > 3600) and 60 or 1;

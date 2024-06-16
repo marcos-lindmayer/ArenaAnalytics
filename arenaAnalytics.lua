@@ -183,6 +183,19 @@ function ArenaAnalytics:getMatchSessionByIndex(matchIndex)
 	return nil;
 end
 
+function ArenaAnalytics:getLastMatch(ignoreInvalidDate)
+	if(not ignoreInvalidDate) then
+		for i=#MatchHistoryDB, 1, -1 do
+			local match = MatchHistoryDB[i];
+			if(tonumber(MatchHistoryDB[i]["date"]) and MatchHistoryDB[i]["date"] > 0) then
+				return MatchHistoryDB[i];
+			end
+		end
+	end
+
+	return MatchHistoryDB[#MatchHistoryDB];
+end
+
 -- Returns the whether last session and whether it has expired by time
 function ArenaAnalytics:getLastSession()
 	for i=#MatchHistoryDB, 1, -1 do
@@ -196,9 +209,10 @@ function ArenaAnalytics:getLastSession()
 	return 1, false;
 end
 
+-- TODO: Study to determine risk of no start time detected
 -- Returns the start and end times of the last session
 function ArenaAnalytics:getLastSessionStartAndEndTime()
-	local lastSession, expired, bestStartTime, endTime;
+	local lastSession, expired, bestStartTime, endTime = 0,true,0,0;
 
 	for i=#MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
@@ -386,7 +400,7 @@ function AAmatch:insertArenaOnTable()
 		["isRated"] = currentArena["isRated"],
 		["date"] = tonumber(currentArena["timeStartInt"]) or time(),
 		["season"] = season,
-		["session"] = session,
+		["session"] = nil,
 		["map"] = currentArena["mapName"], 
 		["bracket"] = bracket,
 		["duration"] = currentArena["duration"],
@@ -406,7 +420,7 @@ function AAmatch:insertArenaOnTable()
 
 	-- Assign session
 	local session = ArenaAnalytics:getLastSession();
-	local lastMatch = MatchHistoryDB[#MatchHistoryDB];
+	local lastMatch = ArenaAnalytics:getLastMatch(false);
 	if (not ArenaAnalytics:isMatchesSameSession(lastMatch, arenaData)) then
 		session = session + 1;
 	end
@@ -445,7 +459,7 @@ function AAmatch:fillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
 	
 	initialValue = unitGroup == "party" and  0 or 1;
 	for i = initialValue, currentArena["size"] do
-		local name, realm = UnitName(unitGroup .. i);
+		local name, realm = UnitNameUnmodified(unitGroup .. i);
 		
 		if (name ~= nil and name ~= "Unknown") then
 			if(realm == nil or realm == "") then
@@ -485,7 +499,7 @@ function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 		-- Check if spell was casted by party
 		for i = 1, #currentArena["party"] do
 			local unit = currentArena["party"][i];
-			if (unit["GUID"] == sourceGUID ) then
+			if (unit["GUID"] == sourceGUID) then
 				-- Adding spec to party member
 				unit["spec"] = AAmatch:assignSpec(unit["class"], unit["spec"], spec);
 				unitIsParty = true;
@@ -496,7 +510,7 @@ function AAmatch:detectSpec(sourceGUID, spellID, spellName)
 		if (not unitIsParty) then
 			for i = 1, #currentArena["enemy"] do
 				local unit = currentArena["enemy"][i];
-				if (unit["GUID"] == sourceGUID ) then
+				if (unit["GUID"] == sourceGUID) then
 					-- Adding spec to enemy member
 					unit["spec"] = AAmatch:assignSpec(unit["class"], unit["spec"], spec);
 					unitIsEnemy = true;

@@ -192,6 +192,14 @@ function ArenaAnalytics:GetThemeColor()
 	return c.r, c.g, c.b, c.hex;
 end
 
+function ArenaAnalytics:GetTitleColored(asSingleColor)
+	if(asSingleColor) then
+		return "|cff"..select(4, ArenaAnalytics:GetThemeColor()).."ArenaAnalytics|r";
+	else
+		return "Arena|cff"..select(4, ArenaAnalytics:GetThemeColor()).."Analytics|r";
+	end
+end
+
 local function onRatedStatsReceived()
 	if(ratedUpdateEvent ~= nil) then
 		ratedUpdateEvent:SetScript("OnEvent", nil);
@@ -213,9 +221,10 @@ local function createMinimapButton()
 	minibtn:SetHighlightTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconH]])
 	minibtn:SetScript("OnEnter", function ()
 		GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
-		local hex = select(4, ArenaAnalytics:GetThemeColor());
-		local tooltip = string.format("|cff%s%s|r", hex:upper(), "ArenaAnalytics") .. " \nClick to open";
-		GameTooltip:SetText(tooltip, nil, nil, nil, nil, (ArenaAnalyticsMinimapButton.tooltipStyle or true));
+		GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. ArenaAnalytics:getVersion() .. "|r");
+		GameTooltip:AddLine("|cffBBBBBB" .. "Left Click|r" .. " to toggle ArenaAnalytics");
+		GameTooltip:AddLine("|cffBBBBBB" .. "Right Click|r".. " to open Options");
+		GameTooltip:Show();
 	end);
 	minibtn:SetScript("OnLeave", function ()
 		GameTooltip:Hide();

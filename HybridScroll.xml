@@ -250,7 +250,7 @@
 						<Anchor point="TOPLEFT" x="0" y="0"/>
 						<Anchor point="BOTTOMRIGHT" x="0" y="0"/>
 					</Anchors>
-					<Color r="0" g="0" b="0" a="1"/>
+					<Color r="0" g="0" b="0" a="0.7"/>
 				</Texture>
 			</Layer>
 		</Layers>
@@ -279,7 +279,7 @@
 		</Scripts>
 		<ThumbTexture name="$parentThumbTexture" inherits="HybridScrollBarButton" file="Interface\Buttons\UI-ScrollBar-Knob" parentKey="thumbTexture">
 			<Size x="18" y="24"/>
-			<TexCoords left="0.20" right="0.80" top="0.125" bottom="0.875"/>
+			<TexCoords left="0.20" right="0.80" top="0.25" bottom="0.75"/>
 		</ThumbTexture>
 	</Slider>
 
