@@ -736,7 +736,10 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
 
                 local specIcon = spec and ArenaAnalyticsGetSpecIcon(spec, class) or nil;
                 playerFrame.specOverlay.texture:SetTexture(specIcon);
-                playerFrame.specOverlay:Hide();
+
+                if (ArenaAnalyticsSettings["alwaysShowSpecOverlay"] == false) then
+                    playerFrame.specOverlay:Hide();
+                end
 
                 local tooltipSpecText = (spec and #spec > 2) and spec or class;
                 local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class), tooltipSpecText);
@@ -789,7 +792,7 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
 
     for i = 1, #matchData do
         if (matchData[i].specOverlay) then
-            if (visible) then
+            if (visible or ArenaAnalyticsSettings["alwaysShowSpecOverlay"]) then
                 matchData[i].specOverlay:Show();
             else
                 matchData[i].specOverlay:Hide();

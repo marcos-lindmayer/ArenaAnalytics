@@ -133,6 +133,7 @@ function createTab_General()
 
     -- Setup options
     parent.showDeathOverlay = createCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
+    parent.showDeathOverlay = createCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
     parent.unsavedWarning = createInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
 end
 

@@ -19,6 +19,7 @@ function ArenaAnalyticsLoadSettings()
 	ArenaAnalyticsSettings["defaultCurrentSessionFilter"] = ArenaAnalyticsSettings["defaultCurrentSessionFilter"] or false;
 	ArenaAnalyticsSettings["showSkirmish"] = ArenaAnalyticsSettings["showSkirmish"] or false;
 	ArenaAnalyticsSettings["alwaysShowDeathOverlay"] = ArenaAnalyticsSettings["alwaysShowDeathOverlay"] or false;
+	ArenaAnalyticsSettings["alwaysShowSpecOverlay"] = ArenaAnalyticsSettings["alwaysShowSpecOverlay"] or false;
 	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 10;
 	ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] or true;
 	ArenaAnalyticsSettings["selectionControlModInversed"] = ArenaAnalyticsSettings["selectionControlModInversed"] or true;
