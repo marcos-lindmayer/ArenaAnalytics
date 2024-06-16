@@ -51,7 +51,7 @@ local currentArena = {
 	["mapId"] = nil, 
 	["playerName"] = "",
 	["duration"] = nil, 
-	["timeStartInt"] = 0,
+	["timeStartInt"] = nil,
 	["timeEnd"] = 0, 
 	["partyRating"] = nil,
 	["partyRatingDelta"] = "",
@@ -80,7 +80,7 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["mapId"] = nil;
 	currentArena["playerName"] = "";
 	currentArena["duration"] = nil;
-	currentArena["timeStartInt"] = 0;
+	currentArena["timeStartInt"] = nil;
 	currentArena["timeEnd"] = 0;
 	currentArena["partyRating"] = nil;
 	currentArena["partyRatingDelta"] = "";
@@ -325,6 +325,11 @@ end
 -- Calculates arena duration, turns arena data into friendly strings, adds it to MatchHistoryDB
 -- and triggers a layout refresh on ArenaAnalytics.arenaTable
 function AAmatch:insertArenaOnTable()
+	if(not currentArena["timeStartInt"] or currentArena["timeStartInt"] == 0) then
+		-- At least get an estimate for the time of the match this way.
+		currentArena["timeStartInt"] = time();
+	end
+
 	-- Calculate arena duration
 	if (currentArena["timeStartInt"] == 0) then
 		currentArena["duration"] = 0;
@@ -537,7 +542,7 @@ end
 -- GUID, name, race, class, spec
 function AAmatch:getAllAvailableInfo(eventType, ...)
 	-- Start tracking time again in case of disconnect
-	if (currentArena["timeStartInt"] == 0) then
+	if (not currentArena["timeStartInt"] or currentArena["timeStartInt"] == 0) then
 		currentArena["timeStartInt"] = time();
 	end
 
@@ -554,11 +559,10 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 	if (eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
 		local _,logEventType,_,sourceGUID,_,_,_,destGUID,_,_,_,spellID,spellName,spellSchool,extraSpellId,extraSpellName,extraSpellSchool = CombatLogGetCurrentEventInfo();
 		if (logEventType == "SPELL_CAST_SUCCESS" or logEventType == "SPELL_AURA_APPLIED") then
-			AAmatch:detectSpec(sourceGUID, spellID, spellName)
+			AAmatch:detectSpec(sourceGUID, spellID, spellName);
 		end
 		if (logEventType == "UNIT_DIED" and currentArena["firstDeath"] == nil) then
 			if(destGUID:find("Player")) then
-				deathRegistered = true;
 				local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(destGUID)
 				if(name ~= nil and name ~= "Unknown") then
 					if(realm == nil or realm == "") then
@@ -861,7 +865,8 @@ function AAmatch:hasArenaStarted(msg)
 	local locale = ArenaAnalytics.Constants.GetArenaTimer()
     for k,v in pairs(locale) do
         if string.find(msg, v) then
-            if (k == 0 and currentArena["timeStartInt"] == 0) then
+			-- Time is zero according to the broadcast message, and 
+            if (k == 0) then
 				currentArena["timeStartInt"] = time();
             end
         end
@@ -889,11 +894,10 @@ local function handleArenaEvents(_, eventType, ...)
 			if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil ) then
 				AAmatch:handleArenaEnd();
 				AAmatch:removeArenaEvents();
-				-- print("FIRED UPDATE_BATTLEFIELD_SCORE")
 			elseif (eventType == "UNIT_AURA" or eventType == "COMBAT_LOG_EVENT_UNFILTERED" or eventType == "ARENA_OPPONENT_UPDATE") then
-				currentArena["gotAllArenaInfo"] = currentArena["gotAllArenaInfo"] or AAmatch:getAllAvailableInfo(eventType, ...);
-			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL" and currentArena["timeStartInt"] == 0) then
-				AAmatch:hasArenaStarted(...)
+				AAmatch:getAllAvailableInfo(eventType, ...);
+			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL" and not currentArena["timeStartInt"]) then
+				AAmatch:hasArenaStarted(...);
 			end
 		end
 	end
