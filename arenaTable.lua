@@ -808,16 +808,15 @@ end
 -- Sets button row's background according to session
 local function setColorForSession(button, session, index)
     local isOddSession = (session or 0) % 2 == 1;
-    local oddColor, evenColor = 0.05, 0;
-
-    local c = isOddSession and oddColor or evenColor;
+    local oddAlpha, evenAlpha = 0.4, 0.1;
+    
+    local a = isOddSession and oddAlpha or evenAlpha;
 
     if((index or 0) % 2 == 1) then
-        c = c + 0.013;
+        a = a + 0.07;
     end
 
-    local a = 0.4;
-    button.Background:SetColorTexture(c, c, c, a)
+    button.Background:SetColorTexture(0, 0, 0, a)
 end
 
 -- Create dropdowns for the Comp filters
