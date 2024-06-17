@@ -283,7 +283,7 @@ function ArenaAnalytics:init()
 	
 	local version = ArenaAnalytics:getVersion();
 	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
-	ArenaAnalytics:Print("Early Access: Bugs are expected!", versionText);
+	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffBBBBBB" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");

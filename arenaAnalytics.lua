@@ -54,7 +54,8 @@ local currentArena = {
 	["ended"] = false,
 	["endedProperly"] = false,
 	["wonByPlayer"] = nil,
-	["firstDeath"] = nil
+	["firstDeath"] = nil,
+	["deathData"] = {}
 }
 
 -- Reset current arena values
@@ -84,6 +85,7 @@ function AAmatch:resetCurrentArenaValues()
 	currentArena["endedProperly"] = false;
 	currentArena["wonByPlayer"] = nil;
 	currentArena["firstDeath"] = nil;
+	currentArena["deathData"] = {};
 end
 
 function AAmatch:getCurrentArena()
@@ -122,8 +124,6 @@ function ArenaAnalytics:isMatchesSameSession(first, second)
 	if(not ArenaAnalytics:arenasHaveSameParty(first, second)) then
 		return false;
 	end
-
-	-- TODO: Add skirm diff to filter logic?
 
 	return true;
 end
@@ -258,6 +258,91 @@ function AAmatch:updateCachedBracketRatings()
 	end
 end
 
+local function getArenaPartyKeysForGUID(playerGUID)
+	local teams = {"party", "enemy"}
+
+	if(playerGUID) then
+		for _,teamKey in pairs(teams) do
+			local team = currentArena[teamKey];
+			if(team) then
+				for playerIndex,_ in team do
+					local player = team[playerIndex];
+					if(player and player["GUID"] and player["GUID"] == playerGUID) then
+						return team, playerIndex;
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Handle a player's death, through death or kill credit message
+local function handlePlayerDeath(playerGUID, isKillCredit)
+	ArenaAnalytics:Log("handlePlayerDeath ", playerGUID, " - ", isKillCredit)
+
+	if(playerGUID == nil) then
+		return;
+	end
+
+	currentArena["deathData"][playerGUID] = currentArena["deathData"][playerGUID] or {}
+
+	if(currentArena["deathData"][playerGUID] ~= nil) then
+		ArenaAnalytics:Log("Repeat player death detected.");
+	end
+
+	local _, class, _, _, _, playerName, realm = GetPlayerInfoByGUID(playerGUID);
+	if(playerName and playerName ~= "Unknown") then
+		if(realm == nil or realm == "" or realm == "Unknown") then
+			_,realm = UnitFullName("player"); -- Local player's realm
+		end
+
+		if(playerName and realm) then
+			playerName = playerName .. "-" .. realm;
+		end
+	end
+
+	-- Store death
+	currentArena["deathData"][playerGUID] = {
+		["time"] = time(), 
+		["GUID"] = playerGUID,
+		["name"] = playerName,
+		["isHunter"] = isHunter,
+		["hasKillCredit"] = isKillCredit or currentArena["deathData"][playerGUID]["hasKillCredit"]
+	}
+end
+
+-- Called from unit actions, to remove false deaths
+local function tryRemoveFromDeaths(playerGUID)
+	local existingData = currentArena["deathData"][playerGUID];
+	if(existingData ~= nil) then
+		local timeSinceDeath = time() - existingData["time"]
+		if(timeSinceDeath > 2) then
+			ArenaAnalytics:Log("Removed player death due to post death actions. Player: ", currentArena["deathData"][playerGUID]["name"], " Time since death: ", timeSinceDeath);
+			currentArena["deathData"][playerGUID] = nil;
+		end
+	end
+end
+
+-- Fetch the real first death when saving the match
+local function getFirstDeathFromCurrentArena()
+	local deathData = currentArena["deathData"];
+	if(deathData == nil or not next(deathData)) then
+		ArenaAnalytics:Print("Death data missing from currentArena.");
+		return;
+	end
+
+	local bestKey, bestTime;
+	for key,data in pairs(deathData) do
+		if(bestTime == nil or data["time"] < deathData[bestKey]["time"]) then
+			ArenaAnalytics:Print("Best death data: ", data["name"])
+			bestKey = key;
+			bestTime = data["time"];
+		end
+	end
+
+	return deathData[bestKey] and deathData[bestKey]["name"] or nil;
+end
+
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
 function AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec)
 	local classIcon = ArenaAnalyticsGetClassIcon(class)
@@ -319,6 +404,7 @@ function AAmatch:insertArenaOnTable()
 	if(not currentArena["timeStartInt"] or currentArena["timeStartInt"] == 0) then
 		-- At least get an estimate for the time of the match this way.
 		currentArena["timeStartInt"] = time();
+		ArenaAnalytics:Log("Force fixed start time at match end.");
 	end
 
 	-- Calculate arena duration
@@ -392,7 +478,7 @@ function AAmatch:insertArenaOnTable()
 		["comp"] = currentArena["comp"],
 		["enemyComp"] = currentArena["enemyComp"],
 		["won"] = currentArena["wonByPlayer"],
-		["firstDeath"] = currentArena["firstDeath"]
+		["firstDeath"] = getFirstDeathFromCurrentArena();
 	}
 
 	-- Assign session
@@ -551,17 +637,18 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 		local _,logEventType,_,sourceGUID,_,_,_,destGUID,_,_,_,spellID,spellName,spellSchool,extraSpellId,extraSpellName,extraSpellSchool = CombatLogGetCurrentEventInfo();
 		if (logEventType == "SPELL_CAST_SUCCESS" or logEventType == "SPELL_AURA_APPLIED") then
 			AAmatch:detectSpec(sourceGUID, spellID, spellName);
+			tryRemoveFromDeaths(sourceGUID);
 		end
-		if (logEventType == "UNIT_DIED" and currentArena["firstDeath"] == nil) then
-			if(destGUID:find("Player")) then
-				local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(destGUID)
-				if(name ~= nil and name ~= "Unknown") then
-					if(realm == nil or realm == "") then
-						_,realm = UnitFullName("player"); -- Local player's realm
-					end
 
-					currentArena["firstDeath"] = name .. "-" .. realm;
-				end
+		if(destGUID and destGUID:find("Player")) then
+			-- Player Death
+			if (logEventType == "UNIT_DIED") then
+				handlePlayerDeath(destGUID, false);
+			end
+			-- Player Death
+			if (logEventType == "PARTY_KILL") then
+				handlePlayerDeath(destGUID, true);
+				ArenaAnalytics:Log("Party Kill!");
 			end
 		end
 	else
