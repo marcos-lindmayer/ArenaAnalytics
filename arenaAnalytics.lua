@@ -773,7 +773,7 @@ function AAmatch:handleArenaEnd()
 	local numScores = GetNumBattlefieldScores();
 	currentArena["wonByPlayer"] = false;
 	for i=1, numScores do
-		local name, kills, honorKills, deaths, honorGained, faction, rank, race, class, damage, healing = GetBattlefieldScore(i);
+		local name, kills, honorKills, deaths, honorGained, faction, rank, race, class, _, damage, healing = GetBattlefieldScore(i);
 		if(not name:find("-")) then
 			_,realm = UnitFullName("player"); -- Local player's realm
 			name = name.."-"..realm;
