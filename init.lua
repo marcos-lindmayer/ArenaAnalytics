@@ -28,26 +28,23 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print("Total arenas stored: ", #MatchHistoryDB);
 	end,
 	
-	["oldtotal"] = function()
-		local total = 0;
-		if(ArenaAnalyticsDB) then
-			if(ArenaAnalyticsDB["2v2"]) then total = total + #ArenaAnalyticsDB["2v2"] end;
-			if(ArenaAnalyticsDB["3v3"]) then total = total + #ArenaAnalyticsDB["3v3"] end;
-			if(ArenaAnalyticsDB["5v5"]) then total = total + #ArenaAnalyticsDB["5v5"] end;
-		end
-
-		ArenaAnalytics:Print("Old total arenas: ", total);
-	end,
-	
 	["played"] = function()
 		local totalDurationInArenas = 0;
+		local currentSeasonTotalPlayed = 0;
 		for i=1, #MatchHistoryDB do
-			local duration = tonumber(MatchHistoryDB[i]["duration"]);
+			local match = MatchHistoryDB[i];
+			local duration = tonumber(match["duration"]);
 			if(duration and duration > 0) then
 				totalDurationInArenas = totalDurationInArenas + duration;
+
+				if(match["season"] == GetCurrentArenaSeason()) then
+					currentSeasonTotalPlayed = currentSeasonTotalPlayed + duration;
+				end
 			end
 		end
-		ArenaAnalytics:Print("You've spent a total of", SecondsToTime(totalDurationInArenas), "inside the arena!");
+		-- TODO: Update coloring?
+		ArenaAnalytics:Print("Total arena time played: ", SecondsToTime(totalDurationInArenas));
+		ArenaAnalytics:Print("Time played this season: ", SecondsToTime(currentSeasonTotalPlayed));
 		ArenaAnalytics:Print("Average arena duration: ", SecondsToTime(math.floor(totalDurationInArenas / #MatchHistoryDB)));
 	end,
 
@@ -65,9 +62,11 @@ ArenaAnalytics.commands = {
 	end,
 
 	["convert"] = function()
-		ArenaAnalytics:Print("Converting ArenaAnalyticsDB to MatchHistoryDB");
-		MatchHistoryDB = {} -- Force resetting it for testing
-		ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
+		ArenaAnalytics:Print("Forcing data version conversion..");
+		if(not MatchHistoryDB or #MatchHistoryDB == 0) then
+			ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB(); -- 0.3.0
+		end
+		ArenaAnalytics.VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
 	end,
 
 	["updatesessions"] = function()
@@ -312,6 +311,7 @@ function ArenaAnalytics:init()
 	
 	-- Try converting old matches to MatchHistoryDB
 	ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
+	ArenaAnalytics.VersionManager:renameMatchHistoryDBKeys();
 
 	ArenaAnalytics.AAmatch:EventRegister();
 	ArenaAnalytics.AAtable:OnLoad();

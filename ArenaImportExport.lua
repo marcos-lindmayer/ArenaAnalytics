@@ -525,8 +525,8 @@ function Import:createGroupTable_ArenaStats(arena, groupType, size)
                 ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
                 ["race"] = race,
                 ["class"] = isDK and "Death Knight" or string.lower(class):gsub("^%l", string.upper),
-                ["damageDone"] = nil,
-                ["healingDone"] = nil,
+                ["damage"] = nil,
+                ["healing"] = nil,
                 ["spec"] = nil
             }
             table.insert(group, player);
@@ -575,8 +575,8 @@ function Import:createGroupTable_ArenaAnalytics(arena, groupType, size)
                 ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
                 ["race"] = race,
                 ["class"] = class,
-                ["damageDone"] = arena[groupType ..  i .. "Damage"],
-                ["healingDone"] = arena[groupType ..  i .. "Healing"],
+                ["damage"] = arena[groupType ..  i .. "Damage"],
+                ["healing"] = arena[groupType ..  i .. "Healing"],
                 ["spec"] = arena[groupType ..  i .. "Spec"]
             }
             table.insert(group, player);

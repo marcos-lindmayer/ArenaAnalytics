@@ -38,8 +38,8 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     race = playerTable["race"] or "Unknwon";
     class = playerTable["class"] or "Unknwon";
     spec = playerTable["spec"] or "Unknwon";
-    damage = playerTable["damageDone"] or "-";
-    healing = playerTable["healingDone"] or "-";
+    damage = playerTable["damage"] or "-";
+    healing = playerTable["healing"] or "-";
     kills = playerTable["kills"] or "-";
     deaths = playerTable["deaths"] or "-";
 
@@ -52,9 +52,9 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     local function FormatValue(value)
-        if (value ~= "-") then
-            value = value or 0;
+        value = tonumber(value) or "-";
 
+        if (type(value) == "number") then
             -- TODO: Add option to shorten large numbers by suffix
 
             value = math.floor(value);

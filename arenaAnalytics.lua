@@ -105,13 +105,6 @@ function ArenaAnalytics:recomputeSessionsForMatchHistoryDB()
 	end
 end
 
--- Arena DB
-ArenaAnalyticsDB = ArenaAnalyticsDB ~= nil and ArenaAnalyticsDB or {
-	["2v2"] = {},
-	["3v3"] = {},
-	["5v5"] = {},
-};
-
 function ArenaAnalytics:hasStoredMatches()
 	return (MatchHistoryDB ~= nil and #MatchHistoryDB > 0);
 end
@@ -266,7 +259,7 @@ function AAmatch:updateCachedBracketRatings()
 end
 
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
-function AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damageDone, healingDone, spec)
+function AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec)
 	local classIcon = ArenaAnalyticsGetClassIcon(class)
 	local playerTable = {
 		["GUID"] = GUID,
@@ -276,8 +269,8 @@ function AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, cla
 		["race"] = race,
 		["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
 		["class"] = class,
-		["damageDone"] = damageDone,
-		["healingDone"] = healingDone,
+		["damage"] = damage,
+		["healing"] = healing,
 		["spec"] = spec or nil
 	};
 	return playerTable;
@@ -460,12 +453,12 @@ function AAmatch:fillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
 			-- Check if they were already added
 			local currentGroup = (unitGroup == "party") and currentArena["party"] or currentArena["enemy"];
 			if (not AAmatch:doesGroupContainMemberByName(currentGroup, name)) then
-				local kills, deaths, faction, damageDone, healingDone;
+				local kills, deaths, faction, damage, healing;
 				local class = UnitClass(unitGroup .. i);
 				local race = UnitRace(unitGroup .. i);
 				local GUID = UnitGUID(unitGroup .. i);
 				local spec = GUID == unitGuid and unitSpec or nil;
-				local player = AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damageDone, healingDone, spec);
+				local player = AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
 				table.insert(currentGroup, player);
 			end
 		end
@@ -694,13 +687,13 @@ function AAmatch:trackArena(...)
 	-- TODO (v0.4.0): Update to depend on whether local player has been added, in case data 
 	if (#currentArena["party"] == 0) then
 		-- Add player
-		local kills, faction, damageDone, healingDone, spec;
+		local kills, faction, damage, healing, spec;
 		local class = UnitClass("player");
 		local race = UnitRace("player");
 		local GUID = UnitGUID("player");
 		local name = currentArena["playerName"];
 		local spec = AAmatch:getPlayerSpec();
-		local player = AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damageDone, healingDone, spec);
+		local player = AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
 		table.insert(currentArena["party"], player);
 	end
 
@@ -780,7 +773,7 @@ function AAmatch:handleArenaEnd()
 	local numScores = GetNumBattlefieldScores();
 	currentArena["wonByPlayer"] = false;
 	for i=1, numScores do
-		local name, kills, honorKills, deaths, honorGained, faction, rank, race, class, damageDone, healingDone = GetBattlefieldScore(i);
+		local name, kills, honorKills, deaths, honorGained, faction, rank, race, class, damage, healing = GetBattlefieldScore(i);
 		if(not name:find("-")) then
 			_,realm = UnitFullName("player"); -- Local player's realm
 			name = name.."-"..realm;
@@ -790,7 +783,7 @@ function AAmatch:handleArenaEnd()
 		local spec = AAmatch:getCollectedValue("spec", name);
 		local GUID = AAmatch:getCollectedValue("GUID", name);
 		-- Create complete player tables
-		local player = AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damageDone, healingDone, spec);
+		local player = AAmatch:createPlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
 		if (player["name"] == currentArena["playerName"]) then
 			if (faction == winner) then
 				currentArena["wonByPlayer"] = true;

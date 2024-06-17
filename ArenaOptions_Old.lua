@@ -195,12 +195,7 @@ function Options_OLD:createSettingsFrame()
     ArenaAnalyticsScrollFrame.resetBtn:Disable()
     ArenaAnalyticsScrollFrame.resetBtn:SetDisabledFontObject("GameFontDisableSmall")
     ArenaAnalyticsScrollFrame.resetBtn:SetScript("OnClick", function (i) 
-        ArenaAnalyticsDB = {
-			["2v2"] = nil,
-			["3v3"] = nil,
-			["5v5"] = nil,
-		};
-		ArenaAnalyticsDB = nil;
+		ArenaAnalyticsDB = nil; -- Kept in case of stuck outdated data
 		
 		ArenaAnalytics.filteredMatchHistory = { }
 		MatchHistoryDB = { }

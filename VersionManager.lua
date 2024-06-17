@@ -97,6 +97,7 @@ local function computeSeasonWhenMissing(season, unixDate)
     return season;
 end
 
+-- v0.3.0 -> 0.5.0
 local function updateGroupDataToNewFormat(group)
     local updatedGroup = {};
     for _, player in ipairs(group) do
@@ -110,7 +111,7 @@ local function updateGroupDataToNewFormat(group)
             ["spec"] = spec,
             ["race"] = player["race"],
             ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(player["race"]),
-            ["kills"] = tonumber(player["kills"]),
+            ["killingBlows"] = tonumber(player["killingBlows"]),
             ["deaths"] = tonumber(player["deaths"]),
             ["damageDone"] = tonumber(player["damageDone"]),
             ["healingDone"] = tonumber(player["healingDone"])
@@ -170,6 +171,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 
     if(#MatchHistoryDB > 0) then
         ArenaAnalytics:Log("Non-empty MatchHistoryDB.");
+        ArenaAnalyticsDB = nil;
         return;
     end
 
@@ -231,4 +233,35 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 
     -- Refresh filters
     ArenaAnalytics.Filter:refreshFilters();
+
+    -- Remove old storage
+    ArenaAnalyticsDB = nil;
+end
+
+-- 0.5.0 renamed keys
+function VersionManager:renameMatchHistoryDBKeys()
+    local function renameKey(table, oldKey, newKey)
+        if(table[oldKey] and not table[newKey]) then
+            ArenaAnalytics:Print("Renaming keys in MatchHistoryDB from key: ", oldKey, " to: ", newKey)
+            table[newKey] = table[oldKey];
+            table[oldKey] = nil;
+        end
+    end
+
+    for i = 1, #MatchHistoryDB do
+		local match = MatchHistoryDB[i];
+        
+        local teams = {"team", "enemyTeam"}
+
+        for _,team in ipairs(teams) do
+            for i = 1, #match[team] do
+                local player = match[team][i];
+
+                -- Rename keys:
+                renameKey(player, "damageDone", "damage");
+                renameKey(player, "healingDone", "healing");
+                renameKey(player, "killingBlows", "kills");
+            end    
+        end
+	end
 end
