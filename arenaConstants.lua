@@ -299,7 +299,7 @@ function Constants:GetArenaTimer()
 end
 
 -- Returns class color hex by className
-function ArenaAnalyticsGetClassColor(className)
+function ArenaAnalytics:GetClassColor(className)
     if(className == nil) then
         return 'ffffffff';
     end
@@ -309,6 +309,10 @@ function ArenaAnalyticsGetClassColor(className)
     end
     
     return select(4, GetClassColor(className:upper()));
+end
+
+function ArenaAnalytics:ApplyClassColor(text, class)
+    return "|c" .. ArenaAnalytics:GetClassColor(class) .. text or "" .."|r";
 end
 
 -- Returns class icon path string

@@ -76,8 +76,9 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:Show();
+                        else
+                            print(self.tooltip);
                         end
                     </OnEnter>
                     <OnLeave>
@@ -93,8 +94,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>
@@ -110,8 +111,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>
@@ -127,8 +128,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>
@@ -144,8 +145,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>
@@ -161,8 +162,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>
@@ -178,8 +179,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>
@@ -195,8 +196,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>
@@ -212,8 +213,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>
@@ -229,8 +230,8 @@
                 <Scripts>
                     <OnEnter>
                         if (self.tooltip) then
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, (self.tooltipStyle or true));
+                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
+                            self.tooltip:Show();
                         end
                     </OnEnter>
                     <OnLeave>

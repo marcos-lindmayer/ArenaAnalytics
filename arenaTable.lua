@@ -660,7 +660,7 @@ local function addPlayerToQuickSearch(previousSearch, prefix, playerToAdd)
     ArenaAnalyticsScrollFrame.searchBox:SetText(ArenaAnalytics.Filter.currentFilters["Filter_Search"]["raw"]);
 end
 
-local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEntry)
+local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, matchKey, scrollEntry)
     if(match == nil or match[matchKey] == nil) then
         return;
     end
@@ -669,6 +669,10 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
         local player = match[matchKey][i];
         local playerFrame = teamPlayerFrames[i];
         if (player and playerFrame) then
+            playerFrame.team = matchKey;
+            playerFrame.playerIndex = i;
+            playerFrame.matchIndex = matchIndex;
+            
             local class = player["class"];
             local spec = player["spec"];
 
@@ -740,17 +744,19 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchKey, scrollEn
                 if (ArenaAnalyticsSettings["alwaysShowSpecOverlay"] == false) then
                     playerFrame.specOverlay:Hide();
                 end
-
-                local tooltipSpecText = (spec and #spec > 2) and spec or class;
-                local coloredSpecText = string.format("|c%s%s|r", ArenaAnalyticsGetClassColor(class), tooltipSpecText);
-                playerFrame.tooltip = playerName .. " | " .. coloredSpecText; -- TODO: Update to improved tooltip
             else
                 if (playerFrame.specOverlay) then
                     playerFrame.specOverlay:SetTexture(nil);
                     playerFrame.specOverlay:Hide();
                 end
-                playerFrame.tooltip = playerName;
             end
+
+            playerFrame:SetScript("OnEnter", function ()
+                ArenaAnalytics.Tooltips:DrawPlayerTooltip(playerFrame);
+            end);
+            playerFrame:SetScript("OnLeave", function ()
+                GameTooltip:Hide();
+            end);
 
             -- Add death overlay            
             local firstDeath = match["firstDeath"] and match["firstDeath"]:gsub("-", "%%-") or nil;
@@ -1052,8 +1058,8 @@ function AAtable:RefreshLayout()
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
             
             -- Setup player class frames
-            setupTeamPlayerFrames(teamIconsFrames, match, "team", button);
-            setupTeamPlayerFrames(enemyTeamIconsFrames, match, "enemyTeam", button);
+            setupTeamPlayerFrames(teamIconsFrames, match, matchIndex, "team", button);
+            setupTeamPlayerFrames(enemyTeamIconsFrames, match, matchIndex, "enemyTeam", button);
 
             local enemyDelta
             -- Paint winner green, loser red

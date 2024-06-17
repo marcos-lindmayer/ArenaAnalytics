@@ -2,6 +2,23 @@ local _, ArenaAnalytics = ...; -- Namespace
 ArenaAnalytics.Options = {};
 local Options = ArenaAnalytics.Options;
 
+-- TODO: Consider making some settings character specific (For cases like one char having lots of games desiring different comp filter limits)
+-- User settings
+ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
+
+function ArenaAnalyticsLoadSettings()
+	ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsSettings["outliers"] or 0;
+	ArenaAnalyticsSettings["compsLimit"] = ArenaAnalyticsSettings["compsLimit"] or 0;
+	ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] = ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] or false;
+	ArenaAnalyticsSettings["defaultCurrentSessionFilter"] = ArenaAnalyticsSettings["defaultCurrentSessionFilter"] or false;
+	ArenaAnalyticsSettings["showSkirmish"] = ArenaAnalyticsSettings["showSkirmish"] or false;
+	ArenaAnalyticsSettings["alwaysShowDeathOverlay"] = ArenaAnalyticsSettings["alwaysShowDeathOverlay"] or false;
+	ArenaAnalyticsSettings["alwaysShowSpecOverlay"] = ArenaAnalyticsSettings["alwaysShowSpecOverlay"] or false;
+	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 10;
+	ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] or true;
+	ArenaAnalyticsSettings["selectionControlModInversed"] = ArenaAnalyticsSettings["selectionControlModInversed"] or true;
+end
+
 ArenaAnalyticsOptionsFrame = nil;
 
 local TabTitleSize = 18;

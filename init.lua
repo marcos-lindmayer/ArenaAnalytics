@@ -220,11 +220,7 @@ local function createMinimapButton()
 	minibtn:SetPushedTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconP]])
 	minibtn:SetHighlightTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconH]])
 	minibtn:SetScript("OnEnter", function ()
-		GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
-		GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. ArenaAnalytics:getVersion() .. "|r");
-		GameTooltip:AddLine("|cffBBBBBB" .. "Left Click|r" .. " to toggle ArenaAnalytics");
-		GameTooltip:AddLine("|cffBBBBBB" .. "Right Click|r".. " to open Options");
-		GameTooltip:Show();
+		ArenaAnalytics.Tooltips:DrawMinimapTooltip();
 	end);
 	minibtn:SetScript("OnLeave", function ()
 		GameTooltip:Hide();
@@ -280,9 +276,7 @@ local function createMinimapButton()
 	end)
 end
 
-function ArenaAnalytics:init(event, name, ...)
-	if (name ~= "ArenaAnalytics") then return end 
-	
+function ArenaAnalytics:init()
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
@@ -314,7 +308,7 @@ function ArenaAnalytics:init(event, name, ...)
 	ratedUpdateEvent = CreateFrame("Frame");
 	ratedUpdateEvent:RegisterEvent("PVP_RATED_STATS_UPDATE");
 	ratedUpdateEvent:SetScript("OnEvent", function() onRatedStatsReceived() end);
-	C_Timer.After(0, function() RequestRatedInfo() end);
+	RequestRatedInfo();
 	
 	-- Try converting old matches to MatchHistoryDB
 	ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
@@ -335,6 +329,13 @@ function ArenaAnalytics:init(event, name, ...)
 	createMinimapButton();
 end
 
+-- Delay the init a frame, to allow all files to be loaded
+function ArenaAnalytics:delayedInit(event, name, ...)
+	if (name ~= "ArenaAnalytics") then return end
+
+	C_Timer.After(0, function() ArenaAnalytics.init() end);
+end
+
 local events = CreateFrame("Frame");
 events:RegisterEvent("ADDON_LOADED");
-events:SetScript("OnEvent", ArenaAnalytics.init);
+events:SetScript("OnEvent", ArenaAnalytics.delayedInit);

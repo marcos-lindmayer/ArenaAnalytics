@@ -520,7 +520,7 @@ function Import:createGroupTable_ArenaStats(arena, groupType, size)
             local player = {
                 ["GUID"] = nil,
                 ["name"] = name or "",
-                ["killingBlows"] = nil,
+                ["kills"] = nil,
                 ["deaths"] = nil,
                 ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
                 ["race"] = race,
@@ -570,7 +570,7 @@ function Import:createGroupTable_ArenaAnalytics(arena, groupType, size)
             local player = {
                 ["GUID"] = nil,
                 ["name"] = name,
-                ["killingBlows"] = arena[groupType ..  i .. "Kills"],
+                ["kills"] = arena[groupType ..  i .. "Kills"],
                 ["deaths"] = arena[groupType ..  i .. "Deaths"],
                 ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
                 ["race"] = race,

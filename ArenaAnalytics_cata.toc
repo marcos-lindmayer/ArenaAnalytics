@@ -8,6 +8,7 @@
 ## SavedVariablesPerCharacter: ArenaAnalyticsDB, MatchHistoryDB, ArenaAnalyticsCharacterSettings
 
 init.lua
+ArenaOptions.lua
 arenaConstants.lua
 arenaSpecSpells_cata.lua
 arenaAPI_cata.lua
@@ -19,6 +20,6 @@ arenaTable.lua
 HybridScroll.xml
 VersionManager.lua
 ArenaMoreFilters.lua
-ArenaOptions.lua
 ArenaOptions_OLD.lua
 ArenaMatchSelection.lua
+ArenaTooltips.lua

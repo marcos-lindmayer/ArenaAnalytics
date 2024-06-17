@@ -110,7 +110,7 @@ local function updateGroupDataToNewFormat(group)
             ["spec"] = spec,
             ["race"] = player["race"],
             ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(player["race"]),
-            ["killingBlows"] = tonumber(player["killingBlows"]),
+            ["kills"] = tonumber(player["kills"]),
             ["deaths"] = tonumber(player["deaths"]),
             ["damageDone"] = tonumber(player["damageDone"]),
             ["healingDone"] = tonumber(player["healingDone"])
