@@ -19,7 +19,7 @@ function ArenaAnalyticsLoadSettings()
 	ArenaAnalyticsSettings["selectionControlModInversed"] = ArenaAnalyticsSettings["selectionControlModInversed"] or true;
 end
 
-ArenaAnalyticsOptionsFrame = nil;
+local ArenaAnalyticsOptionsFrame = nil;
 
 local TabTitleSize = 18;
 local TabHeaderSize = 16;
@@ -32,9 +32,9 @@ local OptionsSpacing = 25;
 local offsetY = 0;
 
 function Options:Open()
-    if(ArenaAnalyticsOptionsFrame and ArenaAnalyticsOptionsFrame.name) then
-        InterfaceOptionsFrame_OpenToCategory(ArenaAnalyticsOptionsFrame.name);
-        InterfaceOptionsFrame_OpenToCategory(ArenaAnalyticsOptionsFrame.name);
+    if(ArenaAnalyticsOptionsFrame) then
+        InterfaceOptionsFrame_OpenToCategory(ArenaAnalyticsOptionsFrame);
+        InterfaceOptionsFrame_OpenToCategory(ArenaAnalyticsOptionsFrame);
     end
 end
 

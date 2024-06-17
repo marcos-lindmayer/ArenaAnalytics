@@ -189,17 +189,17 @@ end
 -- TODO: Study to determine risk of no start time detected
 -- Returns the start and end times of the last session
 function ArenaAnalytics:getLastSessionStartAndEndTime()
-	local lastSession, expired, bestStartTime, endTime = 0,true,0,0;
+	local lastSession, expired, bestStartTime, endTime = nil,true;
 
 	for i=#MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
+
 		if(match and tonumber(match["session"])) then
 			if(lastSession == nil) then
 				lastSession = tonumber(match["session"]);
 				expired = (time() - match["date"]) > 3600;
 				endTime = expired and match["date"] or time();
 			end
-			ForceDebugNilError(lastSession, true);
 						
 			if(lastSession == tonumber(match["session"])) then
 				bestStartTime = match["date"] - match["duration"];

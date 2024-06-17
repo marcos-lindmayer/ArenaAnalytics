@@ -1170,12 +1170,7 @@ local function handleSessionDurationTimer()
     -- Update text
     setLatestSessionDurationText(expired, startTime, endTime);
 
-    -- No active session
-    if(not startTime) then
-        return;
-    end
-
-    if (not expired and not isSessionTimerActive) then
+    if (startTime and not expired and not isSessionTimerActive) then
         local duration = endTime - startTime;
         local desiredInterval = (duration > 3600) and 60 or 1;
         isSessionTimerActive = true;
@@ -1185,16 +1180,10 @@ end
 
 function AAtable:tryStartSessionDurationTimer()
     local _,expired, startTime, endTime = ArenaAnalytics:getLastSessionStartAndEndTime();
-    
     -- Update text
     setLatestSessionDurationText(expired, startTime, endTime);
     
-    -- No active session
-    if(not startTime) then
-        return;
-    end
-
-    if (not expired and not isSessionTimerActive) then
+    if (startTime and not expired and not isSessionTimerActive) then
         local duration = time() - startTime;
         local desiredInterval = (duration > 3600) and 60 or 1;
         local firstInterval = desiredInterval - duration % desiredInterval;

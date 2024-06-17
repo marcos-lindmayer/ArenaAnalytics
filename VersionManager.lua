@@ -242,7 +242,6 @@ end
 function VersionManager:renameMatchHistoryDBKeys()
     local function renameKey(table, oldKey, newKey)
         if(table[oldKey] and not table[newKey]) then
-            ArenaAnalytics:Print("Renaming keys in MatchHistoryDB from key: ", oldKey, " to: ", newKey)
             table[newKey] = table[oldKey];
             table[oldKey] = nil;
         end
