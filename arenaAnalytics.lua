@@ -624,6 +624,7 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 	-- Start tracking time again in case of disconnect
 	if (not currentArena["timeStartInt"] or currentArena["timeStartInt"] == 0) then
 		currentArena["timeStartInt"] = time();
+		ArenaAnalytics:Log("Set new start time. Probable reconnect.");
 	end
 
 	if (currentArena["size"] == nil) then

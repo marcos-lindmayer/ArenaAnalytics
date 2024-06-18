@@ -433,12 +433,17 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.settingsButton:SetHighlightFontObject("GameFontHighlight");
     ArenaAnalyticsScrollFrame.settingsButton:SetSize(24, 19);
     ArenaAnalyticsScrollFrame.settingsButton:SetScript("OnClick", function()
-        if (not ArenaAnalyticsScrollFrame.settingsFrame:IsShown()) then  
-            ArenaAnalyticsScrollFrame.settingsFrame:Show();
-            ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
-            ArenaAnalyticsScrollFrame.resetBtn:Disable();
+        local enableOldSettings = false;
+        if not enableOldSettings then
+            ArenaAnalytics.Options:Open();
         else
-            ArenaAnalyticsScrollFrame.settingsFrame:Hide();
+            if (not ArenaAnalyticsScrollFrame.settingsFrame:IsShown()) then  
+                ArenaAnalyticsScrollFrame.settingsFrame:Show();
+                ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
+                ArenaAnalyticsScrollFrame.resetBtn:Disable();
+            else
+                ArenaAnalyticsScrollFrame.settingsFrame:Hide();
+            end
         end
     end);
 
