@@ -278,17 +278,11 @@ end
 
 -- Handle a player's death, through death or kill credit message
 local function handlePlayerDeath(playerGUID, isKillCredit)
-	ArenaAnalytics:Log("handlePlayerDeath ", playerGUID, " - ", isKillCredit)
-
 	if(playerGUID == nil) then
 		return;
 	end
 
 	currentArena["deathData"][playerGUID] = currentArena["deathData"][playerGUID] or {}
-
-	if(currentArena["deathData"][playerGUID] ~= nil) then
-		ArenaAnalytics:Log("Repeat player death detected.");
-	end
 
 	local _, class, _, _, _, playerName, realm = GetPlayerInfoByGUID(playerGUID);
 	if(playerName and playerName ~= "Unknown") then
@@ -306,18 +300,25 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 		["time"] = time(), 
 		["GUID"] = playerGUID,
 		["name"] = playerName,
-		["isHunter"] = isHunter,
+		["isHunter"] = (class == "HUNTER") or nil;
 		["hasKillCredit"] = isKillCredit or currentArena["deathData"][playerGUID]["hasKillCredit"]
 	}
 end
 
 -- Called from unit actions, to remove false deaths
-local function tryRemoveFromDeaths(playerGUID)
+local function tryRemoveFromDeaths(playerGUID, spell)
 	local existingData = currentArena["deathData"][playerGUID];
 	if(existingData ~= nil) then
 		local timeSinceDeath = time() - existingData["time"]
-		if(timeSinceDeath > 2) then
-			ArenaAnalytics:Log("Removed player death due to post death actions. Player: ", currentArena["deathData"][playerGUID]["name"], " Time since death: ", timeSinceDeath);
+		
+		-- TODO: Confirm that minimal delay is fine. Otherwise improve logic to determine delay based on isHunter and hasKillCredit.
+		local minimumDelay = existingData["isHunter"] and 2 or 10;
+		if(existingData["hasKillCredit"]) then
+			minimumDelay = minimumDelay + 5;
+		end
+		
+		if(timeSinceDeath > 0) then
+			ArenaAnalytics:Log("Removed death by post-death action: ", spell, " for player: ",currentArena["deathData"][playerGUID]["name"], " Time since death: ", timeSinceDeath);
 			currentArena["deathData"][playerGUID] = nil;
 		end
 	end
@@ -327,20 +328,22 @@ end
 local function getFirstDeathFromCurrentArena()
 	local deathData = currentArena["deathData"];
 	if(deathData == nil or not next(deathData)) then
-		ArenaAnalytics:Print("Death data missing from currentArena.");
+		ArenaAnalytics:Log("Death data missing from currentArena.");
 		return;
 	end
 
 	local bestKey, bestTime;
 	for key,data in pairs(deathData) do
 		if(bestTime == nil or data["time"] < deathData[bestKey]["time"]) then
-			ArenaAnalytics:Print("Best death data: ", data["name"])
+			ArenaAnalytics:Log("Best death data: ", data["name"])
 			bestKey = key;
 			bestTime = data["time"];
 		end
 	end
 
-	return deathData[bestKey] and deathData[bestKey]["name"] or nil;
+	if(bestKey) then
+		return deathData[bestKey] and deathData[bestKey]["name"] or nil;
+	end
 end
 
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
@@ -635,9 +638,13 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 	-- Tracking teams for spec/race and in case arena is quitted
 	if (eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
 		local _,logEventType,_,sourceGUID,_,_,_,destGUID,_,_,_,spellID,spellName,spellSchool,extraSpellId,extraSpellName,extraSpellSchool = CombatLogGetCurrentEventInfo();
-		if (logEventType == "SPELL_CAST_SUCCESS" or logEventType == "SPELL_AURA_APPLIED") then
+		if (logEventType == "SPELL_CAST_SUCCESS") then
 			AAmatch:detectSpec(sourceGUID, spellID, spellName);
-			tryRemoveFromDeaths(sourceGUID);
+			tryRemoveFromDeaths(sourceGUID, spellName);
+		end
+
+		if(logEventType == "SPELL_AURA_APPLIED") then
+			AAmatch:detectSpec(sourceGUID, spellID, spellName);
 		end
 
 		if(destGUID and destGUID:find("Player")) then
@@ -645,7 +652,7 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 			if (logEventType == "UNIT_DIED") then
 				handlePlayerDeath(destGUID, false);
 			end
-			-- Player Death
+			-- Player killed
 			if (logEventType == "PARTY_KILL") then
 				handlePlayerDeath(destGUID, true);
 				ArenaAnalytics:Log("Party Kill!");
@@ -685,8 +692,6 @@ function AAmatch:getAllAvailableInfo(eventType, ...)
 			return false;
 		end
 	end
-
-	return currentArena["firstDeath"];
 end
 
 -- Player quitted the arena before it ended
