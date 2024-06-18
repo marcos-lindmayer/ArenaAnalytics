@@ -279,7 +279,7 @@
 			<OnValueChanged function="HybridScrollFrame_OnValueChanged"/>
 		</Scripts>
 		<ThumbTexture name="$parentThumbTexture" inherits="HybridScrollBarButton" file="Interface\Buttons\UI-ScrollBar-Knob" parentKey="thumbTexture">
-			<Size x="15" y="24"/>
+			<Size x="18" y="24"/>
 			<TexCoords left="0.125" right="0.825" top="0.25" bottom="0.805"/>
 		</ThumbTexture>
 	</Slider>

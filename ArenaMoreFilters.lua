@@ -7,7 +7,7 @@ local MoreFilters = ArenaAnalytics.MoreFilters;
 
 -- Main dropdown menu items (In reverse order!)
 local dropdownInfo = {
-    ["Filter_Date"] = { ["text"] = "Date", ["options"] = {"All Time" , "Current Session", "Last day", "Last week", "Last Month", "Last 3 months", "Last 6 months", "Last year"} },
+    ["Filter_Date"] = { ["text"] = "Date", ["options"] = {"All Time" , "Current Session", "Last Day", "Last Week", "Last Month", "Last 3 Months", "Last 6 Months", "Last Year"} },
     ["Filter_Season"] = { ["text"] = "Season", ["options"] = {"All" , "Current Season"} },
     ["Filter_Map"] = { ["text"] = "Maps", ["options"] = {"All" ,"Nagrand Arena" ,"Ruins of Lordaeron", "Blade Edge Arena", "Dalaran Arena"} },
 }

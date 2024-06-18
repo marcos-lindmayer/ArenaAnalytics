@@ -365,25 +365,26 @@ local function doesMatchPassFilter_Date(match)
     if match == nil then return false end;
 
     local value = Filter.currentFilters["Filter_Date"] and Filter.currentFilters["Filter_Date"] or "";
+    value = value:lower();
     local seconds = 0;
-    if(value == "All Time" or value == "") then
+    if(value == "all time" or value == "") then
         return true;
-    elseif(value == "Current Session") then        
+    elseif(value == "current session") then        
         return match["session"] == ArenaAnalytics:getLastSession();
-    elseif(value == "Last Day") then
+    elseif(value == "last day") then
         seconds = 86400;
-    elseif(value == "Last Week") then
+    elseif(value == "last week") then
         seconds = 604800;
-    elseif(value == "Last Month") then -- 31 days
+    elseif(value == "last month") then -- 31 days
         seconds = 2678400;        
-    elseif(value == "Last 3 months") then
+    elseif(value == "last 3 months") then
         seconds = 7889400;
-    elseif(value == "Last 6 months") then
+    elseif(value == "last 6 months") then
         seconds = 15778800;
-    elseif(value == "Last year") then
+    elseif(value == "last year") then
         seconds = 31536000;
     end
-    
+
     return match["date"] > (time() - seconds);
 end
 

@@ -758,6 +758,10 @@ end
 function AAmatch:trackArena(...)
 	AAmatch:resetCurrentArenaValues();
 
+	ArenaAnalytics:Print("Tracking started..");
+
+	currentArena["timeStartInt"] = currentArena["timeStartInt"] or time();
+
 	currentArena["battlefieldId"] = ...;
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRated, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena["battlefieldId"]);
 	
