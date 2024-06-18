@@ -1,8 +1,8 @@
 ## Interface: 40400
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
-## Author: Lingo
-## Version: 0.5.2
+## Author: Lingo, Zeetrax
+## Version: 0.5.3
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSettings
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsCharacterSettings
