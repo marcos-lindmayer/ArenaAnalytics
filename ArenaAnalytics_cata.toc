@@ -23,3 +23,5 @@ ArenaMoreFilters.lua
 ArenaOptions_OLD.lua
 ArenaMatchSelection.lua
 ArenaTooltips.lua
+ArenaTracker.lua
+ArenaEvents.lua

@@ -294,14 +294,13 @@ function ArenaAnalytics:init()
 	----------------------------------
 	-- Register Slash Commands
 	----------------------------------
-
 	SLASH_AuraTracker1 = "/aa";
 	SLASH_AuraTracker2 = "/arenaanalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
 	ArenaAnalytics:updateLastSession();
 
-	ArenaAnalyticsLoadSettings();
+	ArenaAnalytics.Options:LoadSettings();
 
 	-- Update cached rating as soon as possible
 	ratedUpdateEvent = CreateFrame("Frame");
@@ -313,7 +312,8 @@ function ArenaAnalytics:init()
 	ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
 	ArenaAnalytics.VersionManager:renameMatchHistoryDBKeys();
 
-	ArenaAnalytics.AAmatch:EventRegister();
+	ArenaAnalytics:Print("Init pre-RegisterGlobalEvents")
+	ArenaAnalytics.Events:RegisterGlobalEvents();
 	ArenaAnalytics.AAtable:OnLoad();
 	
 	if(IsInInstance() or IsInGroup(1)) then

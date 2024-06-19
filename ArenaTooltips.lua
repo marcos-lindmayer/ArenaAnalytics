@@ -35,9 +35,9 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
 
     player = playerName or "Unknown";
     faction = playerTable["faction"] or "Unknown";
-    race = playerTable["race"] or "Unknwon";
-    class = playerTable["class"] or "Unknwon";
-    spec = playerTable["spec"] or "Unknwon";
+    race = playerTable["race"] or "Unknown Race";
+    class = playerTable["class"] or "";
+    spec = playerTable["spec"] or "";
     damage = playerTable["damage"] or "-";
     healing = playerTable["healing"] or "-";
     kills = playerTable["kills"] or "-";
