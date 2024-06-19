@@ -88,8 +88,6 @@ end
 function ArenaTracker:trackArena(...)
 	ArenaTracker:ResetCurrentArenaValues();
 
-	ArenaAnalytics:Print("Tracking started..");
-
 	currentArena["timeStartInt"] = currentArena["timeStartInt"] or time();
 
 	currentArena["battlefieldId"] = ...;
@@ -136,14 +134,12 @@ end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
 function ArenaTracker:hasArenaStarted(msg)
-	if(not currentArena["timeStartInt"]) then
-		local locale = ArenaAnalytics.Constants.GetArenaTimer()
-		for k,v in pairs(locale) do
-			if string.find(msg, v) then
-				-- Time is zero according to the broadcast message, and 
-				if (k == 0) then
-					currentArena["timeStartInt"] = time();
-				end
+	local locale = ArenaAnalytics.Constants.GetArenaTimer()
+	for k,v in pairs(locale) do
+		if string.find(msg, v) then
+			-- Time is zero according to the broadcast message, and 
+			if (k == 0) then
+				currentArena["timeStartInt"] = time();
 			end
 		end
 	end
@@ -187,10 +183,10 @@ end
 -- info from the UPDATE_BATTLEFIELD_SCORE event
 function ArenaTracker:GetCollectedValue(value, name)
 	local teams = {"party", "enemy"}
-	for _,v in pairs(teams) do
-		for i = 1, #currentArena[v] do
-			if (currentArena[v][i][value] ~= "" and currentArena[v][i]["name"] == name) then
-				return currentArena["party"][i][value]
+	for _,group in pairs(teams) do
+		for i = 1, #currentArena[group] do
+			if (currentArena[group][i][value] ~= "" and currentArena[group][i]["name"] == name) then
+				return currentArena[group][i][value]
 			end
 		end
 	end
@@ -520,32 +516,27 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	-- Check if spell belongs to spec defining spells
 	local spec = ArenaAnalytics.SpecSpells:GetSpec(spellID);
 	if (spec ~= nil) then
-		local unitIsParty = false;
-		local unitIsEnemy = false;
 		-- Check if spell was casted by party
 		for i = 1, #currentArena["party"] do
 			local unit = currentArena["party"][i];
 			if (unit["GUID"] == sourceGUID) then
 				-- Adding spec to party member
 				unit["spec"] = ArenaTracker:assignSpec(unit["class"], unit["spec"], spec);
-				unitIsParty = true;
-				break;
+				return;
 			end
 		end
 		-- Check if spell was casted by enemy
-		if (not unitIsParty) then
-			for i = 1, #currentArena["enemy"] do
-				local unit = currentArena["enemy"][i];
-				if (unit["GUID"] == sourceGUID) then
-					-- Adding spec to enemy member
-					unit["spec"] = ArenaTracker:assignSpec(unit["class"], unit["spec"], spec);
-					unitIsEnemy = true;
-					break;
-				end
+		for i = 1, #currentArena["enemy"] do
+			local unit = currentArena["enemy"][i];
+			if (unit["GUID"] == sourceGUID) then
+				-- Adding spec to enemy member
+				unit["spec"] = ArenaTracker:assignSpec(unit["class"], unit["spec"], spec);
+				return;
 			end
 		end
+
 		-- Check if unit should be added
-		if (unitIsEnemy == false and unitIsParty == false and string.find(sourceGUID, "Player-")) then
+		if (string.find(sourceGUID, "Player-")) then
 			--Determine arena group
 			local unitGroup;
 			for i = 1, currentArena["size"] do
@@ -556,7 +547,6 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 			if (unitGroup == nil) then
 				unitGroup = "arena";
 			end
-			ArenaAnalytics:Log("Adding unit with spec: ", spec)
 			ArenaTracker:FillGroupsByUnitReference(unitGroup, sourceGUID, spec);
 		end
 	end
