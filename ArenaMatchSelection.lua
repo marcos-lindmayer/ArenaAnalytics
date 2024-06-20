@@ -123,7 +123,7 @@ end
 
 -- Helper function to select or deselect a session by index
 local function selectSessionByIndex(index, autoCommit, isDeselect)
-    local session = MatchHistoryDB[index]["session"]
+    local session = ArenaAnalytics.filteredMatchHistory[index]["session"]
 
     -- Select or deselect the match at the given index using selectMatchByIndex
     selectMatchByIndex(index, autoCommit, isDeselect)
