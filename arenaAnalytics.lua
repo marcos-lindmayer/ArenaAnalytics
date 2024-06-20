@@ -27,6 +27,17 @@ local eventTracker = {
 	["ArenaEventsAdded"] = false
 }
 
+function ArenaAnalytics:GetActiveBattlefieldID()
+    for index = 1, GetMaxBattlefieldID() do
+        local status = GetBattlefieldStatus(index)
+        if status == "active" then
+			ArenaAnalytics:Log("Found battlefield ID ", index)
+            return index
+        end
+    end
+	ArenaAnalytics:Log("Failed to find battlefield ID");
+end
+
 function ArenaAnalytics:recomputeSessionsForMatchHistoryDB()
 	-- Assign session to filtered matches
 	local session = 1
@@ -340,7 +351,8 @@ end
 function AAmatch:getPlayerSpec()
 	local spec = ArenaAnalytics.API:GetMySpec();
 
-	if (spec == nil) then -- Workaround for when GetTalentTabInfo returns nil
+	-- TODO: Decide if we wanna keep this, make it a setting, or remove it.
+	if (spec == nil and false) then -- Workaround for when GetTalentTabInfo returns nil
 		if(#MatchHistoryDB > 0) then
 			-- Get the player from last match (Assumes sorting to index 1)
 			spec = MatchHistoryDB[#MatchHistoryDB]["team"][1]["spec"];

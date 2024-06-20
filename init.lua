@@ -8,6 +8,10 @@ function ArenaAnalyticsToggle()
 	ArenaAnalytics:Toggle();
 end
 
+function ArenaAnalyticsOpenOptions()
+	ArenaAnalytics.Options.Open();
+end
+
 --------------------------------------
 -- Custom Slash Command
 --------------------------------------
@@ -156,7 +160,7 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
-ArenaAnalytics.skipDebugLog = true;
+ArenaAnalytics.skipDebugLog = false;
 function ArenaAnalytics:Log(...)
 	if ArenaAnalytics.skipDebugLog then 
 		return;
@@ -280,12 +284,16 @@ function ArenaAnalytics:init()
 	for i = 1, NUM_CHAT_WINDOWS do
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
 	end
-	
+
 	local version = ArenaAnalytics:getVersion();
 	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffBBBBBB" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 
+	if(not skipDebugLog) then
+		ArenaAnalytics:Log("Default Debugging Enabled!");
+	end
+	
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
 	if(not successfulRequest) then
 		ArenaAnalytics:Log("Failed to register Addon Message Prefix: 'ArenaAnalytics'!")
@@ -312,7 +320,6 @@ function ArenaAnalytics:init()
 	ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB();
 	ArenaAnalytics.VersionManager:renameMatchHistoryDBKeys();
 
-	ArenaAnalytics:Print("Init pre-RegisterGlobalEvents")
 	ArenaAnalytics.Events:RegisterGlobalEvents();
 	ArenaAnalytics.AAtable:OnLoad();
 	
@@ -327,6 +334,12 @@ function ArenaAnalytics:init()
 	ArenaAnalytics.Filter:resetFilters(false);
 
 	createMinimapButton();
+
+	-- Already in an arena
+	if (IsActiveBattlefieldArena()) then
+		ArenaAnalytics.Events:RegisterArenaEvents();
+		ArenaAnalytics.ArenaTracker:HandleArenaStart();
+	end
 end
 
 -- Delay the init a frame, to allow all files to be loaded

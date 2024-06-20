@@ -169,6 +169,10 @@ end
 function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     MatchHistoryDB = MatchHistoryDB or { }
 
+    if(not ArenaAnalyticsDB or #ArenaAnalyticsDB == 0) then
+        return;
+    end
+
     if(#MatchHistoryDB > 0) then
         ArenaAnalytics:Log("Non-empty MatchHistoryDB.");
         ArenaAnalyticsDB = nil;

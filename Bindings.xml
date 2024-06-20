@@ -1,5 +1,8 @@
 <Bindings>
-    <Binding name="Toggle ArenaAnalytics" category="ADDONS">
+    <Binding name="Toggle ArenaAnalytics" category="Arena|cff00ccffAnalytics|r" >
         ArenaAnalyticsToggle();
+    </Binding>
+    <Binding name="Toggle AA Options" category="Arena|cff00ccffAnalytics|r">
+        ArenaAnalyticsOpenOptions();
     </Binding>
 </Bindings>

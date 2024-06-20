@@ -15,7 +15,7 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 	if (IsActiveBattlefieldArena()) then
 		if (ArenaAnalytics.ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-				ArenaAnalytics.ArenaTracker:trackArena(...);
+				ArenaAnalytics.ArenaTracker:HandleArenaStart(...);
 			end
 			
 			ArenaAnalytics.Events:RegisterArenaEvents();			
@@ -23,17 +23,23 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 	elseif (eventType == "UPDATE_BATTLEFIELD_STATUS") then
 		ArenaAnalytics.ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
 	elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
-		if(ArenaAnalytics.ArenaTracker:HasMapData()) then
-			if(not ArenaAnalytics.ArenaTracker:GetArenaEndedProperly()) then
-				ArenaAnalytics.ArenaTracker:QuitsArena();
+		ArenaAnalytics:Print("ZONE_CHANGED_NEW_AREA")
+		ArenaAnalytics.Events:UnregisterArenaEvents();
+		ArenaAnalytics.ArenaTracker:HandleArenaExit();
+	end
+end
+
+-- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
+local function ParseArenaTimerMessages(msg)
+	local locale = ArenaAnalytics.Constants.GetArenaTimer()
+	for k,v in pairs(locale) do
+		if string.find(msg, v) then
+			-- Time is zero according to the broadcast message, and 
+			if (k == 0) then
+				ArenaAnalytics.ArenaTracker:UpdateStartTime();
 			end
-			
-			ArenaAnalytics.Events:UnregisterArenaEvents();
-			ArenaAnalytics.ArenaTracker:handleArenaExited();
 		end
 	end
-    
-    ArenaAnalytics:Print("HandleGlobalEvents called")
 end
 
 -- Assigns behaviour for each arena event
@@ -47,9 +53,9 @@ local function HandleArenaEvents(_, eventType, ...)
 				ArenaAnalytics.ArenaTracker:HandleArenaEnd();
 				Events:UnregisterArenaEvents();
 			elseif (eventType == "UNIT_AURA" or eventType == "COMBAT_LOG_EVENT_UNFILTERED" or eventType == "ARENA_OPPONENT_UPDATE") then
-				ArenaAnalytics.ArenaTracker:getAllAvailableInfo(eventType, ...);
+				ArenaAnalytics.ArenaTracker:ProcessCombatLogEvent(eventType, ...);
 			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
-				ArenaAnalytics.ArenaTracker:hasArenaStarted(...);
+				ParseArenaTimerMessages(...);
 			end
 		end
 	end
@@ -57,18 +63,13 @@ end
 
 -- Creates "global" events
 function Events:RegisterGlobalEvents()
-    ArenaAnalytics:Print("RegisterGlobalEvents called")
-
 	eventFrame:RegisterEvent("UPDATE_BATTLEFIELD_STATUS");
 	eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA");
 	eventFrame:SetScript("OnEvent", HandleGlobalEvents);
-
 end
 
 -- Adds events used inside arenas
 function Events:RegisterArenaEvents()
-	ArenaAnalytics:Print("RegisterArenaEvents called")
-
 	if(not arenaEventsRegistered) then
 		for _,event in ipairs(arenaEvents) do
 			arenaEventFrame:RegisterEvent(event);
@@ -80,8 +81,6 @@ end
 
 -- Removes events used inside arenas
 function Events:UnregisterArenaEvents()
-	ArenaAnalytics:Print("UnregisterArenaEvents called")
-	
 	if(arenaEventsRegistered) then
 		for _,event in ipairs(arenaEvents) do
 			arenaEventFrame:UnregisterEvent(event);

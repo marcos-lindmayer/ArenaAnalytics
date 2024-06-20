@@ -70,6 +70,10 @@ function ArenaTracker:IsTrackingArena()
 	return not currentArena["ended"];
 end
 
+function ArenaTracker:UpdateStartTime()
+	currentArena["timeStartInt"] = time();
+end
+
 function ArenaTracker:GetArenaEndedProperly()
 	return currentArena["endedProperly"];
 end
@@ -85,12 +89,18 @@ end
 
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
-function ArenaTracker:trackArena(...)
+function ArenaTracker:HandleArenaStart(...)
+	if(not IsActiveBattlefieldArena()) then
+		return;
+	end
+
 	ArenaTracker:ResetCurrentArenaValues();
 
-	currentArena["timeStartInt"] = currentArena["timeStartInt"] or time();
+	currentArena["timeStartInt"] = time();
 
-	currentArena["battlefieldId"] = ...;
+	local battlefieldId = ...;
+	currentArena["battlefieldId"] = battlefieldId or ArenaAnalytics:GetActiveBattlefieldID();
+	
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRated, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena["battlefieldId"]);
 	
 	if (status ~= "active") then
@@ -127,31 +137,29 @@ function ArenaTracker:trackArena(...)
 	end
 	
 	-- Not using mapName since string is lang based (unreliable) 
-	-- TODO update to WOTLK values and add backwards compatibility
 	currentArena["mapId"] = select(8,GetInstanceInfo())
 	currentArena["mapName"] = ArenaAnalytics.AAmatch:getMapNameById(currentArena["mapId"])
-end
 
--- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
-function ArenaTracker:hasArenaStarted(msg)
-	local locale = ArenaAnalytics.Constants.GetArenaTimer()
-	for k,v in pairs(locale) do
-		if string.find(msg, v) then
-			-- Time is zero according to the broadcast message, and 
-			if (k == 0) then
-				currentArena["timeStartInt"] = time();
-			end
-		end
+	-- Determine if a winner has already been determined.
+	if(GetBattlefieldWinner() ~= nil) then
+		HandleArenaEnd();
 	end
 end
 
-function ArenaTracker:handleArenaExited()
+function ArenaTracker:HandleArenaExit()
 	if (currentArena["mapId"] == nil or currentArena["size"] == nil) then
 		return false;	
 	end
 
-	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(currentArena["size"]);
+	if(not currentArena["endedProperly"]) then
+		currentArena["ended"] = true;
+		currentArena["wonByPlayer"] = false;
 
+		ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena["mapId"]);
+	end
+
+	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(currentArena["size"]);
+	
 	if(currentArena["isRated"] == true) then
 		local newRating = GetPersonalRatedInfo(bracketId);
 		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
@@ -274,14 +282,6 @@ function ArenaTracker:HandleArenaEnd()
 	end
 end
 
--- Player quitted the arena before it ended
-function ArenaTracker:QuitsArena(self, ...)
-	currentArena["ended"] = true;
-	currentArena["wonByPlayer"] = false;
-
-	ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena["mapId"]);
-end
-
 -- Returns bool for input group containing a character (by name) in it
 function ArenaTracker:DoesGroupContainMemberByName(currentGroup, name)
 	for i = 1, #currentGroup do
@@ -377,7 +377,6 @@ function ArenaTracker:GetFirstDeathFromCurrentArena()
 	local bestKey, bestTime;
 	for key,data in pairs(deathData) do
 		if(bestTime == nil or data["time"] < deathData[bestKey]["time"]) then
-			ArenaAnalytics:Log("Best death data: ", data["name"])
 			bestKey = key;
 			bestTime = data["time"];
 		end
@@ -420,7 +419,7 @@ end
 -- Returns bool whether all obtainable information (before arena ends) has
 -- been collected. Attempts to get initial data on arena players:
 -- GUID, name, race, class, spec
-function ArenaTracker:getAllAvailableInfo(eventType, ...)
+function ArenaTracker:ProcessCombatLogEvent(eventType, ...)
 	-- Start tracking time again in case of disconnect
 	if (not currentArena["timeStartInt"] or currentArena["timeStartInt"] == 0) then
 		currentArena["timeStartInt"] = time();
@@ -506,7 +505,6 @@ function ArenaTracker:assignSpec(class, oldSpec, newSpec)
 		return newSpec;
 	end
 
-	ArenaAnalytics:Log("Keeping spec: ", oldSpec);
 	return oldSpec;
 end
 

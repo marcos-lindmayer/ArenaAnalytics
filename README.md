@@ -7,7 +7,7 @@ Special thanks to:
 Hydra, Itrulia, and Permok.
 
 *Inspired by ArenaStatsTBC.*
-Credit to Gladdy for spec spells and translations tables.
+Credit to Gladdy for translations tables.
 
 Open layout with */aa* or */arenaanalytics*
 Optional keybind to toggle set in Addons category of the game keybindings menu.
