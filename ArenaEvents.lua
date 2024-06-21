@@ -13,19 +13,22 @@ local arenaEvents = { "UPDATE_BATTLEFIELD_SCORE", "UNIT_AURA", "CHAT_MSG_BG_SYST
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
 local function HandleGlobalEvents(prefix, eventType, ...)
 	if (IsActiveBattlefieldArena()) then
-		if (ArenaAnalytics.ArenaTracker:IsTrackingArena()) then
+		if (not ArenaAnalytics.ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-				ArenaAnalytics.ArenaTracker:HandleArenaStart(...);
+				ArenaAnalytics.ArenaTracker:HandleArenaEnter(...);
 			end
 			
 			ArenaAnalytics.Events:RegisterArenaEvents();			
 		end
-	elseif (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-		ArenaAnalytics.ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
-	elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
-		ArenaAnalytics:Print("ZONE_CHANGED_NEW_AREA")
-		ArenaAnalytics.Events:UnregisterArenaEvents();
-		ArenaAnalytics.ArenaTracker:HandleArenaExit();
+	else -- Not in arena
+		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
+			ArenaAnalytics.ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
+		elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
+			if(ArenaAnalytics.ArenaTracker:IsTrackingArena()) then
+				ArenaAnalytics.Events:UnregisterArenaEvents();
+				ArenaAnalytics.ArenaTracker:HandleArenaExit();
+			end
+		end
 	end
 end
 
@@ -36,7 +39,7 @@ local function ParseArenaTimerMessages(msg)
 		if string.find(msg, v) then
 			-- Time is zero according to the broadcast message, and 
 			if (k == 0) then
-				ArenaAnalytics.ArenaTracker:UpdateStartTime();
+				ArenaAnalytics.ArenaTracker:HandleArenaStart();
 			end
 		end
 	end

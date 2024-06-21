@@ -201,7 +201,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                     ["season"] = computeSeasonWhenMissing(arena["season"], arena["dateInt"]),
                     ["map"] = arena["map"], 
                     ["bracket"] = bracket,
-                    ["duration"] = convertFormatedDurationToSeconds(arena["duration"]),
+                    ["duration"] = convertFormatedDurationToSeconds(tonumber(arena["duration"]) or 0),
                     ["team"] = team,
                     ["rating"] = tonumber(arena["rating"]),
                     ["ratingDelta"] = tonumber(arena["ratingDelta"]),

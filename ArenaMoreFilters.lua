@@ -120,7 +120,6 @@ end);
 function MoreFilters.dropdown:SetValue(filter, newValue)
     -- Update the filter for the new value
     ArenaAnalytics.Filter:updateFilter(filter, newValue);
-    ArenaAnalytics:Log("MoreFiltersDropdown SetValue(", filter, ",", newValue, ")");
     CloseDropDownMenus();
 end
 

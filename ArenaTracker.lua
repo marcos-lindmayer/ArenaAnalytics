@@ -12,9 +12,10 @@ local currentArena = {
 	["mapName"] = "", 
 	["mapId"] = nil, 
 	["playerName"] = "",
-	["duration"] = nil, 
-	["timeStartInt"] = nil,
-	["timeEnd"] = 0, 
+	["duration"] = 0, 
+	["startTime"] = nil,
+	["hasRealStartTime"] = nil,
+	["endTime"] = 0, 
 	["partyRating"] = nil,
 	["partyRatingDelta"] = "",
 	["partyMMR"] = nil, 
@@ -38,13 +39,16 @@ local currentArena = {
 
 -- Reset current arena values
 function ArenaTracker:ResetCurrentArenaValues()
+	ArenaAnalytics:Log("Resetting current arena values..");
+
 	currentArena["battlefieldId"] = nil;
 	currentArena["mapName"] = "";
 	currentArena["mapId"] = nil;
 	currentArena["playerName"] = "";
-	currentArena["duration"] = nil;
-	currentArena["timeStartInt"] = nil;
-	currentArena["timeEnd"] = 0;
+	currentArena["duration"] = 0;
+	currentArena["startTime"] = nil;
+	currentArena["hasRealStartTime"] = nil;
+	currentArena["endTime"] = 0;
 	currentArena["partyRating"] = nil;
 	currentArena["partyRatingDelta"] = "";
 	currentArena["partyMMR"] = nil;
@@ -67,11 +71,7 @@ function ArenaTracker:ResetCurrentArenaValues()
 end
 
 function ArenaTracker:IsTrackingArena()
-	return not currentArena["ended"];
-end
-
-function ArenaTracker:UpdateStartTime()
-	currentArena["timeStartInt"] = time();
+	return currentArena["mapId"] ~= nil;
 end
 
 function ArenaTracker:GetArenaEndedProperly()
@@ -87,16 +87,23 @@ function ArenaTracker:HasMapData()
 	return currentArena["mapId"] ~= nil;
 end
 
+-- Gates opened, match has officially started
+function ArenaTracker:HandleArenaStart(...)
+	currentArena["startTime"] = time();
+	currentArena["hasRealStartTime"] = true; -- The start time has been set by gates opened
+end
+
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
-function ArenaTracker:HandleArenaStart(...)
-	if(not IsActiveBattlefieldArena()) then
+function ArenaTracker:HandleArenaEnter(...)
+	if(ArenaTracker:IsTrackingArena()) then
 		return;
 	end
 
 	ArenaTracker:ResetCurrentArenaValues();
 
-	currentArena["timeStartInt"] = time();
+	-- Update start time immediately, might be overridden by gates open if it hasn't happened yet.
+	currentArena["startTime"] = time();
 
 	local battlefieldId = ...;
 	currentArena["battlefieldId"] = battlefieldId or ArenaAnalytics:GetActiveBattlefieldID();
@@ -139,52 +146,15 @@ function ArenaTracker:HandleArenaStart(...)
 	-- Not using mapName since string is lang based (unreliable) 
 	currentArena["mapId"] = select(8,GetInstanceInfo())
 	currentArena["mapName"] = ArenaAnalytics.AAmatch:getMapNameById(currentArena["mapId"])
+	ArenaAnalytics:Log("Tracking mapId: ", currentArena["mapId"])
 
 	-- Determine if a winner has already been determined.
 	if(GetBattlefieldWinner() ~= nil) then
+		ArenaAnalytics:Log("Started tracking after a team won. Calling HandleArenaEnd().")
 		HandleArenaEnd();
 	end
 end
 
-function ArenaTracker:HandleArenaExit()
-	if (currentArena["mapId"] == nil or currentArena["size"] == nil) then
-		return false;	
-	end
-
-	if(not currentArena["endedProperly"]) then
-		currentArena["ended"] = true;
-		currentArena["wonByPlayer"] = false;
-
-		ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena["mapId"]);
-	end
-
-	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(currentArena["size"]);
-	
-	if(currentArena["isRated"] == true) then
-		local newRating = GetPersonalRatedInfo(bracketId);
-		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
-		ForceDebugNilError(ArenaAnalyticsCachedBracketRatings[bracketId]);
-		
-		if(oldRating == nil or oldRating == "SKIRMISH") then
-			oldRating = ArenaAnalytics:getLastRating();
-			ForceDebugNilError(nil);
-		end
-		
-		local deltaRating = newRating - oldRating;
-		
-		currentArena["partyRating"] = newRating;
-		currentArena["partyRatingDelta"] = deltaRating;
-	else
-		currentArena["partyRating"] = "SKIRMISH";
-		currentArena["partyRatingDelta"] = "";
-	end
-
-	-- Update all the cached bracket ratings
-	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
-
-	ArenaAnalytics.AAmatch:insertArenaOnTable(currentArena);
-	return true;
-end
 
 -- Returns currently stored value by character name
 -- Used to link existing spec and GUID info with players'
@@ -201,6 +171,7 @@ function ArenaTracker:GetCollectedValue(value, name)
 	return nil;
 end
 
+--- TODO: Refactor this?
 -- Gets arena information when it ends and the scoreboard is shown
 -- Matches obtained info with previously collected player values
 function ArenaTracker:HandleArenaEnd()
@@ -232,8 +203,9 @@ function ArenaTracker:HandleArenaEnd()
 		end
 	end
 	
-	local numScores = GetNumBattlefieldScores();
 	currentArena["wonByPlayer"] = false;
+	
+	local numScores = GetNumBattlefieldScores();
 	for i=1, numScores do
 		local name, kills, honorKills, deaths, honorGained, faction, rank, race, class, _, damage, healing = GetBattlefieldScore(i);
 		if(not name:find("-")) then
@@ -280,6 +252,46 @@ function ArenaTracker:HandleArenaEnd()
 			currentArena["enemyRatingDelta"] = team1RatingDif;
 		end
 	end
+end
+
+-- Player left an arena (Zone changed to non-arena with valid arena data)
+function ArenaTracker:HandleArenaExit()
+	assert(currentArena["size"]);
+	assert(currentArena["mapId"]);
+
+	if(not currentArena["endedProperly"]) then
+		currentArena["ended"] = true;
+		currentArena["wonByPlayer"] = false;
+
+		ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena["mapId"]);
+	end
+
+	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(currentArena["size"]);
+	
+	if(currentArena["isRated"] == true) then
+		local newRating = GetPersonalRatedInfo(bracketId);
+		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
+		ForceDebugNilError(ArenaAnalyticsCachedBracketRatings[bracketId]);
+		
+		if(oldRating == nil or oldRating == "SKIRMISH") then
+			oldRating = ArenaAnalytics:getLastRating();
+			ForceDebugNilError(nil);
+		end
+		
+		local deltaRating = newRating - oldRating;
+		
+		currentArena["partyRating"] = newRating;
+		currentArena["partyRatingDelta"] = deltaRating;
+	else
+		currentArena["partyRating"] = "SKIRMISH";
+		currentArena["partyRatingDelta"] = "";
+	end
+
+	-- Update all the cached bracket ratings
+	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
+
+	ArenaAnalytics:insertArenaToMatchHistory(currentArena);
+	return true;
 end
 
 -- Returns bool for input group containing a character (by name) in it
@@ -420,12 +432,6 @@ end
 -- been collected. Attempts to get initial data on arena players:
 -- GUID, name, race, class, spec
 function ArenaTracker:ProcessCombatLogEvent(eventType, ...)
-	-- Start tracking time again in case of disconnect
-	if (not currentArena["timeStartInt"] or currentArena["timeStartInt"] == 0) then
-		currentArena["timeStartInt"] = time();
-		ArenaAnalytics:Log("Set new start time. Probable reconnect.");
-	end
-
 	if (currentArena["size"] == nil) then
 		if (IsActiveBattlefieldArena() and currentArena["battlefieldId"] ~= nil) then
 			local _, _, _, _, _, teamSize = GetBattlefieldStatus(currentArena["battlefieldId"]);

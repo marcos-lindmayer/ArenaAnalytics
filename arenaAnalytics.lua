@@ -58,20 +58,30 @@ function ArenaAnalytics:hasStoredMatches()
 end
 
 -- Check if 2 arenas are in the same session
-function ArenaAnalytics:isMatchesSameSession(first, second)
-	if(not first or not second) then
+function ArenaAnalytics:isMatchesSameSession(arena1, arena2)
+	if(not arena1 or not arena2) then
 		return false;
 	end
 
-	if(second["date"] - first["date"] > 3600) then
+	if(arena2["date"] - arena1["date"] > 3600) then
 		return false;
 	end
 	
-	if(not ArenaAnalytics:arenasHaveSameParty(first, second)) then
+	if(not ArenaAnalytics:arenasHaveSameParty(arena1, arena2)) then
 		return false;
 	end
 
 	return true;
+end
+
+function ArenaAnalytics:teamContainsPlayer(team, player)
+	if(team and player) then
+		for i = 1, #team do
+			if (team[i]["name"] ~= player) then
+				return true;
+			end
+		end
+	end
 end
 
 -- Checks if 2 arenas have the same party members
@@ -84,15 +94,30 @@ function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
         return false;
     end
 
-    if(#arena1["team"] ~= #arena2["team"]) then
-        return false;
-    end
+	-- Same size teams, all players must be in both. (Expected, due to same bracket)
+    if(#arena1["team"] == #arena2["team"]) then
+		for i = 1, #arena1["team"] do
+			if(arena1["team"][i] and arena2["team"][i]) then
+				if (arena1["team"][i]["name"] ~= arena2["team"][i]["name"]) then
+					return false;
+				end
+			end
+		end
+	else -- If one team is missing players in the same bracket, make sure all existing players are the same.
+		local teamOneIsSmaller = (#arena1["team"] < #arena2["team"]);
 
-    for i = 1, #arena1["team"] do
-        if (arena2["team"][i] and arena1["team"][i]["name"] ~= arena2["team"][i]["name"]) then
-            return false;
-        end
-    end
+		local smallerTeam = teamOneIsSmaller and #arena1["team"] or #arena2["team"];
+		local largerTeam = teamOneIsSmaller and #arena2["team"] or #arena1["team"];
+
+		for i = 1, #smallerTeam do
+			local player = smallerTeam[i]["name"];
+			if (smallerTeam[i]["name"]) then
+				if(not ArenaAnalytics:teamContainsPlayer(largerTeam, player)) then
+					return false;
+				end
+			end
+		end
+	end   
 
     return true;
 end
@@ -119,11 +144,36 @@ function ArenaAnalytics:getLastMatch(ignoreInvalidDate)
 	return MatchHistoryDB[#MatchHistoryDB];
 end
 
+function ArenaAnalytics:ShouldSkipMatchForSessions(match)
+	-- Invalid match
+	if(match == nil) then
+		return true;
+	end
+
+	-- Invalid session
+	if(tonumber(session) == nil) then
+		return true;
+	end
+
+	-- Invalid date
+	if(tonumber(match["date"]) and tonumber(match["date"]) > 0) then
+		return true;
+	end
+
+	-- Invalid comp, missing players
+	if(not match["party"] or #match["party"] < ArenaAnalytics:getTeamSizeFromBracket(match["bracket"])) then
+		return true;
+	end
+
+	-- Don't skip
+	return false; 
+end
+
 -- Returns the whether last session and whether it has expired by time
 function ArenaAnalytics:getLastSession()
 	for i=#MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
-		if(match and tonumber(match["session"]) and tonumber(match["date"]) and match["date"] > 0) then
+		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
 			local session = match["session"];
 			local expired = (time() - match["date"]) > 3600;
 			return session, expired;
@@ -140,15 +190,16 @@ function ArenaAnalytics:getLastSessionStartAndEndTime()
 	for i=#MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
 
-		if(match and tonumber(match["session"])) then
+		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
 			if(lastSession == nil) then
 				lastSession = tonumber(match["session"]);
-				expired = (time() - match["date"]) > 3600;
-				endTime = expired and match["date"] or time();
+				local testEndTime = match["date"] + match["duration"];
+				expired = (time() - testEndTime) > 3600;
+				endTime = expired and testEndTime or time();
 			end
-						
+
 			if(lastSession == tonumber(match["session"])) then
-				bestStartTime = match["date"] - match["duration"];
+				bestStartTime = match["date"];
 			else
 				break;
 			end
@@ -243,19 +294,20 @@ end
 
 -- Calculates arena duration, turns arena data into friendly strings, adds it to MatchHistoryDB
 -- and triggers a layout refresh on ArenaAnalytics.arenaTable
-function AAmatch:insertArenaOnTable(newArena)
-	if(not newArena["timeStartInt"] or newArena["timeStartInt"] == 0) then
+function ArenaAnalytics:insertArenaToMatchHistory(newArena)
+	local hasRealStartTime = newArena["hasRealStartTime"] ~= nil and newArena["startTime"] and newArena["startTime"] > 0;
+	if(not hasRealStartTime) then
 		-- At least get an estimate for the time of the match this way.
-		newArena["timeStartInt"] = time();
+		newArena["startTime"] = time();
 		ArenaAnalytics:Log("Force fixed start time at match end.");
 	end
 
 	-- Calculate arena duration
-	if (newArena["timeStartInt"] == 0) then
+	if (not hasRealStartTime) then
 		newArena["duration"] = 0;
 	else
-		newArena["timeEnd"] = time();
-		local duration = (newArena["timeEnd"] - newArena["timeStartInt"]);
+		newArena["endTime"] = time();
+		local duration = (newArena["endTime"] - newArena["startTime"]);
 		duration = duration < 0 and 0 or duration;
 		newArena["duration"] = duration;
 	end
@@ -304,7 +356,7 @@ function AAmatch:insertArenaOnTable(newArena)
 	local arenaData = {
 		["player"] = name,
 		["isRated"] = newArena["isRated"],
-		["date"] = tonumber(newArena["timeStartInt"]) or time(),
+		["date"] = tonumber(newArena["startTime"]) or time(),
 		["season"] = season,
 		["session"] = nil,
 		["map"] = newArena["mapName"], 
@@ -412,6 +464,3 @@ function AAmatch:getMapNameById(mapId)
 		return "DA"
 	end
 end
-
-
-

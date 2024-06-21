@@ -37,8 +37,8 @@ ArenaAnalytics.commands = {
 		local currentSeasonTotalPlayed = 0;
 		for i=1, #MatchHistoryDB do
 			local match = MatchHistoryDB[i];
-			local duration = tonumber(match["duration"]);
-			if(duration and duration > 0) then
+			local duration = tonumber(match["duration"]) or 0;
+			if(duration > 0) then
 				totalDurationInArenas = totalDurationInArenas + duration;
 
 				if(match["season"] == GetCurrentArenaSeason()) then
