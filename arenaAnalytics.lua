@@ -388,6 +388,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	-- Insert arena data as a new MatchHistoryDB entry
 	table.insert(MatchHistoryDB, arenaData);
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
+	ArenaAnalytics.Import:tryHide();
 
 	ArenaAnalytics:Print("Arena recorded!");
 	
@@ -423,6 +424,7 @@ local function isArenaPreparationStateActive()
 			local auraID = tonumber(select(10, UnitAura("player", auraIndex)));
 			ArenaAnalytics:Log("Aura: ", auraID);
 			if(auraID ~= nil and (auraID == 32728 or auraID == 32727)) then
+				ArenaAnalytics:Log("Arena Preparation active!");
 				return true;
 			end
 

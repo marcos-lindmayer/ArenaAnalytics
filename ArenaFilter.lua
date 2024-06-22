@@ -4,7 +4,7 @@ ArenaAnalytics.Filter = {}
 local Filter = ArenaAnalytics.Filter;
 
 -- Currently applied filters
-Filter.currentFilters = {}
+local currentFilters = {}
 
 local defaults = {
     ["Filter_Date"] = "All Time",
@@ -12,11 +12,27 @@ local defaults = {
     ["Filter_Map"] = "All",
     ["Filter_Bracket"] = "All",
     ["Filter_Comp"] = "All",
+    ["Filter_EnemyComp"] = "All",
 }
+
+function Filter:GetDefault(filter, skipOverrides)
+    -- overrides
+    if(not skipOverrides) then
+        if(filter == "Filter_Date" and ArenaAnalyticsSettings["defaultCurrentSessionFilter"]) then
+            return "Current Session";
+        end
+
+        if(filter == "Filter_Season" and ArenaAnalyticsSettings["defaultCurrentSeasonFilter"]) then
+            return "Current Season";
+        end
+    end
+
+    return defaults[filter];
+end
 
 -- Clearing filters, optionally keeping filters explicitly applied through options
 function Filter:resetFilters(forceDefaults)
-    Filter.currentFilters = {
+    currentFilters = {
         ["Filter_Search"] = { 
             ["raw"] = "",
             ["data"] = {}
@@ -30,21 +46,32 @@ function Filter:resetFilters(forceDefaults)
             ["display"] = defaults["Filter_Comp"]
         },
         ["Filter_EnemyComp"] = {
-            ["data"] = defaults["Filter_Comp"],
-            ["display"] = defaults["Filter_Comp"]
+            ["data"] = defaults["Filter_EnemyComp"],
+            ["display"] = defaults["Filter_EnemyComp"]
         }
     };
 end
 Filter:resetFilters(false);
 
+-- Get the current value, defaulting to 
+function Filter:GetCurrent(filter, subcategory, default)
+    if(filter ~= nil) then
+        if(subcategory ~= nil) then
+            return currentFilters[filter] and currentFilters[filter][subcategory] or default;
+        else
+            return currentFilters[filter] or default;
+        end
+    end
+end
+
 function Filter:isFilterActive(filterName)
     if(filterName == "Filter_Search") then
-        return Filter.currentFilters["Filter_Search"]["raw"] ~= "";
+        return currentFilters["Filter_Search"]["raw"] ~= "";
     elseif(filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
-        return Filter.currentFilters[filterName]["data"] ~= defaults["Filter_Comp"];
+        return currentFilters[filterName]["data"] ~= defaults["Filter_Comp"];
     end
     
-    local filter = Filter.currentFilters[filterName];
+    local filter = currentFilters[filterName];
     if (filter) then
         return filter ~= defaults[filterName];
     end
@@ -85,32 +112,32 @@ function Filter:changeFilter(dropdown, value, tooltip)
 
     dropdown.selected:SetText(value);
     
-    Filter:updateFilter(dropdown.filterName, value, tooltip);
+    Filter:SetFilter(dropdown.filterName, value, tooltip);
 
     if dropdown.list:IsShown() then   
         dropdown.list:Hide();
     end    
 end
 
-function Filter:updateFilter(filter, value, tooltip)
+function Filter:SetFilter(filter, value, tooltip)
     if (filter == "Filter_Bracket") then
-        Filter.currentFilters["Filter_Comp"] = {
+        currentFilters["Filter_Comp"] = {
             ["data"] = "All",
             ["display"] = "All"
         };
-        Filter.currentFilters["Filter_EnemyComp"] = {
+        currentFilters["Filter_EnemyComp"] = {
             ["data"] = "All",
             ["display"] = "All"
         };
     end
     
     if (filter == "Filter_Comp" or filter == "Filter_EnemyComp") then
-        Filter.currentFilters[filter] = {
+        currentFilters[filter] = {
             ["data"] = tooltip;
             ["display"] = tooltip ~= "All" and ArenaAnalytics.AAtable:getCompIconString(tooltip) or "All";
         }
     else
-        Filter.currentFilters[filter] = value;
+        currentFilters[filter] = value;
     end
 
     ArenaAnalytics:Log("Change Filter: ", filter, " to: ", value);
@@ -145,7 +172,7 @@ function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
         { ["comp"] = "All" }
     };
 
-    local bracket = ArenaAnalytics.Filter.currentFilters["Filter_Bracket"];
+    local bracket = currentFilters["Filter_Bracket"];
     if(bracket ~= "All") then        
         for i=1, #MatchHistoryDB do
             local match = MatchHistoryDB[i];
@@ -180,7 +207,7 @@ function Filter:commitSearch(search)
     };
 
     -- Search didn't change
-    if(searchFilter["raw"] == Filter.currentFilters["Filter_Search"]["raw"]) then
+    if(searchFilter["raw"] == currentFilters["Filter_Search"]["raw"]) then
         return;
     end
 
@@ -221,8 +248,8 @@ function Filter:commitSearch(search)
     end
 
     -- Commit search
-    if(searchFilter ~= Filter.currentFilters["Filter_Search"]) then
-        Filter.currentFilters["Filter_Search"] = searchFilter;
+    if(searchFilter ~= currentFilters["Filter_Search"]) then
+        currentFilters["Filter_Search"] = searchFilter;
 		Filter:refreshFilters();
     end
 end
@@ -272,17 +299,17 @@ end
 local function doesMatchPassFilter_Search(match)
     if match == nil then return false end;
 
-    if(Filter.currentFilters["Filter_Search"]["data"] == "") then
+    if(currentFilters["Filter_Search"]["data"] == "") then
         return true;
     end
 
     if(match ~= nil) then
-        if(Filter.currentFilters["Filter_Search"]["data"] == nil) then
+        if(currentFilters["Filter_Search"]["data"] == nil) then
             return true;
         end
-        for k=1, #Filter.currentFilters["Filter_Search"]["data"] do
+        for k=1, #currentFilters["Filter_Search"]["data"] do
             local foundMatch = false;
-            local search = Filter.currentFilters["Filter_Search"]["data"][k];
+            local search = currentFilters["Filter_Search"]["data"][k];
             if(search ~= nil and search["alts"] ~= nil and #search["alts"] > 0) then
                 local teams = (search["explicitTeam"] ~= "any") and { search["explicitTeam"] } or {"team", "enemyTeam"};
                 for _, team in ipairs(teams) do
@@ -316,7 +343,7 @@ end
 local function doesMatchPassFilter_Map(match)
     if match == nil then return false end;
 
-    if(Filter.currentFilters["Filter_Map"] == "All") then
+    if(currentFilters["Filter_Map"] == "All") then
         return true;
     end
     
@@ -326,12 +353,12 @@ local function doesMatchPassFilter_Map(match)
         ["Blade Edge Arena"] = "BEA", 
         ["Dalaran Arena"] = "DA"
     }
-    local filterMap = arenaMaps[Filter.currentFilters["Filter_Map"]];
+    local filterMap = arenaMaps[currentFilters["Filter_Map"]];
     
     if(filterMap == nil) then
-        ArenaAnalytics:Log("Map filter did not match a valid map. Filter: ", Filter.currentFilters["Filter_Map"]);
+        ArenaAnalytics:Log("Map filter did not match a valid map. Filter: ", currentFilters["Filter_Map"]);
         filterMap = "All"
-        Filter.currentFilters["Filter_Map"] = filterMap;
+        currentFilters["Filter_Map"] = filterMap;
         ArenaAnalyticsScrollFrame.filterMap.selected = filterMap;
     end
 
@@ -342,18 +369,18 @@ end
 local function doesMatchPassFilter_Bracket(match)
     if match == nil then return false end;
 
-    if(Filter.currentFilters["Filter_Bracket"] == "All") then
+    if(currentFilters["Filter_Bracket"] == "All") then
         return true;
     end
     
-    return match["bracket"] == Filter.currentFilters["Filter_Bracket"];
+    return match["bracket"] == currentFilters["Filter_Bracket"];
 end
 
 -- check skirmish filter
 local function doesMatchPassFilter_Skirmish(match)
     if match == nil then return false end;
 
-    ForceDebugNilError(Filter.currentFilters["Filter_Map"]);
+    ForceDebugNilError(currentFilters["Filter_Map"]);
     if(ArenaAnalyticsSettings["showSkirmish"]) then
         return true;
     end
@@ -364,7 +391,7 @@ end
 local function doesMatchPassFilter_Date(match)
     if match == nil then return false end;
 
-    local value = Filter.currentFilters["Filter_Date"] and Filter.currentFilters["Filter_Date"] or "";
+    local value = currentFilters["Filter_Date"] and currentFilters["Filter_Date"] or "";
     value = value:lower();
     local seconds = 0;
     if(value == "all time" or value == "") then
@@ -392,7 +419,7 @@ end
 local function doesMatchPassFilter_Season(match)
     if match == nil then return false end;
 
-    local season = Filter.currentFilters["Filter_Season"];
+    local season = currentFilters["Filter_Season"];
     ForceDebugNilError(season);
     if(season == "All") then
         return true;
@@ -410,17 +437,17 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
     if match == nil then return false end;
 
     -- Skip comp filter when no bracket is selected
-    if(Filter.currentFilters["Filter_Bracket"] == "All") then
+    if(currentFilters["Filter_Bracket"] == "All") then
         return true;
     end
     
     local compFilterKey = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
-    if(Filter.currentFilters[compFilterKey]["data"] == "All") then
+    if(currentFilters[compFilterKey]["data"] == "All") then
         return true;
     end
     
     local compKey = isEnemyComp and "enemyComp" or "comp";
-    return match[compKey] == Filter.currentFilters[compFilterKey]["data"];
+    return match[compKey] == currentFilters[compFilterKey]["data"];
 end
 
 function Filter:doesMatchPassGameSettings(match)

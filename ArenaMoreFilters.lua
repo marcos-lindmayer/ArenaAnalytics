@@ -1,11 +1,12 @@
 local _, ArenaAnalytics = ...;
 ArenaAnalytics.MoreFilters = {};
-
 local MoreFilters = ArenaAnalytics.MoreFilters;
+
+local Filter = ArenaAnalytics.Filter;
 
 -------------------------------------------------------------------------
 
--- Main dropdown menu items (In reverse order!)
+-- Main dropdown menu items
 local dropdownInfo = {
     ["Filter_Date"] = { ["text"] = "Date", ["options"] = {"All Time" , "Current Session", "Last Day", "Last Week", "Last Month", "Last 3 Months", "Last 6 Months", "Last Year"} },
     ["Filter_Season"] = { ["text"] = "Season", ["options"] = {"All" , "Current Season"} },
@@ -59,7 +60,7 @@ local function addDynamicOptions_Season(self, level, filter, info, settings)
         info.func = self.SetValue;
         info.arg1 = filter;
         info.arg2 = season;
-        info.checked = (season == ArenaAnalytics.Filter.currentFilters[filter]);
+        info.checked = (season == Filter:GetCurrent(filter));
         info.text = seasonText;
 
         UIDropDownMenu_AddButton(info, level);
@@ -80,6 +81,10 @@ UIDropDownMenu_Initialize(MoreFilters.dropdown, function(self, level, filter)
             info.notCheckable = false;
             info.menuList = key;
             info.hasArrow = values["options"] and #values["options"] > 0;
+            info.arg1 = key;
+            info.func = self.ResetValue;
+            info.checked = Filter:GetCurrent(key) ~= Filter:GetDefault(key, true);
+
             UIDropDownMenu_AddButton(info);
         end
         return;
@@ -101,8 +106,7 @@ UIDropDownMenu_Initialize(MoreFilters.dropdown, function(self, level, filter)
             info.func = self.SetValue;
             info.arg1 = filter;
             info.arg2 = option;
-            info.checked = (option == ArenaAnalytics.Filter.currentFilters[filter]);
-
+            info.checked = (option == Filter:GetCurrent(filter));
             info.text = option;
             UIDropDownMenu_AddButton(info, level);
         end
@@ -119,7 +123,17 @@ end);
 -- Implement the function to change the value for a given filter
 function MoreFilters.dropdown:SetValue(filter, newValue)
     -- Update the filter for the new value
-    ArenaAnalytics.Filter:updateFilter(filter, newValue);
+    Filter:SetFilter(filter, newValue);
+    UIDropDownMenu_RefreshAll(MoreFilters.dropdown, true);
+    CloseDropDownMenus();
+end
+
+-- Implement the function to change the value for a given filter
+function MoreFilters.dropdown:ResetValue(filter)
+    -- Update the filter for the new value
+    local defaultValue = Filter:GetDefault(filter, true);
+    Filter:SetFilter(filter, defaultValue);
+    UIDropDownMenu_RefreshAll(MoreFilters.dropdown, true);
     CloseDropDownMenus();
 end
 
