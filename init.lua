@@ -160,7 +160,7 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
-ArenaAnalytics.skipDebugLog = true;
+ArenaAnalytics.skipDebugLog = false;
 function ArenaAnalytics:Log(...)
 	if ArenaAnalytics.skipDebugLog then 
 		return;
@@ -340,6 +340,9 @@ function ArenaAnalytics:init()
 		ArenaAnalytics.Events:RegisterArenaEvents();
 		ArenaAnalytics.ArenaTracker:HandleArenaStart();
 	end
+
+	-- TEMP
+	ArenaAnalytics.Dropdown:Create_Simplified(testEntries);
 end
 
 -- Delay the init a frame, to allow all files to be loaded

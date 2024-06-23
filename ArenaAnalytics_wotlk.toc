@@ -22,5 +22,5 @@ ArenaMoreFilters.lua
 ArenaOptions.lua
 ArenaOptions_OLD.lua
 ArenaMatchSelection.lua
-ArenaDropdown.lua
+ArenaScrollableDropdown.lua
 ArenaTooltips.lua
