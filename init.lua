@@ -160,7 +160,7 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
-ArenaAnalytics.skipDebugLog = false;
+ArenaAnalytics.skipDebugLog = true;
 function ArenaAnalytics:Log(...)
 	if ArenaAnalytics.skipDebugLog then 
 		return;

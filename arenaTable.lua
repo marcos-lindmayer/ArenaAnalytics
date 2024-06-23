@@ -61,7 +61,6 @@ local function createDropdownButton(info, dropdown, filter, width)
     button:SetHighlightFontObject("GameFontHighlight");
     button:SetAttribute("dropdown", dropdown);
     
-
     if (info.tooltip ~= "") then
         -- Comp filter (Has icons)
         button:SetAttribute("tooltip", info.tooltip);
