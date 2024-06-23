@@ -64,7 +64,8 @@ local function createHeader(text, size, parent, relative, x, y, icon)
 end
 
 local function createCheckbox(setting, parent, x, text, relative, isSingleLine)
-    assert(setting ~= nil and type(setting) == "string");
+    assert(setting ~= nil);
+    assert(type(setting) == "string");
 
     local checkbox = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_"..setting, parent, "OptionsSmallCheckButtonTemplate");
     
@@ -84,7 +85,7 @@ local function createCheckbox(setting, parent, x, text, relative, isSingleLine)
 
     checkbox:SetScript("OnClick", function()
 		ArenaAnalyticsSettings[setting] = checkbox:GetChecked();
-		ArenaAnalytics:Log("Show Previous Seasons: ", ArenaAnalyticsSettings[setting]);
+		ArenaAnalytics:Log(setting .. ": ", ArenaAnalyticsSettings[setting]);
 		ArenaAnalytics.Filter:refreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
 	end);
