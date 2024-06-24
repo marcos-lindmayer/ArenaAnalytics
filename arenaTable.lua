@@ -231,19 +231,14 @@ function AAtable:OnLoad()
         ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrent("Filter_Search", "raw", ""));
     end);
 
-    local arenaBracket_opts = {
-        ["name"] ="Filter_Bracket",
-        ["title"] ="Bracket",
-        ["entries"] = { "All", "2v2", "3v3", "5v5" },
-        ["defaultValue"] ="All", 
-    }
-
+    -- Dropdown data
     local title = "Bracket";
     local filter = "Filter_Bracket";
     local default = "All"
     local entries = { "All", "2v2", "3v3", "5v5" };
 
-    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create_Simplified(filter, entries, default, title, 150, 25);
+    ArenaAnalyticsScrollFrame.filterBracketDropdown = nil;
+    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 75, 25);
     ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);    
 
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
@@ -360,7 +355,7 @@ function AAtable:OnLoad()
 
         -- Reset filters UI
         ArenaAnalyticsScrollFrame.searchBox:SetText("");
-        ArenaAnalyticsScrollFrame.filterBracketDropdown:reset();
+        ArenaAnalyticsScrollFrame.filterBracketDropdown:Reset();
         AAtable:forceCompFilterRefresh();
         
         ArenaAnalytics.Filter:refreshFilters();
@@ -644,7 +639,7 @@ end
 -- Sets button row's background according to session
 local function setColorForSession(button, session, index)
     local isOddSession = (session or 0) % 2 == 1;
-    local oddAlpha, evenAlpha = 0.8, 0.15;
+    local oddAlpha, evenAlpha = 0.6, 0.15;
     
     local alpha = isOddSession and oddAlpha or evenAlpha;
 
@@ -657,7 +652,13 @@ local function setColorForSession(button, session, index)
         end
     end
 
-    button.Background:SetColorTexture(0, 0, 0, min(alpha, 1))
+    if isOddSession then
+        local c = 0;
+        button.Background:SetColorTexture(c, c, c, min(alpha, 1))
+    else
+        local c = 0.1;
+        button.Background:SetColorTexture(c, c, c, min(alpha, 1))
+    end
 end
 
 -- Create dropdowns for the Comp filters
@@ -669,22 +670,13 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
     local isDisabled = Filter:GetCurrent("Filter_Bracket") == "All";
     local disabledText = "Select bracket to enable filter"
 
+    -- Dropdown data
     local filter = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
-
-    local filterCompsOpts = {
-        ["name"] = filter,
-        ["title"] = "Comp: Games | Comp | Winrate",
-        ["hasCompIcons"] = true,
-        ["entries"] = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp),
-        ["defaultValue"] = isDisabled and disabledText or Filter:GetCurrent(filter, "display")
-    }
-
-    local title = isEnemyComp and "Comp: Games | Comp | Winrate" or "Enemy Comp: Games | Comp | Winrate";
-    local filter = "Filter_Bracket";
+    local title = isEnemyComp and "Enemy Comp: Games | Comp | Winrate" or "Comp: Games | Comp | Winrate";
     local default = isDisabled and disabledText or Filter:GetCurrent(filter, "display");
     local entries = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp);
 
-    local dropdown = ArenaAnalytics.Dropdown:Create_Simplified(filter, entries, default, title, 265, 25);
+    local dropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 265, 25);
     local parent = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
     dropdown:SetPoint("LEFT", parent, "RIGHT", 10, 0);
 

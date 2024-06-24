@@ -108,11 +108,7 @@ ArenaAnalytics.commands = {
 	end,
 
 	["test"] = function()
-		ArenaAnalytics:Log("Testing...");
-		-- TEMP: Testing
-		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
-		local status = GetBattlefieldStatus(1);
-		ArenaAnalytics:Log(status);
+		ArenaAnalytics.Dropdown:DebugScrollState(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown);
 	end,	
 };
 
@@ -345,10 +341,6 @@ function ArenaAnalytics:init()
     local filter = "Filter_Bracket";
     local default = "All"
     local entries = { "All", "2v2", "3v3", "5v5" };
-
-	-- TEMP
-	local dropdown = ArenaAnalytics.Dropdown:Create_Simplified(filter, entries, default, title, 150, 25);
-    dropdown:SetPoint("CENTER", 0, 300);   
 end
 
 -- Delay the init a frame, to allow all files to be loaded
