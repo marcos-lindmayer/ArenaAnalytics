@@ -141,6 +141,8 @@ function Filter:SetFilter(filter, value, tooltip)
     end
 
     ArenaAnalytics:Log("Change Filter: ", filter, " to: ", value);
+    
+    ArenaAnalytics.Selection:ClearSelectedMatches();
     Filter:refreshFilters();
 end
 

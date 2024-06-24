@@ -340,6 +340,15 @@ function ArenaAnalytics:init()
 		ArenaAnalytics.Events:RegisterArenaEvents();
 		ArenaAnalytics.ArenaTracker:HandleArenaStart();
 	end
+
+	local title = "Bracket";
+    local filter = "Filter_Bracket";
+    local default = "All"
+    local entries = { "All", "2v2", "3v3", "5v5" };
+
+	-- TEMP
+	local dropdown = ArenaAnalytics.Dropdown:Create_Simplified(filter, entries, default, title, 150, 25);
+    dropdown:SetPoint("CENTER", 0, 300);   
 end
 
 -- Delay the init a frame, to allow all files to be loaded

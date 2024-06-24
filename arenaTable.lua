@@ -53,10 +53,12 @@ end
 
 -- TODO: Prioritize spec too
 -- Get a string representing the comp, 
-function AAtable:getCompIconString(comp, priorityClass, prioritySpec)
+function AAtable:getCompIconString(comp, isPlayerPriority)
     if(comp == nil or comp:find('|') == nil) then
         return "";
     end
+
+    local priorityClass = UnitClass("player");
 
     local classTable = { }
 
@@ -236,8 +238,13 @@ function AAtable:OnLoad()
         ["defaultValue"] ="All", 
     }
 
-    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(arenaBracket_opts)
-    ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);
+    local title = "Bracket";
+    local filter = "Filter_Bracket";
+    local default = "All"
+    local entries = { "All", "2v2", "3v3", "5v5" };
+
+    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create_Simplified(filter, entries, default, title, 150, 25);
+    ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);    
 
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
     ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
@@ -672,24 +679,25 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
         ["defaultValue"] = isDisabled and disabledText or Filter:GetCurrent(filter, "display")
     }
 
-    if (not isEnemyComp) then
-        ArenaAnalyticsScrollFrame.filterCompsDropdown = ArenaAnalytics.Dropdown:Create(filterCompsOpts);
-        ArenaAnalyticsScrollFrame.filterCompsDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterBracketDropdown, "RIGHT", 10, 0);
-        
-        if(isDisabled) then
-            -- Set tooltip when comp is disabled
-            ArenaAnalyticsScrollFrame.filterCompsDropdown.list:Hide();
-            ArenaAnalyticsScrollFrame.filterCompsDropdown.selected:Disable();
-        end
-    else
-        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = ArenaAnalytics.Dropdown:Create(filterCompsOpts);
-        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterCompsDropdown, "RIGHT", 10, 0);
+    local title = isEnemyComp and "Comp: Games | Comp | Winrate" or "Enemy Comp: Games | Comp | Winrate";
+    local filter = "Filter_Bracket";
+    local default = isDisabled and disabledText or Filter:GetCurrent(filter, "display");
+    local entries = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp);
 
-        if(isDisabled) then
-            -- Set tooltip when comp is disabled
-            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list:Hide();
-            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.selected:Disable();
-        end
+    local dropdown = ArenaAnalytics.Dropdown:Create_Simplified(filter, entries, default, title, 265, 25);
+    local parent = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
+    dropdown:SetPoint("LEFT", parent, "RIGHT", 10, 0);
+
+    if(isDisabled) then
+        -- Set tooltip when comp is disabled
+        dropdown.list:Hide();
+        dropdown.selected:Disable();
+    end
+
+    if(isEnemyComp) then
+        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = dropdown;
+    else
+        ArenaAnalyticsScrollFrame.filterCompsDropdown = dropdown;
     end
 end
 
