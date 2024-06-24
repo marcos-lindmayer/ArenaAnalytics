@@ -39,17 +39,15 @@ local function SetupScrollbar(dropdown, accumulatedHeight)
         scrollbar.ScrollDownButton:SetAlpha(0);
     end
 
-    local viewHeight = dropdown.list:GetHeight()
-    local contentHeight = dropdown.list.content:GetHeight();
-    local maxScroll = math.max(accumulatedHeight - viewHeight - 75, 0)
-
-    dropdown.list:UpdateScrollChildRect()
-    dropdown.list:SetVerticalScroll(0)
-    scrollbar:SetValue(0)
-    scrollbar:SetMinMaxValues(0, maxScroll)
-
     local function UpdateScrollRange()
+        local viewHeight = dropdown.list:GetHeight()
+        local contentHeight = dropdown.list.content:GetHeight();
+        local maxScroll = math.max(accumulatedHeight - viewHeight, 0)
         
+        dropdown.list:UpdateScrollChildRect()
+        dropdown.list:SetVerticalScroll(0)
+        scrollbar:SetValue(0)
+        scrollbar:SetMinMaxValues(0, maxScroll)
     end
 
     dropdown.list:HookScript("OnShow", UpdateScrollRange)
@@ -379,7 +377,7 @@ end
 
 -- TEMP
 function Dropdown:DebugScrollState(dropdown)
-    if dropdown == nil then return end
+    if dropdown == nil or ArenaAnalytics.skipDebugLog then return end
     local scrollFrame, scrollbar = dropdown.list, dropdown.list.ScrollBar;
 
     -- Print ScrollFrame information
@@ -390,7 +388,7 @@ function Dropdown:DebugScrollState(dropdown)
     print("ScrollFrame ScrollOffsets (x, y):", scrollFrame:GetHorizontalScroll(), scrollFrame:GetVerticalScroll());
     print("ScrollFrame Min Scroll:", scrollFrame.minScroll);
     print("ScrollFrame Max Scroll:", scrollFrame.maxScroll);
-    
+
     -- Print ScrollBar information
     print("=== ScrollBar Information ===");
     print("ScrollBar Name:", scrollbar:GetName());
