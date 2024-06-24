@@ -233,7 +233,7 @@ function AAtable:OnLoad()
         ["name"] ="Filter_Bracket",
         ["title"] ="Bracket",
         ["entries"] = { "All", "2v2", "3v3", "5v5" },
-        ["defaultVal"] ="All", 
+        ["defaultValue"] ="All", 
     }
 
     ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(arenaBracket_opts)
@@ -669,10 +669,19 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
         ["title"] = "Comp: Games | Comp | Winrate",
         ["hasCompIcons"] = true,
         ["entries"] = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp),
-        ["defaultVal"] = isDisabled and disabledText or Filter:GetCurrent(filter, "display")
+        ["defaultValue"] = isDisabled and disabledText or Filter:GetCurrent(filter, "display")
     }
 
-    if (isEnemyComp) then
+    if (not isEnemyComp) then
+        ArenaAnalyticsScrollFrame.filterCompsDropdown = ArenaAnalytics.Dropdown:Create(filterCompsOpts);
+        ArenaAnalyticsScrollFrame.filterCompsDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterBracketDropdown, "RIGHT", 10, 0);
+        
+        if(isDisabled) then
+            -- Set tooltip when comp is disabled
+            ArenaAnalyticsScrollFrame.filterCompsDropdown.list:Hide();
+            ArenaAnalyticsScrollFrame.filterCompsDropdown.selected:Disable();
+        end
+    else
         ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = ArenaAnalytics.Dropdown:Create(filterCompsOpts);
         ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterCompsDropdown, "RIGHT", 10, 0);
 
@@ -680,15 +689,6 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
             -- Set tooltip when comp is disabled
             ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list:Hide();
             ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.selected:Disable();
-        end
-    else
-        ArenaAnalyticsScrollFrame.filterCompsDropdown = ArenaAnalytics.Dropdown:Create(filterCompsOpts);
-        ArenaAnalyticsScrollFrame.filterCompsDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterBracketDropdown, "RIGHT", 10, 0);
-    
-        if(isDisabled) then
-            -- Set tooltip when comp is disabled
-            ArenaAnalyticsScrollFrame.filterCompsDropdown.list:Hide();
-            ArenaAnalyticsScrollFrame.filterCompsDropdown.selected:Disable();
         end
     end
 end

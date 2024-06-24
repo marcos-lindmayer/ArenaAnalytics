@@ -3,17 +3,56 @@ local _, ArenaAnalytics = ...;
 ArenaAnalytics.Dropdown = {};
 local Dropdown = ArenaAnalytics.Dropdown;
 
+local defaultEntryHeight = 25;
+local maxEntriesToShow = 5;
+
+local function CreateButton(name, dropdown, parent, width, height, text)
+    local button = CreateFrame("Button", name .. "_selected", (parent or dropdown), "UIServiceButtonTemplate")
+    button.money:Hide();
+    button:SetPoint("CENTER", parent or dropdown)
+    button:SetSize(width, height)
+    button:SetText(text);
+    button:SetNormalFontObject("GameFontHighlight");
+    button:SetHighlightFontObject("GameFontHighlight");
+    button:SetDisabledFontObject("GameFontDisableSmall");
+    button:SetAttribute("dropdown", dropdown);
+    return button;
+end
+
+local function SetupScrollbar(dropdown, contentHeight)
+    -- Modern scrollbar visuals are handled by UIPanelScrollBarTemplate
+    local scrollbar = dropdown.list.ScrollBar;
+    scrollbar:SetWidth(16); -- Adjust width as needed
+    scrollbar:ClearAllPoints();
+    scrollbar:SetPoint("TOPLEFT", dropdown.list, "TOPRIGHT", -4, 3);
+    scrollbar:SetPoint("BOTTOMLEFT", dropdown.list, "BOTTOMRIGHT", -4, -3);
+
+    local function UpdateScrollRange()
+        local viewHeight = dropdown.list:GetHeight()
+        local maxScroll = max(contentHeight - viewHeight, 0)
+
+        dropdown.list:UpdateScrollChildRect()
+        dropdown.list:SetVerticalScroll(0)
+        scrollbar:SetMinMaxValues(0, maxScroll)
+        scrollbar:SetValue(0)
+    end
+
+    dropdown.list:HookScript("OnShow", UpdateScrollRange)
+    dropdown.list:HookScript("OnSizeChanged", UpdateScrollRange)
+    UpdateScrollRange()
+end
+
 -- Returns buttons for filter lists
 local function createDropdownButton(info, dropdown, filter, width)
-    local button = CreateFrame("Button", filter .. "_" .. info.text, dropdown.list, "UIServiceButtonTemplate");
+    local parent = dropdown.list;
+    local button = CreateFrame("Button", filter .. "_" .. info.text, parent, "UIServiceButtonTemplate");
     button.money:Hide();
     button:SetSize(width, 25);
-    button:SetPoint("CENTER", dropdown.list.content);
+    button:SetPoint("TOPLEFT", 0, -(info.index-1) * defaultEntryHeight);
     button:SetNormalFontObject("GameFontHighlight");
     button:SetHighlightFontObject("GameFontHighlight");
     button:SetAttribute("dropdown", dropdown);
     
-
     if (info.tooltip ~= "") then
         -- Comp filter (Has icons)
         button:SetAttribute("tooltip", info.tooltip);
@@ -42,28 +81,36 @@ function Dropdown:Create(opts)
     local dropdownName ="$parent_" .. opts["name"] .. "_dropdown";
     local entries = opts["entries"] or {};
     local isCompDropdown = opts["hasCompIcons"];
-    local title_text = opts["title"] or "";
+    local titleText = opts["title"] or "";
     local dropdownWidth = (filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") and 265 or 0;
-    local default_val = opts["defaultVal"] or "";
+    local defaultValue = opts["defaultValue"] or "";
 
     local dropdown = CreateFrame("Frame", dropdownName, ArenaAnalyticsScrollFrame);
+    dropdown:SetSize(dropdownWidth, defaultEntryHeight);
+
     dropdown.list = CreateFrame("ScrollFrame", dropdownName .. "_list", dropdown, "UIPanelScrollFrameTemplate");
     dropdown.list:SetPoint("TOP", dropdown, "BOTTOM");
-    dropdown:SetSize(dropdownWidth, 25);
-
+    dropdown.list:SetSize(dropdownWidth, #entries * defaultEntryHeight);
+    dropdown.list:SetClipsChildren(true); -- Ensure content clipping
+    dropdown.list.scrollBarHideable = true; -- Make scrollbar hideable when not needed
     dropdown.list.content = CreateFrame("Frame", dropdownName .. "_content", dropdown.list);
-    dropdown.list.content:SetSize(dropdownWidth, (#entries * 25)); -- Adjust height based on the number of entries
+    dropdown.list.content:SetSize(dropdownWidth, (#entries * defaultEntryHeight));
     dropdown.list:SetScrollChild(dropdown.list.content);
+    dropdown.list:SetFrameStrata("HIGH");
 
+    SetupScrollbar(dropdown, (#entries * defaultEntryHeight));
+    
     dropdown.title = dropdown:CreateFontString(nil, "OVERLAY")
     dropdown.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
     dropdown.title:SetPoint("TOPLEFT", 0, 15)
+
     isEnemyComp, _ = string.find(opts["name"]:lower(), "enemy")
+
     dropdown.filterName = filterName;
-    
+
     dropdown.entries = {}
     
-    for _, entry in ipairs(entries) do 
+    for i, entry in ipairs(entries) do 
         local text = entry["comp"] or entry;
         dropdown.title:SetText(text);
         local text_width = dropdown.title:GetStringWidth() + 50
@@ -85,14 +132,14 @@ function Dropdown:Create(opts)
                 local wins = entry["wins"] or 0;
 
                 winrate = (totalPlayed > 0) and math.floor(wins * 100 / totalPlayed) or 0
-                info.text = totalPlayed .. " - " .. info.text .. " - " .. winrate .. "%";
+                info.text = totalPlayed .. " " .. info.text .. " - " .. winrate .. "%";
 
                 -- Make a temp font string to calculate width of the left and right added strings.
                 local tmpWidthString = dropdown:CreateFontString(nil, "OVERLAY")
                 tmpWidthString:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
                 tmpWidthString:SetText("- " .. winrate .. "%");
                 winrateWidth = tmpWidthString:GetStringWidth();
-                tmpWidthString:SetText(totalPlayed .. " - ");
+                tmpWidthString:SetText(totalPlayed);
                 totalPlayedWidth = tmpWidthString:GetStringWidth();
                 tmpWidthString = nil;
 
@@ -102,7 +149,11 @@ function Dropdown:Create(opts)
             end
         end
 
-        local newEntry = createDropdownButton(info, dropdown, title_text, dropdownWidth);
+        local text = tostring(i);
+        local name = dropdownName .. "_Entry" .. i;
+        
+        info.index = i;
+        local newEntry = createDropdownButton(info, dropdown, titleText, dropdownWidth);
         newEntry.winrate = winrate;
         newEntry.totalPlayed = totalPlayed;
         table.insert(dropdown.entries, newEntry);
@@ -143,7 +194,7 @@ function Dropdown:Create(opts)
         end
     end
 
-    dropdown.title:SetText(title_text)
+    dropdown.title:SetText(titleText)
     dropdown.list:SetSize(dropdownWidth, (#dropdown.entries * 25));
     dropdown:SetWidth(dropdownWidth)
     
@@ -158,22 +209,16 @@ function Dropdown:Create(opts)
     local dropdownBg = dropdown:CreateTexture();
     dropdownBg:SetPoint("CENTER")
     dropdownBg:SetSize(dropdownWidth, 25);
-    dropdownBg:SetColorTexture(0, 0, 0, 0.7);
+    dropdownBg:SetColorTexture(0, 0, 0, 0.5);
     
     dropdown.background = dropdown.list:CreateTexture();
     dropdown.background:SetPoint("TOP")
     dropdown.background:SetSize(dropdownWidth, totalHeight);
-    dropdown.background:SetColorTexture(0, 0, 0, 0.9);
+    dropdown.background:SetColorTexture(0, 0, 0, 0.5);
 
-    dropdown.selected = CreateFrame("Button", dropdownName .. "_selected", dropdown, "UIServiceButtonTemplate")
-    dropdown.selected.money:Hide();
-    dropdown.selected:SetPoint("CENTER")
-    dropdown.selected:SetSize(dropdownWidth, 25)
-    dropdown.selected:SetText(default_val);
-    dropdown.selected:SetNormalFontObject("GameFontHighlight");
-    dropdown.selected:SetHighlightFontObject("GameFontHighlight");
-    dropdown.selected:SetDisabledFontObject("GameFontDisableSmall");
-    dropdown.selected:SetAttribute("dropdown", dropdown)
+    local name = dropdownName .. "_selected";
+    dropdown.selected = CreateButton(name, dropdown, nil, dropdownWidth, defaultEntryHeight, defaultValue);
+    dropdown.selected:SetPoint("CENTER");
 
     dropdown.selected:SetScript("OnClick", function (args)
         local dropdownList = args:GetAttribute("dropdown").list
@@ -186,10 +231,10 @@ function Dropdown:Create(opts)
     end);
 
     dropdown.reset = function(self)
-        ArenaAnalytics.Filter:changeFilter(dropdown, default_val);
+        ArenaAnalytics.Filter:changeFilter(dropdown, defaultValue);
     end
 
-    dropdown.list:Show();
+    dropdown.list:Hide();
 
     return dropdown;
 end
@@ -197,6 +242,7 @@ end
 -----------------------------------------------------------------
 -----------------------------------------------------------------
 -----------------------------------------------------------------
+-- Test function for simplified basic dropdown at center of the screen
 
 -- Usage example:
 local testEntries = {}
@@ -204,29 +250,15 @@ for i = 1, 100 do
     table.insert(testEntries, "Entry " .. i);
 end
 
-local function CreateButton(name, dropdown, parent, width, height, text)
-    local button = CreateFrame("Button", name .. "_selected", (parent or dropdown), "UIServiceButtonTemplate")
-    button.money:Hide();
-    button:SetPoint("CENTER")
-    button:SetSize(width, height)
-    button:SetText(text);
-    button:SetNormalFontObject("GameFontHighlight");
-    button:SetHighlightFontObject("GameFontHighlight");
-    button:SetDisabledFontObject("GameFontDisableSmall");
-    button:SetAttribute("dropdown", dropdown);
-    return button;
-end
-
 function Dropdown:Create_Simplified(entries)
     entries = entries or testEntries;
 
     local dropdownName = "MyDropdownFrame";
     local dropdownWidth = 200;
-    local defaultVal = "Select an option";
-    local maxEntriesToShow = 10;
+    local defaultValue = "Select an option";
 
     local dropdown = CreateFrame("Frame", dropdownName, UIParent);
-    dropdown:SetPoint("CENTER", 0, 100);
+    dropdown:SetPoint("CENTER", 0, 500);
     dropdown:SetSize(dropdownWidth, 25);
 
     dropdown.list = CreateFrame("ScrollFrame", dropdownName .. "_list", dropdown, "UIPanelScrollFrameTemplate");
@@ -243,8 +275,7 @@ function Dropdown:Create_Simplified(entries)
     for i = 1, #entries do
         local text = entries[i];
         local name = dropdownName .. "_Entry" .. i;
-
-        local newEntry = CreateButton(name, dropdown, dropdown.list.content, dropdownWidth, 25, text);
+        local newEntry = CreateButton(name, dropdown, dropdown.list.content, dropdownWidth, defaultEntryHeight, text);
         newEntry:SetPoint("TOPLEFT", 0, -(i-1) * 25);
 
         newEntry:SetScript("OnClick", function()
@@ -255,11 +286,10 @@ function Dropdown:Create_Simplified(entries)
 
         table.insert(dropdown.entries, newEntry);
     end
-
     
     local name = dropdownName .. "_selected";
-    dropdown.selected = CreateButton(name, dropdown, nil, dropdownWidth, 25, defaultVal);
-    dropdown.selected:SetPoint("CENTER")
+    dropdown.selected = CreateButton(name, dropdown, nil, dropdownWidth, defaultEntryHeight, defaultValue);
+    dropdown.selected:SetPoint("CENTER");
 
     dropdown.selected:SetScript("OnClick", function()
         if dropdown.list:IsShown() then
