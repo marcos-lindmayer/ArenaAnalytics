@@ -51,7 +51,7 @@ local function createDropdownButton(info, dropdown, title, width)
     local parent = dropdown.list.content;
     local button = CreateFrame("Button", info.buttonName, parent, "UIServiceButtonTemplate");
     button.money:Hide();
-    button:SetSize(width, 25);
+    button:SetSize(width, defaultEntryHeight);
     button:SetPoint("CENTER");
     button:SetNormalFontObject("GameFontHighlight");
     button:SetHighlightFontObject("GameFontHighlight");
@@ -258,82 +258,12 @@ end
 -- Test function for simplified basic dropdown at center of the screen
 
 -- Usage example:
-local testEntries = {}
+local testEntries = { "All" }
 for i = 1, 100 do
     table.insert(testEntries, "Entry " .. i);
 end
 
 function Dropdown:Create_Simplified(entries)
-    entries = entries or testEntries;
-
-    local dropdownName = "MyDropdownFrame";
-    local dropdownWidth = 200;
-    local defaultValue = "Select an option";
-
-    local dropdown = CreateFrame("Frame", baseName, UIParent);
-    dropdown:SetPoint("CENTER", 0, 500);
-    dropdown:SetSize(dropdownWidth, 25);
-
-    dropdown.list = CreateFrame("ScrollFrame", baseName .. "_list", dropdown, "UIPanelScrollFrameTemplate");
-    dropdown.list:SetPoint("TOP", dropdown, "BOTTOM");
-    dropdown.list:SetSize(dropdownWidth, maxEntriesToShow * 25);
-    dropdown.list:SetClipsChildren(true); -- Ensure content clipping
-    dropdown.list.scrollBarHideable = true; -- Make scrollbar hideable when not needed
-    dropdown.list.content = CreateFrame("Frame", baseName .. "_content", dropdown.list);
-    dropdown.list.content:SetSize(dropdownWidth, (#entries * 25));
-    dropdown.list:SetScrollChild(dropdown.list.content);
-
-    dropdown.entries = {}
-
-    for i = 1, #entries do
-        local text = entries[i];
-        local newEntry = CreateButton(dropdownName .. "_Entry" .. i, dropdown, dropdown.list.content, dropdownWidth, defaultEntryHeight, text);
-        newEntry:SetPoint("TOPLEFT", 0, -(i-1) * 25);
-
-        newEntry:SetScript("OnClick", function()
-            ArenaAnalytics:Log(text .. " clicked");
-            dropdown.selected:SetText(text);
-            dropdown.list:Hide();
-        end);
-
-        table.insert(dropdown.entries, newEntry);
-    end
     
-    dropdown.selected = CreateButton(dropdownName .. "_selected", dropdown, nil, dropdownWidth, defaultEntryHeight, defaultValue);
-    dropdown.selected:SetPoint("CENTER");
-
-    dropdown.selected:SetScript("OnClick", function()
-        if dropdown.list:IsShown() then
-            dropdown.list:Hide();
-        else
-            dropdown.list:Show();
-        end
-    end);
-
-    dropdown.list:Hide();
-
-    -- Modern scrollbar visuals are handled by UIPanelScrollBarTemplate
-    local scrollbar = dropdown.list.ScrollBar;
-    scrollbar:SetWidth(16); -- Adjust width as needed
-    scrollbar:ClearAllPoints();
-    scrollbar:SetPoint("TOPLEFT", dropdown.list, "TOPRIGHT", -4, 3);
-    scrollbar:SetPoint("BOTTOMLEFT", dropdown.list, "BOTTOMRIGHT", -4, -3);
-  
-    local function UpdateScrollRange()
-        local contentHeight = #entries * 25
-        local viewHeight = dropdown.list:GetHeight()
-        local maxScroll = max(contentHeight - viewHeight, 0)
-    
-        dropdown.list:UpdateScrollChildRect()
-        dropdown.list:SetVerticalScroll(0)
-        scrollbar:SetMinMaxValues(0, maxScroll)
-        scrollbar:SetValue(0)
-    end
-    
-    dropdown.list:HookScript("OnShow", UpdateScrollRange)
-    dropdown.list:HookScript("OnSizeChanged", UpdateScrollRange)
-    UpdateScrollRange()
-
-    return dropdown;
 end
 

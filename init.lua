@@ -340,9 +340,6 @@ function ArenaAnalytics:init()
 		ArenaAnalytics.Events:RegisterArenaEvents();
 		ArenaAnalytics.ArenaTracker:HandleArenaStart();
 	end
-
-	-- TEMP
-	ArenaAnalytics.Dropdown:Create_Simplified(testEntries);
 end
 
 -- Delay the init a frame, to allow all files to be loaded

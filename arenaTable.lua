@@ -714,7 +714,7 @@ function AAtable:forceCompFilterRefresh(keepVisibility)
     ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
     
     -- Create updated frames (Friendly first!)
-    AAtable:createDropdownForFilterComps(false);
+    AAtable:createDropdownForFilterComps(false); -- isEnemyComp == false
     AAtable:createDropdownForFilterComps(true);
 
     -- Update visibility to match previous visibility, if desired
