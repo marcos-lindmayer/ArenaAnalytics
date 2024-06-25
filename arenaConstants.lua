@@ -195,10 +195,9 @@ local classAndSpecByID = {
     [93] = {"Priest|Shadow", "Priest", "Shadow"},
 }
 
--- FIX to fetch by ID as intended
--- Add priority values
+-- TODO: Add real priority values (Possible player customizable option?)
 function Constants:getSpecPriorityValue(specID)
-    return specID and tonumber(specID) or 0
+    return tonumber(specID) or 0
 end
 
 function Constants:getClassAndSpec(specID)

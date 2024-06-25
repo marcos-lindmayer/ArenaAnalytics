@@ -108,11 +108,7 @@ ArenaAnalytics.commands = {
 	end,
 
 	["test"] = function()
-		ArenaAnalytics:Log("Testing...");
-		-- TEMP: Testing
-		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
-		local status = GetBattlefieldStatus(1);
-		ArenaAnalytics:Log(status);
+
 	end,	
 };
 
@@ -160,7 +156,7 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
-ArenaAnalytics.skipDebugLog = true;
+ArenaAnalytics.skipDebugLog = false;
 function ArenaAnalytics:Log(...)
 	if ArenaAnalytics.skipDebugLog then 
 		return;
@@ -169,6 +165,10 @@ function ArenaAnalytics:Log(...)
     local hex = "FF6EC7";
     local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Debug):");
 	print(prefix, ...);
+end
+
+function ArenaAnalytics:NoFormatting(text)
+	return text and text:gsub("|", "||") or "";
 end
 
 -- Debug function to force a nil error if input is nil
@@ -219,8 +219,7 @@ local function createMinimapButton()
 	minibtn:SetSize(24,24)
 	minibtn:SetMovable(true)
 	minibtn:SetNormalTexture([[Interface\AddOns\ArenaAnalytics\icon\mmicon]])
-	minibtn:SetPushedTexture([[Interface\AddOns\ArenaAnalytics\icon\mmicon]])
-	minibtn:SetPushedTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconP]])
+	--minibtn:SetPushedTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconP]]) -- FIX: Bugged icon when not mouseover!
 	minibtn:SetHighlightTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconH]])
 	minibtn:SetScript("OnEnter", function ()
 		ArenaAnalytics.Tooltips:DrawMinimapTooltip();
@@ -229,16 +228,24 @@ local function createMinimapButton()
 		GameTooltip:Hide();
 	end);
 
+	local size = 50;
 	local minibtnBorder = CreateFrame("Frame", nil, minibtn)
-	minibtnBorder:SetSize(50,50)
+	minibtnBorder:SetSize(size,size)
 	minibtnBorder:SetPoint("TOPLEFT");
 	local minibtnBorderT = minibtnBorder:CreateTexture()
-	minibtnBorderT:SetSize(50,50)
+	minibtnBorderT:SetSize(size,size)
 	minibtnBorderT:SetPoint("TOPLEFT", -2, 2);
 	minibtnBorderT:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 
 	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos or 0
+	ArenaAnalytics:Log("Minimap Icon Angle:", ArenaAnalyticsMapIconPos);
 	
+	local function SetMinimapIconPosition(angle)
+		minibtn:ClearAllPoints();
+		local radius = 75;
+		minibtn:SetPoint("CENTER", Minimap, "CENTER", -(radius * cos(ArenaAnalyticsMapIconPos)), (radius * sin(ArenaAnalyticsMapIconPos)));
+	end
+
 	-- Control movement
 	local function UpdateMapBtn()
 		local cursorX, cursorY = GetCursorPosition();
@@ -246,13 +253,12 @@ local function createMinimapButton()
 		cursorX = minX - cursorX / Minimap:GetEffectiveScale() + 70;
 		cursorY = cursorY / Minimap:GetEffectiveScale() - minY - 70;
 		ArenaAnalyticsMapIconPos = math.deg(math.atan2(cursorY, cursorX));
-		minibtn:ClearAllPoints();
-		local offset = 57;
-		minibtn:SetPoint("TOPLEFT", Minimap, "TOPLEFT", offset - (80 * cos(ArenaAnalyticsMapIconPos)), (80 * sin(ArenaAnalyticsMapIconPos)) - offset);
+		
+		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 	end
 
 	-- Set position
-	UpdateMapBtn();
+	SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 
 	minibtn:RegisterForClicks("LeftButtonDown", "RightButtonDown");
 	minibtn:RegisterForDrag("LeftButton")
@@ -265,7 +271,7 @@ local function createMinimapButton()
 	minibtn:SetScript("OnDragStop", function()
 		minibtn:StopMovingOrSizing();
 		minibtn:SetScript("OnUpdate", nil)
-		UpdateMapBtn();
+		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 	end)
 	
 	-- Control clicks
@@ -340,6 +346,11 @@ function ArenaAnalytics:init()
 		ArenaAnalytics.Events:RegisterArenaEvents();
 		ArenaAnalytics.ArenaTracker:HandleArenaStart();
 	end
+
+	local title = "Bracket";
+    local filter = "Filter_Bracket";
+    local default = "All"
+    local entries = { "All", "2v2", "3v3", "5v5" };
 end
 
 -- Delay the init a frame, to allow all files to be loaded

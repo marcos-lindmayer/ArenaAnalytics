@@ -24,4 +24,5 @@ ArenaOptions_OLD.lua
 ArenaMatchSelection.lua
 ArenaTooltips.lua
 ArenaTracker.lua
+ArenaScrollableDropdown.lua
 ArenaEvents.lua

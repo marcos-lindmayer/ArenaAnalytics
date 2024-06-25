@@ -119,7 +119,15 @@ function Filter:changeFilter(dropdown, value, tooltip)
     end    
 end
 
-function Filter:SetFilter(filter, value, tooltip)
+function Filter:SetFilter(filter, value, display)
+    if(filter == nil) then
+        ArenaAnalytics:Log("SetFilter failed due to nil filter");
+        return;
+    end
+
+    display = display or value;
+
+    -- Reset comp filters when bracket filter changes
     if (filter == "Filter_Bracket") then
         currentFilters["Filter_Comp"] = {
             ["data"] = "All",
@@ -133,15 +141,21 @@ function Filter:SetFilter(filter, value, tooltip)
     
     if (filter == "Filter_Comp" or filter == "Filter_EnemyComp") then
         currentFilters[filter] = {
-            ["data"] = tooltip;
-            ["display"] = tooltip ~= "All" and ArenaAnalytics.AAtable:getCompIconString(tooltip) or "All";
+            ["data"] = value;
+            ["display"] = display;
         }
     else
         currentFilters[filter] = value;
     end
-
-    ArenaAnalytics:Log("Change Filter: ", filter, " to: ", value);
+    
+    ArenaAnalytics.Selection:ClearSelectedMatches();
     Filter:refreshFilters();
+end
+
+function Filter:ResetToDefault(filter, skipOverrides)
+    -- Update the filter for the new value
+    local defaultValue = Filter:GetDefault(filter, skipOverrides);
+    Filter:SetFilter(filter, defaultValue);
 end
 
 local function findOrAddCompValues(comps, comp, isWin)
@@ -185,13 +199,13 @@ function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
             end
         end
 
-        -- Filter out comps by too few matches
+        -- Compute winrates
         for i=#playedComps, 1, -1 do
             local compTable = playedComps[i];
-            if(compTable and compTable["comp"] ~= "All" and compTable["played"] < tonumber(ArenaAnalyticsSettings["outliers"])) then
-                tremove(playedComps, i);
-                i = i - 1;
-            end
+
+            local played = compTable["played"] or 0;
+            local wins = compTable["wins"] or 0;
+            compTable["winrate"] = (played > 0) and math.floor(wins * 100 / played) or 0;
         end
     end
     return playedComps;
