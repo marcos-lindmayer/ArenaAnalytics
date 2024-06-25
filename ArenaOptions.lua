@@ -8,7 +8,7 @@ ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {}
 
 function Options:LoadSettings()
 	ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsSettings["outliers"] or 0;
-	ArenaAnalyticsSettings["dropdownVisibileLimit"] = ArenaAnalyticsSettings["dropdownVisibileLimit"] or 15;
+	ArenaAnalyticsSettings["dropdownVisibileLimit"] = ArenaAnalyticsSettings["dropdownVisibileLimit"] or 10;
 	ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] = ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] or false;
 	ArenaAnalyticsSettings["defaultCurrentSessionFilter"] = ArenaAnalyticsSettings["defaultCurrentSessionFilter"] or false;
 	ArenaAnalyticsSettings["showSkirmish"] = ArenaAnalyticsSettings["showSkirmish"] or false;

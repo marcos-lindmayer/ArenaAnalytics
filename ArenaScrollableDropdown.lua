@@ -20,17 +20,6 @@ local function CreateButton(frameName, dropdown, parent, width, height, text)
     return button;
 end
 
-local function UpdateScrollbarMax(dropdown)
-    local viewHeight = dropdown.list:GetHeight()
-    local contentHeight = dropdown.list.content:GetHeight();
-    local maxScroll = math.max(contentHeight - viewHeight, 0)
-    
-    dropdown.list:UpdateScrollChildRect()
-    dropdown.list:SetVerticalScroll(0)
-    dropdown.list.ScrollBar:SetValue(0)
-    dropdown.list.ScrollBar:SetMinMaxValues(0, maxScroll)
-end
-
 local function SetupScrollbar(dropdown)
     -- Modern scrollbar visuals are handled by UIPanelScrollBarTemplate
     local scrollbar = dropdown.list.ScrollBar;
@@ -58,8 +47,6 @@ local function SetupScrollbar(dropdown)
         scrollbar.ScrollDownButton:Hide();
         scrollbar.ScrollDownButton:SetAlpha(0);
     end
-
-    UpdateScrollbarMax(dropdown);
 end
 
 -- Usage example:
@@ -196,7 +183,14 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     dropdown.list.scrollBarHideable = true; -- Make scrollbar hideable when not needed
     dropdown.list:SetSize(width, entryHeight * maxVisibleEntries);
     
-	dropdown.list:SetScript("OnScrollRangeChanged", nil);
+	dropdown.list:SetScript("OnScrollRangeChanged", function(scrollFrame)
+        local viewHeight = scrollFrame:GetHeight()
+        local contentHeight = scrollFrame.content:GetHeight();
+        local maxScroll = math.max(contentHeight - viewHeight, 0)
+        
+        scrollFrame:UpdateScrollChildRect()
+        scrollFrame.ScrollBar:SetMinMaxValues(0, maxScroll)
+    end);
 
     -- Setup list content
     dropdown.list.content = CreateFrame("Frame", dropdownName .. "_content", dropdown.list);
@@ -285,7 +279,7 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     end
 
     dropdown.ShowDropdown = function(self)
-        UpdateScrollbarMax(self);
+        self.list:SetVerticalScroll(0)
         self.list:Show();
     end
 
