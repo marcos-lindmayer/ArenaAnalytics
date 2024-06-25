@@ -21,13 +21,34 @@ local function CreateButton(frameName, dropdown, parent, width, height, text)
     return button;
 end
 
-local function SetupScrollbar(dropdown, accumulatedHeight)
+local function UpdateScrollbarMax(dropdown)
+    local viewHeight = dropdown.list:GetHeight()
+    local contentHeight = dropdown.list.content:GetHeight();
+    local maxScroll = math.max(contentHeight - viewHeight, 0)
+    
+    dropdown.list:UpdateScrollChildRect()
+    dropdown.list:SetVerticalScroll(0)
+    dropdown.list.ScrollBar:SetValue(0)
+    dropdown.list.ScrollBar:SetMinMaxValues(0, maxScroll)
+end
+
+local function SetupScrollbar(dropdown)
     -- Modern scrollbar visuals are handled by UIPanelScrollBarTemplate
     local scrollbar = dropdown.list.ScrollBar;
-    scrollbar:SetWidth(16); -- Adjust width as needed
     scrollbar:ClearAllPoints();
     scrollbar:SetPoint("TOPLEFT", dropdown.list, "TOPRIGHT", -5, 3);
     scrollbar:SetPoint("BOTTOMLEFT", dropdown.list, "BOTTOMRIGHT", -5, -3);
+
+    -- Workaround for scrollbar not hiding automatically
+    local viewHeight = dropdown.list:GetHeight()
+    local contentHeight = dropdown.list.content:GetHeight();
+    if (viewHeight < contentHeight) then
+        scrollbar.ScrollUpButton:SetAlpha(1);
+        scrollbar:SetWidth(16); -- Adjust width as needed
+    else
+        scrollbar.ScrollUpButton:SetAlpha(0);
+        scrollbar:SetWidth(0);
+    end
 
     -- Hide the scroll up and down buttons
     if scrollbar.ScrollUpButton then
@@ -39,20 +60,7 @@ local function SetupScrollbar(dropdown, accumulatedHeight)
         scrollbar.ScrollDownButton:SetAlpha(0);
     end
 
-    local function UpdateScrollRange()
-        local viewHeight = dropdown.list:GetHeight()
-        local contentHeight = dropdown.list.content:GetHeight();
-        local maxScroll = math.max(accumulatedHeight - viewHeight, 0)
-        
-        dropdown.list:UpdateScrollChildRect()
-        dropdown.list:SetVerticalScroll(0)
-        scrollbar:SetValue(0)
-        scrollbar:SetMinMaxValues(0, maxScroll)
-    end
-
-    dropdown.list:HookScript("OnShow", UpdateScrollRange)
-    dropdown.list:HookScript("OnSizeChanged", UpdateScrollRange)
-    UpdateScrollRange()
+    UpdateScrollbarMax(dropdown);
 end
 
 -- Returns buttons for filter lists
@@ -235,12 +243,12 @@ function Dropdown:Create_OLD(filter, entries, defaultValue, title, width, entryH
     dropdown.selected:SetPoint("CENTER");
 
     dropdown.selected:SetScript("OnClick", function (args)
-        local dropdownList = args:GetAttribute("dropdown").list
-        if (dropdownList:IsShown()) then
-            dropdownList:Hide();
+        local dropdownList = args:GetAttribute("dropdown")
+        if (dropdownList.list:IsShown()) then
+            dropdownList.list:Hide();
         else
             ArenaAnalytics.AAtable:closeFilterDropdowns();
-            dropdownList:Show();
+            dropdownList:ShowDropdown();
         end
     end);
 
@@ -249,21 +257,12 @@ function Dropdown:Create_OLD(filter, entries, defaultValue, title, width, entryH
     end
 
     SetupScrollbar(dropdown);
+    UpdateScrollbarMax(dropdown);
     
     dropdown.list:Hide();
 
     return dropdown;
 end
-
-
-
-
-
-
------------------------------------------------------------------
------------------------------------------------------------------
------------------------------------------------------------------
--- Test function for simplified basic dropdown at center of the screen
 
 -- Usage example:
 local testEntries = { "All" }
@@ -342,6 +341,7 @@ end
 
 local function CreateCompEntryButton(frameName, dropdown, filter, width, height, entry, isPlayerPriority)
     local comp = entry["comp"]
+    height = 27;
 
     -- Skip complex setup when entry has no icons
     if(comp == "All") then
@@ -366,36 +366,12 @@ local function CreateCompEntryButton(frameName, dropdown, filter, width, height,
 
     local button = CreateButton(frameName, dropdown, dropdown.list.content, width, height, "");
     button.text = ArenaAnalyticsCreateText(button, "CENTER", button, "CENTER", info.textOffsetX, 0, info.display);
-    button:SetHeight(27)
 
     button:SetScript("OnClick", function(args)
         HandleClick(dropdown, info.comp, info.display);
     end);
 
     return button;
-end
-
--- TEMP
-function Dropdown:DebugScrollState(dropdown)
-    if dropdown == nil or ArenaAnalytics.skipDebugLog then return end
-    local scrollFrame, scrollbar = dropdown.list, dropdown.list.ScrollBar;
-
-    -- Print ScrollFrame information
-    print("=== ScrollFrame Information ===");
-    print("ScrollFrame Name:", scrollFrame:GetName());
-    print("ScrollFrame Size:", scrollFrame:GetSize());
-    print("ScrollFrame ScrollChild Size:", scrollFrame:GetScrollChild():GetSize());
-    print("ScrollFrame ScrollOffsets (x, y):", scrollFrame:GetHorizontalScroll(), scrollFrame:GetVerticalScroll());
-    print("ScrollFrame Min Scroll:", scrollFrame.minScroll);
-    print("ScrollFrame Max Scroll:", scrollFrame.maxScroll);
-
-    -- Print ScrollBar information
-    print("=== ScrollBar Information ===");
-    print("ScrollBar Name:", scrollbar:GetName());
-    print("ScrollBar Size:", scrollbar:GetSize());
-    print("ScrollBar Orientation:", scrollbar:GetOrientation());
-    print("ScrollBar Min/Max Values:", scrollbar:GetMinMaxValues());
-    print("ScrollBar Current Value:", scrollbar:GetValue());
 end
 
 -- Create the dropdown frame
@@ -424,12 +400,13 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     dropdown.list.scrollBarHideable = true; -- Make scrollbar hideable when not needed
     dropdown.list:SetSize(width, entryHeight * maxEntriesToShow);
     
+	dropdown.list:SetScript("OnScrollRangeChanged", nil);
+
     -- Setup list content
     dropdown.list.content = CreateFrame("Frame", dropdownName .. "_content", dropdown.list);
     dropdown.list.content:SetPoint("TOP", dropdown.list);
     dropdown.list:SetScrollChild(dropdown.list.content);
     dropdown.list.content:SetSize(width, entryHeight * #entries);
-    ArenaAnalytics:Print(#entries)
 
     -- Setup Title (Optional)
     if title then
@@ -461,7 +438,6 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
             newEntry = CreateSimpleEntryButton(entryFrameName, dropdown, filter, width, entryHeight, text);
         end
 
-        newEntry:SetPoint("TOPLEFT", 0, -accumulatedHeight);
         accumulatedHeight = accumulatedHeight + newEntry:GetHeight();
 
         table.insert(dropdown.entries, newEntry);
@@ -475,12 +451,12 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     dropdown.selected:SetPoint("CENTER");
     
     dropdown.selected:SetScript("OnClick", function (args)
-        local dropdownList = args:GetAttribute("dropdown").list
-        if (dropdownList:IsShown()) then
-            dropdownList:Hide();
+        local dropdown = args:GetAttribute("dropdown")
+        if (dropdown.list:IsShown()) then
+            dropdown.list:Hide();
         else
             ArenaAnalytics.AAtable:closeFilterDropdowns();
-            dropdownList:Show();
+            dropdown:ShowDropdown();
         end
     end);
 
@@ -495,10 +471,8 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     dropdown.list.background:SetSize(width, dropdown.list.content:GetHeight());
     dropdown.list.background:SetColorTexture(0, 0, 0, 0.95);
 
-    SetupScrollbar(dropdown, accumulatedHeight);
+    SetupScrollbar(dropdown);
 
-    Dropdown:DebugScrollState(dropdown)
-    
     dropdown.list:Hide();
 
     local totalHeight = 0;
@@ -512,6 +486,11 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     -- Functions
     dropdown.Reset = function(self)
         HandleClick(self, defaultValue);
+    end
+
+    dropdown.ShowDropdown = function(self)
+        UpdateScrollbarMax(self);
+        self.list:Show();
     end
 
     return dropdown;

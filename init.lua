@@ -108,7 +108,7 @@ ArenaAnalytics.commands = {
 	end,
 
 	["test"] = function()
-		ArenaAnalytics.Dropdown:DebugScrollState(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown);
+
 	end,	
 };
 
@@ -165,6 +165,10 @@ function ArenaAnalytics:Log(...)
     local hex = "FF6EC7";
     local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Debug):");
 	print(prefix, ...);
+end
+
+function ArenaAnalytics:NoFormatting(text)
+	return text and text:gsub("|", "||") or "";
 end
 
 -- Debug function to force a nil error if input is nil

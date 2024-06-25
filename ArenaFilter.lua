@@ -147,8 +147,6 @@ function Filter:SetFilter(filter, value, display)
     else
         currentFilters[filter] = value;
     end
-
-    ArenaAnalytics:Log("Change Filter: ", filter, " to: ", value);
     
     ArenaAnalytics.Selection:ClearSelectedMatches();
     Filter:refreshFilters();

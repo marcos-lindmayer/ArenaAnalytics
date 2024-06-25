@@ -720,11 +720,11 @@ function AAtable:forceCompFilterRefresh(keepVisibility)
     -- Update visibility to match previous visibility, if desired
     if(keepVisibility == true) then
         if (wasCompFilterVisible == true) then
-            ArenaAnalyticsScrollFrame.filterCompsDropdown.list:Show();
+            ArenaAnalyticsScrollFrame.filterCompsDropdown:ShowDropdown();
         end
 
         if(wasEnemyCompFilterVisible == true) then
-            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Show();
+            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:ShowDropdown();
         end
     end
 
