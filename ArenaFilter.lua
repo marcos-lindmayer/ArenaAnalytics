@@ -152,6 +152,12 @@ function Filter:SetFilter(filter, value, display)
     Filter:refreshFilters();
 end
 
+function Filter:ResetToDefault(filter, skipOverrides)
+    -- Update the filter for the new value
+    local defaultValue = Filter:GetDefault(filter, skipOverrides);
+    Filter:SetFilter(filter, defaultValue);
+end
+
 local function findOrAddCompValues(comps, comp, isWin)
     if(comp == nil) then return end;
 

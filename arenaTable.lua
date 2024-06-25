@@ -340,8 +340,15 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetPoint("TOP", 0, 15);
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetText("");
 
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetScript("OnClick", function()
-        ToggleDropDownMenu(1, nil, ArenaAnalytics.MoreFilters.dropdown, "cursor", 3, -10);
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+
+    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetScript("OnClick", function(frame, btn)
+        if(btn == "RightButton") then
+            -- Clear all filters related to this
+            ArenaAnalytics.MoreFilters:ResetAll();
+        else
+            ToggleDropDownMenu(1, nil, ArenaAnalytics.MoreFilters.dropdown, "cursor", 3, -10);
+        end
     end);
 
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.filterBtn_MoreFilters, "RIGHT", 10, 0, "Clear");

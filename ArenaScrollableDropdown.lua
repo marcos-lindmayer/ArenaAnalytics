@@ -239,14 +239,22 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     -- Selected (main) button for this dropdown
     dropdown.selected = CreateButton(dropdownName .. "_selected", dropdown, nil, width, entryHeight, defaultValue);
     dropdown.selected:SetPoint("CENTER");
-    
-    dropdown.selected:SetScript("OnClick", function (args)
-        local dropdown = args:GetAttribute("dropdown")
-        if (dropdown.list:IsShown()) then
-            dropdown.list:Hide();
-        else
+
+    dropdown.selected:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+    dropdown.selected:SetScript("OnClick", function (frame, btn)
+        if(btn == "RightButton") then
+            -- Clear all filters related to this
+            ArenaAnalytics.Filter:ResetToDefault(filter, true);
+            dropdown.selected:SetText(ArenaAnalytics.Filter:GetCurrent(filter));
             ArenaAnalytics.AAtable:closeFilterDropdowns();
-            dropdown:ShowDropdown();
+        else
+            local dropdown = frame:GetAttribute("dropdown")
+            if (dropdown.list:IsShown()) then
+                dropdown.list:Hide();
+            else
+                ArenaAnalytics.AAtable:closeFilterDropdowns();
+                dropdown:ShowDropdown();
+            end
         end
     end);
 

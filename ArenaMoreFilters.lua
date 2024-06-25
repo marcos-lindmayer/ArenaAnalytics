@@ -131,10 +131,18 @@ end
 -- Implement the function to change the value for a given filter
 function MoreFilters.dropdown:ResetValue(filter)
     -- Update the filter for the new value
-    local defaultValue = Filter:GetDefault(filter, true);
-    Filter:SetFilter(filter, defaultValue);
+    Filter:ResetToDefault(filter, true);
     UIDropDownMenu_RefreshAll(MoreFilters.dropdown, true);
     CloseDropDownMenus();
+end
+
+function MoreFilters:ResetAll()
+    for filter,_ in pairs(dropdownInfo) do
+        -- Update the filter for the new value
+        Filter:ResetToDefault(filter, true);
+        UIDropDownMenu_RefreshAll(MoreFilters.dropdown, true);
+        CloseDropDownMenus();
+    end
 end
 
 -------------------------------------------------------------------------
