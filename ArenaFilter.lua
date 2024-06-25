@@ -193,15 +193,6 @@ function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
             end
         end
 
-        -- Filter out comps by too few matches
-        for i=#playedComps, 1, -1 do
-            local compTable = playedComps[i];
-            if(compTable and compTable["comp"] ~= "All" and compTable["played"] < tonumber(ArenaAnalyticsSettings["outliers"])) then
-                tremove(playedComps, i);
-                i = i - 1;
-            end
-        end
-
         -- Compute winrates
         for i=#playedComps, 1, -1 do
             local compTable = playedComps[i];

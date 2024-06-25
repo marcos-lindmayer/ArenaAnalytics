@@ -8,7 +8,7 @@ ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {}
 
 function Options:LoadSettings()
 	ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsSettings["outliers"] or 0;
-	ArenaAnalyticsSettings["compsLimit"] = ArenaAnalyticsSettings["compsLimit"] or 0;
+	ArenaAnalyticsSettings["dropdownVisibileLimit"] = ArenaAnalyticsSettings["dropdownVisibileLimit"] or 15;
 	ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] = ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] or false;
 	ArenaAnalyticsSettings["defaultCurrentSessionFilter"] = ArenaAnalyticsSettings["defaultCurrentSessionFilter"] or false;
 	ArenaAnalyticsSettings["showSkirmish"] = ArenaAnalyticsSettings["showSkirmish"] or false;
@@ -85,9 +85,10 @@ local function createCheckbox(setting, parent, x, text, relative, isSingleLine)
 
     checkbox:SetScript("OnClick", function()
 		ArenaAnalyticsSettings[setting] = checkbox:GetChecked();
-		ArenaAnalytics:Log(setting .. ": ", ArenaAnalyticsSettings[setting]);
 		ArenaAnalytics.Filter:refreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+
+		ArenaAnalytics:Log(setting .. ": ", ArenaAnalyticsSettings[setting]);
 	end);
 
     offsetY = offsetY - 25;
@@ -123,7 +124,7 @@ local function createInputBox(setting, parent, x, text)
     end);
 
     inputBox:SetScript("OnEditFocusLost", function(self)
-		local oldValue = tonumber(ArenaAnalyticsSettings[setting]) or 213;
+		local oldValue = tonumber(ArenaAnalyticsSettings[setting]) or 25;
 		local newValue = tonumber(inputBox:GetText());
         ArenaAnalyticsSettings[setting] = newValue or oldValue;
 		inputBox:SetText(tonumber(ArenaAnalyticsSettings[setting]));
@@ -131,6 +132,8 @@ local function createInputBox(setting, parent, x, text)
 		inputBox:HighlightText(0,0);
         
 		ArenaAnalytics.AAtable:checkUnsavedWarningThreshold();
+
+        ArenaAnalytics:Log("Setting ", setting, " changed to: ", newValue, ". Old value: ", oldValue);
     end);
 
     offsetY = offsetY - OptionsSpacing;
@@ -178,7 +181,7 @@ function setupTab_Filters()
     parent.compFilterSortByTotal = createCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
 
     parent.unsavedWarning = createInputBox("outliers", parent, offsetX, "Minimum games required to appear on comp filter");
-    parent.unsavedWarning = createInputBox("compsLimit", parent, offsetX, "Maximum comps to appear in comp filter dropdowns (0 = unlimited)");
+    parent.unsavedWarning = createInputBox("dropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
 end
 
 -------------------------------------------------------------------

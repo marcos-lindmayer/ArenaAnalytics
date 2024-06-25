@@ -6,7 +6,6 @@ local Dropdown = ArenaAnalytics.Dropdown;
 local baseName = "ArenaScrollableDropdown"
 
 local defaultEntryHeight = 25;
-local maxEntriesToShow = 15;
 
 local function CreateButton(frameName, dropdown, parent, width, height, text)
     local button = CreateFrame("Button", frameName, (parent or dropdown), "UIServiceButtonTemplate")
@@ -63,207 +62,6 @@ local function SetupScrollbar(dropdown)
     UpdateScrollbarMax(dropdown);
 end
 
--- Returns buttons for filter lists
-local function createDropdownButton(info, dropdown, title, width)
-    local parent = dropdown.list.content;
-    local button = CreateFrame("Button", info.buttonName, parent, "UIServiceButtonTemplate");
-    button.money:Hide();
-    button:SetSize(width, defaultEntryHeight);
-    button:SetPoint("CENTER");
-    button:SetNormalFontObject("GameFontHighlight");
-    button:SetHighlightFontObject("GameFontHighlight");
-    button:SetAttribute("dropdown", dropdown);
-    button:Show();
-    button:SetFrameStrata("HIGH")
-    
-    if (info.display ~= "") then
-        -- Comp filter (Has icons)
-        button:SetHeight(27)
-        if(info.text == "All" or info.textOffsetX == nil) then
-            button:SetText(info.text);
-        else
-            button:SetText("");
-            button.text = ArenaAnalyticsCreateText(button, "CENTER", button, "CENTER", info.textOffsetX, 0, info.text);
-        end    
-    else
-        button:SetText(info.text);
-    end
-
-    button:SetScript("OnClick", function(args) 
-        ArenaAnalytics.Filter:changeFilter(dropdown, info.text, info.display);
-    end);
-
-    return button;
-end
-
--- TODO: Refactor this mess!
--- Returns a dropdown frame
--- Used for match filters
-function Dropdown:Create_OLD(filter, entries, defaultValue, title, width, entryHeight)
-    assert(filter);
-
-    entries = entries or {}
-    defaultValue = defaultValue or "Missing Default"
-    width = width and max(width, 1) or 1; -- At least 1, to avoid content is considered visible
-    entryHeight = entryHeight or defaultEntryHeight;
-
-    local dropdownName = baseName .. "_".. filter;
-    local isCompDropdown = filter == "Filter_Comp" and filter == "Filter_EnemyComp";
-    local prioritizePlayerSpec = (filter == "Filter_Comp");
-
-    local dropdown = CreateFrame("Frame", dropdownName, ArenaAnalyticsScrollFrame);
-    dropdown:SetSize(width, defaultEntryHeight);
-    dropdown.filter = filter;
-
-    dropdown.list = CreateFrame("ScrollFrame", dropdownName .. "_list", dropdown, "UIPanelScrollFrameTemplate");
-    dropdown.list:SetPoint("TOP", dropdown, "BOTTOM");
-    dropdown.list:SetSize(width, maxEntriesToShow * defaultEntryHeight);
-    dropdown.list:SetClipsChildren(true); -- Ensure content clipping
-    dropdown.list.scrollBarHideable = true; -- Make scrollbar hideable when not needed
-    dropdown.list.content = CreateFrame("Frame", dropdownName .. "_content", dropdown.list);
-    dropdown.list.content:SetSize(width, (#entries * defaultEntryHeight));
-    dropdown.list.content:SetPoint("TOP", dropdown.list)
-
-    dropdown.list:SetScrollChild(dropdown.list.content);
-    dropdown.list:SetFrameStrata("HIGH");
-    
-    if (title) then
-        dropdown.title = dropdown:CreateFontString(nil, "OVERLAY")
-        dropdown.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-        dropdown.title:SetPoint("TOPLEFT", 0, 15)
-        dropdown.title:SetText(title);
-    end
-
-    isEnemyComp, _ = string.find(filter:lower(), "enemy")
-
-    dropdown.entries = {}
-    
-    for i, entry in ipairs(entries) do 
-        local text = entry["comp"] or entry;
-
-        local info = {}
-        info.text = text;
-        info.display = "";
-        local winrate = nil;
-        local totalPlayed = nil;
-        
-        if(isCompDropdown) then
-            if(info.text ~= "All") then
-                info.display = entry["comp"];
-                info.text = ArenaAnalytics.AAtable:getCompIconString(entry["comp"], not isEnemyComp and UnitClass("player") or nil);
-
-                totalPlayed = entry["played"] or 0;
-                local wins = entry["wins"] or 0;
-
-                winrate = (totalPlayed > 0) and math.floor(wins * 100 / totalPlayed) or 0
-                info.text = totalPlayed .. " " .. info.text .. " - " .. winrate .. "%";
-
-                -- Make a temp font string to calculate width of the left and right added strings.
-                local tmpWidthString = dropdown:CreateFontString(nil, "OVERLAY")
-                tmpWidthString:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-                tmpWidthString:SetText("- " .. winrate .. "%");
-                winrateWidth = tmpWidthString:GetStringWidth();
-                tmpWidthString:SetText(totalPlayed);
-                totalPlayedWidth = tmpWidthString:GetStringWidth();
-                tmpWidthString = nil;
-
-                info.textOffsetX = (winrateWidth - totalPlayedWidth) / 2;
-            else
-                info.display = "All";
-            end
-        end
-        
-        info.buttonName = dropdownName .. "_Entry" .. i;
-        info.index = i;
-        local newEntry = createDropdownButton(info, dropdown, titleText, width);
-        newEntry.winrate = winrate;
-        newEntry.totalPlayed = totalPlayed;
-        table.insert(dropdown.entries, newEntry);
-    end
-
-    -- Order Comp filter by winrate
-    if (isCompDropdown and #dropdown.entries) then
-        table.sort(dropdown.entries, function(a,b)
-            if(a and a:GetText() == "All" or b == nil) then
-                return true;
-            elseif(b and b:GetText() == "All" or a == nil) then
-                return false;
-            end
-
-            local sortByTotal = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"];
-            local value1 = tonumber(sortByTotal and a.totalPlayed or a.winrate);
-            local value2 = tonumber(sortByTotal and b.totalPlayed or b.winrate);
-            if(value1 and value2) then
-                return value1 > value2;
-            end
-            return value1 ~= nil;
-        end);
-
-        -- Remove entries with lowest priority past the limit
-        local limit = tonumber(ArenaAnalyticsSettings["compsLimit"]);
-        if(limit and limit > 0) then
-            limit = limit + 2;
-            if(#dropdown.entries > limit) then
-                for i=#dropdown.entries, limit, -1 do
-                    local entry = dropdown.entries[i]
-                    if(entry ~= nil) then
-                        entry:Hide();
-                        entry = nil;
-                    end
-                    tremove(dropdown.entries, i);
-                end
-            end
-        end
-    end
-
-    dropdown.list:SetSize(width, (maxEntriesToShow * 25));
-    dropdown:SetWidth(width)
-    
-    local totalHeight = 0;
-    for i = 1, #dropdown.entries do
-        local entry = dropdown.entries[i];
-        totalHeight = totalHeight + entry:GetHeight();
-        entry:SetPoint("TOPLEFT", 0, -(i - 1) * entry:GetHeight())
-        entry:SetWidth(width)
-    end
-
-    local dropdownBg = dropdown:CreateTexture();
-    dropdownBg:SetPoint("CENTER")
-    dropdownBg:SetSize(width, defaultEntryHeight);
-    dropdownBg:SetColorTexture(0.2, 0.2, 0.2, 0.5);
-    
-    dropdown.background = dropdown.list:CreateTexture();
-    dropdown.background:SetPoint("TOP", dropdown.list)
-    dropdown.background:SetSize(width, totalHeight);
-    dropdown.background:SetColorTexture(0.2, 0.2, 0.2, 0.5);
-
-    dropdown.list.content:SetHeight(totalHeight);
-
-    dropdown.selected = CreateButton(dropdownName .. "_selected", dropdown, nil, width, defaultEntryHeight, defaultValue);
-    dropdown.selected:SetPoint("CENTER");
-
-    dropdown.selected:SetScript("OnClick", function (args)
-        local dropdownList = args:GetAttribute("dropdown")
-        if (dropdownList.list:IsShown()) then
-            dropdownList.list:Hide();
-        else
-            ArenaAnalytics.AAtable:closeFilterDropdowns();
-            dropdownList:ShowDropdown();
-        end
-    end);
-
-    dropdown.reset = function(self)
-        ArenaAnalytics.Filter:changeFilter(dropdown, defaultValue);
-    end
-
-    SetupScrollbar(dropdown);
-    UpdateScrollbarMax(dropdown);
-    
-    dropdown.list:Hide();
-
-    return dropdown;
-end
-
 -- Usage example:
 local testEntries = { "All" }
 for i = 1, 100 do
@@ -298,18 +96,15 @@ local function SortDropdownEntries(entries, isPlayerPriority)
     end);
 end
 
-local function ApplyEntryLimit(entries)
-    -- Remove entries with lowest priority past the limit
-    local limit = tonumber(ArenaAnalyticsSettings["compsLimit"]);
-    if(limit and limit > 0) then
-        limit = limit + 2;
-        if(#entries > limit) then
-            for i=#entries, limit, -1 do
-                local entry = entries[i]
-                if(entry ~= nil) then
-                    entry = nil;
-                end
+local function RemoveEntriesByOptions(entries)
+    local outlierLimit = tonumber(ArenaAnalyticsSettings["outliers"]) or 0
+    if(outlierLimit > 0) then
+        -- Filter out comps by too few matches
+        for i=#entries, 1, -1 do
+            local compTable = entries[i];
+            if(compTable and compTable["comp"] ~= "All" and compTable["played"] < outlierLimit) then
                 tremove(entries, i);
+                i = i - 1;
             end
         end
     end
@@ -386,6 +181,7 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     local dropdownName = baseName .. "_".. filter;
     local isCompDropdown = filter == "Filter_Comp" or filter == "Filter_EnemyComp";
     local prioritizePlayerSpec = (filter == "Filter_Comp");
+    local maxVisibleEntries = isCompDropdown and ArenaAnalyticsSettings["dropdownVisibileLimit"] or 10;
 
     -- Setup main dropdown frame
     local dropdown = CreateFrame("Frame", dropdownName, ArenaAnalyticsScrollFrame);
@@ -398,7 +194,7 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     dropdown.list:SetFrameStrata("HIGH");
     dropdown.list:SetClipsChildren(true); -- Ensure content clipping
     dropdown.list.scrollBarHideable = true; -- Make scrollbar hideable when not needed
-    dropdown.list:SetSize(width, entryHeight * maxEntriesToShow);
+    dropdown.list:SetSize(width, entryHeight * maxVisibleEntries);
     
 	dropdown.list:SetScript("OnScrollRangeChanged", nil);
 
@@ -419,7 +215,7 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
     -- Apply settings for comp filters
     if(isCompDropdown) then
         SortDropdownEntries(entries, prioritizePlayerSpec);
-        ApplyEntryLimit(entries);
+        RemoveEntriesByOptions(entries);
     end
 
     dropdown.entries = {}
