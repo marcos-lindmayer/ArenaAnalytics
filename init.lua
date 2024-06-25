@@ -156,7 +156,7 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
-ArenaAnalytics.skipDebugLog = false;
+ArenaAnalytics.skipDebugLog = true;
 function ArenaAnalytics:Log(...)
 	if ArenaAnalytics.skipDebugLog then 
 		return;
@@ -296,7 +296,7 @@ function ArenaAnalytics:init()
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffBBBBBB" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 
-	if(not skipDebugLog) then
+	if(not ArenaAnalytics.skipDebugLog) then
 		ArenaAnalytics:Log("Default Debugging Enabled!");
 	end
 	
