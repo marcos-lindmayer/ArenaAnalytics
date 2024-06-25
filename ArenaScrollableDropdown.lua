@@ -245,7 +245,7 @@ function Dropdown:Create(filter, entries, defaultValue, title, width, entryHeigh
         if(btn == "RightButton") then
             -- Clear all filters related to this
             ArenaAnalytics.Filter:ResetToDefault(filter, true);
-            dropdown.selected:SetText(ArenaAnalytics.Filter:GetCurrent(filter));
+            dropdown.selected:SetText(ArenaAnalytics.Filter:GetCurrentDisplay(filter) or "");
             ArenaAnalytics.AAtable:closeFilterDropdowns();
         else
             local dropdown = frame:GetAttribute("dropdown")

@@ -54,14 +54,22 @@ end
 Filter:resetFilters(false);
 
 -- Get the current value, defaulting to 
-function Filter:GetCurrent(filter, subcategory, default)
+function Filter:GetCurrent(filter, subcategory, fallback)
     if(filter ~= nil) then
         if(subcategory ~= nil) then
-            return currentFilters[filter] and currentFilters[filter][subcategory] or default;
+            return currentFilters[filter] and currentFilters[filter][subcategory] or defaults[filter][subcategory] or fallback;
         else
-            return currentFilters[filter] or default;
+            return currentFilters[filter] or defaults[filter] or fallback;
         end
     end
+end
+
+function Filter:GetCurrentDisplay(filter)
+    if(filter == nil) then
+        return "";
+    end
+
+    return currentFilters[filter]["display"] or currentFilters[filter]["raw"] or currentFilters[filter] or "";
 end
 
 function Filter:isFilterActive(filterName)

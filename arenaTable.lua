@@ -210,12 +210,12 @@ function AAtable:OnLoad()
     end);
 
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEscapePressed", function() 
-        ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrent("Filter_Search")["raw"]);
+        ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrentDisplay("Filter_Search"));
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
     end);
         
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextSet", function(self) 
-        if(self:GetText() == "" and Filter:GetCurrent("Filter_Search", "raw", "") ~= "") then
+        if(self:GetText() == "" and (Filter:GetCurrentDisplay("Filter_Search")) ~= "") then
             ArenaAnalytics.Filter:commitSearch("");
             self:SetText("");
         end
@@ -228,7 +228,7 @@ function AAtable:OnLoad()
         ArenaAnalytics.Filter:commitSearch(search);
 
         -- Compact double spaces to single spaces in the search box
-        ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrent("Filter_Search", "raw", ""));
+        ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrentDisplay("Filter_Search"));
     end);
 
     -- Dropdown data
@@ -486,7 +486,7 @@ local function addPlayerToQuickSearch(previousSearch, prefix, playerToAdd)
     end
     
     ArenaAnalytics.Filter:commitSearch(newSearch);
-    ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrent("Filter_Search", "raw", ""));
+    ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrentDisplay("Filter_Search"));
 end
 
 local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, matchKey, scrollEntry)
@@ -680,7 +680,7 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
     -- Dropdown data
     local filter = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
     local title = isEnemyComp and "Enemy Comp: Games | Comp | Winrate" or "Comp: Games | Comp | Winrate";
-    local default = isDisabled and disabledText or Filter:GetCurrent(filter, "display");
+    local default = isDisabled and disabledText or Filter:GetCurrentDisplay(filter);
     local entries = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp);
 
     local dropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 265, 25);
