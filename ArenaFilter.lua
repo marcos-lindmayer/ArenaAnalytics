@@ -72,6 +72,14 @@ function Filter:GetCurrentDisplay(filter)
     return currentFilters[filter]["display"] or currentFilters[filter]["raw"] or currentFilters[filter] or "";
 end
 
+function Filter:GetCurrentData(filter)
+    if(filter == nil) then
+        return "";
+    end
+
+    return currentFilters[filter]["data"] or currentFilters[filter] or "";
+end
+
 function Filter:isFilterActive(filterName)
     if(filterName == "Filter_Search") then
         return currentFilters["Filter_Search"]["raw"] ~= "";

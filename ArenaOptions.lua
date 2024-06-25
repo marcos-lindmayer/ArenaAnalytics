@@ -15,6 +15,7 @@ function Options:LoadSettings()
 	ArenaAnalyticsSettings["alwaysShowDeathOverlay"] = ArenaAnalyticsSettings["alwaysShowDeathOverlay"] or false;
 	ArenaAnalyticsSettings["alwaysShowSpecOverlay"] = ArenaAnalyticsSettings["alwaysShowSpecOverlay"] or false;
 	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 10;
+	ArenaAnalyticsSettings["showSelectedCompStats"] = ArenaAnalyticsSettings["showSelectedCompStats"] or true;
 	ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] or true;
 	ArenaAnalyticsSettings["selectionControlModInversed"] = ArenaAnalyticsSettings["selectionControlModInversed"] or true;
 end
@@ -50,6 +51,10 @@ local function InitializeTab(parent)
     
     -- Reset Y offset
     offsetY = 0;
+end
+
+local function createSpace(explicit)
+    offsetY = offsetY - max(0, explicit or 25)
 end
 
 local function createHeader(text, size, parent, relative, x, y, icon)
@@ -180,6 +185,9 @@ function setupTab_Filters()
     parent.defaultCurrentSessionFilter = createCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
     parent.compFilterSortByTotal = createCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
 
+    createSpace();
+
+    parent.showSelectedCompStats = createCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
     parent.unsavedWarning = createInputBox("outliers", parent, offsetX, "Minimum games required to appear on comp filter");
     parent.unsavedWarning = createInputBox("dropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
 end

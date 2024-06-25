@@ -58,7 +58,11 @@ function AAtable:getCompIconString(comp, isPlayerPriority)
         return "";
     end
 
-    local priorityClass = UnitClass("player");
+    local myClass, mySpec;
+    if(isPlayerPriority) then
+        myClass = UnitClass("player");
+        mySpec = ArenaAnalytics.API:GetMySpec();
+    end
 
     local classTable = { }
 
@@ -71,14 +75,29 @@ function AAtable:getCompIconString(comp, isPlayerPriority)
     end);
 
     table.sort(classTable, function(a, b)
-        local classA = a[2];
-        local classB = b[2];
+        local classA, classB = a[2], b[2];
+        local specA, specB = a[3], b[3];
 
-        if (priorityClass) then 
-            if(classA == priorityClass) then 
-                return true;
-            elseif(classB == priorityClass) then
-                return false;
+        if(isPlayerPriority) then
+            if(myClass) then
+                local priorityA = (classA == myClass) and 1 or 0;
+                local priorityB = (classB == myClass) and 1 or 0;
+
+                if(mySpec) then
+                    priorityA = priorityA + ((specA == mySpec) and 2 or 0);
+                    priorityB = priorityB + ((specB == mySpec) and 2 or 0);
+                end
+
+                return priorityA > priorityB;
+            end
+
+
+            if (playerClass) then 
+                if(classA == playerClass) then 
+                    return true;
+                elseif(classB == playerClass) then
+                    return false;
+                end
             end
         end
 
@@ -96,7 +115,7 @@ function AAtable:getCompIconString(comp, isPlayerPriority)
             -- Replace with game folder icons
             local iconPath = "Interface\\AddOns\\ArenaAnalytics\\icon\\" .. class .. "\\" .. spec;
             local singleClassSpecIcon = IconClass(iconPath, 0, 0, 0, 0, 0, 0, 25, 25);
-            output = output .. singleClassSpecIcon:GetIconString() .. " ";
+            output = output .. singleClassSpecIcon:GetIconString();
         end
     end
     return output;
@@ -238,7 +257,7 @@ function AAtable:OnLoad()
     local entries = { "All", "2v2", "3v3", "5v5" };
 
     ArenaAnalyticsScrollFrame.filterBracketDropdown = nil;
-    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 75, 25);
+    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 65, 25);
     ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);    
 
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
@@ -334,12 +353,6 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown, "RIGHT", 10, 0);
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetWidth(90);
 
-    -- TODO: Add active filters count text above "More Filters" button.
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title = ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:CreateFontString(nil, "OVERLAY")
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetPoint("TOP", 0, 15);
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetText("");
-
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:RegisterForClicks("LeftButtonDown", "RightButtonDown");
 
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetScript("OnClick", function(frame, btn)
@@ -369,6 +382,12 @@ function AAtable:OnLoad()
         CloseDropDownMenus();
     end);
     
+    -- Active Filters text count
+    ArenaAnalyticsScrollFrame.activeFilterCountText = ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:CreateFontString(nil, "OVERLAY")
+    ArenaAnalyticsScrollFrame.activeFilterCountText:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
+    ArenaAnalyticsScrollFrame.activeFilterCountText:SetPoint("BOTTOM", ArenaAnalyticsScrollFrame.filterBtn_ClearFilters, "TOP", 0, 5);
+    ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
+
     AAtable:OnShow();
 end
 
@@ -680,7 +699,7 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
     -- Dropdown data
     local filter = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
     local title = isEnemyComp and "Enemy Comp: Games | Comp | Winrate" or "Comp: Games | Comp | Winrate";
-    local default = isDisabled and disabledText or Filter:GetCurrentDisplay(filter);
+    local default = isDisabled and disabledText or nil;
     local entries = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp);
 
     local dropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 265, 25);
@@ -861,10 +880,10 @@ function AAtable:RefreshLayout()
     if(ArenaAnalyticsScrollFrame.filterBtn_ClearFilters) then
         local activeFilterCount = ArenaAnalytics.Filter:getActiveFilterCount();
         if(activeFilterCount > 0) then
-            ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetText("(" .. activeFilterCount .." active)");
+            ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("(" .. activeFilterCount .." active)");
             ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Enable();
         else
-            ArenaAnalyticsScrollFrame.filterBtn_MoreFilters.title:SetText("");
+            ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
 
             if(not ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] and not ArenaAnalyticsSettings["defaultCurrentSessionFilter"]) then
                 ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Disable();

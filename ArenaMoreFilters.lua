@@ -85,7 +85,8 @@ UIDropDownMenu_Initialize(MoreFilters.dropdown, function(self, level, filter)
             info.func = self.ResetValue;
             info.checked = Filter:GetCurrent(key) ~= Filter:GetDefault(key, true);
 
-            UIDropDownMenu_AddButton(info);
+            local newButton = UIDropDownMenu_AddButton(info);
+            newButton:RegisterForClicks("LeftButtonDown", "RightButtonDown");
         end
         return;
     end
