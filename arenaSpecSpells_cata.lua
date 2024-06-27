@@ -15,11 +15,14 @@ local specSpells = {
     [ 48438 ] = "Restoration", -- Wild Growth
     [ 33891 ] = "Restoration", -- Tree of Life
 
-    [ 33917 ] = "Feral", -- Mangle
-    [ 49377 ] = "Feral", -- Feral Charge
+    [ 33878 ] = "Feral", -- Mangle (Bear Form)
+    [ 33876 ] = "Feral", -- Mangle (Cat Form)
+    [ 16979 ] = "Feral", -- Feral Charge (Bear Form)
+    [ 49376 ] = "Feral", -- Feral Charge (Cat Form)
     [ 61336 ] = "Feral", -- Survival Instincts
     [ 80313 ] = "Feral", -- Pulverize
     [ 33983 ] = "Feral", -- Berserk
+    [ 17007 ] = "Feral", -- Leader of the Pack
     
     [ 78674 ] = "Balance", -- Starsurge
     [ 24858 ] = "Balance", -- Moonkin Form
@@ -66,7 +69,9 @@ local specSpells = {
     [ 11129 ] = "Fire", -- Combustion
     [ 31661 ] = "Fire", -- Dragon's Breath
     [ 44457 ] = "Fire", -- Living Bomb
+    [ 44461 ] = "Fire", -- Living Bomb (Explosion)
     [ 31642 ] = "Fire", -- Blazing Speed
+    [ 44445 ] = "Fire", -- Hot Streak
 
     --------------------------------------------------------
     -- PALADIN
