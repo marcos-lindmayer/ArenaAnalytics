@@ -106,8 +106,8 @@ function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
 	else -- If one team is missing players in the same bracket, make sure all existing players are the same.
 		local teamOneIsSmaller = (#arena1["team"] < #arena2["team"]);
 
-		local smallerTeam = teamOneIsSmaller and #arena1["team"] or #arena2["team"];
-		local largerTeam = teamOneIsSmaller and #arena2["team"] or #arena1["team"];
+		local smallerTeam = teamOneIsSmaller and arena1["team"] or arena2["team"];
+		local largerTeam = teamOneIsSmaller and arena2["team"] or arena1["team"];
 
 		for i = 1, #smallerTeam do
 			local player = smallerTeam[i]["name"];
