@@ -914,7 +914,12 @@ function AAtable:RefreshLayout()
 
             local enemyDelta
             -- Paint winner green, loser red
-            local hex = match["won"] and "ff00cc66" or "ffff0000"
+            local hex
+            if(match["won"] == nil) then
+                hex = "ff999999";
+            else
+                hex = match["won"] and "ff00cc66" or "ffff0000"
+            end
             local ratingText = ratingToText(match["rating"], match["ratingDelta"]) or "SKIRMISH";
             button.Rating:SetText("|c" .. hex .. ratingText .."|r");
             

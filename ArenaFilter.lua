@@ -174,6 +174,7 @@ function Filter:ResetToDefault(filter, skipOverrides)
     Filter:SetFilter(filter, defaultValue);
 end
 
+-- TODO: Decide what to do with nil win. Might be better to not include its stats at all (Though still wanna count as a played comp)?
 local function findOrAddCompValues(comps, comp, isWin)
     if(comp == nil) then return end;
 

@@ -1,7 +1,5 @@
 local _, ArenaAnalytics = ...; -- Namespace
 
-local ratedUpdateEvent = nil;
-
 local version = "";
 
 function ArenaAnalyticsToggle()
@@ -203,15 +201,6 @@ function ArenaAnalytics:GetTitleColored(asSingleColor)
 	end
 end
 
-local function onRatedStatsReceived()
-	if(ratedUpdateEvent ~= nil) then
-		ratedUpdateEvent:SetScript("OnEvent", nil);
-		ratedUpdateEvent = nil;
-	end
-	
-	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
-end
-
 local function createMinimapButton()
 	-- Create minimap button -- Credit to Leatrix
 	local minibtn = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap)
@@ -238,7 +227,6 @@ local function createMinimapButton()
 	minibtnBorderT:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 
 	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos or 0
-	ArenaAnalytics:Log("Minimap Icon Angle:", ArenaAnalyticsMapIconPos);
 	
 	local function SetMinimapIconPosition(angle)
 		minibtn:ClearAllPoints();
@@ -317,9 +305,9 @@ function ArenaAnalytics:init()
 	ArenaAnalytics.Options:LoadSettings();
 
 	-- Update cached rating as soon as possible
-	ratedUpdateEvent = CreateFrame("Frame");
-	ratedUpdateEvent:RegisterEvent("PVP_RATED_STATS_UPDATE");
-	ratedUpdateEvent:SetScript("OnEvent", function() onRatedStatsReceived() end);
+	ArenaAnalytics.Events:CreateEventListenerForRequest("PVP_RATED_STATS_UPDATE", function() 
+		ArenaAnalytics.AAmatch:updateCachedBracketRatings();
+	end);
 	RequestRatedInfo();
 	
 	-- Try converting old matches to MatchHistoryDB
@@ -344,7 +332,7 @@ function ArenaAnalytics:init()
 	-- Already in an arena
 	if (IsActiveBattlefieldArena()) then
 		ArenaAnalytics.Events:RegisterArenaEvents();
-		ArenaAnalytics.ArenaTracker:HandleArenaStart();
+		ArenaAnalytics.ArenaTracker:HandleArenaEnter();
 	end
 
 	local title = "Bracket";

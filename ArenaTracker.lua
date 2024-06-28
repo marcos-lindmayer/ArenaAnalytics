@@ -9,7 +9,6 @@ end
 -- Arena variables
 local currentArena = {
 	["battlefieldId"] = nil,
-	["mapName"] = "", 
 	["mapId"] = nil, 
 	["playerName"] = "",
 	["duration"] = 0, 
@@ -42,7 +41,6 @@ function ArenaTracker:ResetCurrentArenaValues()
 	ArenaAnalytics:Log("Resetting current arena values..");
 
 	currentArena["battlefieldId"] = nil;
-	currentArena["mapName"] = "";
 	currentArena["mapId"] = nil;
 	currentArena["playerName"] = "";
 	currentArena["duration"] = 0;
@@ -91,6 +89,8 @@ end
 function ArenaTracker:HandleArenaStart(...)
 	currentArena["startTime"] = time();
 	currentArena["hasRealStartTime"] = true; -- The start time has been set by gates opened
+
+	ArenaAnalytics:Log("Match started!");
 end
 
 -- Begins capturing data for the current arena
@@ -145,13 +145,14 @@ function ArenaTracker:HandleArenaEnter(...)
 	
 	-- Not using mapName since string is lang based (unreliable) 
 	currentArena["mapId"] = select(8,GetInstanceInfo())
-	currentArena["mapName"] = ArenaAnalytics.AAmatch:getMapNameById(currentArena["mapId"])
-	ArenaAnalytics:Log("Tracking mapId: ", currentArena["mapId"])
+	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena["mapId"])
+
+	RequestBattlefieldScoreData();
 
 	-- Determine if a winner has already been determined.
 	if(GetBattlefieldWinner() ~= nil) then
 		ArenaAnalytics:Log("Started tracking after a team won. Calling HandleArenaEnd().")
-		HandleArenaEnd();
+		--ArenaTracker:HandleArenaEnd();
 	end
 end
 
@@ -177,7 +178,7 @@ end
 function ArenaTracker:HandleArenaEnd()
 	currentArena["endedProperly"] = true;
 	currentArena["ended"] = true;
-	local winner =  GetBattlefieldWinner();
+	local winner = GetBattlefieldWinner();
 
 	local team1 = {};
 	local team0 = {};
@@ -185,12 +186,9 @@ function ArenaTracker:HandleArenaEnd()
 	local team1Name, oldTeam1Rating, newTeam1Rating, team1Rating, team1RatingDif;
 	local team0Name, oldTeam0Rating, newTeam0Rating, team0Rating, team0RatingDif;
 	if (currentArena["isRated"]) then
-		team1Name, oldTeam1Rating, newTeam1Rating, team1Rating = GetBattlefieldTeamInfo(1);
 		team0Name, oldTeam0Rating, newTeam0Rating, team0Rating = GetBattlefieldTeamInfo(0);
-		oldTeam0Rating = tonumber(oldTeam0Rating);
-		oldTeam1Rating = tonumber(oldTeam1Rating);
-		newTeam1Rating = tonumber(newTeam1Rating);
-		newTeam0Rating = tonumber(newTeam0Rating);
+		team1Name, oldTeam1Rating, newTeam1Rating, team1Rating = GetBattlefieldTeamInfo(1);
+		
 		if ((newTeam1Rating - oldTeam1Rating) > 0) then
 			team1RatingDif = (newTeam1Rating - oldTeam1Rating ~= 0) and (newTeam1Rating - oldTeam1Rating) or "";
 		else
@@ -203,7 +201,9 @@ function ArenaTracker:HandleArenaEnd()
 		end
 	end
 	
-	currentArena["wonByPlayer"] = false;
+	-- Figure out how to default to nil, without failing to count losses.
+	--currentArena["wonByPlayer"] = false;
+	local myFaction = nil;
 	
 	local numScores = GetNumBattlefieldScores();
 	for i=1, numScores do
@@ -221,9 +221,7 @@ function ArenaTracker:HandleArenaEnd()
 		local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
 
 		if (player["name"] == currentArena["playerName"]) then
-			if (faction == winner) then
-				currentArena["wonByPlayer"] = true;
-			end
+			myFaction = faction;
 			currentArena["playerTeam"] = faction;
 		end
 		if (faction == 1) then
@@ -231,6 +229,11 @@ function ArenaTracker:HandleArenaEnd()
 		else
 			table.insert(team0, player);
 		end
+	end
+
+	ArenaAnalytics:Log("My faction: ", myFaction, "(Winner:", winner,")")
+	if(winner ~= nil) then
+		currentArena["wonByPlayer"] = (myFaction == winner);
 	end
 
 	if (currentArena["playerTeam"] == 1) then
@@ -252,6 +255,8 @@ function ArenaTracker:HandleArenaEnd()
 			currentArena["enemyRatingDelta"] = team1RatingDif;
 		end
 	end
+
+	ArenaAnalytics:Log("Match ended!");
 end
 
 -- Player left an arena (Zone changed to non-arena with valid arena data)
@@ -291,7 +296,6 @@ function ArenaTracker:HandleArenaExit()
 	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
 
 	ArenaAnalytics:insertArenaToMatchHistory(currentArena);
-	return true;
 end
 
 -- Returns bool for input group containing a character (by name) in it
@@ -518,7 +522,11 @@ end
 -- caster if they weren't defined yet, or adds a new unit with it
 function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	-- Check if spell belongs to spec defining spells
-	local spec = ArenaAnalytics.SpecSpells:GetSpec(spellID);
+	local spec, shouldDebug = ArenaAnalytics.SpecSpells:GetSpec(spellID);
+	if(shouldDebug ~= nil) then
+		ArenaAnalytics:Log("DEBUG ID Detected spec: ", sourceGUID, spellID, spellName);
+	end
+
 	if (spec ~= nil) then
 		-- Check if spell was casted by party
 		for i = 1, #currentArena["party"] do

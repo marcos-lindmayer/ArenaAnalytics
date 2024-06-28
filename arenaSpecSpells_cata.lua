@@ -133,6 +133,7 @@ local specSpells = {
     [ 14183 ] = "Subtlety", -- Premeditation
     [ 14185 ] = "Subtlety", -- Preparation
     [ 51713 ] = "Subtlety", -- Shadow Dance
+    [ 31223 ] = "Subtlety", -- Master of Subtlety
 
     [ 1329 ] = "Assassination", -- Mutilate
     [ 14177 ] = "Assassination", -- Cold Blood
@@ -167,7 +168,9 @@ local specSpells = {
     [ 30146 ] = "Demonology", -- Summon Felguard
     [ 47193 ] = "Demonology", -- Demonic Empowerment
     [ 71521 ] = "Demonology", -- Hand of Gul'dan
-    [ 59672 ] = "Demonology", -- Metamorphosis
+    [ 59672 ] = "Demonology", -- Metamorphosis?
+    [ 47241 ] = "Demonology", -- Metamorphosis?
+    [ 59673 ] = "Demonology", -- Metamorphosis?
     
     [ 30108 ] = "Affliction", -- Unstable Affliction
     [ 18223 ] = "Affliction", -- Curse of Exhaustion
@@ -217,6 +220,14 @@ local specSpells = {
     [ 49028 ] = "Blood", -- Dancing Rune Weapon
 }
 
+local debugSpells = {
+    [ 17007 ] = "Feral", -- Leader of the Pack
+    [ 51698 ] = "Subtlety", -- Honor Among Thieves
+    [ 59672 ] = "Demonology", -- Metamorphosis?
+    [ 47241 ] = "Demonology", -- Metamorphosis?
+    [ 59673 ] = "Demonology", -- Metamorphosis?
+}
+
 function SpecSpells:GetSpec(spellID)
-    return specSpells[spellID];   
+    return specSpells[spellID], debugSpells[spellID];
 end

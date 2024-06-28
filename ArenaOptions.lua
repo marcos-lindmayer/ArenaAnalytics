@@ -6,18 +6,22 @@ local Options = ArenaAnalytics.Options;
 -- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
 
+local function LoadSetting(setting, default)
+    ArenaAnalyticsSettings[setting] = ArenaAnalyticsSettings[setting] ~= nil and ArenaAnalyticsSettings[setting] or default;
+end
+
 function Options:LoadSettings()
-	ArenaAnalyticsSettings["outliers"] = ArenaAnalyticsSettings["outliers"] or 0;
-	ArenaAnalyticsSettings["dropdownVisibileLimit"] = ArenaAnalyticsSettings["dropdownVisibileLimit"] or 10;
-	ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] = ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] or false;
-	ArenaAnalyticsSettings["defaultCurrentSessionFilter"] = ArenaAnalyticsSettings["defaultCurrentSessionFilter"] or false;
-	ArenaAnalyticsSettings["showSkirmish"] = ArenaAnalyticsSettings["showSkirmish"] or false;
-	ArenaAnalyticsSettings["alwaysShowDeathOverlay"] = ArenaAnalyticsSettings["alwaysShowDeathOverlay"] or false;
-	ArenaAnalyticsSettings["alwaysShowSpecOverlay"] = ArenaAnalyticsSettings["alwaysShowSpecOverlay"] or false;
-	ArenaAnalyticsSettings["unsavedWarningThreshold"] = ArenaAnalyticsSettings["unsavedWarningThreshold"] or 10;
-	ArenaAnalyticsSettings["showSelectedCompStats"] = ArenaAnalyticsSettings["showSelectedCompStats"] or true;
-	ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] or true;
-	ArenaAnalyticsSettings["selectionControlModInversed"] = ArenaAnalyticsSettings["selectionControlModInversed"] or true;
+    LoadSetting("outliers", 0);
+    LoadSetting("dropdownVisibileLimit", 10);
+    LoadSetting("defaultCurrentSeasonFilter", false);
+    LoadSetting("defaultCurrentSessionFilter", false);
+    LoadSetting("showSkirmish", false);
+    LoadSetting("alwaysShowDeathOverlay", false);
+    LoadSetting("alwaysShowSpecOverlay", false);
+    LoadSetting("unsavedWarningThreshold", 10);
+    LoadSetting("showSelectedCompStats", false);
+    LoadSetting("sortCompFilterByTotalPlayed", false);
+    LoadSetting("selectionControlModInversed", false);
 end
 
 local ArenaAnalyticsOptionsFrame = nil;

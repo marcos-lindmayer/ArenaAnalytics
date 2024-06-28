@@ -147,7 +147,6 @@ local function UpdateSelectedText(selectedFrame, selectedText, filter, entries, 
             -- Update the currently displayed entry with new values
             local currentData = ArenaAnalytics.Filter:GetCurrentData(filter);
             if(currentData ~= "" and text == currentData) then
-                ArenaAnalytics:Log("Found entry matching current comp, set selected.");
                 local display, offsetX = GetCompDisplayString(entry, isPlayerPriority, true);
                 selectedFrame.text = ArenaAnalyticsCreateText(selectedFrame, "CENTER", selectedFrame, "CENTER", offsetX, 0, display);
                 selectedFrame:SetText("");

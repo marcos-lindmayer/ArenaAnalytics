@@ -295,15 +295,15 @@ end
 -- Calculates arena duration, turns arena data into friendly strings, adds it to MatchHistoryDB
 -- and triggers a layout refresh on ArenaAnalytics.arenaTable
 function ArenaAnalytics:insertArenaToMatchHistory(newArena)
-	local hasRealStartTime = newArena["hasRealStartTime"] ~= nil and newArena["startTime"] and newArena["startTime"] > 0;
-	if(not hasRealStartTime) then
+	local hasStartTime = tonumber(newArena["startTime"]) and newArena["startTime"] > 0;
+	if(not hasStartTime) then
 		-- At least get an estimate for the time of the match this way.
 		newArena["startTime"] = time();
 		ArenaAnalytics:Log("Force fixed start time at match end.");
 	end
 
 	-- Calculate arena duration
-	if (not hasRealStartTime) then
+	if (not hasStartTime) then
 		newArena["duration"] = 0;
 	else
 		newArena["endTime"] = time();
@@ -359,7 +359,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 		["date"] = tonumber(newArena["startTime"]) or time(),
 		["season"] = season,
 		["session"] = nil,
-		["map"] = newArena["mapName"], 
+		["map"] = ArenaAnalytics.AAmatch:getMapNameById(newArena["mapId"]), 
 		["bracket"] = bracket,
 		["duration"] = newArena["duration"],
 		["team"] = newArena["party"],

@@ -319,7 +319,7 @@ function Import:parseCachedValues_ArenaAnalytics(nextIndex)
                 ["bracket"] = arena[3],
                 ["map"] = arena[4],
                 ["duration"] = tonumber(arena[5]) or 0,
-                ["won"] = arena[6] == "1",
+                ["won"] = (arena[6] ~= "") and (arena[6] == "1" and "1" or "0") or nil, -- Won, lost or nil
                 ["isRated"] = arena[7] == "1",
                 ["rating"] = arena[8],
                 ["mmr"] = arena[9],
@@ -466,7 +466,7 @@ function Import:addCachedArenasToMatchHistory_ArenaAnalytics(nextIndex)
             ["enemyMmr"] = tonumber(cachedArena["enemyMmr"]),
             ["comp"] = ArenaAnalytics.AAmatch:getArenaComp(team, cachedArena["bracket"]),
             ["enemyComp"] = ArenaAnalytics.AAmatch:getArenaComp(enemyTeam, cachedArena["bracket"]),
-            ["won"] = cachedArena["won"] or false,
+            ["won"] = cachedArena["won"],
             ["firstDeath"] = cachedArena["firstDeath"] or nil
         }
 
@@ -656,6 +656,8 @@ function Export:addMatchesToExport(nextIndex)
 
     for i = nextIndex, #MatchHistoryDB do
         local match = MatchHistoryDB[i];
+
+        local victory = match["won"] ~= nil and (match["won"] and "1" or "0") or "";
         
         -- Add match data
         local matchCSV = match["date"] .. ","
@@ -663,7 +665,7 @@ function Export:addMatchesToExport(nextIndex)
         .. (match["bracket"] or "") .. ","
         .. (match["map"] or "") .. ","
         .. (match["duration"] or "") .. ","
-        .. (match["won"] and "1" or "0") .. ","
+        .. victory .. ","
         .. (match["isRated"] and "1" or "0") .. ","
         .. (match["rating"] or "").. ","
         .. (match["mmr"] or "") .. ","

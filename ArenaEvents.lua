@@ -8,6 +8,18 @@ local arenaEventFrame = CreateFrame("Frame");
 
 local arenaEvents = { "UPDATE_BATTLEFIELD_SCORE", "UNIT_AURA", "CHAT_MSG_BG_SYSTEM_NEUTRAL", "COMBAT_LOG_EVENT_UNFILTERED", "ARENA_OPPONENT_UPDATE" }
 
+-- Register an event as a response to a 
+function Events:CreateEventListenerForRequest(event, callback)
+    local eventFrame = CreateFrame("Frame")
+    eventFrame:RegisterEvent(event)
+    eventFrame:SetScript("OnEvent", function(self)
+        self:UnregisterEvent(event, nil) -- Unregister the event handler
+        callback()
+        self:Hide() -- Hide the frame
+		eventFrame = nil;
+    end)
+end
+
 -- Assigns behaviour for "global" events
 -- UPDATE_BATTLEFIELD_STATUS: Begins arena tracking and arena events if inside arena
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
@@ -18,7 +30,7 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 				ArenaAnalytics.ArenaTracker:HandleArenaEnter(...);
 			end
 			
-			ArenaAnalytics.Events:RegisterArenaEvents();			
+			ArenaAnalytics.Events:RegisterArenaEvents();
 		end
 	else -- Not in arena
 		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
@@ -54,6 +66,7 @@ local function HandleArenaEvents(_, eventType, ...)
 		if (ArenaAnalytics.ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
 				ArenaAnalytics.ArenaTracker:HandleArenaEnd();
+				ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
 				Events:UnregisterArenaEvents();
 			elseif (eventType == "UNIT_AURA" or eventType == "COMBAT_LOG_EVENT_UNFILTERED" or eventType == "ARENA_OPPONENT_UPDATE") then
 				ArenaAnalytics.ArenaTracker:ProcessCombatLogEvent(eventType, ...);
