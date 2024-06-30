@@ -20,7 +20,6 @@ arenaTable.lua
 HybridScroll.xml
 VersionManager.lua
 ArenaMoreFilters.lua
-ArenaOptions_OLD.lua
 ArenaMatchSelection.lua
 ArenaTooltips.lua
 ArenaTracker.lua

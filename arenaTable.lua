@@ -9,6 +9,9 @@ local hasLoaded = false;
 
 local bottomStatsPrefixColor = "FF909090"
 local function colorText(text, color)
+    text = text or "";
+    color = color or "FFFFFFFF";
+
     return "|c" .. color .. text .. "|r"
 end
 
@@ -131,6 +134,11 @@ function ArenaAnalyticsCreateText(relativeFrame, anchor, refFrame, relPoint, xOf
 end
 
 function AAtable:UpdateSelected()
+    if(not hasLoaded) then
+        -- Load will trigger call soon
+        return;
+    end
+    
     local newSelectedText = ""
     local selectedGamesCount, selectedWins = 0, 0;
     
@@ -282,7 +290,7 @@ function AAtable:OnLoad()
     end);
 
     -- Settings window
-    ArenaAnalytics.Options_OLD:createSettingsFrame();
+    -- ArenaAnalytics.Options_OLD:createSettingsFrame();
 
     -- Table headers
     ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "TOPLEFT", -5, -47, "Date");
@@ -301,8 +309,11 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.totalArenaNumber = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 10, "");
     ArenaAnalyticsScrollFrame.winrate = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.totalArenaNumber, "TOPRIGHT", 10, 0, "");
 
-    ArenaAnalyticsScrollFrame.sessionDuration = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 27, "Session Duration: 2h 13m");
-    ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 10, "Selected: (click matches to select)");
+    local coloredSessionPrefix = colorText("Session Duration: ", bottomStatsPrefixColor);
+    ArenaAnalyticsScrollFrame.sessionDuration = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 27, coloredSessionPrefix);
+
+    local selectedPrefixText = colorText("Selected: ", bottomStatsPrefixColor);
+    ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 10, selectedPrefixText .. " (click matches to select)");
     
     AAtable:tryStartSessionDurationTimer();
 
@@ -329,14 +340,10 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.StartMoving)
     ArenaAnalyticsScrollFrame:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.StopMovingOrSizing)
     ArenaAnalyticsScrollFrame:SetScript("OnHide", function()
-		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
-		ArenaAnalyticsScrollFrame.resetBtn:Disable();
         CloseDropDownMenus();
     end);
 
     ArenaAnalyticsScrollFrame:SetScript("OnShow", function()
-		ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
-		ArenaAnalyticsScrollFrame.resetBtn:Disable();
         AAtable:tryShowimportFrame();
     end);
 
@@ -348,6 +355,7 @@ function AAtable:OnLoad()
     hasLoaded = true;
 
     ArenaAnalytics.Filter:refreshFilters();
+    AAtable:UpdateSelected();
 
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame, "RIGHT", 10, 0, "More Filters");
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown, "RIGHT", 10, 0);
@@ -803,7 +811,8 @@ function AAtable:handleArenaCountChanged()
     AAtable:RefreshLayout();
     AAtable:forceCompFilterRefresh();
         
-
+    -- TODO: Create new export setup, and implement this logic before removing here
+--[[ Options_OLD
     if(ArenaAnalytics:hasStoredMatches()) then
         ArenaAnalyticsScrollFrame.exportBtn:Enable();
     else
@@ -811,6 +820,7 @@ function AAtable:handleArenaCountChanged()
         ArenaAnalyticsScrollFrame.exportFrame:SetText("");
         ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
     end
+--]]
 
     local matches = ArenaAnalytics.filteredMatchHistory;
 

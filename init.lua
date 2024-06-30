@@ -23,7 +23,7 @@ ArenaAnalytics.commands = {
 	end,
 	
 	["version"] = function()
-		ArenaAnalytics:Print("Current version: ", ArenaAnalytics:getVersion(), " (Early Access)");
+		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (ArenaAnalytics:getVersion() or "Nil") .. " (Early Access)|r");
 	end,
 	
 	["total"] = function()
@@ -281,7 +281,7 @@ function ArenaAnalytics:init()
 
 	local version = ArenaAnalytics:getVersion();
 	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
-	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffBBBBBB" .. versionText .. "|r");
+	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffAAAAAA" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 
 	if(not ArenaAnalytics.skipDebugLog) then
