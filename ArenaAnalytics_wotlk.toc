@@ -7,19 +7,23 @@
 ## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSettings
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsCharacterSettings
 
+HybridScroll.xml
 init.lua
+ArenaOptions.lua
 arenaConstants.lua
 arenaSpecSpells_wotlk.lua
 arenaAPI_wotlk.lua
 arenaAnalytics.lua
 ArenaFilter.lua
+ArenaMoreFilters.lua
+ArenaSearch.lua
 ArenaImportExport.lua
 iconClass.lua
 arenaTable.lua
-HybridScroll.xml
+ArenaEvents.lua
+ArenaTracker.lua
 VersionManager.lua
-ArenaMoreFilters.lua
 ArenaOptions.lua
 ArenaMatchSelection.lua
-ArenaScrollableDropdown.lua
 ArenaTooltips.lua
+ArenaScrollableDropdown.lua

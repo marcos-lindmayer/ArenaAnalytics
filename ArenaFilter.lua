@@ -2,6 +2,7 @@ local _, ArenaAnalytics = ... -- Namespace
 ArenaAnalytics.Filter = {}
 
 local Filter = ArenaAnalytics.Filter;
+ArenaAnalytics:Log(Search == nil)
 
 -- Currently applied filters
 local currentFilters = {}
@@ -50,6 +51,8 @@ function Filter:resetFilters(forceDefaults)
             ["display"] = defaults["Filter_EnemyComp"]
         }
     };
+
+    ArenaAnalytics.Search:Reset();
 end
 Filter:resetFilters(false);
 
@@ -82,7 +85,7 @@ end
 
 function Filter:isFilterActive(filterName)
     if(filterName == "Filter_Search") then
-        return currentFilters["Filter_Search"]["raw"] ~= "";
+        return not ArenaAnalytics.Search:IsEmpty();
     elseif(filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
         return currentFilters[filterName]["data"] ~= defaults["Filter_Comp"];
     end
@@ -98,7 +101,7 @@ end
 
 function Filter:getActiveFilterCount()
     local count = 0;
-    if(Filter:isFilterActive("Filter_Search")) then 
+    if(not ArenaAnalytics.Search:IsEmpty()) then
         count = count + 1;
     end
     if(Filter:isFilterActive("Filter_Date")) then
@@ -531,7 +534,7 @@ function Filter:doesMatchPassAllFilters(match, excluded)
     end
 
     -- Search
-    if(not doesMatchPassFilter_Search(match)) then
+    if(not ArenaAnalytics.Search:DoesMatchPassSearch(match)) then
         return false;
     end
 

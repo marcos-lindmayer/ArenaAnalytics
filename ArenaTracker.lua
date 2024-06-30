@@ -432,8 +432,7 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 	}
 end
 
--- Returns bool whether all obtainable information (before arena ends) has
--- been collected. Attempts to get initial data on arena players:
+-- Attempts to get initial data on arena players:
 -- GUID, name, race, class, spec
 function ArenaTracker:ProcessCombatLogEvent(eventType, ...)
 	if (currentArena["size"] == nil) then
