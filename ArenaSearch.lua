@@ -268,36 +268,20 @@ function Search:DoesMatchPassSearch(match)
     if(Search:IsEmpty()) then
         return true;
     end
+end
 
-
+function Search:CommitSearch()
+    -- Update active search filter
+    -- Force filter refresh
 end
 
 ---------------------------------
--- Processing Pipeline
+-- Search Parsing Logic
 ---------------------------------
-
-local function isValidToken(token, newWord, isExactScope)
-    -- Combine the current token with the new word
-    local combinedToken = token == "" and newWord or token .. " " .. newWord
-
-    local typeKey, valueKey, noSpace, matchedValue = FindSearchValueDataForToken(combinedToken, isExactScope)
-
-    -- Check if the combined token is valid in any table
-    for _, table in pairs(tables) do
-        if table.values[combinedToken] then
-            return true, combinedToken
-        end
-    end
-
-    -- If not valid, return false and keep the original current token
-    return false, currentToken
-end
-
-
 
 -- Process the input string for symbols: Double quotation marks, commas, parenthesis, spaces
 function Search:ProcessInput(input)
-    local tokens = {}
+    local playerSegments = {}
     local currentSegment = {}
     local currentToken = ""
     local currentWord = ""
@@ -305,11 +289,39 @@ function Search:ProcessInput(input)
     local length = #input
     local inExactScope = false
 
-    local function addToken(segment, token, isExact)
-        if token ~= "" then
-            local typeKey, valueKey, noSpace = self:FindSearchValueDataForToken(token, isExact)
-            table.insert(segment, { token = token, typeKey = typeKey, valueKey = valueKey, isExact = isExact })
+    local function CommitCurrentWord()
+        if(currentWord == "") then
+            return;
         end
+
+        ArenaAnalytics:Log("Search Committing Word: ", currentWord);
+
+        if(currentToken ~= "") then
+            -- If current token + current word match a valid keyword
+                -- add word to the token.
+            -- else
+                -- call CommitCurrentToken() 
+            -- end
+        end
+            
+        -- Move current word to current token 
+        -- if new token is invalid
+            -- call CommitCurrentToken()
+        -- end
+    end
+
+    local function CommitCurrentToken()
+        if(currentToken ~= "") then
+            ArenaAnalytics:Log("Search Committing token: ", currentToken);
+            tinsert(currentSegment, currentToken);
+        end
+    end
+
+    local function CommitCurrentSegment()
+        if(currentSegment and #currentSegment > 0) then
+            ArenaAnalytics:Log("Search Committing Segment! (" .. #currentSegment .. " tokens)");
+            tinsert(playerSegments, currentSegment);
+        end        
     end
 
     local function GetScopeEndIndex(endSymbol)
