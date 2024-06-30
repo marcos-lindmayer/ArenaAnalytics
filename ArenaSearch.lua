@@ -31,6 +31,23 @@ local Search = ArenaAnalytics.Search;
 --  player1 frost "death knigh, hunter beast master alt1"|alt2partial|"alt3"
 
 ---------------------------------
+-- Search Colors
+---------------------------------
+
+local function ColorizeInvalid(text)
+    return text and "|cffFF0000" .. text .. "|r" or "";
+end
+
+local function ColorizeToken(token)
+    if(token == nil) then
+        return "";
+    end
+
+    local text = token["value"];
+    return text and "|cffFFFFFF" .. text .. "|r" or "";
+end
+
+---------------------------------
 -- Prefix Data
 ---------------------------------
 
@@ -45,10 +62,7 @@ local PrefixTable = {
 
 -- Find the prefix key from the given token
 function Search:GetTokenPrefixKey(token)
-    -- Get value before colon
-    -- Remove special symbols? (Double quotes, comma, space)?
-
-
+    
 end
 
 ---------------------------------
@@ -62,66 +76,66 @@ SearchTokenTypeTable = {
         ["values"] = {
             -- Druid
             ["Druid"] = 0,
-            [1] = { "restoration druid", "rdruid" }
-            [2] = { "feral", "fdruid" }
-            [3] = { "balance druid", "balance", "bdruid", "boomkin" }
+            [1] = { "restoration druid", "rdruid" },
+            [2] = { "feral", "fdruid" },
+            [3] = { "balance druid", "balance", "bdruid", "boomkin" },
             
             -- Paladin
             ["Paladin"] = 10,
-            [11] = { "holy paladin", "holy pala", "hpal", "hpala", "hpaladin", "holypaladin", "holypala"}
-            [12] = { "protection paladin", "prot paladin", "protection pala", "prot pala"}
-            [13] = { "preg paladin", "preg pala", "preg" }
-            [14] = { "retribution paladin", "retribution pala", "ret paladin", "ret pala", "rpala", "retribution", "ret" }
+            [11] = { "holy paladin", "holy pala", "hpal", "hpala", "hpaladin", "holypaladin", "holypala"},
+            [12] = { "protection paladin", "prot paladin", "protection pala", "prot pala"},
+            [13] = { "preg paladin", "preg pala", "preg" },
+            [14] = { "retribution paladin", "retribution pala", "ret paladin", "ret pala", "rpala", "retribution", "ret" },
             
             -- Shaman
             ["Shaman"] = 20,
-            [21] = { "restoration shaman", "restoration sham", "resto shaman", "resto sham", "rshaman", "rsham" }
-            [22] = { "elemental shaman", "elemental sham", "ele shaman", "ele sham", "esham", , "elemental", "ele" }
-            [23] = { "enhancement shaman", "enhancement sham", "enh shaman", "enh sham", "enh" }
+            [21] = { "restoration shaman", "restoration sham", "resto shaman", "resto sham", "rshaman", "rsham" },
+            [22] = { "elemental shaman", "elemental sham", "ele shaman", "ele sham", "esham", "elemental", "ele" },
+            [23] = { "enhancement shaman", "enhancement sham", "enh shaman", "enh sham", "enh" },
 
             -- Death Knight
             ["Death Knight"] = 30,
-            [31] = { "unholy", "uhdk", "udk", "uh" }
-            [32] = { "frost death knight", "frost deathknight", "frost dk", "fdk" }
-            [33] = { "bdk", "blood" }
+            [31] = { "unholy", "uhdk", "udk", "uh" },
+            [32] = { "frost death knight", "frost deathknight", "frost dk", "fdk" },
+            [33] = { "bdk", "blood" },
 
             -- Hunter
             ["Hunter"] = 40,
-            [41] = { "beast mastery", "beastmastery", "bm", "bmhunter", "bmhunt" }
-            [42] = { "marksmanship", "mm", "mmhunter", "mmhunt" }
-            [43] = { "survival", "surv", "shunter", "shunt", "sh" }
+            [41] = { "beast mastery", "beastmastery", "bm", "bmhunter", "bmhunt" },
+            [42] = { "marksmanship", "mm", "mmhunter", "mmhunt" },
+            [43] = { "survival", "surv", "shunter", "shunt", "sh" },
 
             -- Mage
             ["Mage"] = 50,
-            [51] = { "frost mage" }
-            [52] = { "fire" }
-            [53] = { "arcane", "amage" }
+            [51] = { "frost mage" },
+            [52] = { "fire" },
+            [53] = { "arcane", "amage" },
 
             -- Rogue
             ["Rogue"] = 60,
-            [61] = { "subtlety", "sub", "srogue", "srog" }
-            [62] = { "assassination", "assa", "arogue", "arog" }
-            [63] = { "Combat", "crogue", "crog" }
-            [64] = { "Outlaw", "orogue" }
+            [61] = { "subtlety", "sub", "srogue", "srog" },
+            [62] = { "assassination", "assa", "arogue", "arog" },
+            [63] = { "Combat", "crogue", "crog" },
+            [64] = { "Outlaw", "orogue" },
 
             -- Warlock
             ["Warlock"] = 70,
-            [71] = { "affliction", "affli", "awarlock", "alock" }
-            [72] = { "destruction", "destro" }
-            [73] = { "demonology", "demo" }
+            [71] = { "affliction", "affli", "awarlock", "alock" },
+            [72] = { "destruction", "destro" },
+            [73] = { "demonology", "demo" },
 
             -- Warrior
             ["Warrior"] = 80,
-            [81] = { "protection warrior", "protection warr", "prot warrior", "prot warr", "protection war", "prot war", "pwarrior", "pwarr", "pwar" }
-            [82] = { "arms", "awarrior", "awarr", "awar" }
-            [83] = { "fury", "fwarrior", "fwarr", "fwar" }
+            [81] = { "protection warrior", "protection warr", "prot warrior", "prot warr", "protection war", "prot war", "pwarrior", "pwarr", "pwar" },
+            [82] = { "arms", "awarrior", "awarr", "awar" },
+            [83] = { "fury", "fwarrior", "fwarr", "fwar" },
             
             -- Priest
             ["Priest"] = 90,
-            [91] = { "discipline", "disc", "dpriest", "dp" }
-            [92] = { "holy priest", "hpriest" }
-            [93] = { "shadow", "spriest", "sp" }
-        }
+            [91] = { "discipline", "disc", "dpriest", "dp" },
+            [92] = { "holy priest", "hpriest" },
+            [93] = { "shadow", "spriest", "sp" },
+        },
     },
     ["class"] = {
         ["noSpace"] = false,
@@ -177,40 +191,37 @@ SearchTokenTypeTable = {
     }
 }
 
--- Find typeKey, valueKey, noSpace from SearchTokenTypeTable
-function Search:FindSearchValueDataForToken(token, isExactScope, optionalExplicitKey)
-    assert(token);
-    assert(token ~= "");
+-- Find typeKey, valueKey, noSpace, matchedValue from SearchTokenTypeTable
+function Search:FindSearchValueDataForToken(token, isExactScope, explicitTypeKey)
+    assert(token)
+    assert(token ~= "")
 
-    local function FindTokenTypeKey(table, token, requireExact) 
-        for key,typeTable in pairs(table) do
-            if(typeTable ~= nil) then
-                for _,value in ipairs(typeTable["values"]) do
-                    assert(value);
-                    local isMatch = requireExact and (token == value) or (value:containing(token));
-                    if(isMatch) then
-                        return key, typeTable["noSpace"];
-                    end
+    local function FindTokenValueKey(typeTable, token, requireExact)
+        for valueKey, typeValues in pairs(typeTable["values"]) do
+            for _, value in ipairs(typeValues) do
+                assert(value)
+                local isMatch = requireExact and (token == value) or string.find(value, token, 1, true)
+                if isMatch then
+                    return typeKey, typeTable["noSpace"], value
                 end
             end
         end
     end
 
     -- Look through the values for the explicit key
-    if(optionalExplicitKey ~= nil) then
-        local valueTable = SearchTokenTypeTable[optionalExplicitKey];
-        if(valueTable) then
-            local typeKey, noSpace = FindTokenTypeKey(valueTable, token, isExactScope);
-            if(typeKey) then
-                return optionalExplicitKey, typeKey, noSpace;
+    if explicitTypeKey then
+        local valueTable = SearchTokenTypeTable[explicitTypeKey]
+        if valueTable then
+            local typeKey, noSpace, matchedValue = FindTokenValueKey(valueTable, token, isExactScope)
+            if typeKey then
+                return explicitTypeKey, typeKey, noSpace, matchedValue
             end
         end
     else -- Look through all keys
-        local typeKey = nil;
-        for key,typeTables in pairs(SearchTokenTypeTable) do
-            typeKey, noSpace = FindTokenTypeKey(typeTables, token, isExactScope);
-            if(typeKey) then
-                return key, typeKey, noSpace
+        for typeKey, typeTables in pairs(SearchTokenTypeTable) do
+            local valueKey, noSpace, matchedValue = FindTokenValueKey(typeTables, token, isExactScope)
+            if valueKey then
+                return typeKey, valueKey, noSpace, matchedValue
             end
         end
     end
@@ -265,75 +276,104 @@ end
 -- Processing Pipeline
 ---------------------------------
 
-local function GetScopeEndIndex(input, startIndex, endSymbol)
-    assert(input ~= nil);
-    assert(endSymbol ~= nil);
+local function isValidToken(token, newWord, isExactScope)
+    -- Combine the current token with the new word
+    local combinedToken = token == "" and newWord or token .. " " .. newWord
 
-    for index = startIndex + 1, #input do
-        local char = index:sub(index, index);
-        if(char == endSymbol) then
-            return index;
-        elseif(char == ",") then
-            return nil;
+    local typeKey, valueKey, noSpace, matchedValue = FindSearchValueDataForToken(combinedToken, isExactScope)
+
+    -- Check if the combined token is valid in any table
+    for _, table in pairs(tables) do
+        if table.values[combinedToken] then
+            return true, combinedToken
         end
     end
+
+    -- If not valid, return false and keep the original current token
+    return false, currentToken
 end
 
+
+
+-- Process the input string for symbols: Double quotation marks, commas, parenthesis, spaces
 function Search:ProcessInput(input)
-    if(input == nil or input == "") then
-        Search:Reset();
-        return;
+    local tokens = {}
+    local currentSegment = {}
+    local currentToken = ""
+    local currentWord = ""
+    local i = 1
+    local length = #input
+    local inExactScope = false
+
+    local function addToken(segment, token, isExact)
+        if token ~= "" then
+            local typeKey, valueKey, noSpace = self:FindSearchValueDataForToken(token, isExact)
+            table.insert(segment, { token = token, typeKey = typeKey, valueKey = valueKey, isExact = isExact })
+        end
     end
 
-    local playerSegments = { }
-
-    -- Data in the making
-    local currentData = {
-        ["segment"] = {}, 
-        ["token"] = {}, 
-        ["word"] = ""
-    };
-
-    local function CommitToken()
-        tinsert(currentData["segment"], currentData["token"]);
-        currentData["token"] = {}
-
-        -- Prepare next word for token check
-        if(currentData["word"] ~= "") then
-            tinsert(currentData["token"], currentData["word"]);
-            currentData["word"] = "";
-
-            -- Check new token immediately
-                -- TODO: Add token check function.
-            if(not currentData["token"]) then
-                -- Commit immediately, no chance of being a multi-word token
-                CommitToken();
+    local function GetScopeEndIndex(endSymbol)
+        assert(endSymbol ~= nil);
+        
+        for scopeIndex = i + 1, #input do
+            local char = index:sub(scopeIndex, scopeIndex);
+            if(char == endSymbol) then
+                return scopeIndex;
+            elseif(char == ",") then
+                return nil;
             end
         end
     end
-    
-    -- TODO: Rework for desired parsing logic
-    local index = 1;
-    while(index <= #input) do
-        -- Loop through characters until segment ends
-        while(index <= #input) do
-            local char = input:sub(index,index);
-            index = index + 1; -- Prepare for next iteration
 
-            -- If segment ended, go to next
-            if(char == ',') then
-                isExactScope = false; -- End exact scope in same segment for now. (TODO: Consider what's preferrable)
-                break;
+    while i <= length do
+        local char = input:sub(i, i)
+        if char == '"' then
+            if inExactScope then
+                local exactScope, isValid = GetScopeEndIndex('"')
+                if isValid then
+                    addToken(currentSegment, currentToken .. exactScope, true)
+                    currentToken = ""
+                else
+                    -- Invalid exact scope, handle error (e.g., color red)
+                end
+            else
+                local exactScope, isValid = GetScopeEndIndex('"')
+                if isValid then
+                    addToken(currentSegment, currentToken, false)
+                    addToken(currentSegment, exactScope, true)
+                    currentToken = ""
+                else
+                    -- Invalid exact scope, handle error (e.g., color red)
+                end
             end
-
-            -- Toggle exact scope
-            if(char == '"') then
-                isExactScope = not isExactScope;
+            inExactScope = not inExactScope
+        elseif char == "(" then
+            local partialScope, isValid = GetScopeEndIndex(")")
+            if isValid then
+                addToken(currentSegment, currentToken, false)
+                addToken(currentSegment, partialScope, false)
+                currentToken = ""
+            else
+                -- Invalid partial scope, handle error (e.g., color red)
             end
-
-            nextWord = nextWord .. char;
+        elseif char == "," then
+            addToken(currentSegment, currentToken, false)
+            table.insert(tokens, currentSegment)
+            currentSegment = {}
+            currentToken = ""
+        elseif char == " " then
+            if currentToken ~= "" then
+                addToken(currentSegment, currentToken, false)
+                currentToken = ""
+            end
+        else
+            currentToken = currentToken .. char
         end
-        tinsert(playerSegments, segment);
+        i = i + 1
     end
 
+    addToken(currentSegment, currentToken, false)
+    table.insert(tokens, currentSegment)
+
+    return tokens
 end
