@@ -756,7 +756,7 @@ end
 -- Sets button row's background according to session
 local function setColorForSession(button, session, index)
     local isOddSession = (session or 0) % 2 == 1;
-    local oddAlpha, evenAlpha = 0.8, 0.65;
+    local oddAlpha, evenAlpha = 0.8, 0.4;
     
     local alpha = isOddSession and oddAlpha or evenAlpha;
 
