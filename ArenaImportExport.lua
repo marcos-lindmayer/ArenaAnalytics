@@ -11,6 +11,64 @@ local cachedArenas = {};
 
 ArenaImportPasteString = "";
 
+local existingArenaCount = 0;
+local arenasSkippedByDate = 0;
+local earliestStartTime, latestStartTime;
+
+-- Get the start time of the first and last arena currently stored.
+local function RecomputeFirstAndLastStoredTimes()
+    if(isImporting) then
+        return;
+    end
+
+    earliestStartTime, latestStartTime = nil, nil;
+    arenasSkippedByDate = 0;
+    existingArenaCount = #MatchHistoryDB;
+
+    -- Earliest start times (Loop in case of invalid dates)
+    for i = #MatchHistoryDB, 1, -1 do
+        local match = MatchHistoryDB[i];
+        
+        if(match["date"] and match["date"] > 0) then
+            earliestStartTime = match["date"];
+        end
+    end
+    
+    -- Latest start times (Loop in case of invalid dates)
+    for i = 1, #MatchHistoryDB do
+        local match = MatchHistoryDB[i];
+
+        if(match["date"] and match["date"] > 0) then
+            latestStartTime = match["date"];
+        end
+    end
+end
+
+local function CanImportMatchByRelativeTime(startTime)
+    local doesMatchPass = false;
+
+    if(existingArenaCount == 0) then
+        doesMatchPass = true;
+    elseif(not ArenaAnalyticsSettings["allowImportDataMerge"]) then
+        return false; -- Backup catch
+    elseif(startTime and earliestStartTime and latestStartTime) then
+        if(startTime == 0) then
+            doesMatchPass = false;
+        else
+            doesMatchPass = (startTime + 360) < earliestStartTime or (startTime - 360) > latestStartTime;
+        end
+    else
+        ArenaAnalytics:Log("CanImportMatchByRelativeTime: ", startTime, earliestStartTime, latestStartTime);
+    end
+    
+    if(doesMatchPass == false) then
+        ArenaAnalytics:Log("Rejected startTime: ", date("%d/%m/%y %H:%M:%S", startTime));
+        arenasSkippedByDate = arenasSkippedByDate + 1;
+    end
+
+    return doesMatchPass;
+end
+
 local function checkDataSource_ArenaStats_Wotlk(data)
     local ArenaStatsFormat_Wotlk = "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,"..
     "winnerColor,teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5,"..
@@ -50,26 +108,24 @@ local function checkDataSource_ArenaStats_Cata(data)
 end
 
 local function checkDataSource_ArenaAnalytics(data)
-    if(data[1]:sub(1, 15) == "ArenaAnalytics:") then
+    if(data[1]:sub(1, 18) == "ArenaAnalytics_v1:") then
         return true;
     end
    return false;
 end
 
 function Import:determineImportSource(data)
-    if(data and #data[1] > 0) then
+    if(data and data[1] and #data[1] > 0) then
         -- Identify ArenaAnalytics
         if(checkDataSource_ArenaAnalytics(data)) then
             return "ArenaAnalytics";
         end
 
-        -- Identify ArenaStats_Wotlk
-        if (checkDataSource_ArenaStats_Wotlk(data)) then
-            return "ArenaStats_Wotlk";
-        end
-
+        -- Identify ArenaStats
         if(checkDataSource_ArenaStats_Cata(data)) then
             return "ArenaStats_Cata";
+        elseif (checkDataSource_ArenaStats_Wotlk(data)) then
+            return "ArenaStats_Wotlk";
         end
     end
 
@@ -107,10 +163,14 @@ function Import:parseRawData(data)
     end
 
     local dataSource = Import:determineImportSource(data);
+
+    if(not isImporting and dataSource ~= "Invalid") then
+        RecomputeFirstAndLastStoredTimes();
+    end
     
     if(isImporting) then
         ArenaAnalytics:Print("Another import already in progress!");
-    elseif(ArenaAnalytics:hasStoredMatches()) then
+    elseif(not ArenaAnalyticsSettings["allowImportDataMerge"] and ArenaAnalytics:hasStoredMatches()) then
         ArenaAnalytics:Print("Import failed due to existing stored matches!");
         Import:reset();
     elseif(dataSource == "Invalid") then
@@ -171,10 +231,10 @@ function Import:parseRawData(data)
             end
         elseif(dataSource == "ArenaAnalytics") then
             -- Remove heading
-            local arenasRaw = string.sub(data[1], 1061)
+            local arenasRaw = string.sub(data[1], 1075)
             -- Split into arenas
             local _, numberOfArenas = arenasRaw:gsub(",","");
-            numberOfArenas = numberOfArenas/91;
+            numberOfArenas = numberOfArenas/92;
             if (numberOfArenas ~= math.floor(numberOfArenas)) then
                 dataIsCorrupt = true;
             elseif(numberOfArenas == 0) then
@@ -231,60 +291,63 @@ function Import:parseCachedValues_ArenaStats_Wotlk(nextIndex)
     for i = nextIndex, #cachedValues do
         if(i%48 ~= 0) then
             table.insert(arena, cachedValues[i])
-        else 
-            local arenaTable = {
-                ["isRated"] = (arena[1] == "YES"),
-                ["startTime"] = arena[2],
-                ["endTime"] = arena[3],
-                ["zoneId"] = arena[4],
-                ["duration"] = tonumber(arena[5]) or 0,
-                ["teamName"] = arena[6],
-                ["teamColor"] = arena[7],
-                ["winnerColor"] = arena[8],
-                ["teamPlayerName1"] = arena[9],
-                ["teamPlayerName2"] = arena[10],
-                ["teamPlayerName3"] = arena[11],
-                ["teamPlayerName4"] = arena[12],
-                ["teamPlayerName5"] = arena[13],
-                ["teamPlayerClass1"] = arena[14],
-                ["teamPlayerClass2"] = arena[15],
-                ["teamPlayerClass3"] = arena[16],
-                ["teamPlayerClass4"] = arena[17],
-                ["teamPlayerClass5"] = arena[18],
-                ["teamPlayerRace1"] = arena[19],
-                ["teamPlayerRace2"] = arena[20],
-                ["teamPlayerRace3"] = arena[21],
-                ["teamPlayerRace4"] = arena[22],
-                ["teamPlayerRace5"] = arena[23],
-                ["oldTeamRating"] = arena[24],
-                ["newTeamRating"] = arena[25],
-                ["diffRating"] = arena[26],
-                ["mmr"] = arena[27],
-                ["enemyOldTeamRating"] = arena[28],
-                ["enemyNewTeamRating"] = arena[29],
-                ["enemyDiffRating"] = arena[30],
-                ["enemyMmr"] = arena[31],
-                ["enemyTeamName"] = arena[32],
-                ["enemyPlayerName1"] = arena[33],
-                ["enemyPlayerName2"] = arena[34],
-                ["enemyPlayerName3"] = arena[35],
-                ["enemyPlayerName4"] = arena[36],
-                ["enemyPlayerName5"] = arena[37],
-                ["enemyPlayerClass1"] = arena[38],
-                ["enemyPlayerClass2"] = arena[39],
-                ["enemyPlayerClass3"] = arena[40],
-                ["enemyPlayerClass4"] = arena[41],
-                ["enemyPlayerClass5"] = arena[42],
-                ["enemyPlayerRace1"] = arena[43],
-                ["enemyPlayerRace2"] = arena[44],
-                ["enemyPlayerRace3"] = arena[45],
-                ["enemyPlayerRace4"] = arena[46],
-                ["enemyPlayerRace5"] = arena[47],
-                ["enemyFaction"] = arena[48]
-            }
+        else
+            if(CanImportMatchByRelativeTime(tonumber(arena[2]))) then
+                local arenaTable = {
+                    ["isRated"] = (arena[1] == "YES"),
+                    ["startTime"] = arena[2],
+                    ["endTime"] = arena[3],
+                    ["zoneId"] = arena[4],
+                    ["duration"] = tonumber(arena[5]) or 0,
+                    ["teamName"] = arena[6],
+                    ["teamColor"] = arena[7],
+                    ["winnerColor"] = arena[8],
+                    ["teamPlayerName1"] = arena[9],
+                    ["teamPlayerName2"] = arena[10],
+                    ["teamPlayerName3"] = arena[11],
+                    ["teamPlayerName4"] = arena[12],
+                    ["teamPlayerName5"] = arena[13],
+                    ["teamPlayerClass1"] = arena[14],
+                    ["teamPlayerClass2"] = arena[15],
+                    ["teamPlayerClass3"] = arena[16],
+                    ["teamPlayerClass4"] = arena[17],
+                    ["teamPlayerClass5"] = arena[18],
+                    ["teamPlayerRace1"] = arena[19],
+                    ["teamPlayerRace2"] = arena[20],
+                    ["teamPlayerRace3"] = arena[21],
+                    ["teamPlayerRace4"] = arena[22],
+                    ["teamPlayerRace5"] = arena[23],
+                    ["oldTeamRating"] = arena[24],
+                    ["newTeamRating"] = arena[25],
+                    ["diffRating"] = arena[26],
+                    ["mmr"] = arena[27],
+                    ["enemyOldTeamRating"] = arena[28],
+                    ["enemyNewTeamRating"] = arena[29],
+                    ["enemyDiffRating"] = arena[30],
+                    ["enemyMmr"] = arena[31],
+                    ["enemyTeamName"] = arena[32],
+                    ["enemyPlayerName1"] = arena[33],
+                    ["enemyPlayerName2"] = arena[34],
+                    ["enemyPlayerName3"] = arena[35],
+                    ["enemyPlayerName4"] = arena[36],
+                    ["enemyPlayerName5"] = arena[37],
+                    ["enemyPlayerClass1"] = arena[38],
+                    ["enemyPlayerClass2"] = arena[39],
+                    ["enemyPlayerClass3"] = arena[40],
+                    ["enemyPlayerClass4"] = arena[41],
+                    ["enemyPlayerClass5"] = arena[42],
+                    ["enemyPlayerRace1"] = arena[43],
+                    ["enemyPlayerRace2"] = arena[44],
+                    ["enemyPlayerRace3"] = arena[45],
+                    ["enemyPlayerRace4"] = arena[46],
+                    ["enemyPlayerRace5"] = arena[47],
+                    ["enemyFaction"] = arena[48]
+                }
+                
+                table.insert(cachedArenas, arenaTable);
+            end
 
             arenasParsedThisFrame = arenasParsedThisFrame + 1;
-            table.insert(cachedArenas, arenaTable)
             arena = {}
 
             if(arenasParsedThisFrame >= 1000 and i < #cachedValues) then
@@ -320,69 +383,72 @@ function Import:parseCachedValues_ArenaStats_Cata(nextIndex)
         if(i%58 ~= 0) then
             table.insert(arena, cachedValues[i]);
         else
-            local arenaTable = {
-                ["isRated"] = (arena[1] == "YES"),
-                ["startTime"] = arena[2],
-                ["endTime"] = arena[3],
-                ["zoneId"] = arena[4],
-                ["duration"] = tonumber(arena[5]) or 0,
-                ["teamName"] = arena[6],
-                ["teamColor"] = arena[7],
-                ["winnerColor"] = arena[8],
-                ["teamPlayerName1"] = arena[9],
-                ["teamPlayerName2"] = arena[10],
-                ["teamPlayerName3"] = arena[11],
-                ["teamPlayerName4"] = arena[12],
-                ["teamPlayerName5"] = arena[13],
-                ["teamPlayerClass1"] = arena[14],
-                ["teamPlayerClass2"] = arena[15],
-                ["teamPlayerClass3"] = arena[16],
-                ["teamPlayerClass4"] = arena[17],
-                ["teamPlayerClass5"] = arena[18],
-                ["teamPlayerRace1"] = arena[19],
-                ["teamPlayerRace2"] = arena[20],
-                ["teamPlayerRace3"] = arena[21],
-                ["teamPlayerRace4"] = arena[22],
-                ["teamPlayerRace5"] = arena[23],
-                ["oldTeamRating"] = arena[24],
-                ["newTeamRating"] = arena[25],
-                ["diffRating"] = arena[26],
-                ["mmr"] = arena[27],
-                ["enemyOldTeamRating"] = arena[28],
-                ["enemyNewTeamRating"] = arena[29],
-                ["enemyDiffRating"] = arena[30],
-                ["enemyMmr"] = arena[31],
-                ["enemyTeamName"] = arena[32],
-                ["enemyPlayerName1"] = arena[33],
-                ["enemyPlayerName2"] = arena[34],
-                ["enemyPlayerName3"] = arena[35],
-                ["enemyPlayerName4"] = arena[36],
-                ["enemyPlayerName5"] = arena[37],
-                ["enemyPlayerClass1"] = arena[38],
-                ["enemyPlayerClass2"] = arena[39],
-                ["enemyPlayerClass3"] = arena[40],
-                ["enemyPlayerClass4"] = arena[41],
-                ["enemyPlayerClass5"] = arena[42],
-                ["enemyPlayerRace1"] = arena[43],
-                ["enemyPlayerRace2"] = arena[44],
-                ["enemyPlayerRace3"] = arena[45],
-                ["enemyPlayerRace4"] = arena[46],
-                ["enemyPlayerRace5"] = arena[47],
-                ["enemyFaction"] = arena[48],
-                ["teamSpec1"] = arena[49],
-                ["teamSpec2"] = arena[50],
-                ["teamSpec3"] = arena[51],
-                ["teamSpec4"] = arena[52],
-                ["teamSpec5"] = arena[53],
-                ["enemySpec1"] = arena[54],
-                ["enemySpec2"] = arena[55],
-                ["enemySpec3"] = arena[56],
-                ["enemySpec4"] = arena[57],
-                ["enemySpec5"] = arena[58],
-            }
+            if(CanImportMatchByRelativeTime(tonumber(arena[2]))) then
+                local arenaTable = {
+                    ["isRated"] = (arena[1] == "YES"),
+                    ["startTime"] = arena[2],
+                    ["endTime"] = arena[3],
+                    ["zoneId"] = arena[4],
+                    ["duration"] = tonumber(arena[5]) or 0,
+                    ["teamName"] = arena[6],
+                    ["teamColor"] = arena[7],
+                    ["winnerColor"] = arena[8],
+                    ["teamPlayerName1"] = arena[9],
+                    ["teamPlayerName2"] = arena[10],
+                    ["teamPlayerName3"] = arena[11],
+                    ["teamPlayerName4"] = arena[12],
+                    ["teamPlayerName5"] = arena[13],
+                    ["teamPlayerClass1"] = arena[14],
+                    ["teamPlayerClass2"] = arena[15],
+                    ["teamPlayerClass3"] = arena[16],
+                    ["teamPlayerClass4"] = arena[17],
+                    ["teamPlayerClass5"] = arena[18],
+                    ["teamPlayerRace1"] = arena[19],
+                    ["teamPlayerRace2"] = arena[20],
+                    ["teamPlayerRace3"] = arena[21],
+                    ["teamPlayerRace4"] = arena[22],
+                    ["teamPlayerRace5"] = arena[23],
+                    ["oldTeamRating"] = arena[24],
+                    ["newTeamRating"] = arena[25],
+                    ["diffRating"] = arena[26],
+                    ["mmr"] = arena[27],
+                    ["enemyOldTeamRating"] = arena[28],
+                    ["enemyNewTeamRating"] = arena[29],
+                    ["enemyDiffRating"] = arena[30],
+                    ["enemyMmr"] = arena[31],
+                    ["enemyTeamName"] = arena[32],
+                    ["enemyPlayerName1"] = arena[33],
+                    ["enemyPlayerName2"] = arena[34],
+                    ["enemyPlayerName3"] = arena[35],
+                    ["enemyPlayerName4"] = arena[36],
+                    ["enemyPlayerName5"] = arena[37],
+                    ["enemyPlayerClass1"] = arena[38],
+                    ["enemyPlayerClass2"] = arena[39],
+                    ["enemyPlayerClass3"] = arena[40],
+                    ["enemyPlayerClass4"] = arena[41],
+                    ["enemyPlayerClass5"] = arena[42],
+                    ["enemyPlayerRace1"] = arena[43],
+                    ["enemyPlayerRace2"] = arena[44],
+                    ["enemyPlayerRace3"] = arena[45],
+                    ["enemyPlayerRace4"] = arena[46],
+                    ["enemyPlayerRace5"] = arena[47],
+                    ["enemyFaction"] = arena[48],
+                    ["teamSpec1"] = arena[49],
+                    ["teamSpec2"] = arena[50],
+                    ["teamSpec3"] = arena[51],
+                    ["teamSpec4"] = arena[52],
+                    ["teamSpec5"] = arena[53],
+                    ["enemySpec1"] = arena[54],
+                    ["enemySpec2"] = arena[55],
+                    ["enemySpec3"] = arena[56],
+                    ["enemySpec4"] = arena[57],
+                    ["enemySpec5"] = arena[58],
+                }
+
+                table.insert(cachedArenas, arenaTable);
+            end
 
             arenasParsedThisFrame = arenasParsedThisFrame + 1;
-            table.insert(cachedArenas, arenaTable);
             arena = {}
 
             if(arenasParsedThisFrame >= 1000 and i < #cachedValues) then
@@ -442,16 +508,9 @@ function Import:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
             ["comp"] = ArenaAnalytics.AAmatch:getArenaComp(group, bracket),
             ["enemyComp"] = ArenaAnalytics.AAmatch:getArenaComp(enemyGroup, bracket),
             ["won"] = arena["teamColor"] == arena["winnerColor"] and true or false,
-            ["firstDeath"] = nil
+            ["firstDeath"] = nil,
+            ["importInfo"] = {"ArenaStats", (existingArenaCount > 0 and true or false)} -- Import Source, isMergeImport
         }
-
-        table.sort(arena["team"], function(a, b)
-            local name = UnitName("player");
-            local prioA = a["name"] == name and 1 or 2;
-            local prioB = b["name"] == name and 1 or 2;
-            local sameClass = a["class"] == b["class"];
-            return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
-        end)
 
         table.insert(MatchHistoryDB, arena);
         arenasImportedThisFrame = arenasImportedThisFrame + 1;
@@ -491,28 +550,8 @@ function Import:createGroupTable_ArenaStats(arena, groupType, size)
         end
     end
 
-    -- TODO: Custom function to do this consistently
     -- Place player first in the arena party group, sort rest 
-	table.sort(group, function(a, b)
-        local name = UnitName("player");
-		local prioA = string.find(a["name"], name) and 1 or 2;
-		local prioB = string.find(b["name"], name) and 1 or 2;
-		local sameClass = a["class"] == b["class"]
-
-        if (prioA < prioB) then
-            return true;
-        end
-
-        if (prioA == prioB and a["class"] < b["class"]) then
-            return true;
-        end
-
-		if (prioA == prioB and sameClass and a["name"] < b["name"]) then
-            return true;
-        end
-
-        return false;
-	end);
+	ArenaAnalytics:SortGroup(group, (groupType == "team"));
 
     return group;
 end
@@ -533,105 +572,109 @@ function Import:parseCachedValues_ArenaAnalytics(nextIndex)
     local finishedParsing = false;
 
     for i = nextIndex, #cachedValues do
-        if(i%91 ~= 0) then
+        if(i%92 ~= 0) then
             table.insert(arena, cachedValues[i])
         else
-            local arenaTable = {
-                ["date"] = tonumber(arena[1]),
-                ["season"] = tonumber(arena[2]),
-                ["bracket"] = arena[3],
-                ["map"] = arena[4],
-                ["duration"] = tonumber(arena[5]) or 0,
-                ["won"] = GetBoolFromBinaryImport(arena[6]), -- Won, lost or nil
-                ["isRated"] = arena[7] == "1",
-                ["rating"] = tonumber(arena[8]),
-                ["mmr"] = tonumber(arena[9]),
-                ["enemyRating"] = tonumber(arena[10]),
-                ["enemyMmr"] = tonumber(arena[11]),
-                ["party1Name"] = arena[12], -- Party names
-                ["party2Name"] = arena[13],
-                ["party3Name"] = arena[14],
-                ["party4Name"] = arena[15],
-                ["party5Name"] = arena[16],
-                ["party1Race"] = arena[17], -- Party races
-                ["party2Race"] = arena[18],
-                ["party3Race"] = arena[19],
-                ["party4Race"] = arena[20],
-                ["party5Race"] = arena[21],
-                ["party1Class"] = arena[22], -- Party classes
-                ["party2Class"] = arena[23],
-                ["party3Class"] = arena[24],
-                ["party4Class"] = arena[25],
-                ["party5Class"] = arena[26],
-                ["party1Spec"] = arena[27], -- Party Specs
-                ["party2Spec"] = arena[28],
-                ["party3Spec"] = arena[29],
-                ["party4Spec"] = arena[30],
-                ["party5Spec"] = arena[31],
-                ["party1Kills"] = tonumber(arena[32]), -- Party Kills stats
-                ["party2Kills"] = tonumber(arena[33]),
-                ["party3Kills"] = tonumber(arena[34]),
-                ["party4Kills"] = tonumber(arena[35]),
-                ["party5Kills"] = tonumber(arena[36]),
-                ["party1Deaths"] = tonumber(arena[37]), -- Party Death stats
-                ["party2Deaths"] = tonumber(arena[38]),
-                ["party3Deaths"] = tonumber(arena[39]),
-                ["party4Deaths"] = tonumber(arena[40]),
-                ["party5Deaths"] = tonumber(arena[41]),
-                ["party1Damage"] = tonumber(arena[42]), -- Party Damage stats
-                ["party2Damage"] = tonumber(arena[43]),
-                ["party3Damage"] = tonumber(arena[44]),
-                ["party4Damage"] = tonumber(arena[45]),
-                ["party5Damage"] = tonumber(arena[46]),
-                ["party1Healing"] = tonumber(arena[47]), -- Party Healing stats
-                ["party2Healing"] = tonumber(arena[48]),
-                ["party3Healing"] = tonumber(arena[49]),
-                ["party4Healing"] = tonumber(arena[50]),
-                ["party5Healing"] = tonumber(arena[51]),
-                ["enemy1Name"] = arena[52], -- Enemy names
-                ["enemy2Name"] = arena[53],
-                ["enemy3Name"] = arena[54],
-                ["enemy4Name"] = arena[55],
-                ["enemy5Name"] = arena[56],
-                ["enemy1Race"] = arena[57], -- Enemy races
-                ["enemy2Race"] = arena[58],
-                ["enemy3Race"] = arena[59],
-                ["enemy4Race"] = arena[60],
-                ["enemy5Race"] = arena[61],
-                ["enemy1Class"] = arena[62], -- Enemy classes
-                ["enemy2Class"] = arena[63],
-                ["enemy3Class"] = arena[64],
-                ["enemy4Class"] = arena[65],
-                ["enemy5Class"] = arena[66],
-                ["enemy1Spec"] = arena[67], -- Enemy Specs
-                ["enemy2Spec"] = arena[68],
-                ["enemy3Spec"] = arena[69],
-                ["enemy4Spec"] = arena[70],
-                ["enemy5Spec"] = arena[71],
-                ["enemy1Kills"] = tonumber(arena[72]), -- Enemy Kills stats
-                ["enemy2Kills"] = tonumber(arena[73]),
-                ["enemy3Kills"] = tonumber(arena[74]),
-                ["enemy4Kills"] = tonumber(arena[75]),
-                ["enemy5Kills"] = tonumber(arena[76]),
-                ["enemy1Deaths"] = tonumber(arena[77]), -- Enemy Death stats
-                ["enemy2Deaths"] = tonumber(arena[78]),
-                ["enemy3Deaths"] = tonumber(arena[79]),
-                ["enemy4Deaths"] = tonumber(arena[80]),
-                ["enemy5Deaths"] = tonumber(arena[81]),
-                ["enemy1Damage"] = tonumber(arena[82]), -- Enemy Damage stats
-                ["enemy2Damage"] = tonumber(arena[83]),
-                ["enemy3Damage"] = tonumber(arena[84]),
-                ["enemy4Damage"] = tonumber(arena[85]),
-                ["enemy5Damage"] = tonumber(arena[86]),
-                ["enemy1Healing"] = tonumber(arena[87]), -- Enemy Healing stats
-                ["enemy2Healing"] = tonumber(arena[88]),
-                ["enemy3Healing"] = tonumber(arena[89]),
-                ["enemy4Healing"] = tonumber(arena[90]),
-                ["enemy5Healing"] = tonumber(arena[91]),
-            }
+            if(CanImportMatchByRelativeTime(tonumber(arena[1]))) then
+                local arenaTable = {
+                    ["date"] = tonumber(arena[1]),
+                    ["season"] = tonumber(arena[2]),
+                    ["bracket"] = arena[3],
+                    ["map"] = arena[4],
+                    ["duration"] = tonumber(arena[5]) or 0,
+                    ["won"] = GetBoolFromBinaryImport(arena[6]), -- Won, lost or nil
+                    ["isRated"] = arena[7] == "1",
+                    ["rating"] = tonumber(arena[8]),
+                    ["mmr"] = tonumber(arena[9]),
+                    ["enemyRating"] = tonumber(arena[10]),
+                    ["enemyMmr"] = tonumber(arena[11]),
+                    ["firstDeath"] = arena[12],
+                    ["party1Name"] = arena[13], -- Party names
+                    ["party2Name"] = arena[14],
+                    ["party3Name"] = arena[15],
+                    ["party4Name"] = arena[16],
+                    ["party5Name"] = arena[17],
+                    ["party1Race"] = arena[18], -- Party races
+                    ["party2Race"] = arena[19],
+                    ["party3Race"] = arena[20],
+                    ["party4Race"] = arena[21],
+                    ["party5Race"] = arena[22],
+                    ["party1Class"] = arena[23], -- Party classes
+                    ["party2Class"] = arena[24],
+                    ["party3Class"] = arena[25],
+                    ["party4Class"] = arena[26],
+                    ["party5Class"] = arena[27],
+                    ["party1Spec"] = arena[28], -- Party Specs
+                    ["party2Spec"] = arena[29],
+                    ["party3Spec"] = arena[30],
+                    ["party4Spec"] = arena[31],
+                    ["party5Spec"] = arena[32],
+                    ["party1Kills"] = tonumber(arena[33]), -- Party Kills stats
+                    ["party2Kills"] = tonumber(arena[34]),
+                    ["party3Kills"] = tonumber(arena[35]),
+                    ["party4Kills"] = tonumber(arena[36]),
+                    ["party5Kills"] = tonumber(arena[37]),
+                    ["party1Deaths"] = tonumber(arena[38]), -- Party Death stats
+                    ["party2Deaths"] = tonumber(arena[39]),
+                    ["party3Deaths"] = tonumber(arena[40]),
+                    ["party4Deaths"] = tonumber(arena[41]),
+                    ["party5Deaths"] = tonumber(arena[42]),
+                    ["party1Damage"] = tonumber(arena[43]), -- Party Damage stats
+                    ["party2Damage"] = tonumber(arena[44]),
+                    ["party3Damage"] = tonumber(arena[45]),
+                    ["party4Damage"] = tonumber(arena[46]),
+                    ["party5Damage"] = tonumber(arena[47]),
+                    ["party1Healing"] = tonumber(arena[48]), -- Party Healing stats
+                    ["party2Healing"] = tonumber(arena[49]),
+                    ["party3Healing"] = tonumber(arena[50]),
+                    ["party4Healing"] = tonumber(arena[51]),
+                    ["party5Healing"] = tonumber(arena[52]),
+                    ["enemy1Name"] = arena[53], -- Enemy names
+                    ["enemy2Name"] = arena[54],
+                    ["enemy3Name"] = arena[55],
+                    ["enemy4Name"] = arena[56],
+                    ["enemy5Name"] = arena[57],
+                    ["enemy1Race"] = arena[58], -- Enemy races
+                    ["enemy2Race"] = arena[59],
+                    ["enemy3Race"] = arena[60],
+                    ["enemy4Race"] = arena[61],
+                    ["enemy5Race"] = arena[62],
+                    ["enemy1Class"] = arena[63], -- Enemy classes
+                    ["enemy2Class"] = arena[64],
+                    ["enemy3Class"] = arena[65],
+                    ["enemy4Class"] = arena[66],
+                    ["enemy5Class"] = arena[67],
+                    ["enemy1Spec"] = arena[68], -- Enemy Specs
+                    ["enemy2Spec"] = arena[69],
+                    ["enemy3Spec"] = arena[70],
+                    ["enemy4Spec"] = arena[71],
+                    ["enemy5Spec"] = arena[72],
+                    ["enemy1Kills"] = tonumber(arena[73]), -- Enemy Kills stats
+                    ["enemy2Kills"] = tonumber(arena[74]),
+                    ["enemy3Kills"] = tonumber(arena[75]),
+                    ["enemy4Kills"] = tonumber(arena[76]),
+                    ["enemy5Kills"] = tonumber(arena[77]),
+                    ["enemy1Deaths"] = tonumber(arena[78]), -- Enemy Death stats
+                    ["enemy2Deaths"] = tonumber(arena[79]),
+                    ["enemy3Deaths"] = tonumber(arena[80]),
+                    ["enemy4Deaths"] = tonumber(arena[81]),
+                    ["enemy5Deaths"] = tonumber(arena[82]),
+                    ["enemy1Damage"] = tonumber(arena[83]), -- Enemy Damage stats
+                    ["enemy2Damage"] = tonumber(arena[84]),
+                    ["enemy3Damage"] = tonumber(arena[85]),
+                    ["enemy4Damage"] = tonumber(arena[86]),
+                    ["enemy5Damage"] = tonumber(arena[87]),
+                    ["enemy1Healing"] = tonumber(arena[88]), -- Enemy Healing stats
+                    ["enemy2Healing"] = tonumber(arena[89]),
+                    ["enemy3Healing"] = tonumber(arena[90]),
+                    ["enemy4Healing"] = tonumber(arena[91]),
+                    ["enemy5Healing"] = tonumber(arena[92]),
+                }
+
+                table.insert(cachedArenas, arenaTable);
+            end
 
             arenasParsedThisFrame = arenasParsedThisFrame + 1;
-            table.insert(cachedArenas, arenaTable)
             arena = {}
 
             if(arenasParsedThisFrame >= 1000 and i < #cachedValues) then
@@ -641,6 +684,7 @@ function Import:parseCachedValues_ArenaAnalytics(nextIndex)
             else
                 finishedParsing = true;
             end
+
         end
     end
 
@@ -690,16 +734,9 @@ function Import:addCachedArenasToMatchHistory_ArenaAnalytics(nextIndex)
             ["comp"] = ArenaAnalytics.AAmatch:getArenaComp(team, cachedArena["bracket"]),
             ["enemyComp"] = ArenaAnalytics.AAmatch:getArenaComp(enemyTeam, cachedArena["bracket"]),
             ["won"] = cachedArena["won"],
-            ["firstDeath"] = cachedArena["firstDeath"] or nil
+            ["firstDeath"] = cachedArena["firstDeath"] ~= "" and cachedArena["firstDeath"] or nil,
+            ["importInfo"] = {"ArenaAnalytics", (existingArenaCount > 0 and true or false)} -- Import Source, isMergeImport
         }
-
-        table.sort(arena["team"], function(a, b)
-            local name = UnitName("player");
-            local prioA = a["name"] == name and 1 or 2;
-            local prioB = b["name"] == name and 1 or 2;
-            local sameClass = a["class"] == b["class"];
-            return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
-        end)
 
         table.insert(MatchHistoryDB, arena);
         arenasImportedThisFrame = arenasImportedThisFrame + 1;
@@ -719,18 +756,20 @@ function Import:completeImport()
     Import:reset();
     Import:tryHide();
 
+    
     table.sort(MatchHistoryDB, function (k1,k2)
         if (k1["date"] and k2["date"]) then
             return k1["date"] < k2["date"];
         end
     end);
-
+    
     ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
     ArenaAnalytics:updateLastSession();    
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
     ArenaAnalytics.Filter:refreshFilters();
-
-    ArenaAnalytics:Print("Import complete. " .. #MatchHistoryDB .. " arenas added!");
+    
+    ArenaAnalytics:Print("Import complete. " .. (#MatchHistoryDB - existingArenaCount) .. " arenas added!");
+    ArenaAnalytics:Log("Import ignored", arenasSkippedByDate, "arenas due to their date.");
 end
 
 -- TODO: Update for ArenaAnalytics!
@@ -759,26 +798,7 @@ function Import:createGroupTable_ArenaAnalytics(arena, groupType, size)
     end
 
     -- Place player first in the arena party group, sort rest 
-	table.sort(group, function(a, b)
-        local name = UnitName("player");
-		local prioA = string.find(a["name"], name) and 1 or 2;
-		local prioB = string.find(b["name"], name) and 1 or 2;
-		local sameClass = a["class"] == b["class"]
-
-        if (prioA < prioB) then
-            return true;
-        end
-
-        if (prioA == prioB and a["class"] < b["class"]) then
-            return true;
-        end
-
-		if (prioA == prioB and sameClass and a["name"] < b["name"]) then
-            return true;
-        end
-
-        return false;
-	end);
+	ArenaAnalytics:SortGroup(group, (groupType == "team"));
 
     return group;
 end
@@ -799,10 +819,10 @@ function Export:combineExportCSV()
     end
 
     local exportTable = {}
-    local exportHeader = "ArenaAnalytics:".. 
+    local exportHeader = "ArenaAnalytics_v1:"..
 
     -- Match data
-    "date,season,bracket,map,duration,won,isRated,rating,mmr,enemyRating,enemyMMR,"..
+    "date,season,bracket,map,duration,won,isRated,rating,mmr,enemyRating,enemyMMR,firstDeath,"..
 
     -- Team data
     "party1Name,party2Name,party3Name,party4Name,party5Name,"..
@@ -842,10 +862,6 @@ function Export:addMatchesToExport(exportTable, nextIndex)
         
         local victory = match["won"] ~= nil and (match["won"] and "1" or "0") or "";
         
-        if(match["season"] ~= nil) then
-            ArenaAnalytics:Log(match["season"]);
-        end
-
         -- Add match data
         local matchCSV = match["date"] .. ","
         .. (match["season"] or ArenaAnalytics:computeSeasonFromMatchDate(match["date"]) or "") .. ","
@@ -858,6 +874,7 @@ function Export:addMatchesToExport(exportTable, nextIndex)
         .. (match["mmr"] or "") .. ","
         .. (match["enemyRating"] or "") .. ","
         .. (match["enemyMmr"] or "") .. ","
+        .. (match["firstDeath"] or "") .. ","
         
         -- Add team data 
         local teams = {"team", "enemyTeam"};

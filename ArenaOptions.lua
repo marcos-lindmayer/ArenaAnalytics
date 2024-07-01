@@ -324,7 +324,7 @@ function setupTab_ImportExport()
     parent.importAllowMerge = createCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
         parent.importButton.stateFunc();
     end);
-    parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nThis will add matches before and after already stored matches.\n\n|cffff0000Use at own risk.|r\nBackup SavedVariables recommended." }
+    parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nThis will add matches before and after already stored matches.\n\n|cffff0000Untested! - Use at own risk.|r\nBackup SavedVariables recommended." }
 
     
     exportOptionsFrame:SetScript("OnShow", function() parent.importButton.stateFunc() end);

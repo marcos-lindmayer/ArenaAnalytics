@@ -95,10 +95,10 @@ function AAtable:getCompIconString(comp, isPlayerPriority)
             end
 
 
-            if (playerClass) then 
-                if(classA == playerClass) then 
+            if (myClass) then 
+                if(classA == myClass) then 
                     return true;
-                elseif(classB == playerClass) then
+                elseif(classB == myClass) then
                     return false;
                 end
             end
@@ -756,24 +756,24 @@ end
 -- Sets button row's background according to session
 local function setColorForSession(button, session, index)
     local isOddSession = (session or 0) % 2 == 1;
-    local oddAlpha, evenAlpha = 0.7, 0.1;
+    local oddAlpha, evenAlpha = 0.8, 0.65;
     
     local alpha = isOddSession and oddAlpha or evenAlpha;
 
     local isOddIndex = (index or 0) % 2 == 1;
     if(isOddIndex) then
         if(isOddSession) then
-            alpha = alpha - 0.1;
+            alpha = alpha - 0.07;
         else
-            alpha = alpha + 0.1;
+            alpha = alpha + 0.07;
         end
     end
 
     if isOddSession then
-        local c = 0.1;
+        local c = 0.05;
         button.Background:SetColorTexture(c, c, c, min(alpha, 1))
     else
-        local c = 0.15;
+        local c = 0.25;
         button.Background:SetColorTexture(c, c, c, min(alpha, 1))
     end
 end

@@ -235,6 +235,60 @@ function ArenaAnalytics:getLastRating(teamSize)
 	return 0;
 end
 
+function ArenaAnalytics:SortGroup(group, isPlayerPriority)
+	local myName, myRealm = UnitFullName("player");
+	local myFullName = myName.."-"..myRealm;
+
+	if(not group or #group == 0) then
+		return;
+	end
+
+    table.sort(group, function(a, b)
+		local classA, classB = a["class"], b["class"];
+        local specA, specB = a["spec"], b["spec"];
+		
+        if(isPlayerPriority) then
+			local nameA, nameB = a["name"], b["name"];
+			if(myName) then
+				if(nameA == myFullName or nameA == myName) then
+					return true;
+				elseif(nameB == myFullName or nameB == myName) then
+					return false;
+				end
+			end
+
+            if(myClass) then
+                local priorityA = (classA == myClass) and 1 or 0;
+                local priorityB = (classB == myClass) and 1 or 0;
+
+                if(mySpec) then
+                    priorityA = priorityA + ((specA == mySpec) and 2 or 0);
+                    priorityB = priorityB + ((specB == mySpec) and 2 or 0);
+                end
+
+                return priorityA > priorityB;
+            end
+
+
+            if (playerClass) then 
+                if(classA == playerClass) then 
+                    return true;
+                elseif(classB == playerClass) then
+                    return false;
+                end
+            end
+        end
+
+		local specID = ArenaAnalytics.Constants:getAddonSpecializationID(classA, specA);
+        local priorityValueA = ArenaAnalytics.Constants:getSpecPriorityValue(specID);
+
+		specID = ArenaAnalytics.Constants:getAddonSpecializationID(classB, specB);
+        local priorityValueB = ArenaAnalytics.Constants:getSpecPriorityValue(specID);
+
+        return priorityValueA > priorityValueB;
+    end);
+end
+
 -- Cached last rating per bracket ID
 ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {
 	[1] = nil,
@@ -322,19 +376,8 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 		newArena["enemyMMR"] = "-";
 	end
 
-	-- Place player first in the arena party group, sort rest 
-	table.sort(newArena["party"], function(a, b)
-		local prioA = a["name"] == newArena["playerName"] and 1 or 2
-		local prioB = b["name"] == newArena["playerName"] and 1 or 2
-		local sameClass = a["class"] == b["class"]
-		return prioA < prioB or (prioA == prioB and a["class"] < b["class"]) or (prioA == prioB and sameClass and a["name"] < b["name"])
-	end);
-
-	--Sort arena["enemy"]
-	table.sort(newArena["enemy"], function(a, b)
-		local sameClass = a["class"] == b["class"]
-		return (sameClass and a["name"] < b["name"]) or a["class"] < b["class"]
-	end);
+	ArenaAnalytics:SortGroup(newArena["party"], true);
+	ArenaAnalytics:SortGroup(newArena["enemy"], false);
 
 	-- Get arena comp for each team
 	local bracket = ArenaAnalytics:getBracketFromTeamSize(newArena["size"]);

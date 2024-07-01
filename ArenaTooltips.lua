@@ -11,7 +11,6 @@ function Tooltips:DrawMinimapTooltip()
 end
 
 function Tooltips:DrawOptionTooltip(frame, tooltip)
-    ArenaAnalytics:Log(name, description);
     assert(tooltip);
 
     local name, description = tooltip[1], tooltip[2];
