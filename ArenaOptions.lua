@@ -6,32 +6,57 @@ local Options = ArenaAnalytics.Options;
 -- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
 
-local function LoadSetting(setting, default)
+-- Adds a setting that 
+local function AddSetting(setting, default)
     ArenaAnalyticsSettings[setting] = ArenaAnalyticsSettings[setting] ~= nil and ArenaAnalyticsSettings[setting] or default;
 end
 
-function Options:LoadSettings()
-    LoadSetting("outliers", 0);
-    LoadSetting("dropdownVisibileLimit", 10);
-    LoadSetting("defaultCurrentSeasonFilter", false);
-    LoadSetting("defaultCurrentSessionFilter", false);
-    LoadSetting("showSkirmish", false);
-    LoadSetting("alwaysShowDeathOverlay", false);
-    LoadSetting("alwaysShowSpecOverlay", false);
-    LoadSetting("unsavedWarningThreshold", 10);
-    LoadSetting("showSelectedCompStats", false);
-    LoadSetting("sortCompFilterByTotalPlayed", false);
-    LoadSetting("selectionControlModInversed", false);
+-- Adds a setting that does not save across reloads. (Use with caution)
+local function AddTransientSetting(setting, default)
+    ArenaAnalyticsSettings[setting] = default;
 end
 
+function Options:LoadSettings()
+    AddSetting("outliers", 0);
+    AddSetting("dropdownVisibileLimit", 10);
+    AddSetting("defaultCurrentSeasonFilter", false);
+    AddSetting("defaultCurrentSessionFilter", false);
+    AddSetting("showSkirmish", false);
+    AddSetting("alwaysShowDeathOverlay", false);
+    AddSetting("alwaysShowSpecOverlay", false);
+    AddSetting("unsavedWarningThreshold", 10);
+    AddSetting("showSelectedCompStats", false);
+    AddSetting("sortCompFilterByTotalPlayed", false);
+    AddSetting("selectionControlModInversed", false);
+    AddSetting("allowImportDataMerge", false);
+end
+
+-- Gets a setting, regardless of location between 
+function Options:GetSetting(setting)
+    assert(setting ~= nil);
+
+    local value = ArenaAnalyticsSettings[setting];
+    if(value == nil) then
+        ArenaAnalytics:Log("Attempted to get setting: ", setting, " but got nil result.");
+    end
+end
+
+local exportOptionsFrame = nil;
 local ArenaAnalyticsOptionsFrame = nil;
+
+function Options:TriggerStateUpdates()
+    if(exportOptionsFrame and exportOptionsFrame.importButton and exportOptionsFrame.importButton.stateFunc) then
+        exportOptionsFrame.importButton.stateFunc();
+    end        
+end
+
 
 local TabTitleSize = 18;
 local TabHeaderSize = 16;
 local GroupHeaderSize = 14;
 local TextSize = 12;
 
-local OptionsSpacing = 25;
+local OptionsSpacing = 10;
 
 -- Offset to use while creating settings tabs
 local offsetY = 0;
@@ -44,8 +69,39 @@ function Options:Open()
 end
 
 -------------------------------------------------------------------
+-- Standardized Updated Option Response Functions
+-------------------------------------------------------------------
+
+local function HandleFiltersUpdated()
+    ArenaAnalytics.Filter:resetFilters(false);
+    ArenaAnalytics.Filter:refreshFilters();
+    ArenaAnalytics.AAtable:forceCompFilterRefresh();
+end
+
+-------------------------------------------------------------------
 -- Helper Functions
 -------------------------------------------------------------------
+
+local function SetupTooltip(owner, frames)
+    assert(owner ~= nil);
+
+    frames = frames or owner;
+    frames = (type(frames) == "table" and frames or { frames });
+
+    for i,frame in ipairs(frames) do
+        frame:SetScript("OnEnter", function ()
+            if(owner.tooltip) then
+                ArenaAnalytics.Tooltips:DrawOptionTooltip(owner, owner.tooltip);
+            end
+        end);
+
+        frame:SetScript("OnLeave", function ()
+            if(owner.tooltip) then
+                GameTooltip:Hide();
+            end
+        end);
+    end
+end
 
 local function InitializeTab(parent)
     local addonNameText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -67,23 +123,43 @@ local function createHeader(text, size, parent, relative, x, y, icon)
     frame:SetTextHeight(size);
     frame:SetText(text);
 
-    offsetY = offsetY - size - OptionsSpacing;
+    offsetY = offsetY - OptionsSpacing - frame:GetHeight() + y;
 
     return frame;
 end
 
-local function createCheckbox(setting, parent, x, text, relative, isSingleLine)
+local function CreateButton(setting, parent, x, width, text, func)
+    assert(type(func) == "function");
+
+    -- Create the button
+    local button = CreateFrame("Button", "ArenaAnalyticsButton_" .. (setting or text or ""), parent, "UIPanelButtonTemplate")
+    
+    -- Set the button's position
+    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
+    
+    -- Set the button's size and text
+    button:SetSize(width or 120, 30)
+    button:SetText(text)
+    
+    -- Add a script for the button's click action
+    button:SetScript("OnClick", function()
+        func(setting);
+    end)
+
+    SetupTooltip(button, nil);
+
+    offsetY = offsetY - button:GetHeight() - OptionsSpacing;
+
+    return button;
+end
+
+local function createCheckbox(setting, parent, x, text, func)
     assert(setting ~= nil);
     assert(type(setting) == "string");
 
     local checkbox = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_"..setting, parent, "OptionsSmallCheckButtonTemplate");
     
-    if isSingleLine and relative then
-        _,_,_,_,relativeY = relative:GetPoint();
-        checkbox:SetPoint("LEFT", relative or parent, "RIGHT", relative:GetWrappedWidth() + 5, relativeY);
-    else
-        checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
-    end
+    checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
 
     checkbox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     checkbox.text:SetPoint("LEFT", checkbox, "RIGHT", 5);
@@ -94,18 +170,26 @@ local function createCheckbox(setting, parent, x, text, relative, isSingleLine)
 
     checkbox:SetScript("OnClick", function()
 		ArenaAnalyticsSettings[setting] = checkbox:GetChecked();
-		ArenaAnalytics.Filter:refreshFilters();
-		ArenaAnalytics.AAtable:forceCompFilterRefresh();
+        
+        if(func) then
+            func(setting);
+        else
+            HandleFiltersUpdated();
+        end
 
 		ArenaAnalytics:Log(setting .. ": ", ArenaAnalyticsSettings[setting]);
 	end);
 
-    offsetY = offsetY - 25;
+    SetupTooltip(checkbox, {checkbox, checkbox.text});
+
+    offsetY = offsetY - OptionsSpacing - checkbox:GetHeight() + 10;
 
     return checkbox;
 end
 
-local function createInputBox(setting, parent, x, text)
+local function createInputBox(setting, parent, x, text, func)
+    offsetY = offsetY - 2; -- top padding
+
     local inputBox = CreateFrame("EditBox", "exportFrameScroll", parent, "InputBoxTemplate");
     inputBox:SetPoint("TOPLEFT", parent, "TOPLEFT", x + 8, offsetY);
     inputBox:SetWidth(50);
@@ -145,7 +229,15 @@ local function createInputBox(setting, parent, x, text)
         ArenaAnalytics:Log("Setting ", setting, " changed to: ", newValue, ". Old value: ", oldValue);
     end);
 
-    offsetY = offsetY - OptionsSpacing;
+    SetupTooltip(inputBox, {inputBox, inputBox.text});
+
+    if(func) then
+        func(setting);
+    else
+        HandleFiltersUpdated();
+    end
+
+    offsetY = offsetY - OptionsSpacing - inputBox:GetHeight() + 5;
 
     return inputBox;
 end
@@ -184,32 +276,58 @@ function setupTab_Filters()
     parent.tabHeader = createHeader("Filters", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
-    parent.showSkirmish = createCheckbox("showSkirmish", parent, offsetX, "Show Skirmish");
     parent.defaultCurrentSeasonFilter = createCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
     parent.defaultCurrentSessionFilter = createCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
-    parent.compFilterSortByTotal = createCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
-
+    
     createSpace();
-
+    
+    parent.showSkirmish = createCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
+    
+    createSpace();
+    
+    parent.compFilterSortByTotal = createCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
     parent.showSelectedCompStats = createCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
-    parent.unsavedWarning = createInputBox("outliers", parent, offsetX, "Minimum games required to appear on comp filter");
+    parent.unsavedWarning = createInputBox("outliers", parent, offsetX, "Minimum games required to appear on comp filter.");
     parent.unsavedWarning = createInputBox("dropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
 end
 
 -------------------------------------------------------------------
--- Export Options Tab
+-- Import/Export Options Tab
 -------------------------------------------------------------------
-function setupTab_Export()
-    local exportOptionsFrame = CreateFrame("frame");
-    exportOptionsFrame.name = "Export";
+function setupTab_ImportExport()
+    exportOptionsFrame = CreateFrame("frame");
+    exportOptionsFrame.name = "Import / Export";
     exportOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
     InterfaceOptions_AddCategory(exportOptionsFrame);
 
     InitializeTab(exportOptionsFrame);
     local parent = exportOptionsFrame;
+    local offsetX = 20;
 
-    parent.tabHeader = createHeader("Export", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = createHeader("Import / Export", TabHeaderSize, parent, nil, 15, -15);
 
+    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() ArenaAnalytics.Export:combineExportCSV() end);
+    
+    createSpace();
+
+    -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
+    parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() ArenaAnalytics.AAtable:tryShowimportDialogFrame() end);
+    parent.importButton.stateFunc = function()
+        if(ArenaAnalyticsSettings["allowImportDataMerge"] or not ArenaAnalytics:hasStoredMatches()) then
+            exportOptionsFrame.importButton:Enable();
+        else
+            exportOptionsFrame.importButton:Disable();
+        end
+    end
+    parent.importButton.stateFunc();
+
+    parent.importAllowMerge = createCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
+        parent.importButton.stateFunc();
+    end);
+    parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nThis will add matches before and after already stored matches.\n\n|cffff0000Use at own risk.|r\nBackup SavedVariables recommended." }
+
+    
+    exportOptionsFrame:SetScript("OnShow", function() parent.importButton.stateFunc() end);
 end
 
 -------------------------------------------------------------------
@@ -224,5 +342,6 @@ function Options.Initialzie()
         -- Setup tabs
         createTab_General();
         setupTab_Filters();
+        setupTab_ImportExport();
     end
 end

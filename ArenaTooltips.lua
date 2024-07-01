@@ -2,11 +2,38 @@ local _, ArenaAnalytics = ...; -- Namespace
 ArenaAnalytics.Tooltips = {};
 local Tooltips = ArenaAnalytics.Tooltips;
 
-function Tooltips.DrawMinimapTooltip()
+function Tooltips:DrawMinimapTooltip()
     GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
     GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. ArenaAnalytics:getVersion() .. "|r");
     GameTooltip:AddLine("|cffBBBBBB" .. "Left Click|r" .. " to toggle ArenaAnalytics");
     GameTooltip:AddLine("|cffBBBBBB" .. "Right Click|r".. " to open Options");
+    GameTooltip:Show();
+end
+
+function Tooltips:DrawOptionTooltip(frame, tooltip)
+    ArenaAnalytics:Log(name, description);
+    assert(tooltip);
+
+    local name, description = tooltip[1], tooltip[2];
+
+    -- Set the owner of the tooltip to the frame and anchor it at the cursor
+    GameTooltip:SetOwner(ArenaAnalyticsScrollFrame, "ANCHOR_CURSOR");
+    
+    -- Clear previous tooltip content
+    GameTooltip:ClearLines();
+    
+    -- Add the title with a larger font size
+    GameTooltip:AddLine(name, 1, 1, 1, true);
+    GameTooltipTextLeft1:SetFont(GameTooltipTextLeft1:GetFont(), 13);
+    
+    -- Add the description with a smaller font size
+    GameTooltip:AddLine(description, nil, nil, nil, true);
+    GameTooltipTextLeft2:SetFont(GameTooltipTextLeft2:GetFont(), 11);
+    
+    -- Width
+    GameTooltip:SetWidth(500);
+
+    -- Show the tooltip
     GameTooltip:Show();
 end
 

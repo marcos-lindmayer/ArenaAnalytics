@@ -78,8 +78,8 @@ function Import:determineImportSource(data)
 end
 
 function Import:reset()
-    ArenaAnalyticsScrollFrame.importDataBtn:Enable();
-    ArenaAnalyticsScrollFrame.importDataBox:SetText("");
+    ArenaAnalyticsScrollFrame.importDialogFrame.button:Enable();
+    ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText("");
     ArenaAnalytics.AAtable:RefreshLayout(true);
 
     cachedValues = {};
@@ -88,11 +88,11 @@ function Import:reset()
 end
 
 function Import:tryHide()
-    if(ArenaAnalyticsScrollFrame.importFrame ~= nil and ArenaAnalytics:hasStoredMatches()) then
-        ArenaAnalyticsScrollFrame.importDataBtn:Disable();
-        ArenaAnalyticsScrollFrame.importDataBox:SetText("");
-        ArenaAnalyticsScrollFrame.importFrame:Hide();
-        ArenaAnalyticsScrollFrame.importFrame = nil;
+    if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil and ArenaAnalytics:hasStoredMatches()) then
+        ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
+        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText("");
+        ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
+        ArenaAnalyticsScrollFrame.importDialogFrame = nil;
     end
 end
 
@@ -203,6 +203,15 @@ function Import:parseRawData(data)
         -- Hide the dialog if we have existing matches
         Import:tryHide();
     end
+end
+
+-- Returns true, false or nil based on input strings "1", "0" or ""
+local function GetBoolFromBinaryImport(value)
+    if(value == "1" or value == "0") then
+        return value == "1";
+    end
+
+    return nil;
 end
 
 ---------------------------------
@@ -528,17 +537,17 @@ function Import:parseCachedValues_ArenaAnalytics(nextIndex)
             table.insert(arena, cachedValues[i])
         else
             local arenaTable = {
-                ["date"] = arena[1],
-                ["season"] = arena[2],
+                ["date"] = tonumber(arena[1]),
+                ["season"] = tonumber(arena[2]),
                 ["bracket"] = arena[3],
                 ["map"] = arena[4],
                 ["duration"] = tonumber(arena[5]) or 0,
-                ["won"] = (arena[6] ~= "") and (arena[6] == "1" and "1" or "0") or nil, -- Won, lost or nil
+                ["won"] = GetBoolFromBinaryImport(arena[6]), -- Won, lost or nil
                 ["isRated"] = arena[7] == "1",
-                ["rating"] = arena[8],
-                ["mmr"] = arena[9],
-                ["enemyRating"] = arena[10],
-                ["enemyMmr"] = arena[11],
+                ["rating"] = tonumber(arena[8]),
+                ["mmr"] = tonumber(arena[9]),
+                ["enemyRating"] = tonumber(arena[10]),
+                ["enemyMmr"] = tonumber(arena[11]),
                 ["party1Name"] = arena[12], -- Party names
                 ["party2Name"] = arena[13],
                 ["party3Name"] = arena[14],
@@ -559,26 +568,26 @@ function Import:parseCachedValues_ArenaAnalytics(nextIndex)
                 ["party3Spec"] = arena[29],
                 ["party4Spec"] = arena[30],
                 ["party5Spec"] = arena[31],
-                ["party1Kills"] = arena[32], -- Party Kills stats
-                ["party2Kills"] = arena[33],
-                ["party3Kills"] = arena[34],
-                ["party4Kills"] = arena[35],
-                ["party5Kills"] = arena[36],
-                ["party1Deaths"] = arena[37], -- Party Death stats
-                ["party2Deaths"] = arena[38],
-                ["party3Deaths"] = arena[39],
-                ["party4Deaths"] = arena[40],
-                ["party5Deaths"] = arena[41],
-                ["party1Damage"] = arena[42], -- Party Damage stats
-                ["party2Damage"] = arena[43],
-                ["party3Damage"] = arena[44],
-                ["party4Damage"] = arena[45],
-                ["party5Damage"] = arena[46],
-                ["party1Healing"] = arena[47], -- Party Healing stats
-                ["party2Healing"] = arena[48],
-                ["party3Healing"] = arena[49],
-                ["party4Healing"] = arena[50],
-                ["party5Healing"] = arena[51],
+                ["party1Kills"] = tonumber(arena[32]), -- Party Kills stats
+                ["party2Kills"] = tonumber(arena[33]),
+                ["party3Kills"] = tonumber(arena[34]),
+                ["party4Kills"] = tonumber(arena[35]),
+                ["party5Kills"] = tonumber(arena[36]),
+                ["party1Deaths"] = tonumber(arena[37]), -- Party Death stats
+                ["party2Deaths"] = tonumber(arena[38]),
+                ["party3Deaths"] = tonumber(arena[39]),
+                ["party4Deaths"] = tonumber(arena[40]),
+                ["party5Deaths"] = tonumber(arena[41]),
+                ["party1Damage"] = tonumber(arena[42]), -- Party Damage stats
+                ["party2Damage"] = tonumber(arena[43]),
+                ["party3Damage"] = tonumber(arena[44]),
+                ["party4Damage"] = tonumber(arena[45]),
+                ["party5Damage"] = tonumber(arena[46]),
+                ["party1Healing"] = tonumber(arena[47]), -- Party Healing stats
+                ["party2Healing"] = tonumber(arena[48]),
+                ["party3Healing"] = tonumber(arena[49]),
+                ["party4Healing"] = tonumber(arena[50]),
+                ["party5Healing"] = tonumber(arena[51]),
                 ["enemy1Name"] = arena[52], -- Enemy names
                 ["enemy2Name"] = arena[53],
                 ["enemy3Name"] = arena[54],
@@ -599,26 +608,26 @@ function Import:parseCachedValues_ArenaAnalytics(nextIndex)
                 ["enemy3Spec"] = arena[69],
                 ["enemy4Spec"] = arena[70],
                 ["enemy5Spec"] = arena[71],
-                ["enemy1Kills"] = arena[72], -- Enemy Kills stats
-                ["enemy2Kills"] = arena[73],
-                ["enemy3Kills"] = arena[74],
-                ["enemy4Kills"] = arena[75],
-                ["enemy5Kills"] = arena[76],
-                ["enemy1Deaths"] = arena[77], -- Enemy Death stats
-                ["enemy2Deaths"] = arena[78],
-                ["enemy3Deaths"] = arena[79],
-                ["enemy4Deaths"] = arena[80],
-                ["enemy5Deaths"] = arena[81],
-                ["enemy1Damage"] = arena[82], -- Enemy Damage stats
-                ["enemy2Damage"] = arena[83],
-                ["enemy3Damage"] = arena[84],
-                ["enemy4Damage"] = arena[85],
-                ["enemy5Damage"] = arena[86],
-                ["enemy1Healing"] = arena[87], -- Enemy Healing stats
-                ["enemy2Healing"] = arena[88],
-                ["enemy3Healing"] = arena[89],
-                ["enemy4Healing"] = arena[90],
-                ["enemy5Healing"] = arena[91],
+                ["enemy1Kills"] = tonumber(arena[72]), -- Enemy Kills stats
+                ["enemy2Kills"] = tonumber(arena[73]),
+                ["enemy3Kills"] = tonumber(arena[74]),
+                ["enemy4Kills"] = tonumber(arena[75]),
+                ["enemy5Kills"] = tonumber(arena[76]),
+                ["enemy1Deaths"] = tonumber(arena[77]), -- Enemy Death stats
+                ["enemy2Deaths"] = tonumber(arena[78]),
+                ["enemy3Deaths"] = tonumber(arena[79]),
+                ["enemy4Deaths"] = tonumber(arena[80]),
+                ["enemy5Deaths"] = tonumber(arena[81]),
+                ["enemy1Damage"] = tonumber(arena[82]), -- Enemy Damage stats
+                ["enemy2Damage"] = tonumber(arena[83]),
+                ["enemy3Damage"] = tonumber(arena[84]),
+                ["enemy4Damage"] = tonumber(arena[85]),
+                ["enemy5Damage"] = tonumber(arena[86]),
+                ["enemy1Healing"] = tonumber(arena[87]), -- Enemy Healing stats
+                ["enemy2Healing"] = tonumber(arena[88]),
+                ["enemy3Healing"] = tonumber(arena[89]),
+                ["enemy4Healing"] = tonumber(arena[90]),
+                ["enemy5Healing"] = tonumber(arena[91]),
             }
 
             arenasParsedThisFrame = arenasParsedThisFrame + 1;
@@ -701,6 +710,8 @@ function Import:addCachedArenasToMatchHistory_ArenaAnalytics(nextIndex)
         end        
     end
 
+    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+
     Import:completeImport();
 end
 
@@ -776,14 +787,18 @@ end
 -- ArenaAnalytics export
 ---------------------------------
 
-local exportTable = {}
 -- Returns a CSV-formatted string using MatchHistoryDB info
 function Export:combineExportCSV()
     if(not ArenaAnalytics:hasStoredMatches()) then
+        ArenaAnalytics:Log("Export: No games to export!");
         return "No games to export!";
     end
 
-    exportTable = {}
+    if(ArenaAnalyticsScrollFrame.exportDialogFrame) then
+        ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
+    end
+
+    local exportTable = {}
     local exportHeader = "ArenaAnalytics:".. 
 
     -- Match data
@@ -811,25 +826,29 @@ function Export:combineExportCSV()
 
     tinsert(exportTable, exportHeader);
 
-    Export:addMatchesToExport()
+    Export:addMatchesToExport(exportTable)
 end
 
-function Export:addMatchesToExport(nextIndex)
+function Export:addMatchesToExport(exportTable, nextIndex)
+    ArenaAnalytics:Log("Attempting export.. addMatchesToExport", nextIndex);
+
     nextIndex = nextIndex or 1;
     
-    arenasAddedThisFrame = 0;
-
-    local teams = {"team", "enemyTeam"};
     local playerData = {"name", "race", "class", "spec", "kills", "deaths", "damage", "healing"};
-
+    
+    local arenasAddedThisFrame = 0;
     for i = nextIndex, #MatchHistoryDB do
         local match = MatchHistoryDB[i];
-
+        
         local victory = match["won"] ~= nil and (match["won"] and "1" or "0") or "";
         
+        if(match["season"] ~= nil) then
+            ArenaAnalytics:Log(match["season"]);
+        end
+
         -- Add match data
         local matchCSV = match["date"] .. ","
-        .. (match["season"] or "") .. ","
+        .. (match["season"] or ArenaAnalytics:computeSeasonFromMatchDate(match["date"]) or "") .. ","
         .. (match["bracket"] or "") .. ","
         .. (match["map"] or "") .. ","
         .. (match["duration"] or "") .. ","
@@ -839,8 +858,9 @@ function Export:addMatchesToExport(nextIndex)
         .. (match["mmr"] or "") .. ","
         .. (match["enemyRating"] or "") .. ","
         .. (match["enemyMmr"] or "") .. ","
-
+        
         -- Add team data 
+        local teams = {"team", "enemyTeam"};
         for _,teamKey in ipairs(teams) do
             local team = match[teamKey];
             
@@ -860,13 +880,13 @@ function Export:addMatchesToExport(nextIndex)
 
         arenasAddedThisFrame = arenasAddedThisFrame + 1;
 
-        if(arenasAddedThisFrame >= 1000 and i < #MatchHistoryDB) then
-            C_Timer.After(0, function() Export:addMatchesToExport(i + 1) end);
+        if(arenasAddedThisFrame >= 10000 and i < #MatchHistoryDB) then
+            C_Timer.After(0, function() Export:addMatchesToExport(exportTable, i + 1) end);
             return;
         end
     end
 
-    Export:FinalizeExportCSV();
+    Export:FinalizeExportCSV(exportTable);
 end
 
 local function formatNumber(num)
@@ -875,18 +895,22 @@ local function formatNumber(num)
     return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
 end
 
-function Export:FinalizeExportCSV()
+function Export:FinalizeExportCSV(exportTable)
+    ArenaAnalytics:Log("Attempting export.. FinalizeExportCSV");
+
     -- Show export with the new CSV string
     if (ArenaAnalytics:hasStoredMatches()) then
-        ArenaAnalyticsScrollFrame.exportFrameContainer:Show();
-        ArenaAnalyticsScrollFrame.exportFrame:SetText(table.concat(exportTable, "\n"));
-	    ArenaAnalyticsScrollFrame.exportFrame:HighlightText();
-
-        ArenaAnalyticsScrollFrame.exportFrameContainer.totalText:SetText("Total arenas: " .. formatNumber(#exportTable - 1));
-        ArenaAnalyticsScrollFrame.exportFrameContainer.lengthText:SetText("Export length: " .. formatNumber(#ArenaAnalyticsScrollFrame.exportFrame:GetText()));
-    else
-        ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
+        ArenaAnalytics.AAtable:CreateExportDialogFrame();
+        ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetText(table.concat(exportTable, "\n"));
+	    ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:HighlightText();
+        
+        ArenaAnalyticsScrollFrame.exportDialogFrame.totalText:SetText("Total arenas: " .. formatNumber(#exportTable - 1));
+        ArenaAnalyticsScrollFrame.exportDialogFrame.lengthText:SetText("Export length: " .. formatNumber(#ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:GetText()));
+        ArenaAnalyticsScrollFrame.exportDialogFrame:Show();
+    elseif(ArenaAnalyticsScrollFrame.exportDialogFrame) then
+        ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
     end
 
-    exportTable = {}
+    exportTable = nil;
+    collectgarbage("collect")
 end

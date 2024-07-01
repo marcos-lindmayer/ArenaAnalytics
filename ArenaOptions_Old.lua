@@ -3,65 +3,6 @@ ArenaAnalytics.Options_OLD = {};
 
 local Options_OLD = ArenaAnalytics.Options_OLD;
 
--- Creates the Export DB frame
-local function createExportFrame()
-	if(ArenaAnalyticsScrollFrame.exportFrameContainer == nil) then
-		ArenaAnalyticsScrollFrame.exportFrameContainer = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
-		ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameStrata("DIALOG");
-		ArenaAnalyticsScrollFrame.exportFrameContainer:SetFrameLevel(10);
-		ArenaAnalyticsScrollFrame.exportFrameContainer:SetPoint("CENTER", ArenaAnalyticsScrollFrame, "CENTER", 0, 0);
-		ArenaAnalyticsScrollFrame.exportFrameContainer:SetSize(400, 150);
-
-		-- Make frame draggable
-		ArenaAnalyticsScrollFrame.exportFrameContainer:SetMovable(true)
-		ArenaAnalyticsScrollFrame.exportFrameContainer:EnableMouse(true)
-		ArenaAnalyticsScrollFrame.exportFrameContainer:RegisterForDrag("LeftButton")
-		ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.exportFrameContainer.StartMoving)
-		ArenaAnalyticsScrollFrame.exportFrameContainer:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.exportFrameContainer.StopMovingOrSizing)
-
-		ArenaAnalyticsScrollFrame.exportFrameContainer.Title = ArenaAnalyticsScrollFrame.exportFrameContainer:CreateFontString(nil, "OVERLAY");
-		ArenaAnalyticsScrollFrame.exportFrameContainer.Title:SetPoint("TOP", ArenaAnalyticsScrollFrame.exportFrameContainer, "TOP", -10, -5);
-		ArenaAnalyticsScrollFrame.exportFrameContainer.Title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-		ArenaAnalyticsScrollFrame.exportFrameContainer.Title:SetText("ArenaAnalytics Export");
-
-		ArenaAnalyticsScrollFrame.exportFrame = CreateFrame("EditBox", "exportFrameEditbox", ArenaAnalyticsScrollFrame.exportFrameContainer, "InputBoxTemplate");
-		ArenaAnalyticsScrollFrame.exportFrame:SetPoint("CENTER", ArenaAnalyticsScrollFrame.exportFrameContainer, "CENTER");
-		ArenaAnalyticsScrollFrame.exportFrame:SetSize(350, 25);
-		ArenaAnalyticsScrollFrame.exportFrame:SetAutoFocus(true);
-		ArenaAnalyticsScrollFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
-		ArenaAnalyticsScrollFrame.exportFrame:SetMultiLine(false);
-		ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
-		
-		ArenaAnalyticsScrollFrame.exportFrameContainer.WarningText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportFrameContainer,"BOTTOM", ArenaAnalyticsScrollFrame.exportFrame, "TOP", 13, 0, "|cffff0000Warning:|r Pasting long string here will crash WoW!");
-		ArenaAnalyticsScrollFrame.exportFrameContainer.totalText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportFrameContainer,"TOPLEFT", ArenaAnalyticsScrollFrame.exportFrame, "BOTTOMLEFT", -3, 0, "Total arenas: " .. #MatchHistoryDB);
-		ArenaAnalyticsScrollFrame.exportFrameContainer.lengthText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportFrameContainer,"TOPRIGHT", ArenaAnalyticsScrollFrame.exportFrame, "BOTTOMRIGHT", -3, 0, "Export length: 0");
-
-		ArenaAnalyticsScrollFrame.exportFrameContainer.selectBtn = ArenaAnalytics.AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.exportFrameContainer, "BOTTOM", 0, 17, "Select All");
-		ArenaAnalyticsScrollFrame.exportFrameContainer.selectBtn:SetScript("OnClick", function() ArenaAnalyticsScrollFrame.exportFrame:HighlightText() end);
-		
-		-- Escape to close
-		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEscapePressed", function(self)
-			ArenaAnalyticsScrollFrame.exportFrame:ClearFocus();
-			ArenaAnalyticsScrollFrame.exportFrameContainer:Hide();
-		end);
-
-		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEnterPressed", function(self)
-			self:ClearFocus();
-		end);
-
-		-- Highlight on focus gained
-		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnEditFocusGained", function(self)
-			self:HighlightText();
-		end);
-		
-		-- Clear text
-		ArenaAnalyticsScrollFrame.exportFrame:SetScript("OnHide", function(self)
-			-- Garbage collect
-			self:SetText("");
-		end);
-	end
-end
-
 function Options_OLD:createSettingsFrame()
 	local paddingLeft = 25;
 	ArenaAnalyticsScrollFrame.settingsFrame = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame, "BasicFrameTemplateWithInset")
@@ -203,7 +144,7 @@ function Options_OLD:createSettingsFrame()
 		ArenaAnalyticsScrollFrame.resetBtn:Disable();
         ArenaAnalytics:Print("Match history deleted!");
 		ArenaAnalytics.AAtable:handleArenaCountChanged();
-		ArenaAnalytics.AAtable:tryShowimportFrame();
+		ArenaAnalytics.AAtable:tryShowimportDialogFrame();
     end);
     
     ArenaAnalyticsScrollFrame.allowReset = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_allowReset", ArenaAnalyticsScrollFrame.settingsFrame, "OptionsSmallCheckButtonTemplate");

@@ -97,11 +97,13 @@ ArenaAnalytics.commands = {
 		if(ArenaAnalytics.skipDebugLog and ArenaAnalytics.skipDebugForceNilError) then
 			ArenaAnalytics:Print("Clearing MatchHistoryDB requires enabling /aa debug. Not intended for users!");
 		else -- Debug mode is enabled, allow debug clearing the DB
-			ArenaAnalytics:Log("Clearing MatchHistoryDB.");
-			MatchHistoryDB = {}
-			ArenaAnalytics.AAtable:tryShowimportFrame();
-			ArenaAnalytics.Filter:refreshFilters();
-			ArenaAnalytics.unsavedArenaCount = 0;
+			if (ArenaAnalytics:hasStoredMatches()) then
+				ArenaAnalytics:Log("Clearing MatchHistoryDB.");
+				MatchHistoryDB = {}
+				ArenaAnalytics.AAtable:tryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
+				ArenaAnalytics.Filter:refreshFilters();
+				ArenaAnalytics.unsavedArenaCount = 0;
+			end
 		end
 	end,
 
