@@ -94,27 +94,16 @@ function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
         return false;
     end
 
-	-- Same size teams, all players must be in both. (Expected, due to same bracket)
-    if(#arena1["team"] == #arena2["team"]) then
-		for i = 1, #arena1["team"] do
-			if(arena1["team"][i] and arena2["team"][i]) then
-				if (arena1["team"][i]["name"] ~= arena2["team"][i]["name"]) then
-					return false;
-				end
-			end
-		end
-	else -- If one team is missing players in the same bracket, make sure all existing players are the same.
-		local teamOneIsSmaller = (#arena1["team"] < #arena2["team"]);
+	-- In case one team is smaller, make sure we loop through that one.
+	local teamOneIsSmaller = (#arena1["team"] < #arena2["team"]);
+	local smallerTeam = teamOneIsSmaller and arena1["team"] or arena2["team"];
+	local largerTeam = teamOneIsSmaller and arena2["team"] or arena1["team"];
 
-		local smallerTeam = teamOneIsSmaller and arena1["team"] or arena2["team"];
-		local largerTeam = teamOneIsSmaller and arena2["team"] or arena1["team"];
-
-		for i = 1, #smallerTeam do
-			local player = smallerTeam[i]["name"];
-			if (smallerTeam[i]["name"]) then
-				if(not ArenaAnalytics:teamContainsPlayer(largerTeam, player)) then
-					return false;
-				end
+	for i = 1, #smallerTeam do
+		local player = smallerTeam[i]["name"];
+		if (player) then
+			if(not ArenaAnalytics:teamContainsPlayer(largerTeam, player)) then
+				return false;
 			end
 		end
 	end   
@@ -236,19 +225,19 @@ function ArenaAnalytics:getLastRating(teamSize)
 end
 
 function ArenaAnalytics:SortGroup(group, isPlayerPriority)
-	local myName, myRealm = UnitFullName("player");
-	local myFullName = myName.."-"..myRealm;
-
 	if(not group or #group == 0) then
 		return;
 	end
+	
+	local myName, myRealm = UnitFullName("player");
+	local myFullName = myName.."-"..myRealm;
 
-    table.sort(group, function(a, b)
-		local classA, classB = a["class"], b["class"];
-        local specA, specB = a["spec"], b["spec"];
+    table.sort(group, function(playerA, playerB)
+		local classA, classB = playerA["class"], playerB["class"];
+        local specA, specB = playerA["spec"], playerB["spec"];
+		local nameA, nameB = playerA["name"], playerB["name"];
 		
         if(isPlayerPriority) then
-			local nameA, nameB = a["name"], b["name"];
 			if(myName) then
 				if(nameA == myFullName or nameA == myName) then
 					return true;
@@ -279,13 +268,17 @@ function ArenaAnalytics:SortGroup(group, isPlayerPriority)
             end
         end
 
-		local specID = ArenaAnalytics.Constants:getAddonSpecializationID(classA, specA);
-        local priorityValueA = ArenaAnalytics.Constants:getSpecPriorityValue(specID);
+		local specID_A = ArenaAnalytics.Constants:getAddonSpecializationID(classA, specA);
+        local priorityValueA = ArenaAnalytics.Constants:getSpecPriorityValue(specID_A);
 
-		specID = ArenaAnalytics.Constants:getAddonSpecializationID(classB, specB);
-        local priorityValueB = ArenaAnalytics.Constants:getSpecPriorityValue(specID);
+		local specID_B = ArenaAnalytics.Constants:getAddonSpecializationID(classB, specB);
+        local priorityValueB = ArenaAnalytics.Constants:getSpecPriorityValue(specID_B);
 
-        return priorityValueA > priorityValueB;
+		if(priorityValueA == priorityValueB) then
+			return nameA < nameB;
+		end
+
+        return priorityValueA < priorityValueB;
     end);
 end
 
@@ -331,7 +324,7 @@ function AAmatch:getArenaComp(teamTable, bracket)
 			return nil;
 		end
 
-		local specID = ArenaAnalytics.Constants:getAddonSpecializationID(player["class"] .. "|" .. player["spec"]);
+		local specID = ArenaAnalytics.Constants:getAddonSpecializationID(player["class"], player["spec"], true);
 		if(specID == nil) then
 			return nil;
 		end

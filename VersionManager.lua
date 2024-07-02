@@ -127,7 +127,13 @@ local function convertCompToShortFormat(comp, bracket)
     
     local newComp = {}
     for i=1, size do
-        local specID = ArenaAnalytics.Constants:getAddonSpecializationID(comp[i]);
+        local specKeyString = comp[i];
+        if(specKeyString == nil) then
+            return nil;
+        end
+
+        local class, spec = specKeyString:match("([^|]+)|(.+)");
+        local specID = ArenaAnalytics.Constants:getAddonSpecializationID(class, spec, true);
         if(specID == nil) then
             return nil;
         end

@@ -72,15 +72,18 @@ ArenaAnalytics.commands = {
 	end,
 
 	["updatesessions"] = function()
-		ArenaAnalytics:Print("Updating sessions in MatchHistoryDB");
+		ArenaAnalytics:Print("Updating sessions in MatchHistoryDB.");
 		ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+
+        ArenaAnalyticsScrollFrame:Hide();
 	end,
 
 	["updateseasons"] = function()
-		ArenaAnalytics:Print("Updating seasons in MatchHistoryDB");
+		ArenaAnalytics:Print("Updating seasons in MatchHistoryDB.");
+
 		for i=1, #MatchHistoryDB do
 			local match = MatchHistoryDB[i];
-			local season = match["season"];
+			local season = match and match["season"] or nil;
 			if(season == nil or season == 0) then
 				season = ArenaAnalytics:computeSeasonFromMatchDate(match["date"]);
 				if(season) then
@@ -91,6 +94,22 @@ ArenaAnalytics.commands = {
 				end
 			end
 		end
+
+        ArenaAnalyticsScrollFrame:Hide();
+	end,
+
+	["updategroupsort"] = function()
+		ArenaAnalytics:Print("Updating group sorting in MatchHistoryDB.");
+
+		for i=1, #MatchHistoryDB do
+			local match = MatchHistoryDB[i];
+			if(match) then
+				ArenaAnalytics:SortGroup(match["team"], true);
+				ArenaAnalytics:SortGroup(match["enemyTeam"], false);
+			end
+		end
+		
+        ArenaAnalyticsScrollFrame:Hide();
 	end,
 
 	["debugcleardb"] = function()
@@ -108,7 +127,10 @@ ArenaAnalytics.commands = {
 	end,
 
 	["test"] = function()
-
+		local specKeyString = "Mage|Frost";
+        local class, spec = specKeyString:match("([^|]+)|(.+)");
+        local specID = ArenaAnalytics.Constants:getAddonSpecializationID(class, spec);
+		ArenaAnalytics:Log(specID, class, spec)
 	end,	
 };
 

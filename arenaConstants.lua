@@ -114,9 +114,17 @@ local addonSpecializationIDs = {
     ["Priest|Holy"] = 92,
     ["Priest|Shadow"] = 93,
 }
-function Constants:getAddonSpecializationID(spec)
-    if spec == nil then return nil end;
-    return tonumber(addonSpecializationIDs[spec]);
+function Constants:getAddonSpecializationID(class, spec, forceExactSpec)
+    if(class == nil) then 
+        return nil;
+    end
+
+    if(forceExactSpec and spec == nil) then
+        return nil;
+    end
+
+    local specKey = spec and (class .. "|" .. spec) or class;
+    return tonumber(addonSpecializationIDs[specKey]);
 end
 function Constants:getAddonClassID(class)
     if class == nil then return nil end;
