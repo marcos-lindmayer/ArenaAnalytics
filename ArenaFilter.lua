@@ -2,7 +2,6 @@ local _, ArenaAnalytics = ... -- Namespace
 ArenaAnalytics.Filter = {}
 
 local Filter = ArenaAnalytics.Filter;
-ArenaAnalytics:Log(Search == nil)
 
 -- Currently applied filters
 local currentFilters = {}

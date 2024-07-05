@@ -178,7 +178,7 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
-ArenaAnalytics.skipDebugLog = true;
+ArenaAnalytics.skipDebugLog = false;
 function ArenaAnalytics:Log(...)
 	if ArenaAnalytics.skipDebugLog then 
 		return;
@@ -320,8 +320,8 @@ function ArenaAnalytics:init()
 	----------------------------------
 	-- Register Slash Commands
 	----------------------------------
-	SLASH_AuraTracker1 = "/aa";
-	SLASH_AuraTracker2 = "/arenaanalytics";
+	SLASH_AuraTracker1 = "/AA";
+	SLASH_AuraTracker2 = "/ArenaAnalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
 	ArenaAnalytics:updateLastSession();

@@ -4,6 +4,7 @@ ArenaAnalytics.AAtable = HybridScrollMixin;
 
 local AAtable = ArenaAnalytics.AAtable
 local Filter = ArenaAnalytics.Filter;
+local Search = ArenaAnalytics.Search;
 
 local hasLoaded = false;
 
@@ -237,25 +238,26 @@ function AAtable:OnLoad()
     end);
 
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEscapePressed", function() 
-        ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrentDisplay("Filter_Search"));
+        ArenaAnalyticsScrollFrame.searchBox:SetText(Search:GetDisplay());
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
+    end);
+
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnChar", function(self)
+        Search:Update(self:GetText());
+        self:SetText(Search:GetDisplay());
     end);
         
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextSet", function(self) 
-        if(self:GetText() == "" and (Filter:GetCurrentDisplay("Filter_Search")) ~= "") then
-            ArenaAnalytics.Filter:commitSearch("");
+        if(self:GetText() == "" and not Search:IsEmpty()) then
+            Search:CommitSearch("");
             self:SetText("");
         end
     end);
         
-    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEditFocusLost", function() 
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEditFocusLost", function(self) 
         -- Clear white spaces
-        local search = ArenaAnalyticsScrollFrame.searchBox:GetText();
-
-        ArenaAnalytics.Filter:commitSearch(search);
-
-        -- Compact double spaces to single spaces in the search box
-        ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrentDisplay("Filter_Search"));
+        Search:CommitSearch(self:GetText());
+        self:SetText(Search:GetDisplay());
     end);
 
     -- Dropdown data
@@ -595,8 +597,8 @@ local function addPlayerToQuickSearch(previousSearch, prefix, playerToAdd)
         newSearch = previousSearch .. newSearch;
     end
     
-    ArenaAnalytics.Filter:commitSearch(newSearch);
-    ArenaAnalyticsScrollFrame.searchBox:SetText(Filter:GetCurrentDisplay("Filter_Search"));
+    Search:CommitSearch(newSearch);
+    ArenaAnalyticsScrollFrame.searchBox:SetText(Search:GetDisplay());
 end
 
 local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, matchKey, scrollEntry)
