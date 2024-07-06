@@ -256,6 +256,28 @@ activePlayerSegments = {};
 -- Search matching logic
 ---------------------------------
 
+local function CheckPlayerName(playerName, searchValue, isExact)
+    assert(searchValue ~= nil);
+    
+    if(playerName == nil) then
+        return false;
+    end
+
+    playerName = playerName:lower();
+
+    if(isExact) then
+        if(not searchValue:find("-")) then
+            return searchValue == playerName:match("[^-]+");
+        else
+            return searchValue == playerName:gsub("-", "%%-");
+        end
+    end
+
+    -- Not exact (Partial search token)
+    return playerName:gsub("-", "%-"):find(searchValue);
+end
+
+-- NOTE: This is the main part to modify to handle actual token matching logic
 -- Returns true if a given type on a player matches the given value
 local function CheckTypeForPlayer(searchType, token, player)
     assert(token and token["value"] and token["value"] ~= "");
@@ -268,15 +290,15 @@ local function CheckTypeForPlayer(searchType, token, player)
     -- Alt search
     if (searchType == "alts") then
         if(token["value"]:find('/') ~= nil) then
-            local playerName = ToLower(player["name"]);
-            if(not playerName) then
+            local name = ToLower(player["name"]);
+            if(not name) then
                 return false;
             end
 
             -- Split value into table
             for value in token["value"]:gmatch("([^/]+)") do
-                local isAltMatch = not token["exact"] and playerName:find(value) or (value == playerName);
-                if(isAltMatch) then
+                --local isAltMatch = not token["exact"] and playerName:find(value) or (value == playerName);
+                if(CheckPlayerName(name, value, token["exact"])) then
                     return true;
                 end
             end
@@ -294,6 +316,10 @@ local function CheckTypeForPlayer(searchType, token, player)
         else
             return false;
         end
+    end
+
+    if(searchType == "name") then
+        return CheckPlayerName(player["name"], token["value"], token["exact"]);
     end
 
     local playerValue = ToLower(player[searchType]);
