@@ -590,7 +590,7 @@ local function ProcessInput(input)
             if #currentSegment.Tokens == 0 and currentWord == "" then
                 currentSegment.team = "enemyTeam";
             else
-                currentWord = currentWord .. "-";
+                currentWord = currentWord .. '-';
             end
             displayString = displayString .. char;
         elseif char == ' ' then
@@ -643,11 +643,11 @@ local function ProcessInput(input)
                 displayString = displayString .. '(' .. scope .. ')';
             else -- Invalid scope
                 -- TODO: Add red color
-                displayString = displayString .. "|cffff0000" .. char .. "|r";
+                displayString = displayString .. ColorizeInvalid(char);
             end
         elseif char == ")" then
             -- Ignore invalid closing of scope
-            displayString = displayString .. "|cffff0000" .. char .. "|r";
+            displayString = displayString .. ColorizeInvalid(char);
         else
             currentWord = currentWord .. char
             displayString = displayString .. char;
