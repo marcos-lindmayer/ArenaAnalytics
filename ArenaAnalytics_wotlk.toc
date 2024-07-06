@@ -8,22 +8,21 @@
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsCharacterSettings
 
 HybridScroll.xml
-init.lua
 ArenaOptions.lua
+init.lua
 arenaConstants.lua
 arenaSpecSpells_wotlk.lua
 arenaAPI_wotlk.lua
 arenaAnalytics.lua
+ArenaSearch.lua
 ArenaFilter.lua
 ArenaMoreFilters.lua
-ArenaSearch.lua
 ArenaImportExport.lua
 iconClass.lua
 arenaTable.lua
 ArenaEvents.lua
 ArenaTracker.lua
 VersionManager.lua
-ArenaOptions.lua
 ArenaMatchSelection.lua
 ArenaTooltips.lua
 ArenaScrollableDropdown.lua

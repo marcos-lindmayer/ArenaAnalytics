@@ -8,8 +8,8 @@
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsCharacterSettings
 
 HybridScroll.xml
-init.lua
 ArenaOptions.lua
+init.lua
 arenaConstants.lua
 arenaSpecSpells_cata.lua
 arenaAPI_cata.lua

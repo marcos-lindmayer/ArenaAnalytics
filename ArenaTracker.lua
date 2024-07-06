@@ -280,7 +280,6 @@ function ArenaTracker:HandleArenaExit()
 		
 		if(oldRating == nil or oldRating == "SKIRMISH") then
 			oldRating = ArenaAnalytics:getLastRating();
-			ForceDebugNilError(nil);
 		end
 		
 		local deltaRating = newRating - oldRating;

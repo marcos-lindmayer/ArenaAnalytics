@@ -5,6 +5,8 @@ ArenaAnalytics.Export = {};
 local Import = ArenaAnalytics.Import;
 local Export = ArenaAnalytics.Export;
 
+local Options = ArenaAnalytics.Options;
+
 local isImporting = false;
 local cachedValues = {};
 local cachedArenas = {};
@@ -49,7 +51,7 @@ local function CanImportMatchByRelativeTime(startTime)
 
     if(existingArenaCount == 0) then
         doesMatchPass = true;
-    elseif(not ArenaAnalyticsSettings["allowImportDataMerge"]) then
+    elseif(not Options:Get("allowImportDataMerge")) then
         return false; -- Backup catch
     elseif(startTime and earliestStartTime and latestStartTime) then
         if(startTime == 0) then

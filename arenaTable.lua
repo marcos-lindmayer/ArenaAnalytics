@@ -3,8 +3,11 @@ HybridScrollMixin = {};
 ArenaAnalytics.AAtable = HybridScrollMixin;
 
 local AAtable = ArenaAnalytics.AAtable
+
+local Options = ArenaAnalytics.Options;
 local Filter = ArenaAnalytics.Filter;
 local Search = ArenaAnalytics.Search;
+
 
 local hasLoaded = false;
 
@@ -682,7 +685,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, matchK
                 local specIcon = spec and ArenaAnalyticsGetSpecIcon(spec, class) or nil;
                 playerFrame.specOverlay.texture:SetTexture(specIcon);
 
-                if (ArenaAnalyticsSettings["alwaysShowSpecOverlay"] == false) then
+                if (not Options:Get("alwaysShowSpecOverlay")) then
                     playerFrame.specOverlay:Hide();
                 end
             else
@@ -712,7 +715,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, matchK
                     playerFrame.deathOverlay.texture:SetSize(26,26)
                     playerFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.27);
                 end
-                if (ArenaAnalyticsSettings["alwaysShowDeathOverlay"] == false) then
+                if (not Options:Get("alwaysShowDeathOverlay")) then
                     playerFrame.deathOverlay:Hide();
                 end
             elseif (playerFrame.deathOverlay ~= nil) then
@@ -739,14 +742,14 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
 
     for i = 1, #matchData do
         if (matchData[i].specOverlay) then
-            if (visible or ArenaAnalyticsSettings["alwaysShowSpecOverlay"]) then
+            if (visible or Options:Get("alwaysShowSpecOverlay")) then
                 matchData[i].specOverlay:Show();
             else
                 matchData[i].specOverlay:Hide();
             end
         end
         if (matchData[i].deathOverlay) then
-            if (visible or ArenaAnalyticsSettings["alwaysShowDeathOverlay"]) then
+            if (visible or Options:Get("alwaysShowDeathOverlay")) then
                 matchData[i].deathOverlay:Show();
             else
                 matchData[i].deathOverlay:Hide();
@@ -792,8 +795,8 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
     -- Dropdown data
     local filter = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
     local title = isEnemyComp and "Enemy Comp: Games | Comp | Winrate" or "Comp: Games | Comp | Winrate";
-    local default = isDisabled and disabledText or nil;
     local entries = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp);
+    local default = isDisabled and disabledText or nil;
 
     local dropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 265, 25);
     local parent = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
@@ -876,7 +879,7 @@ function AAtable:getLastGame(skipSkirmish)
 end
 
 function AAtable:checkUnsavedWarningThreshold()
-    if(ArenaAnalytics.unsavedArenaCount >= ArenaAnalyticsSettings["unsavedWarningThreshold"]) then
+    if(ArenaAnalytics.unsavedArenaCount >= Options:Get("unsavedWarningThreshold")) then
         -- Show and update unsaved arena threshold
         local unsavedWarningText = "|cffff0000" .. ArenaAnalytics.unsavedArenaCount .." unsaved matches!\n |cff00cc66/reload|r |cffff0000to save!|r"
         ArenaAnalyticsScrollFrame.unsavedWarning:SetText(unsavedWarningText);
@@ -983,7 +986,7 @@ function AAtable:RefreshLayout()
         else
             ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
 
-            if(not ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] and not ArenaAnalyticsSettings["defaultCurrentSessionFilter"]) then
+            if(not Options:Get("defaultCurrentSeasonFilter") and not Options:Get("defaultCurrentSessionFilter")) then
                 ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Disable();
             end
         end

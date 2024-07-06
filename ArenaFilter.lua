@@ -2,6 +2,7 @@ local _, ArenaAnalytics = ... -- Namespace
 ArenaAnalytics.Filter = {}
 
 local Filter = ArenaAnalytics.Filter;
+local Options = ArenaAnalytics.Options;
 
 -- Currently applied filters
 local currentFilters = {}
@@ -18,11 +19,11 @@ local defaults = {
 function Filter:GetDefault(filter, skipOverrides)
     -- overrides
     if(not skipOverrides) then
-        if(filter == "Filter_Date" and ArenaAnalyticsSettings["defaultCurrentSessionFilter"]) then
+        if(filter == "Filter_Date" and Options:Get("defaultCurrentSessionFilter")) then
             return "Current Session";
         end
 
-        if(filter == "Filter_Season" and ArenaAnalyticsSettings["defaultCurrentSeasonFilter"]) then
+        if(filter == "Filter_Season" and Options:Get("defaultCurrentSeasonFilter")) then
             return "Current Season";
         end
     end
@@ -37,8 +38,8 @@ function Filter:resetFilters(forceDefaults)
             ["raw"] = "",
             ["data"] = {}
         },
-        ["Filter_Date"] = not forceDefaults and ArenaAnalyticsSettings["defaultCurrentSessionFilter"] and "Current Session" or defaults["Filter_Date"],
-        ["Filter_Season"] = not forceDefaults and ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] and "Current Season" or defaults["Filter_Season"],
+        ["Filter_Date"] = Filter:GetDefault("Filter_Date", forceDefaults),
+        ["Filter_Season"] = Filter:GetDefault("Filter_Season", forceDefaults),
         ["Filter_Map"] = defaults["Filter_Map"], 
         ["Filter_Bracket"] = defaults["Filter_Bracket"], 
         ["Filter_Comp"] = {
@@ -413,8 +414,7 @@ end
 local function doesMatchPassFilter_Skirmish(match)
     if match == nil then return false end;
 
-    ForceDebugNilError(currentFilters["Filter_Map"]);
-    if(ArenaAnalyticsSettings["showSkirmish"]) then
+    if(Options:Get("showSkirmish")) then
         return true;
     end
     return match["isRated"];
@@ -484,7 +484,7 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
 end
 
 function Filter:doesMatchPassGameSettings(match)
-    if (not ArenaAnalyticsSettings["showSkirmish"] and not match["isRated"]) then
+    if (not Options:Get("showSkirmish") and not match["isRated"]) then
         return false;
     end
 

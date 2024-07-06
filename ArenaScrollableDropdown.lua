@@ -3,8 +3,10 @@ local _, ArenaAnalytics = ...;
 ArenaAnalytics.Dropdown = {};
 local Dropdown = ArenaAnalytics.Dropdown;
 
-local baseName = "ArenaScrollableDropdown"
+local Options = ArenaAnalytics.Options;
+local Filter = ArenaAnalytics.Filter;
 
+local baseName = "ArenaScrollableDropdown";
 local defaultEntryHeight = 25;
 
 local function CreateButton(frameName, dropdown, parent, width, height, text)
@@ -78,17 +80,17 @@ local function GetCompDisplayString(compEntry, isPlayerPriority, isSelectedDispl
     local display = ArenaAnalytics.AAtable:getCompIconString(comp, isPlayerPriority) or "???";
     
     -- Skip adding stats for selected, if option desires them hidden
-    if(isSelectedDisplay and not ArenaAnalyticsSettings["showSelectedCompStats"]) then
+    if(isSelectedDisplay and not Options:Get("showSelectedCompStats")) then
         return display, 0;
     end
 
     -- Setup string values (Prefix and suffix for total played and winrate)
-    local played = compEntry["played"] or 0;
-    local wins = compEntry["wins"] or 0;
-    local winrate = compEntry["winrate"] or 0;
+    local played = compEntry["played"] or "|cffff0000" .. "0" .. "|r";
+    --local wins = compEntry["wins"] or 0;
+    local winrate = compEntry["winrate"] ;
     
-    local playedPrefix = played .. "  ";
-    local winrateSuffix = "  " .. winrate .. "%";
+    local playedPrefix = played and (played .. "  ") or "|cffff0000" .. "0  " .. "|r";
+    local winrateSuffix = winrate and ("  " .. winrate .. "%") or "|cffff0000" .. "  0%" .. "|r";
 
     -- Complete display string including icons
     display = playedPrefix .. display .. winrateSuffix; -- TODO: Consider custom icon management setup?
@@ -97,9 +99,9 @@ local function GetCompDisplayString(compEntry, isPlayerPriority, isSelectedDispl
 end
 
 local function HandleClick(dropdown, value, display)
-    ArenaAnalytics.Filter:SetFilter(dropdown.filter, value, display);
+    Filter:SetFilter(dropdown.filter, value, display);
     
-    local newDisplay = ArenaAnalytics.Filter:GetCurrentDisplay(dropdown.filter);
+    local newDisplay = Filter:GetCurrentDisplay(dropdown.filter);
     dropdown.selected:SetText(newDisplay);
 
     if(dropdown.list:IsShown()) then
@@ -115,7 +117,7 @@ local function SortDropdownEntries(entries, isPlayerPriority)
             return false;
         end
 
-        local sortByTotal = ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"];
+        local sortByTotal = Options:Get("sortCompFilterByTotalPlayed");
         local value1 = tonumber(sortByTotal and (a["played"] or 0) or (a["winrate"] or 0));
         local value2 = tonumber(sortByTotal and (b["played"] or 0) or (b["winrate"] or 0));
         if(value1 and value2) then
@@ -126,7 +128,7 @@ local function SortDropdownEntries(entries, isPlayerPriority)
 end
 
 local function RemoveEntriesByOptions(entries)
-    local outlierLimit = tonumber(ArenaAnalyticsSettings["outliers"]) or 0
+    local outlierLimit = tonumber(Options:Get("outliers")) or 0
     if(outlierLimit > 0) then
         -- Filter out comps by too few matches
         for i=#entries, 1, -1 do
@@ -139,21 +141,38 @@ local function RemoveEntriesByOptions(entries)
     end
 end
 
-local function UpdateSelectedText(selectedFrame, selectedText, filter, entries, isPlayerPriority)
-    if (selectedText == nil or selectedText == "") then
-        for i, entry in ipairs(entries) do 
-            local text = entry["comp"] or entry;
+local function SetSelectedText(selectedFrame, entry, isPlayerPriority)
+    local display, offsetX = GetCompDisplayString(entry, isPlayerPriority, true);
+    selectedFrame.text = ArenaAnalyticsCreateText(selectedFrame, "CENTER", selectedFrame, "CENTER", offsetX, 0, display);
+    selectedFrame:SetText("");
+end
 
-            -- Update the currently displayed entry with new values
-            local currentData = ArenaAnalytics.Filter:GetCurrentData(filter);
-            if(currentData ~= "" and text == currentData) then
-                local display, offsetX = GetCompDisplayString(entry, isPlayerPriority, true);
-                selectedFrame.text = ArenaAnalyticsCreateText(selectedFrame, "CENTER", selectedFrame, "CENTER", offsetX, 0, display);
-                selectedFrame:SetText("");
-            end            
+-- Updating selected comp text
+local function UpdateSelectedCompText(selectedFrame, selectedText, filter, entries, isPlayerPriority)
+    if (selectedText == nil) then
+        local foundCompData = false;
+
+        if(#entries > 1) then
+            for i, entry in ipairs(entries) do 
+                local text = entry["comp"] or entry;
+
+                -- Update the currently displayed entry with new values
+                if(text == Filter:GetCurrentData(filter)) then
+                    foundCompData = true;
+
+                    SetSelectedText(selectedFrame, entry, isPlayerPriority);
+                    break;
+                end            
+            end
+        end
+
+        -- No entries contained data for selected comp with current filters
+        if(not foundCompData and Filter:GetCurrentData(filter) ~= "All" ) then
+            local lastFilter = {["comp"] = Filter:GetCurrentData(filter)};
+            SetSelectedText(selectedFrame, lastFilter, isPlayerPriority);
         end
     else
-        selectedFrame:SetText(selectedText);
+        selectedFrame:SetText(selectedText or "");
         selectedFrame.text = nil;
     end
 end
@@ -203,7 +222,7 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
     local dropdownName = baseName .. "_".. filter;
     local isCompDropdown = filter == "Filter_Comp" or filter == "Filter_EnemyComp";
     local isPlayerPriority = (filter == "Filter_Comp");
-    local maxVisibleEntries = isCompDropdown and ArenaAnalyticsSettings["dropdownVisibileLimit"] or 10;
+    local maxVisibleEntries = isCompDropdown and Options:Get("dropdownVisibileLimit") or 10;
 
     -- Setup main dropdown frame
     local dropdown = CreateFrame("Frame", dropdownName, ArenaAnalyticsScrollFrame);
@@ -243,14 +262,14 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
     end
 
     -- Selected (main) button for this dropdown
-    dropdown.selected = CreateButton(dropdownName .. "_selected", dropdown, nil, width, entryHeight, (selectedText or "???"));
+    dropdown.selected = CreateButton(dropdownName .. "_selected", dropdown, nil, width, entryHeight, (selectedText or ""));
     dropdown.selected:SetPoint("CENTER");
     dropdown.selected:RegisterForClicks("LeftButtonDown", "RightButtonDown");
     dropdown.selected:SetScript("OnClick", function (frame, btn)
         if(btn == "RightButton") then
             -- Clear all filters related to this
-            ArenaAnalytics.Filter:ResetToDefault(filter, true);
-            dropdown.selected:SetText(ArenaAnalytics.Filter:GetCurrentDisplay(filter));
+            Filter:ResetToDefault(filter, true);
+            dropdown.selected:SetText(Filter:GetCurrentDisplay(filter));
             ArenaAnalytics.AAtable:closeFilterDropdowns();
         else
             local dropdown = frame:GetAttribute("dropdown")
@@ -267,7 +286,7 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
     if(isCompDropdown) then
         SortDropdownEntries(entries, isPlayerPriority);
         RemoveEntriesByOptions(entries);
-        UpdateSelectedText(dropdown.selected, selectedText, filter, entries, isPlayerPriority);
+        UpdateSelectedCompText(dropdown.selected, selectedText, filter, entries, isPlayerPriority);
     end
 
     dropdown.entries = {}
@@ -318,7 +337,7 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
 
     -- Functions
     dropdown.Reset = function(self)
-        local default = ArenaAnalytics.Filter:GetDefault(filter)
+        local default = Filter:GetDefault(filter)
 
         HandleClick(self, default);
     end

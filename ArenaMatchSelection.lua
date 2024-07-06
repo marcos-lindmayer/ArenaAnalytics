@@ -2,6 +2,7 @@ local _, ArenaAnalytics = ...;
 ArenaAnalytics.Selection = {};
 
 local Selection = ArenaAnalytics.Selection;
+local Options = ArenaAnalytics.Options;
 
 ------------------------------------------------------------------
 
@@ -189,7 +190,7 @@ function Selection:handleMatchEntryClicked(key, isDoubleClick, index)
     end
 
     -- If Ctrl is not pressed, clear the previous selection and latestMultiSelect.
-    local isControlModInversed = ArenaAnalyticsSettings["selectionControlModInversed"] or false;
+    local isControlModInversed = Options:Get("selectionControlModInversed") or false;
     if (IsControlKeyDown() == isControlModInversed) and not IsShiftKeyDown() then
         Selection.selectedGames = {}
         resetLatestSelection(true);

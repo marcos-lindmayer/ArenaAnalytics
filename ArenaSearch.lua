@@ -64,7 +64,7 @@ local PrefixTable = {
     ["class"] = { NoSpaces = false, Aliases = {"class", "c"} },
     ["spec"] = { NoSpaces = false, Aliases = {"spec", "s"} },
     ["subspec"] = { NoSpaces = false, Aliases = {"subspec", "ss"} },
-    ["race"] = { NoSpaces = true, Aliases = {"race", "r"} },
+    ["race"] = { NoSpaces = false, Aliases = {"race", "r"} },
     ["faction"] = { NoSpaces = true, Aliases = {"faction", "f"} },
     ["alts"] = { NoSpaces = true, Aliases = {"alts", "a"} },
 }
@@ -83,7 +83,7 @@ local function GetTokenPrefixKey(text)
             end
         end
     end
-    return nil, (value or text), false;
+    return nil, (value or text), true;
 end
 
 ---------------------------------
@@ -541,6 +541,7 @@ local function ProcessInput(input)
             local newCombinedToken = CreateToken(combinedValue);
             
             if(newCombinedToken) then
+                ArenaAnalytics:Log("Updating token for combined word: ", combinedValue);
                 currentToken = newCombinedToken;
                 currentWord = ""; -- Already added to the token
             else
@@ -630,7 +631,6 @@ local function ProcessInput(input)
             local endIdx = GetScopeEndIndex(')')
             if endIdx then
                 if(lastChar ~= ':') then
-                    ArenaAnalytics:Print("test: ", lastChar)
                     CommitCurrentWord();
                 end
                 CommitCurrentToken();

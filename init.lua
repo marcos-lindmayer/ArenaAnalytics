@@ -1,5 +1,7 @@
 local _, ArenaAnalytics = ...; -- Namespace
 
+local Options = ArenaAnalytics.Options;
+
 local version = "";
 
 function ArenaAnalyticsToggle()
@@ -23,7 +25,7 @@ ArenaAnalytics.commands = {
 	end,
 	
 	["version"] = function()
-		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (ArenaAnalytics:getVersion() or "Nil") .. " (Early Access)|r");
+		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (ArenaAnalytics:getVersion() or "Invalid Version") .. " (Early Access)|r");
 	end,
 	
 	["total"] = function()
@@ -52,13 +54,11 @@ ArenaAnalytics.commands = {
 
 	-- Debug command to 
 	["debug"] = function()
-		if(ArenaAnalytics.skipDebugLog and ArenaAnalytics.skipDebugForceNilError) then
-			ArenaAnalytics.skipDebugLog = false;
-			ArenaAnalytics.skipDebugForceNilError = false;
+		if(not Options:Get("debuggingEnabled")) then
+			Options:Set("debuggingEnabled", true);
 			ArenaAnalytics:Log("Debugging enabled!");
 		else
-			ArenaAnalytics.skipDebugLog = true;
-			ArenaAnalytics.skipDebugForceNilError = true;
+			Options:Set("debuggingEnabled", false);
 			ArenaAnalytics:Print("Debugging disabled!");
 		end
 	end,
@@ -113,8 +113,8 @@ ArenaAnalytics.commands = {
 	end,
 
 	["debugcleardb"] = function()
-		if(ArenaAnalytics.skipDebugLog and ArenaAnalytics.skipDebugForceNilError) then
-			ArenaAnalytics:Print("Clearing MatchHistoryDB requires enabling /aa debug. Not intended for users!");
+		if(not Options:Get("debuggingEnabled")) then
+			ArenaAnalytics:Print("Clearing MatchHistoryDB requires enabling |cffBBBBBB/aa debug|r. Not intended for users!");
 		else -- Debug mode is enabled, allow debug clearing the DB
 			if (ArenaAnalytics:hasStoredMatches()) then
 				ArenaAnalytics:Log("Clearing MatchHistoryDB.");
@@ -178,9 +178,8 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
-ArenaAnalytics.skipDebugLog = false;
 function ArenaAnalytics:Log(...)
-	if ArenaAnalytics.skipDebugLog then 
+	if not ArenaAnalyticsSettings["debuggingEnabled"] then
 		return;
 	end
 
@@ -194,12 +193,9 @@ function ArenaAnalytics:NoFormatting(text)
 end
 
 -- Debug function to force a nil error if input is nil
-ArenaAnalytics.skipDebugForceNilError = true;
-function ForceDebugNilError(value, forceError)
-	if(value == nil) then		
-		if(not ArenaAnalytics.skipDebugForceNilError or forceError) then
-			local nilOperation = value + 666;
-		end
+function ForceDebugNilError(value)
+	if(Options:Get("debuggingEnabled")) then
+		assert(value ~= nil);
 	end
 end
 
@@ -290,7 +286,7 @@ local function createMinimapButton()
 	minibtn:SetScript("OnClick", function(self, button)
 		if(button == "RightButton") then
 			-- Open ArenaAnalytics Options
-			ArenaAnalytics.Options:Open();
+			Options:Open();
 		else
 			ArenaAnalytics:Toggle();
 		end
@@ -308,8 +304,8 @@ function ArenaAnalytics:init()
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffAAAAAA" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 
-	if(not ArenaAnalytics.skipDebugLog) then
-		ArenaAnalytics:Log("Default Debugging Enabled!");
+	if(Options:Get("debuggingEnabled")) then
+		ArenaAnalytics:Log("Debugging Enabled! |cffBBBBBB/aa debug to disable.|r ");
 	end
 	
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
@@ -326,7 +322,7 @@ function ArenaAnalytics:init()
 
 	ArenaAnalytics:updateLastSession();
 
-	ArenaAnalytics.Options:LoadSettings();
+	Options:LoadSettings();
 
 	-- Update cached rating as soon as possible
 	ArenaAnalytics.Events:CreateEventListenerForRequest("PVP_RATED_STATS_UPDATE", function() 

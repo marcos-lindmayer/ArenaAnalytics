@@ -6,9 +6,16 @@ local Options = ArenaAnalytics.Options;
 -- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
 
+local defaults = {};
+
 -- Adds a setting that 
 local function AddSetting(setting, default)
+    assert(setting, default);
+
     ArenaAnalyticsSettings[setting] = ArenaAnalyticsSettings[setting] ~= nil and ArenaAnalyticsSettings[setting] or default;
+    
+    -- Cache latest defaults
+    defaults[setting] = default;
 end
 
 -- Adds a setting that does not save across reloads. (Use with caution)
@@ -16,7 +23,10 @@ local function AddTransientSetting(setting, default)
     ArenaAnalyticsSettings[setting] = default;
 end
 
+local hasOptionsLoaded = false;
 function Options:LoadSettings()
+    if hasOptionsLoaded then return end;
+
     AddSetting("outliers", 0);
     AddSetting("dropdownVisibileLimit", 10);
     AddSetting("defaultCurrentSeasonFilter", false);
@@ -29,15 +39,41 @@ function Options:LoadSettings()
     AddSetting("sortCompFilterByTotalPlayed", false);
     AddSetting("selectionControlModInversed", false);
     AddSetting("allowImportDataMerge", false);
+
+    AddSetting("debuggingEnabled", false);
+
+    hasOptionsLoaded = true;
 end
 
 -- Gets a setting, regardless of location between 
-function Options:GetSetting(setting)
+function Options:Get(setting)
+    if(hasOptionsLoaded == false) then
+        ArenaAnalytics:Log("Force loaded settings to immediately get:", setting);
+        Options:LoadSettings();
+    end
+
     assert(setting ~= nil);
 
     local value = ArenaAnalyticsSettings[setting];
     if(value == nil) then
         ArenaAnalytics:Log("Attempted to get setting: ", setting, " but got nil result.");
+        return;
+    end
+    return value;
+end
+
+function Options:Set(setting, value)
+    if(hasOptionsLoaded == false) then
+        ArenaAnalytics:Log("Force loaded settings to immediately set:", setting, " to value: ", value);
+        Options:LoadSettings();
+    end
+
+    assert(setting);
+    assert(ArenaAnalyticsSettings[setting] ~= nil);
+
+    if(setting and ArenaAnalyticsSettings[setting] ~= nil) then
+        value = value or defaults[setting]; -- Treat nil as default
+        ArenaAnalyticsSettings[setting] = value;
     end
 end
 
@@ -166,10 +202,10 @@ local function createCheckbox(setting, parent, x, text, func)
     checkbox.text:SetTextHeight(TextSize);
     checkbox.text:SetText(text);
 
-    checkbox:SetChecked(ArenaAnalyticsSettings[setting]);
+    checkbox:SetChecked(Options:Get(setting));
 
     checkbox:SetScript("OnClick", function()
-		ArenaAnalyticsSettings[setting] = checkbox:GetChecked();
+		Options:Set(setting, checkbox:GetChecked());
         
         if(func) then
             func(setting);
@@ -177,7 +213,7 @@ local function createCheckbox(setting, parent, x, text, func)
             HandleFiltersUpdated();
         end
 
-		ArenaAnalytics:Log(setting .. ": ", ArenaAnalyticsSettings[setting]);
+		ArenaAnalytics:Log(setting .. ": ", Options:Get(setting));
 	end);
 
     SetupTooltip(checkbox, {checkbox, checkbox.text});
@@ -197,7 +233,7 @@ local function createInputBox(setting, parent, x, text, func)
     inputBox:SetNumeric();
     inputBox:SetAutoFocus(false);
     inputBox:SetMaxLetters(5);
-    inputBox:SetText(tonumber(ArenaAnalyticsSettings[setting]));
+    inputBox:SetText(tonumber(Options:Get(setting)));
     inputBox:SetCursorPosition(0);
     inputBox:HighlightText(0,0);    
     
@@ -212,15 +248,15 @@ local function createInputBox(setting, parent, x, text, func)
     end);
 	
     inputBox:SetScript("OnEscapePressed", function(self)
-		inputBox:SetText(ArenaAnalyticsSettings[setting] or "");
+		inputBox:SetText(Options:Get(setting) or "");
         self:ClearFocus();
     end);
 
     inputBox:SetScript("OnEditFocusLost", function(self)
-		local oldValue = tonumber(ArenaAnalyticsSettings[setting]) or 25;
+		local oldValue = tonumber(Options:Get(setting)) or 25;
 		local newValue = tonumber(inputBox:GetText());
-        ArenaAnalyticsSettings[setting] = newValue or oldValue;
-		inputBox:SetText(tonumber(ArenaAnalyticsSettings[setting]));
+        Options:Set(setting, newValue or oldValue)
+		inputBox:SetText(tonumber(Options:Get(setting)));
         inputBox:SetCursorPosition(0);
 		inputBox:HighlightText(0,0);
         
@@ -313,7 +349,7 @@ function setupTab_ImportExport()
     -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
     parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() ArenaAnalytics.AAtable:tryShowimportDialogFrame() end);
     parent.importButton.stateFunc = function()
-        if(ArenaAnalyticsSettings["allowImportDataMerge"] or not ArenaAnalytics:hasStoredMatches()) then
+        if(Options:Get("allowImportDataMerge") or not ArenaAnalytics:hasStoredMatches()) then
             exportOptionsFrame.importButton:Enable();
         else
             exportOptionsFrame.importButton:Disable();
@@ -324,7 +360,7 @@ function setupTab_ImportExport()
     parent.importAllowMerge = createCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
         parent.importButton.stateFunc();
     end);
-    parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nThis will add matches before and after already stored matches.\n\n|cffff0000Untested! - Use at own risk.|r\nBackup SavedVariables recommended." }
+    parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nThis will add matches before and after already stored matches.\n\n|cffff0000Experimental! - Use at own risk.|r\nBackup SavedVariables recommended." }
 
     
     exportOptionsFrame:SetScript("OnShow", function() parent.importButton.stateFunc() end);
