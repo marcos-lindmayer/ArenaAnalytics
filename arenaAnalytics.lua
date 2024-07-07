@@ -431,7 +431,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	-- Refresh and reset current arena
 	ArenaAnalytics.ArenaTracker:ResetCurrentArenaValues();
 	
-	ArenaAnalytics.Filter:refreshFilters();
+	ArenaAnalytics.Filter:RefreshFilters();
 
 	ArenaAnalytics.AAtable:tryStartSessionDurationTimer();
 end

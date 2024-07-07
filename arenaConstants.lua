@@ -49,7 +49,6 @@ function ArenaAnalytics:computeSeasonFromMatchDate(unixDate)
     return nil;
 end
 
--- Priority: Healer > Caster > Tank > Melee
 -- Addon specific spec IDs { ID, "class|spec", "class", "spec", priority value } (ID must never change to preserve data validity, priority is a runtime check)
 local addonSpecializationIDs = {
     -- Druid
@@ -126,81 +125,71 @@ function Constants:getAddonSpecializationID(class, spec, forceExactSpec)
     local specKey = spec and (class .. "|" .. spec) or class;
     return tonumber(addonSpecializationIDs[specKey]);
 end
-function Constants:getAddonClassID(class)
-    if class == nil then return nil end;
-    local classID = tonumber(addonSpecializationIDs[class]);
-
-    if(classID) then
-        classID = math.floor((classID / 10) * 10);
-        ArenaAnalytics:Log("Class ID: ", classID);
-    end
-
-    return classID;
-end
 
 -- ID to class and spec
 local classAndSpecByID = {
     -- Druid
     [0] = {nil, "Druid", nil},
-    [1] = {"Druid|Restoration", "Druid", "Restoration"},
-    [2] = {"Druid|Feral", "Druid", "Feral"},
-    [3] = {"Druid|Balance", "Druid", "Balance"},
+    [1] = {"Druid|Restoration", "Druid", "Restoration", "Healer"},
+    [2] = {"Druid|Feral", "Druid", "Feral", "Dps"},
+    [3] = {"Druid|Balance", "Druid", "Balance", "Dps"},
+    [4] = {"Druid|Guardian", "Druid", "Guardian", "Tank"},
     
     -- Paladin
     [10] = {nil, "Paladin", nil},
-    [11] = {"Paladin|Holy", "Paladin", "Holy"},
-    [12] = {"Paladin|Protection", "Paladin", "Protection"},
-    [13] = {"Paladin|Preg", "Paladin", "Preg"},
-    [14] = {"Paladin|Retribution", "Paladin", "Retribution"},
+    [11] = {"Paladin|Holy", "Paladin", "Holy", "Healer"},
+    [12] = {"Paladin|Protection", "Paladin", "Protection", "Tank"},
+    [13] = {"Paladin|Preg", "Paladin", "Preg", "Dps"},
+    [14] = {"Paladin|Retribution", "Paladin", "Retribution", "Dps"},
     
     -- Shaman
     [20] = {nil, "Shaman", nil},
-    [21] = {"Shaman|Restoration", "Shaman", "Restoration"},
-    [22] = {"Shaman|Elemental", "Shaman", "Elemental"},
-    [23] = {"Shaman|Enhancement", "Shaman", "Enhancement"},
+    [21] = {"Shaman|Restoration", "Shaman", "Restoration", "Healer"},
+    [22] = {"Shaman|Elemental", "Shaman", "Elemental", "Dps"},
+    [23] = {"Shaman|Enhancement", "Shaman", "Enhancement", "Dps"},
 
     -- Death Knight
     [30] = {nil, "Death Knight", nil},
-    [31] = {"Death Knight|Unholy", "Death Knight", "Unholy"},
-    [32] = {"Death Knight|Frost", "Death Knight", "Frost"},
-    [33] = {"Death Knight|Blood", "Death Knight", "Blood"},
+    [31] = {"Death Knight|Unholy", "Death Knight", "Unholy", "Dps"},
+    [32] = {"Death Knight|Frost", "Death Knight", "Frost", "Dps"},
+    [33] = {"Death Knight|Blood", "Death Knight", "Blood", "Tank"},
 
     -- Hunter
     [40] = {nil, "Hunter", nil},
-    [41] = {"Hunter|Beast Mastery", "Hunter", "Beast Mastery"},
-    [42] = {"Hunter|Marksmanship", "Hunter", "Marksmanship"},
-    [43] = {"Hunter|Survival", "Hunter", "Survival"},
+    [41] = {"Hunter|Beast Mastery", "Hunter", "Beast Mastery", "Dps"},
+    [42] = {"Hunter|Marksmanship", "Hunter", "Marksmanship", "Dps"},
+    [43] = {"Hunter|Survival", "Hunter", "Survival", "Dps"},
 
     -- Mage
     [50] = {nil, "Mage", nil},
-    [51] = {"Mage|Frost", "Mage", "Frost"},
-    [52] = {"Mage|Fire", "Mage", "Fire"},
-    [53] = {"Mage|Arcane", "Mage", "Arcane"},
+    [51] = {"Mage|Frost", "Mage", "Frost", "Dps"},
+    [52] = {"Mage|Fire", "Mage", "Fire", "Dps"},
+    [53] = {"Mage|Arcane", "Mage", "Arcane", "Dps"},
 
     -- Rogue
     [60] = {nil, "Rogue", nil},
-    [61] = {"Rogue|Subtlety", "Rogue", "Subtlety"},
-    [62] = {"Rogue|Assassination", "Rogue", "Assassination"},
-    [63] = {"Rogue|Combat", "Rogue", "Combat"},
-    [64] = {"Rogue|Outlaw", "Rogue", "Outlaw"},
+    [61] = {"Rogue|Subtlety", "Rogue", "Subtlety", "Dps"},
+    [62] = {"Rogue|Assassination", "Rogue", "Assassination", "Dps"},
+    [63] = {"Rogue|Combat", "Rogue", "Combat", "Dps"},
+    [64] = {"Rogue|Outlaw", "Rogue", "Outlaw", "Dps"},
 
     -- Warlock
     [70] = {nil, "Warlock", nil},
-    [71] = {"Warlock|Affliction", "Warlock", "Affliction"},
-    [72] = {"Warlock|Destruction", "Warlock", "Destruction"},
-    [73] = {"Warlock|Demonology", "Warlock", "Demonology"},
+    [71] = {"Warlock|Affliction", "Warlock", "Affliction", "Dps"},
+    [72] = {"Warlock|Destruction", "Warlock", "Destruction", "Dps"},
+    [73] = {"Warlock|Demonology", "Warlock", "Demonology", "Dps"},
 
     -- Warrior
     [80] = {nil, "Warrior", nil},
-    [81] = {"Warrior|Protection", "Warrior", "Protection"},
-    [82] = {"Warrior|Arms", "Warrior", "Arms"},
-    [83] = {"Warrior|Fury", "Warrior", "Fury"},
+    [81] = {"Warrior|Protection", "Warrior", "Protection", "Tank"},
+    [82] = {"Warrior|Arms", "Warrior", "Arms", "Dps"},
+    [83] = {"Warrior|Fury", "Warrior", "Fury", "Dps"},
     
     -- Priest
     [90] = {nil, "Priest", nil},
-    [91] = {"Priest|Discipline", "Priest", "Discipline"},
-    [92] = {"Priest|Holy", "Priest", "Holy"},
-    [93] = {"Priest|Shadow", "Priest", "Shadow"},
+    [91] = {"Priest|Discipline", "Priest", "Discipline", "Healer"},
+    [92] = {"Priest|Holy", "Priest", "Holy", "Healer"},
+    [93] = {"Priest|Shadow", "Priest", "Shadow", "Dps"},
 }
 
 -- TODO: Add real priority values (Possible player customizable option?)
@@ -217,6 +206,17 @@ function Constants:getClassAndSpec(specID)
 
     -- class, spec
     return data[2], data[3];
+end
+
+function Constants:GetSpecRole(specID)
+    if(not tonumber(specID)) then
+        return nil;
+    end
+    local data = classAndSpecByID[tonumber(specID)];
+    assert(data);
+
+    -- class, spec
+    return data[4];
 end
 
 local raceToFaction = {

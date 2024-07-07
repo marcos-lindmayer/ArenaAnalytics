@@ -110,7 +110,7 @@ end
 
 local function HandleFiltersUpdated()
     ArenaAnalytics.Filter:resetFilters(false);
-    ArenaAnalytics.Filter:refreshFilters();
+    ArenaAnalytics.Filter:RefreshFilters();
     ArenaAnalytics.AAtable:forceCompFilterRefresh();
 end
 

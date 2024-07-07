@@ -34,7 +34,7 @@ local wins, sessionGames, sessionWins = 0, 0, 0;
 function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         ArenaAnalytics.Selection:ClearSelectedMatches();
-        ArenaAnalytics.Filter:refreshFilters();
+        ArenaAnalytics.Filter:RefreshFilters();
         AAtable:RefreshLayout();
 
         AAtable:closeFilterDropdowns();
@@ -361,7 +361,7 @@ function AAtable:OnLoad()
 
     hasLoaded = true;
 
-    ArenaAnalytics.Filter:refreshFilters();
+    ArenaAnalytics.Filter:RefreshFilters();
     AAtable:UpdateSelected();
 
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame, "RIGHT", 10, 0, "More Filters");
@@ -393,7 +393,7 @@ function AAtable:OnLoad()
         ArenaAnalyticsScrollFrame.filterBracketDropdown:Reset();
         AAtable:forceCompFilterRefresh();
         
-        ArenaAnalytics.Filter:refreshFilters();
+        ArenaAnalytics.Filter:RefreshFilters();
         CloseDropDownMenus();
     end);
     
@@ -900,15 +900,7 @@ function AAtable:handleArenaCountChanged()
 
     AAtable:RefreshLayout();
     AAtable:forceCompFilterRefresh();
-        
-    -- TODO: Create new export setup, and implement this logic before removing here
---[[ Options_OLD
-    if(ArenaAnalytics:hasStoredMatches()) then
-        ArenaAnalyticsScrollFrame.exportBtn:Enable();
-    else
-        ArenaAnalyticsScrollFrame.exportBtn:Disable();
-        ArenaAnalyticsScrollFrame.exportFrame:SetText("");
---]]
+
     if(not ArenaAnalytics:hasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
         ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
     end

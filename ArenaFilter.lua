@@ -162,7 +162,7 @@ function Filter:SetFilter(filter, value, display)
     end
     
     ArenaAnalytics.Selection:ClearSelectedMatches();
-    Filter:refreshFilters();
+    Filter:RefreshFilters();
 end
 
 function Filter:SetDisplay(filter, display)
@@ -390,7 +390,7 @@ function Filter:doesMatchPassAllFilters(match, excluded)
 end
 
 -- Returns matches applying current match filters
-function Filter:refreshFilters()
+function Filter:RefreshFilters()
     ArenaAnalytics.filteredMatchHistory = {}
 
     for i=1, #MatchHistoryDB do

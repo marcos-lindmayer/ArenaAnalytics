@@ -2,6 +2,8 @@ local _, ArenaAnalytics = ... -- Namespace
 ArenaAnalytics.Search = {}
 local Search = ArenaAnalytics.Search;
 
+local Constants = ArenaAnalytics.Constants;
+
 -- DOCUMENTATION
 -- Player Name
 --  Charactername // name:Charactername // n:Charactername // Charactername-server // etc
@@ -102,13 +104,22 @@ end
     -- (E.g., "Frost" would match first found here (Death Knight or Mage))
     -- For now, it's sorted by the spec ID forcing constant priority here.
 SearchTokenTypeTable = {
-    ["role"] = {
-        ["noSpec"] = true,
+    ["class"] = {
+        ["noSpace"] = false,
         ["values"] = {
-            ["tank"] = {"tank"},
-            ["healer"] = {"healer"},
-            ["dps"] = {"damage dealer", "damage", "dps"},
-        },
+            ["death knight"] = {"death knight", "deathknight", "dk"},
+            ["demon hunter"] = {"demon hunter", "demonhunter", "dh"},
+            ["druid"] = {"druid"},
+            ["hunter"] = {"hunter", "hunt", "huntard"},
+            ["mage"] = {"mage"},
+            ["monk"] = {"monk"},
+            ["paladin"] = {"paladin", "pala"},
+            ["priest"] = {"priest"},
+            ["rogue"] = {"rogue", "rog"},
+            ["shaman"] = {"shaman", "sham"},
+            ["warlock"] = {"warlock", "lock", "wlock"},
+            ["warrior"] = {"warrior"}
+        }
     },
     ["spec"] = {
         ["noSpace"] = false,
@@ -120,9 +131,9 @@ SearchTokenTypeTable = {
         },
         ["values"] = {
             -- Druid
-            [1] = { "restoration druid", "rdruid" },
+            [1] = { "restoration druid", "rdruid", "rd" },
             [2] = { "feral", "fdruid" },
-            [3] = { "balance druid", "balance", "bdruid", "boomkin" },
+            [3] = { "balance", "bdruid", "moonkin", "boomkin", "boomy" },
             
             -- Paladin
             [11] = { "holy paladin", "holy pala", "holy pal", "hpal", "hpala", "hpaladin", "holypaladin", "holypala"},
@@ -172,23 +183,6 @@ SearchTokenTypeTable = {
             [93] = { "shadow", "spriest", "sp" },
         },
     },
-    ["class"] = {
-        ["noSpace"] = false,
-        ["values"] = {
-            ["death knight"] = {"death knight", "deathknight", "dk"},
-            ["demon hunter"] = {"demon hunter", "demonhunter", "dh"},
-            ["druid"] = {"druid"},
-            ["hunter"] = {"hunter", "hunt", "huntard"},
-            ["mage"] = {"mage"},
-            ["monk"] = {"monk"},
-            ["paladin"] = {"paladin", "pala"},
-            ["priest"] = {"priest"},
-            ["rogue"] = {"rogue", "rog"},
-            ["shaman"] = {"shaman", "sham"},
-            ["warlock"] = {"warlock", "lock", "wlock"},
-            ["warrior"] = {"warrior"}
-        }
-    },
     ["race"] = {
         ["noSpace"] = false,
         ["values"] = {
@@ -223,7 +217,15 @@ SearchTokenTypeTable = {
             ["alliance"] = {"alliance"},
             ["horde"] = {"horde"},
         }
-    }
+    },
+    ["role"] = {
+        ["noSpec"] = true,
+        ["values"] = {
+            ["tank"] = {"tank"},
+            ["healer"] = {"healer"},
+            ["dps"] = {"damage dealer", "damage", "dps"},
+        },
+    },
 }
 
 -- Find typeKey, valueKey, noSpace, matchedValue from SearchTokenTypeTable
@@ -338,13 +340,17 @@ local function CheckTypeForPlayer(searchType, token, player)
             searchType = "name";
         end
     elseif (searchType == "faction") then
-        local playerFaction = player["faction"] or ArenaAnalytics.Constants:GetFactionByRace(player["race"]) or "";
+        local playerFaction = player["faction"] or Constants:GetFactionByRace(player["race"]) or "";
         if(playerFaction ~= "") then
             local isFactionMatch = not token["exact"] and playerFaction:find(token["value"]) or (token["value"] == playerFaction:lower());
             return isFactionMatch;
         else
             return false;
         end
+    elseif(searchType == "role") then
+        local playerSpecID = Constants:getAddonSpecializationID(player["class"], player["spec"], false);
+        local role = Constants:GetSpecRole(playerSpecID);
+        return role and role:lower() == token["value"];
     end
 
     if(searchType == "name") then
@@ -358,7 +364,7 @@ local function CheckTypeForPlayer(searchType, token, player)
     
     -- Class and Spec IDs may be numbers in the token
     if(tonumber(token["value"])) then
-        local playerSpecID = ArenaAnalytics.Constants:getAddonSpecializationID(player["class"], player["spec"], false);
+        local playerSpecID = Constants:getAddonSpecializationID(player["class"], player["spec"], false);
         return playerSpecID == token["value"];
     else
         return not token["exact"] and playerValue:find(token["value"]) or (token["value"] == playerValue);
@@ -630,16 +636,18 @@ local function ProcessInput(input)
                 displayString = displayString .. char;
             end
         elseif char == '!' then
-            if(#currentSegment.Tokens == 0 and (currentWord == "" or lastChar == ':')) then
+            if(#currentSegment.Tokens == 0 and not currentToken and (currentWord == "" or lastChar == ':')) then
+                ArenaAnalytics:Log(#currentSegment.Tokens, currentWord == "", lastChar == ':');
                 currentSegment.inversed = true;
                 displayString = displayString .. ColorizeSymbol(char);
             else
                 displayString = displayString .. ColorizeInvalid(char);
             end
         elseif char == ' ' then
-            CommitCurrentWord()
-            
-            displayString = displayString .. char;
+            if(currentWord ~= "") then
+                CommitCurrentWord()
+                displayString = displayString .. char;
+            end
         elseif char == ',' then
             CommitCurrentWord()
             CommitCurrentToken()
@@ -746,7 +754,7 @@ function Search:Reset()
     activePlayerSegments = {}
 
     -- Trigger filter refresh
-    ArenaAnalytics.Filter:refreshFilters();
+    ArenaAnalytics.Filter:RefreshFilters();
 end
 
 function Search:CommitSearch(input)
@@ -764,7 +772,7 @@ function Search:CommitSearch(input)
     end
 
     -- Force filter refresh
-    ArenaAnalytics.Filter:refreshFilters();
+    ArenaAnalytics.Filter:RefreshFilters();
 end
 
 function Search:Update(input)

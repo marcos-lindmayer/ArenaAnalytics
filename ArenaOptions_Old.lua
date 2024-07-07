@@ -1,7 +1,5 @@
-local _, ArenaAnalytics = ...;
-ArenaAnalytics.Options_OLD = {};
-
-local Options_OLD = ArenaAnalytics.Options_OLD;
+-- No longer part of AA namespace
+local Options_OLD = {};
 
 function Options_OLD:createSettingsFrame()
 	local paddingLeft = 25;
@@ -33,7 +31,7 @@ function Options_OLD:createSettingsFrame()
     ArenaAnalyticsScrollFrame.skirmishToggle:SetScript("OnClick", function()
 		ArenaAnalyticsSettings["showSkirmish"] = ArenaAnalyticsScrollFrame.skirmishToggle:GetChecked();
 		ArenaAnalytics:Log("Show Skirmish: ", ArenaAnalyticsSettings["defaultCurrentSessionFilter"]);
-		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.Filter:RefreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
 	end);
 
@@ -45,7 +43,7 @@ function Options_OLD:createSettingsFrame()
     ArenaAnalyticsScrollFrame.seasonToggle:SetScript("OnClick", function()
 		ArenaAnalyticsSettings["defaultCurrentSeasonFilter"] = ArenaAnalyticsScrollFrame.seasonToggle:GetChecked();
 		ArenaAnalytics:Log("Show Previous Seasons: ", ArenaAnalyticsSettings["defaultCurrentSessionFilter"]);
-		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.Filter:RefreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
 	end);
 
@@ -58,7 +56,7 @@ function Options_OLD:createSettingsFrame()
     ArenaAnalyticsScrollFrame.sessionToggle:SetScript("OnClick", function()
 		ArenaAnalyticsSettings["defaultCurrentSessionFilter"] = ArenaAnalyticsScrollFrame.sessionToggle:GetChecked();
 		ArenaAnalytics:Log("Session Only: ", ArenaAnalyticsSettings["defaultCurrentSessionFilter"]);
-		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.Filter:RefreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
 
@@ -71,7 +69,7 @@ function Options_OLD:createSettingsFrame()
     ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle:SetScript("OnClick", function()
 		ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"] = ArenaAnalyticsScrollFrame.compFilterSortByTotalToggle:GetChecked();
 		ArenaAnalytics:Log("Sort comp filter by total: ", ArenaAnalyticsSettings["sortCompFilterByTotalPlayed"]);
-		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.Filter:RefreshFilters();
 		ArenaAnalytics.AAtable:forceCompFilterRefresh();
     end);
 
@@ -87,7 +85,7 @@ function Options_OLD:createSettingsFrame()
     
     ArenaAnalyticsScrollFrame.outliersInput:SetScript("OnEditFocusLost", function(self)
         ArenaAnalyticsSettings["outliers"] = tonumber(ArenaAnalyticsScrollFrame.outliersInput:GetText()) or ArenaAnalyticsSettings["outliers"];
-		ArenaAnalytics.Filter:refreshFilters();
+		ArenaAnalytics.Filter:RefreshFilters();
 		ArenaAnalyticsScrollFrame.outliersInput:SetText(ArenaAnalyticsSettings["outliers"]);
     end);
 
