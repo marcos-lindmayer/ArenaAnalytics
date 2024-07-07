@@ -18,7 +18,7 @@ Starting a player segment with (+/-) prefix enforces searching for specific team
 Example: +Hydra, -Zeetrax
 
 Alt Search:
-Separating names within a player segment by the '|' character will be treated as alts for the same player.
+Separating names within a player segment by the '/' character will be treated as alts for the same player.
 If any alt is found, the player is considered to be found in the match.
 Example: Hydr|hxii-firemaw|romeboy (Search matches if any one of the alts are found)
 
@@ -27,7 +27,7 @@ Each character name may be surrouned by quotation marks must be exact. This func
 Without quotation marks, the name accepts partial matches for player names.
 Example: "Hydr", "hxii-firemaw"
 
-Quick Search:
+Quick Search: (Rework planned)
 Clicking class icons for players in a stored arena in the match history will search for the player.
 Shift-clicking adds it to the existing search.
 Right-clicking adds explicit team prefix to match the team of the player in the match you clicked.

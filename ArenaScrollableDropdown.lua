@@ -101,8 +101,7 @@ end
 local function HandleClick(dropdown, value, display)
     Filter:SetFilter(dropdown.filter, value, display);
     
-    local newDisplay = Filter:GetCurrentDisplay(dropdown.filter);
-    dropdown.selected:SetText(newDisplay);
+    dropdown.selected:SetText(display or value);
 
     if(dropdown.list:IsShown()) then
         dropdown.list:Hide();
@@ -141,12 +140,15 @@ local function RemoveEntriesByOptions(entries)
     end
 end
 
-local function SetSelectedText(selectedFrame, entry, isPlayerPriority)
+local function SetSelectedText(selectedFrame, entry, isPlayerPriority, filter)
     local display, offsetX = GetCompDisplayString(entry, isPlayerPriority, true);
     selectedFrame.text = ArenaAnalyticsCreateText(selectedFrame, "CENTER", selectedFrame, "CENTER", offsetX, 0, display);
     selectedFrame:SetText("");
+
+    Filter:SetDisplay(filter, display);
 end
 
+-- TODO: Improve the update logic
 -- Updating selected comp text
 local function UpdateSelectedCompText(selectedFrame, selectedText, filter, entries, isPlayerPriority)
     if (selectedText == nil) then
@@ -158,21 +160,20 @@ local function UpdateSelectedCompText(selectedFrame, selectedText, filter, entri
 
                 -- Update the currently displayed entry with new values
                 if(text == Filter:GetCurrentData(filter)) then
-                    foundCompData = true;
-
-                    SetSelectedText(selectedFrame, entry, isPlayerPriority);
-                    break;
+                    SetSelectedText(selectedFrame, entry, isPlayerPriority, filter);
+                    return;
                 end            
             end
         end
 
         -- No entries contained data for selected comp with current filters
-        if(not foundCompData and Filter:GetCurrentData(filter) ~= "All" ) then
+        if(Filter:GetCurrentData(filter) ~= "All" ) then
             local lastFilter = {["comp"] = Filter:GetCurrentData(filter)};
-            SetSelectedText(selectedFrame, lastFilter, isPlayerPriority);
+            SetSelectedText(selectedFrame, lastFilter, isPlayerPriority, filter);
+            return;
         end
-    else
-        selectedFrame:SetText(selectedText or "");
+
+        selectedFrame:SetText(Filter:GetCurrentDisplay(filter));
         selectedFrame.text = nil;
     end
 end

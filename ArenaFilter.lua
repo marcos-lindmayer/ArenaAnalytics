@@ -34,10 +34,6 @@ end
 -- Clearing filters, optionally keeping filters explicitly applied through options
 function Filter:resetFilters(forceDefaults)
     currentFilters = {
-        ["Filter_Search"] = { 
-            ["raw"] = "",
-            ["data"] = {}
-        },
         ["Filter_Date"] = Filter:GetDefault("Filter_Date", forceDefaults),
         ["Filter_Season"] = Filter:GetDefault("Filter_Season", forceDefaults),
         ["Filter_Map"] = defaults["Filter_Map"], 
@@ -72,7 +68,7 @@ function Filter:GetCurrentDisplay(filter)
         return "";
     end
 
-    return currentFilters[filter]["display"] or currentFilters[filter]["raw"] or currentFilters[filter] or "";
+    return currentFilters[filter]["display"] or currentFilters[filter]["data"] or currentFilters[filter] or "";
 end
 
 function Filter:GetCurrentData(filter)
@@ -84,10 +80,8 @@ function Filter:GetCurrentData(filter)
 end
 
 function Filter:isFilterActive(filterName)
-    if(filterName == "Filter_Search") then
-        return not ArenaAnalytics.Search:IsEmpty();
-    elseif(filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
-        return currentFilters[filterName]["data"] ~= defaults["Filter_Comp"];
+    if(filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
+        return currentFilters[filterName]["data"] ~= defaults[filterName];
     end
     
     local filter = currentFilters[filterName];
@@ -171,6 +165,17 @@ function Filter:SetFilter(filter, value, display)
     Filter:refreshFilters();
 end
 
+function Filter:SetDisplay(filter, display)
+    assert(filter ~= nil);
+    assert(currentFilters[filter] ~= nil);
+    assert(currentFilters[filter]["display"] ~= nil); -- TODO: Decide if we wanna assert this
+
+    -- Update the display if 
+    if(currentFilters[filter]["display"]) then
+        currentFilters[filter]["display"] = display;
+    end
+end
+
 function Filter:ResetToDefault(filter, skipOverrides)
     -- Update the filter for the new value
     local defaultValue = Filter:GetDefault(filter, skipOverrides);
@@ -199,6 +204,7 @@ local function findOrAddCompValues(comps, comp, isWin)
     });
 end
 
+-- TODO: Consider moving to ArenaAnalytics.lua?
 -- Get all played comps with total played and total wins for matches that pass filters
 function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
     local compKey = isEnemyComp and "enemyComp" or "comp";
@@ -229,148 +235,6 @@ function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
         end
     end
     return playedComps;
-end
-
-function Filter:commitSearch(search)
-    search = search or "";
-    
-    -- Get search table from search
-    local searchFilter = {
-        ["raw"] = string.gsub(search, "%s%s+", " "),
-        ["data"] = {}
-    };
-
-    -- Search didn't change
-    if(searchFilter["raw"] == currentFilters["Filter_Search"]["raw"]) then
-        return;
-    end
-
-    search = string.gsub(search, "%s+", "");
-
-    if(search ~= "") then
-        search:gsub("([^,]*)", function(player)
-            if(player ~= nil and player ~= "") then
-                player = player:gsub(',', '');
-
-                local playerTable = {
-                    ["alts"] = {},
-                    ["explicitTeam"] = "any"
-                }
-
-                -- Parse for alts and explicit teams
-                -- If first symbol is + or -, specify explicit team for the player
-                local prefix = player:sub(1, 1);
-
-                if(prefix == "+") then
-                    player = player:sub(2);
-                    playerTable["explicitTeam"] = "team";
-                elseif(prefix == "-") then
-                    player = player:sub(2);
-                    playerTable["explicitTeam"] = "enemyTeam";
-                end
-
-                player:gsub("([^|]*)", function(alt)
-                    alt = alt:gsub('|', '');
-                    if(alt ~= nil and alt ~= "") then
-                        table.insert(playerTable["alts"], alt:lower());
-                    end
-                end);
-
-                table.insert(searchFilter["data"], playerTable);
-            end
-        end);
-    end
-
-    -- Commit search
-    if(searchFilter ~= currentFilters["Filter_Search"]) then
-        currentFilters["Filter_Search"] = searchFilter;
-		Filter:refreshFilters();
-    end
-end
-
-local function checkSearchMatch(playerName, search, team)
-    if(search == nil) then
-        ArenaAnalytics:Log("Empty search reached checkSearchMatch!");
-        return true;
-    end
-
-    if(playerName == nil or playerName == "") then
-        return false;
-    end
-
-    local stringToSearch = string.gsub(playerName:lower(), "%s+", "");
-
-    for i=1, #search do
-        local altSearch = search[i];
-        if(altSearch ~= nil and altSearch ~= "") then
-            local isExactSearch = #altSearch > 1 and altSearch:sub(1, 1) == '"' and altSearch:sub(-1) == '"';
-            altSearch = altSearch:gsub('"', '');
-            
-            -- If search term is surrounded by quotation marks, check exact search
-            if(isExactSearch) then
-                if(not string.find(altSearch, "-")) then
-                    -- Exclude server when it was excluded for an exact search term
-                    stringToSearch = string.match(stringToSearch, "[^-]+");
-                end
-                
-                if(altSearch == stringToSearch) then
-                    return true;
-                end
-            else
-                -- Fix special characters
-                altSearch = altSearch:gsub("-", "%%-");
-                
-                if(stringToSearch:find(altSearch) ~= nil) then
-                    return true;
-                end
-            end
-        end
-    end
-
-    return false;
-end
-
-local function doesMatchPassFilter_Search(match)
-    if match == nil then return false end;
-
-    if(currentFilters["Filter_Search"]["data"] == "") then
-        return true;
-    end
-
-    if(match ~= nil) then
-        if(currentFilters["Filter_Search"]["data"] == nil) then
-            return true;
-        end
-        for k=1, #currentFilters["Filter_Search"]["data"] do
-            local foundMatch = false;
-            local search = currentFilters["Filter_Search"]["data"][k];
-            if(search ~= nil and search["alts"] ~= nil and #search["alts"] > 0) then
-                local teams = (search["explicitTeam"] ~= "any") and { search["explicitTeam"] } or {"team", "enemyTeam"};
-                for _, team in ipairs(teams) do
-                    for j = 1, #match[team] do
-                        local player = match[team][j];
-                        if(player ~= nil) then
-                            -- keep match if player name match the search
-                            if(checkSearchMatch(player["name"]:lower(), search["alts"], team)) then
-                                foundMatch = true;
-                            end
-                        end
-                    end
-                end
-            else
-                -- Invalid or empty search element, skipping.
-                foundMatch = true;
-            end
-
-            -- Search element had no match
-            if(not foundMatch) then
-                return false;
-            end
-        end
-        return true;
-    end
-
-    return false;
 end
 
 -- check map filter
@@ -408,16 +272,6 @@ local function doesMatchPassFilter_Bracket(match)
     end
     
     return match["bracket"] == currentFilters["Filter_Bracket"];
-end
-
--- check skirmish filter
-local function doesMatchPassFilter_Skirmish(match)
-    if match == nil then return false end;
-
-    if(Options:Get("showSkirmish")) then
-        return true;
-    end
-    return match["isRated"];
 end
 
 -- check season filter
@@ -497,6 +351,11 @@ function Filter:doesMatchPassAllFilters(match, excluded)
         return false;
     end
 
+    -- Season
+    if(not doesMatchPassFilter_Season(match)) then
+        return false;
+    end
+
     -- Map
     if(not doesMatchPassFilter_Map(match)) then
         return false;
@@ -504,16 +363,6 @@ function Filter:doesMatchPassAllFilters(match, excluded)
 
     -- Bracket
     if(not doesMatchPassFilter_Bracket(match)) then
-        return false;
-    end
-
-    -- Skirmish
-    if(not doesMatchPassFilter_Skirmish(match)) then
-        return false;
-    end
-    
-    -- Season
-    if(not doesMatchPassFilter_Season(match)) then
         return false;
     end
 

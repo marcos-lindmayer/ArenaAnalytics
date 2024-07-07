@@ -20,6 +20,9 @@ local Search = ArenaAnalytics.Search;
 -- Race
 --  Undead // race:undead // r:undead
 
+-- Role
+--  Tank // Healer // Damage // role:healer // etc
+
 -- OTHER: Setup to allow adding desired search conditions
 
 -- Exact Search:
@@ -46,6 +49,10 @@ local function ColorizeInvalid(text)
     return text and "|cffFF0000" .. text .. "|r" or "";
 end
 
+local function ColorizeSymbol(text)
+    return text and "|cffEEEE00" .. text .. "|r" or "";
+end
+
 local function ColorizeToken(token)
     if(token == nil) then
         return "";
@@ -64,6 +71,7 @@ local PrefixTable = {
     ["class"] = { NoSpaces = false, Aliases = {"class", "c"} },
     ["spec"] = { NoSpaces = false, Aliases = {"spec", "s"} },
     ["subspec"] = { NoSpaces = false, Aliases = {"subspec", "ss"} },
+    ["role"] = {NoSpaces = true, Aliases = { "role" }},
     ["race"] = { NoSpaces = false, Aliases = {"race", "r"} },
     ["faction"] = { NoSpaces = true, Aliases = {"faction", "f"} },
     ["alts"] = { NoSpaces = true, Aliases = {"alts", "a"} },
@@ -90,10 +98,26 @@ end
 -- Search Type Data tables
 ---------------------------------
 
--- TODO: Convert spec keys to AA spec IDs (?)
+-- TODO: Update to allow order here to determine priority for shared keywords 
+    -- (E.g., "Frost" would match first found here (Death Knight or Mage))
+    -- For now, it's sorted by the spec ID forcing constant priority here.
 SearchTokenTypeTable = {
+    ["role"] = {
+        ["noSpec"] = true,
+        ["values"] = {
+            ["tank"] = {"tank"},
+            ["healer"] = {"healer"},
+            ["dps"] = {"damage dealer", "damage", "dps"},
+        },
+    },
     ["spec"] = {
         ["noSpace"] = false,
+        ["priorityValues"] = {
+            ["frost"] = {"frost"},
+            ["restoration"] = {"restoration"},
+            ["holy"] = {"holy"},
+            ["protection"] = {"protection", "prot"},
+        },
         ["values"] = {
             -- Druid
             [1] = { "restoration druid", "rdruid" },
@@ -101,15 +125,15 @@ SearchTokenTypeTable = {
             [3] = { "balance druid", "balance", "bdruid", "boomkin" },
             
             -- Paladin
-            [11] = { "holy paladin", "holy pala", "hpal", "hpala", "hpaladin", "holypaladin", "holypala"},
+            [11] = { "holy paladin", "holy pala", "holy pal", "hpal", "hpala", "hpaladin", "holypaladin", "holypala"},
             [12] = { "protection paladin", "prot paladin", "protection pala", "prot pala"},
-            [13] = { "preg paladin", "preg pala", "preg" },
-            [14] = { "retribution paladin", "retribution pala", "ret paladin", "ret pala", "rpala", "retribution", "ret" },
+            [13] = { "preg" },
+            [14] = { "retribution", "retribution", "ret", "rpala" },
             
             -- Shaman
             [21] = { "restoration shaman", "restoration sham", "resto shaman", "resto sham", "rshaman", "rsham" },
-            [22] = { "elemental shaman", "elemental sham", "ele shaman", "ele sham", "esham", "elemental", "ele" },
-            [23] = { "enhancement shaman", "enhancement sham", "enh shaman", "enh sham", "enh" },
+            [22] = { "elemental", "elemental", "ele", "ele" },
+            [23] = { "enhancement", "enhancement", "enh", "enh" },
 
             -- Death Knight
             [31] = { "unholy", "uhdk", "udk", "uh" },
@@ -122,15 +146,15 @@ SearchTokenTypeTable = {
             [43] = { "survival", "surv", "shunter", "shunt", "sh" },
 
             -- Mage
-            [51] = { "frost mage" },
+            [51] = { "frost mage"},
             [52] = { "fire" },
             [53] = { "arcane", "amage" },
 
             -- Rogue
             [61] = { "subtlety", "sub", "srogue", "srog" },
-            [62] = { "assassination", "assa", "arogue", "arog" },
-            [63] = { "Combat", "crogue", "crog" },
-            [64] = { "Outlaw", "orogue" },
+            [62] = { "assassination", "assa", "arogue" },
+            [63] = { "combat", "crogue" },
+            [64] = { "outlaw", "orogue" },
 
             -- Warlock
             [71] = { "affliction", "affli", "awarlock", "alock" },
@@ -154,14 +178,14 @@ SearchTokenTypeTable = {
             ["death knight"] = {"death knight", "deathknight", "dk"},
             ["demon hunter"] = {"demon hunter", "demonhunter", "dh"},
             ["druid"] = {"druid"},
-            ["hunter"] = {"hunter"},
+            ["hunter"] = {"hunter", "hunt", "huntard"},
             ["mage"] = {"mage"},
             ["monk"] = {"monk"},
-            ["paladin"] = {"paladin"},
+            ["paladin"] = {"paladin", "pala"},
             ["priest"] = {"priest"},
-            ["rogue"] = {"rogue"},
-            ["shaman"] = {"shaman"},
-            ["warlock"] = {"warlock"},
+            ["rogue"] = {"rogue", "rog"},
+            ["shaman"] = {"shaman", "sham"},
+            ["warlock"] = {"warlock", "lock", "wlock"},
             ["warrior"] = {"warrior"}
         }
     },
@@ -212,30 +236,37 @@ local function FindSearchValueDataForToken(token)
 
     local lowerCaseValue = token["value"]:lower();
 
-    local function FindTokenValueKey(valueTable, requireExact)
-        for valueKey, values in pairs(valueTable["values"]) do
-            for _, value in ipairs(values) do
-                assert(value)
-                local isMatch = not token["exact"] and (value:find(lowerCaseValue) ~= nil) or (lowerCaseValue == value);
-                if isMatch then
-                    return valueKey, valueTable["noSpace"], value
+    local function FindTokenValueKey(valueTable, searchType)
+        local keys = (searchType == "spec") and {"priorityValues", "values"} or {"values"};
+
+        for _,key in ipairs(keys) do
+            local table = key and valueTable[key] or nil;
+            if(table) then
+                for valueKey, values in pairs(table) do
+                    for _, value in ipairs(values) do
+                        assert(value)
+                        local isMatch = not token["exact"] and (value:find(lowerCaseValue) ~= nil) or (lowerCaseValue == value);
+                        if isMatch then
+                            return valueKey, valueTable["noSpace"], value
+                        end
+                    end
                 end
             end
         end
     end
 
     -- Look through the values for the explicit key
-    if token["type"] and token["type"] ~= "any" then
+    if token["type"] then
         local valueTable = SearchTokenTypeTable[token["type"]];
         if valueTable then
-            local valueKey, noSpace, matchedValue = FindTokenValueKey(valueTable, lowerCaseValue, isExactScope)
+            local valueKey, noSpace, matchedValue = FindTokenValueKey(valueTable, token["type"])
             if valueKey then
                 return token["type"], valueKey, noSpace, matchedValue;
             end
         end
     else -- Look through all keys
         for typeKey, valueTable in pairs(SearchTokenTypeTable) do
-            local valueKey, noSpace, matchedValue = FindTokenValueKey(valueTable, lowerCaseValue, isExactScope)
+            local valueKey, noSpace, matchedValue = FindTokenValueKey(valueTable, typeKey)
             if valueKey then
                 return typeKey, valueKey, noSpace, matchedValue;
             end
@@ -256,10 +287,8 @@ activePlayerSegments = {};
 -- Search matching logic
 ---------------------------------
 
-local function CheckPlayerName(playerName, searchValue, isExact)
-    assert(searchValue ~= nil);
-    
-    if(playerName == nil) then
+local function CheckPlayerName(playerName, searchValue, isExact)    
+    if(not playerName or not searchValue or searchValue == "") then
         return false;
     end
 
@@ -274,7 +303,7 @@ local function CheckPlayerName(playerName, searchValue, isExact)
     end
 
     -- Not exact (Partial search token)
-    return playerName:gsub("-", "%-"):find(searchValue);
+    return playerName:gsub("-", "%-"):find(searchValue) ~= nil;
 end
 
 -- NOTE: This is the main part to modify to handle actual token matching logic
@@ -283,7 +312,7 @@ local function CheckTypeForPlayer(searchType, token, player)
     assert(token and token["value"] and token["value"] ~= "");
     assert(player ~= nil);
     
-    if(searchType == nil or searchType == "any") then
+    if(searchType == nil) then
         ArenaAnalytics:Log("Invalid type reached CheckTypeForPlayer for search.");
         return;
     end
@@ -338,12 +367,12 @@ end
 
 local function CheckTokenForPlayer(token, player)
     local explicitType = token["explicitType"];
-    if(explicitType and explicitType ~= "any") then
+    if(explicitType) then
         if(CheckTypeForPlayer(explicitType, token, player)) then
             return true;
         end
     else -- Loop through all types
-        local types = { "spec", "class", "race", "faction", "name", "alts" }
+        local types = { "name", "spec", "class", "race", "faction" }
         local foundMatch = false;
         for _,searchType in ipairs(types) do
             if(CheckTypeForPlayer(searchType, token, player)) then
@@ -368,15 +397,15 @@ local function CheckSegmentForPlayer(segment, player)
     return true;
 end
 
-local function CheckSegmentForMatch(segment, match, matchedPlayers)
+local function CheckSegmentForMatch(segment, match, alreadyMatchedPlayers)
     local teams = segment.team and {segment.team} or {"team", "enemyTeam"};
     local foundConflictMatch = false;
 
     for _,team in ipairs(teams) do
         for _, player in ipairs(match[team]) do
             if CheckSegmentForPlayer(segment, player) then
-                if(matchedPlayers[player["name"]] == nil) then
-                    matchedPlayers[player["name"]] = true;
+                if(alreadyMatchedPlayers[player["name"]] == nil) then
+                    alreadyMatchedPlayers[player["name"]] = true;
                     return true;
                 else
                     foundConflictMatch = true;
@@ -396,14 +425,17 @@ end
 -- Returns true/false depending on whether it passed, or nil if it could not yet be determined
 local function CheckSimplePass(match)
     -- Cache found matches
-    local matchedPlayers = {}
+    local alreadyMatchedPlayers = {}
 
     -- Look for segments with no matches or no unique matches
     for _,segment in ipairs(activePlayerSegments) do
-        local segmentResult = CheckSegmentForMatch(segment, match, matchedPlayers);
-        if(segmentResult == nil) then
+        local segmentResult = CheckSegmentForMatch(segment, match, alreadyMatchedPlayers);
+        
+        if(segment.inversed) then
+            return (segmentResult == false);
+        elseif(segmentResult == nil) then
             return nil; -- Segment detected conflict
-        elseif(segmentResult == false) then
+        elseif(not segmentResult) then
             return false; -- Failed to pass.
         end
     end
@@ -454,20 +486,20 @@ local function CreateToken(text, isExact)
     local newToken = {}
     local tokenType, tokenValue, noSpace = GetTokenPrefixKey(text);
     
-    newToken["explicitType"] = tokenType and tokenType or nil;
-    newToken["value"] = ToLower(tokenValue);
+    newToken["explicitType"] = tokenType;
+    newToken["value"] = tokenValue;
     newToken["exact"] = isExact;
     newToken["noSpace"] = noSpace;
 
     if(newToken["explicitType"] == "alts" or newToken["value"]:find('/') ~= nil) then
         newToken["explicitType"] = "alts";
-    else
+    elseif(newToken["explicitType"] ~= "name") then
         -- Check for keywords
-        local typeKey, valueKey, noSpace, matchedValue = FindSearchValueDataForToken(newToken);
+        local typeKey, valueKey, noSpace = FindSearchValueDataForToken(newToken);
         if(typeKey and valueKey) then
             newToken["noSpace"] = noSpace;
             newToken["explicitType"] = typeKey;
-            newToken["keyword"] = ToLower(valueKey);
+            newToken["keyword"] = valueKey;
         end
     end
 
@@ -481,7 +513,6 @@ local function CreateToken(text, isExact)
         newToken["value"] = newToken["value"]:gsub("-", "%%-");
     end
 
-    ArenaAnalytics:Log("Created token: ", tokenValue);
     return newToken;
 end
 
@@ -498,8 +529,8 @@ end
 local function ProcessInput(input)
     local playerSegments = {}
 
-    local currentSegment = { Tokens = {}, explicitTeam = nil }
-    local currentToken = {}
+    local currentSegment = { Tokens = {}}
+    local currentToken = nil;
     local currentWord = ""
 
     local index = 1;
@@ -515,28 +546,32 @@ local function ProcessInput(input)
     -- internal functions
 
     local function CommitCurrentSegment()
-        if(#currentSegment.Tokens > 0) then
+        if(not currentSegment or #currentSegment.Tokens > 0) then
             tinsert(playerSegments, currentSegment);
         end
 
-        currentSegment = { Tokens = {}, explicitTeam = nil }
+        currentSegment = { Tokens = {}}
     end
 
     local function CommitCurrentToken()
-        currentToken["value"] = currentToken["keyword"] or currentToken["value"];
+        if(not currentToken) then
+            return;
+        end
+
+        currentToken["value"] = ToLower(currentToken["keyword"] or currentToken["value"]);
 
         if(currentToken["value"] and currentToken["value"] ~= "") then
             tinsert(currentSegment.Tokens, currentToken);
         end
-        currentToken = {}
+        currentToken = nil;
     end
 
     local function CommitCurrentWord()
-        if(currentWord == "") then
+        if(not currentWord or currentWord == "") then
             return;
         end
 
-        if(currentToken["value"] and currentToken["value"] ~= "") then
+        if(currentToken) then
             local combinedValue = currentToken["value"] .. " " .. currentWord;
             local newCombinedToken = CreateToken(combinedValue);
             
@@ -545,7 +580,6 @@ local function ProcessInput(input)
                 currentToken = newCombinedToken;
                 currentWord = ""; -- Already added to the token
             else
-                ArenaAnalytics:Log("Committing old token.");
                 CommitCurrentToken();
             end
         end
@@ -583,17 +617,25 @@ local function ProcessInput(input)
         if char == "+" then
             if #currentSegment.Tokens == 0 and currentWord == "" then
                 currentSegment.team = "team";
-                displayString = displayString .. char;
+                displayString = displayString .. ColorizeSymbol(char);
             else
                 displayString = displayString .. ColorizeInvalid(char);
             end
         elseif char == '-' then
             if #currentSegment.Tokens == 0 and currentWord == "" then
                 currentSegment.team = "enemyTeam";
+                displayString = displayString .. ColorizeSymbol(char);
             else
-                currentWord = currentWord .. '-';
+                currentWord = currentWord .. char;
+                displayString = displayString .. char;
             end
-            displayString = displayString .. char;
+        elseif char == '!' then
+            if(#currentSegment.Tokens == 0 and (currentWord == "" or lastChar == ':')) then
+                currentSegment.inversed = true;
+                displayString = displayString .. ColorizeSymbol(char);
+            else
+                displayString = displayString .. ColorizeInvalid(char);
+            end
         elseif char == ' ' then
             CommitCurrentWord()
             
@@ -603,7 +645,7 @@ local function ProcessInput(input)
             CommitCurrentToken()
             CommitCurrentSegment()
 
-            displayString = displayString .. char;
+            displayString = displayString .. ColorizeSymbol(char);
         elseif char == '"' then
             local endIdx = GetScopeEndIndex('"')
             if endIdx then
@@ -615,18 +657,21 @@ local function ProcessInput(input)
                 local scope = input:sub(index + 1, endIdx - 1);
                 currentToken = CreateToken(currentWord .. scope, true);
                 currentWord = "";
+
+                -- Commit the new token immediately
+                CommitCurrentToken();
                                 
                 index = endIdx
                 
-                displayString = displayString .. '"' .. scope .. '"';
+                displayString = displayString .. ColorizeSymbol('"') .. scope .. ColorizeSymbol('"');
             else -- Invalid scope
                 -- TODO: Add red color
-                displayString = displayString .. "|cffff0000" .. char .. "|r";
+                displayString = displayString .. ColorizeInvalid(char);
             end
         elseif char == ":" then
             CommitCurrentToken()
             currentWord = currentWord .. char;
-            displayString = displayString .. char;
+            displayString = displayString .. ColorizeSymbol(char);
         elseif char == "(" then
             local endIdx = GetScopeEndIndex(')')
             if endIdx then
@@ -636,11 +681,14 @@ local function ProcessInput(input)
                 CommitCurrentToken();
 
                 local scope = input:sub(index + 1, endIdx - 1)
-                currentToken = CreateToken(currentWord .. scope, false);
+                currentToken = CreateToken(currentWord .. scope);
                 currentWord = "";
+
+                -- Commit the new token immediately
+                CommitCurrentToken();
                                 
                 index = endIdx
-                displayString = displayString .. '(' .. scope .. ')';
+                displayString = displayString .. ColorizeSymbol('(') .. scope .. ColorizeSymbol(')');
             else -- Invalid scope
                 -- TODO: Add red color
                 displayString = displayString .. ColorizeInvalid(char);
@@ -711,7 +759,7 @@ function Search:CommitSearch(input)
     for i,segment in ipairs(activePlayerSegments) do
         for j,token in ipairs(segment.Tokens) do
             assert(token and token["value"]);
-            ArenaAnalytics:Log("Token", j, "in segment",i, "has values:", token["value"], token["exact"], token["explicitType"], segment.team);
+            ArenaAnalytics:Log("Token", j, "in segment",i, "has values:", token["value"], token["exact"], token["explicitType"], segment.team, segment.inversed);
         end
     end
 

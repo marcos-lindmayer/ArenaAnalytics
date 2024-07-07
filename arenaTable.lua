@@ -234,7 +234,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.searchTitle = ArenaAnalyticsScrollFrame.searchBox:CreateFontString(nil, "OVERLAY");
     ArenaAnalyticsScrollFrame.searchTitle:SetPoint("TOPLEFT", -4, 0);
     ArenaAnalyticsScrollFrame.searchTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-    ArenaAnalyticsScrollFrame.searchTitle:SetText("Player Search");
+    ArenaAnalyticsScrollFrame.searchTitle:SetText("Search");
 
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEnterPressed", function()
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
