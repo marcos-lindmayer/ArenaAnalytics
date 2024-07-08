@@ -52,7 +52,7 @@ local function ColorizeInvalid(text)
 end
 
 local function ColorizeSymbol(text)
-    return text and "|cffEEEE00" .. text .. "|r" or "";
+    return text and "|cff00ccff" .. text .. "|r" or "";
 end
 
 local function ColorizeToken(token)
@@ -77,6 +77,7 @@ local PrefixTable = {
     ["race"] = { NoSpaces = false, Aliases = {"race", "r"} },
     ["faction"] = { NoSpaces = true, Aliases = {"faction", "f"} },
     ["alts"] = { NoSpaces = true, Aliases = {"alts", "a"} },
+    ["team"] = { NoSpaces = true, Aliases = {"team", "t"}}
 }
 
 -- Find the prefix key from the given token
@@ -118,20 +119,20 @@ SearchTokenTypeTable = {
             ["rogue"] = {"rogue", "rog"},
             ["shaman"] = {"shaman", "sham"},
             ["warlock"] = {"warlock", "lock", "wlock"},
-            ["warrior"] = {"warrior"}
+            ["warrior"] = {"warrior"},
         }
     },
     ["spec"] = {
         ["noSpace"] = false,
         ["priorityValues"] = {
             ["frost"] = {"frost"},
-            ["restoration"] = {"restoration"},
+            ["restoration"] = {"restoration", "resto"},
             ["holy"] = {"holy"},
             ["protection"] = {"protection", "prot"},
         },
         ["values"] = {
             -- Druid
-            [1] = { "restoration druid", "rdruid", "rd" },
+            [1] = { "restoration druid", "resto druid", "rdruid", "rd" },
             [2] = { "feral", "fdruid" },
             [3] = { "balance", "bdruid", "moonkin", "boomkin", "boomy" },
             
@@ -218,38 +219,80 @@ SearchTokenTypeTable = {
             ["horde"] = {"horde"},
         }
     },
+    ["team"] = {
+        ["noSpace"] = true,
+        ["values"] = {
+            ["ally"] = {"friend", "team", "ally", "help"},
+            ["enemy"] = {"enemy", "foe", "harm"},
+        }
+    },
     ["role"] = {
-        ["noSpec"] = true,
+        ["noSpace"] = true,
         ["values"] = {
             ["tank"] = {"tank"},
             ["healer"] = {"healer"},
             ["dps"] = {"damage dealer", "damage", "dps"},
         },
     },
+    ["logical"] = {
+        ["values"] = {
+            ["not"] = { "not" }
+        }
+    }
 }
 
--- Find typeKey, valueKey, noSpace, matchedValue from SearchTokenTypeTable
+local maxPartialSearchDiff = 5;
+
+local function CalculateMatchScore(searchInput, matchedValue, startIndex)
+    local matchedCountScore = (#searchInput / #matchedValue);
+    local differenceScore = 1 - ((#matchedValue - #searchInput) / maxPartialSearchDiff)
+    local startIndexScore = 1 - ((startIndex * startIndex) / (#matchedValue * #matchedValue));
+
+    -- Return weighted score
+    return (matchedCountScore * 0.5) + (differenceScore * 0.3) + (startIndexScore * 0.2);
+end
+
+-- TODO: Look for best match, not just first unless it's exact.
+-- Find typeKey, valueKey, noSpace from SearchTokenTypeTable
 local function FindSearchValueDataForToken(token)
     assert(token);
 
-    if(token["value"] == nil or token["value"] == "") then
+    if(token["value"] == nil or #token["value"] < 2) then
         return;
     end
 
     local lowerCaseValue = token["value"]:lower();
+    
+    -- Cached info about the best match
+    local bestMatch = nil;
+    local function TryUpdateBestMatch(matchedValue, valueKey, typeKey, noSpace, startIndex)
+        local score = CalculateMatchScore(lowerCaseValue, matchedValue, startIndex);
+        if(not bestMatch or score > bestMatch["score"]) then
+            bestMatch = {
+                ["score"] = score,
+                
+                ["typeKey"] = typeKey,
+                ["valueKey"] = valueKey,
+                ["noSpace"] = noSpace,
+            }                                
+        end
+    end
 
     local function FindTokenValueKey(valueTable, searchType)
         local keys = (searchType == "spec") and {"priorityValues", "values"} or {"values"};
-
         for _,key in ipairs(keys) do
             local table = key and valueTable[key] or nil;
             if(table) then
                 for valueKey, values in pairs(table) do
                     for _, value in ipairs(values) do
-                        assert(value)
-                        local isMatch = not token["exact"] and (value:find(lowerCaseValue) ~= nil) or (lowerCaseValue == value);
-                        if isMatch then
-                            return valueKey, valueTable["noSpace"], value
+                        assert(value);
+                        if(lowerCaseValue == value) then
+                            return valueKey, true, value;
+                        elseif(not token["exact"]) then
+                            local foundStartIndex = value:find(lowerCaseValue);
+                            if(foundStartIndex ~= nil) then
+                                TryUpdateBestMatch(value, valueKey, searchType, valueTable["noSpace"], foundStartIndex);
+                            end
                         end
                     end
                 end
@@ -261,18 +304,23 @@ local function FindSearchValueDataForToken(token)
     if token["type"] then
         local valueTable = SearchTokenTypeTable[token["type"]];
         if valueTable then
-            local valueKey, noSpace, matchedValue = FindTokenValueKey(valueTable, token["type"])
-            if valueKey then
-                return token["type"], valueKey, noSpace, matchedValue;
+            local valueKey, isExactMatch = FindTokenValueKey(valueTable, token["type"])
+            if isExactMatch then
+                return token["type"], valueKey, valueTable["noSpace"];
             end
         end
     else -- Look through all keys
         for typeKey, valueTable in pairs(SearchTokenTypeTable) do
-            local valueKey, noSpace, matchedValue = FindTokenValueKey(valueTable, typeKey)
-            if valueKey then
-                return typeKey, valueKey, noSpace, matchedValue;
+            local valueKey, isExactMatch = FindTokenValueKey(valueTable, typeKey)
+            if isExactMatch then
+                return typeKey, valueKey, valueTable["noSpace"];
             end
         end
+    end
+
+    -- Evaluate best match so far, if any.
+    if(bestMatch) then
+        return bestMatch["typeKey"], bestMatch["valueKey"], bestMatch["noSpace"];
     end
 end
 
@@ -506,6 +554,11 @@ local function CreateToken(text, isExact)
             newToken["noSpace"] = noSpace;
             newToken["explicitType"] = typeKey;
             newToken["keyword"] = valueKey;
+        elseif(not newToken["explicitType"] and newToken["value"]:find(' ') == nil) then
+            -- Tokens without spaces fall back to name type
+            ArenaAnalytics:Log("Search: Forced fallback to name search type.")
+            newToken["explicitType"] = "name";
+            newToken["noSpace"] = true;
         end
     end
 
@@ -523,12 +576,13 @@ local function CreateToken(text, isExact)
 end
 
 local function SanitizeInput(input)
-    if(not input or input == "") then
+    if(not input or input == "" or input == " ") then
         return "";
     end
 
-    -- TODO: Ignore if there's two vertical bars in a row?
-    return input:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "");
+    local output = input:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "");
+    output = output:gsub("%s%s+", " ");
+    return output;
 end
 
 -- Process the input string for symbols: Double quotation marks, commas, parenthesis, spaces
@@ -644,10 +698,8 @@ local function ProcessInput(input)
                 displayString = displayString .. ColorizeInvalid(char);
             end
         elseif char == ' ' then
-            if(currentWord ~= "") then
-                CommitCurrentWord()
-                displayString = displayString .. char;
-            end
+            CommitCurrentWord()
+            displayString = displayString .. char;
         elseif char == ',' then
             CommitCurrentWord()
             CommitCurrentToken()
@@ -704,6 +756,9 @@ local function ProcessInput(input)
         elseif char == ")" then
             -- Ignore invalid closing of scope
             displayString = displayString .. ColorizeInvalid(char);
+        elseif char == '/' then
+            currentWord = currentWord .. char
+            displayString = displayString .. ColorizeSymbol(char);
         else
             currentWord = currentWord .. char
             displayString = displayString .. char;
@@ -718,7 +773,7 @@ local function ProcessInput(input)
     CommitCurrentToken()
     CommitCurrentSegment()
 
-    return playerSegments, displayString, input
+    return playerSegments, displayString, input;
 end
 
 ---------------------------------
