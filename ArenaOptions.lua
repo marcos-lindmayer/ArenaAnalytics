@@ -10,10 +10,12 @@ local defaults = {};
 
 -- Adds a setting that 
 local function AddSetting(setting, default)
-    assert(setting, default);
+    assert(setting ~= nil);
+    assert(default ~= nil);
 
     ArenaAnalyticsSettings[setting] = ArenaAnalyticsSettings[setting] ~= nil and ArenaAnalyticsSettings[setting] or default;
-    
+    assert(ArenaAnalyticsSettings[setting] ~= nil);
+
     -- Cache latest defaults
     defaults[setting] = default;
 end
@@ -23,57 +25,72 @@ local function AddTransientSetting(setting, default)
     ArenaAnalyticsSettings[setting] = default;
 end
 
-local hasOptionsLoaded = false;
+Options.hasOptionsLoaded = false;
 function Options:LoadSettings()
-    if hasOptionsLoaded then return end;
+    if Options.hasOptionsLoaded then return end;
 
-    AddSetting("outliers", 0);
-    AddSetting("dropdownVisibileLimit", 10);
-    AddSetting("defaultCurrentSeasonFilter", false);
-    AddSetting("defaultCurrentSessionFilter", false);
-    AddSetting("showSkirmish", false);
+    ArenaAnalytics:Log("Loading settings..")
+    
+    -- General
+    AddSetting("unsavedWarningThreshold", 10);
     AddSetting("alwaysShowDeathOverlay", false);
     AddSetting("alwaysShowSpecOverlay", false);
-    AddSetting("unsavedWarningThreshold", 10);
-    AddSetting("showSelectedCompStats", false);
+    
+    -- Filters
+    AddSetting("defaultCurrentSeasonFilter", false);
+    AddSetting("defaultCurrentSessionFilter", false);
+    
+    AddSetting("showSkirmish", false);
+
     AddSetting("sortCompFilterByTotalPlayed", false);
+    AddSetting("showSelectedCompStats", false);
+    AddSetting("outliers", 0); -- Minimum games to appear on comp dropdowns
+    AddSetting("dropdownVisibileLimit", 10);
+    
+    -- Selection (NYI)
     AddSetting("selectionControlModInversed", false);
+    
+    -- Import/Export
     AddSetting("allowImportDataMerge", false);
 
+    -- Search
+    AddSetting("searchDefaultExplicitEnemy", true);
+
+    -- Debugging
     AddSetting("debuggingEnabled", false);
 
-    hasOptionsLoaded = true;
+    Options.hasOptionsLoaded = true;
+    ArenaAnalytics:Log("Settings loaded successfully.")
 end
 
 -- Gets a setting, regardless of location between 
 function Options:Get(setting)
-    if(hasOptionsLoaded == false) then
+    if(Options.hasOptionsLoaded == false) then
         ArenaAnalytics:Log("Force loaded settings to immediately get:", setting);
         Options:LoadSettings();
     end
 
     assert(setting ~= nil);
-
+    
     local value = ArenaAnalyticsSettings[setting];
-    if(value == nil) then
-        ArenaAnalytics:Log("Attempted to get setting: ", setting, " but got nil result.");
-        return;
-    end
+    assert(value ~= nil);
+    
     return value;
 end
 
 function Options:Set(setting, value)
-    if(hasOptionsLoaded == false) then
+    if(Options.hasOptionsLoaded == false) then
         ArenaAnalytics:Log("Force loaded settings to immediately set:", setting, " to value: ", value);
         Options:LoadSettings();
     end
 
     assert(setting);
     assert(ArenaAnalyticsSettings[setting] ~= nil);
-
+    
     if(setting and ArenaAnalyticsSettings[setting] ~= nil) then
         value = value or defaults[setting]; -- Treat nil as default
         ArenaAnalyticsSettings[setting] = value;
+        ArenaAnalytics:Log("Setting setting: ", setting, "to:", value);
     end
 end
 
@@ -149,11 +166,11 @@ local function InitializeTab(parent)
     offsetY = 0;
 end
 
-local function createSpace(explicit)
+local function CreateSpace(explicit)
     offsetY = offsetY - max(0, explicit or 25)
 end
 
-local function createHeader(text, size, parent, relative, x, y, icon)
+local function CreateHeader(text, size, parent, relative, x, y, icon)
     local frame = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     frame:SetPoint("TOPLEFT", relative or parent, "TOPLEFT", x, y)
     frame:SetTextHeight(size);
@@ -189,7 +206,7 @@ local function CreateButton(setting, parent, x, width, text, func)
     return button;
 end
 
-local function createCheckbox(setting, parent, x, text, func)
+local function CreateCheckbox(setting, parent, x, text, func)
     assert(setting ~= nil);
     assert(type(setting) == "string");
 
@@ -223,7 +240,7 @@ local function createCheckbox(setting, parent, x, text, func)
     return checkbox;
 end
 
-local function createInputBox(setting, parent, x, text, func)
+local function CreateInputBox(setting, parent, x, text, func)
     offsetY = offsetY - 2; -- top padding
 
     local inputBox = CreateFrame("EditBox", "exportFrameScroll", parent, "InputBoxTemplate");
@@ -281,24 +298,24 @@ end
 -------------------------------------------------------------------
 -- General Options
 -------------------------------------------------------------------
-function createTab_General()
+function SetupTab_General()
     -- Title
     InitializeTab(ArenaAnalyticsOptionsFrame);
     local parent = ArenaAnalyticsOptionsFrame;
     local offsetX = 20;    
 
-    parent.tabHeader = createHeader("General", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = CreateHeader("General", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
-    parent.showDeathOverlay = createCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
-    parent.showDeathOverlay = createCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
-    parent.unsavedWarning = createInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
+    parent.showDeathOverlay = CreateCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
+    parent.showDeathOverlay = CreateCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
+    parent.unsavedWarning = CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
 end
 
 -------------------------------------------------------------------
 -- Filter Options Tab
 -------------------------------------------------------------------
-function setupTab_Filters()
+function SetupTab_Filters()
     local filterOptionsFrame = CreateFrame("frame");
     filterOptionsFrame.name = "Filters";
     filterOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
@@ -309,28 +326,48 @@ function setupTab_Filters()
     local parent = filterOptionsFrame;
     local offsetX = 20;
     
-    parent.tabHeader = createHeader("Filters", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = CreateHeader("Filters", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
-    parent.defaultCurrentSeasonFilter = createCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
-    parent.defaultCurrentSessionFilter = createCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
+    parent.defaultCurrentSeasonFilter = CreateCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
+    parent.defaultCurrentSessionFilter = CreateCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
     
-    createSpace();
+    CreateSpace();
     
-    parent.showSkirmish = createCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
+    parent.showSkirmish = CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
     
-    createSpace();
+    CreateSpace();
     
-    parent.compFilterSortByTotal = createCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
-    parent.showSelectedCompStats = createCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
-    parent.unsavedWarning = createInputBox("outliers", parent, offsetX, "Minimum games required to appear on comp filter.");
-    parent.unsavedWarning = createInputBox("dropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
+    parent.compFilterSortByTotal = CreateCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
+    parent.showSelectedCompStats = CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
+    parent.unsavedWarning = CreateInputBox("outliers", parent, offsetX, "Minimum games required to appear on comp filter.");
+    parent.unsavedWarning = CreateInputBox("dropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
+end
+
+-------------------------------------------------------------------
+-- Search Options Tab
+-------------------------------------------------------------------
+function SetupTab_Search()
+    local filterOptionsFrame = CreateFrame("frame");
+    filterOptionsFrame.name = "Search";
+    filterOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
+    InterfaceOptions_AddCategory(filterOptionsFrame);
+    
+    -- Title
+    InitializeTab(filterOptionsFrame);
+    local parent = filterOptionsFrame;
+    local offsetX = 20;
+    
+    parent.tabHeader = CreateHeader("Search", TabHeaderSize, parent, nil, 15, -15);
+
+    -- Setup options
+    parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team. Prefix player segment '|cff00ccff+|r' to force friendly team.");
 end
 
 -------------------------------------------------------------------
 -- Import/Export Options Tab
 -------------------------------------------------------------------
-function setupTab_ImportExport()
+function SetupTab_ImportExport()
     exportOptionsFrame = CreateFrame("frame");
     exportOptionsFrame.name = "Import / Export";
     exportOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
@@ -340,11 +377,11 @@ function setupTab_ImportExport()
     local parent = exportOptionsFrame;
     local offsetX = 20;
 
-    parent.tabHeader = createHeader("Import / Export", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = CreateHeader("Import / Export", TabHeaderSize, parent, nil, 15, -15);
 
     parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() ArenaAnalytics.Export:combineExportCSV() end);
     
-    createSpace();
+    CreateSpace();
 
     -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
     parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() ArenaAnalytics.AAtable:tryShowimportDialogFrame() end);
@@ -357,7 +394,7 @@ function setupTab_ImportExport()
     end
     parent.importButton.stateFunc();
 
-    parent.importAllowMerge = createCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
+    parent.importAllowMerge = CreateCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
         parent.importButton.stateFunc();
     end);
     parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nThis will add matches before and after already stored matches.\n\n|cffff0000Experimental! - Use at own risk.|r\nBackup SavedVariables recommended." }
@@ -376,8 +413,9 @@ function Options.Initialzie()
         InterfaceOptions_AddCategory(ArenaAnalyticsOptionsFrame);
 
         -- Setup tabs
-        createTab_General();
-        setupTab_Filters();
-        setupTab_ImportExport();
+        SetupTab_General();
+        SetupTab_Filters();
+        SetupTab_Search();
+        SetupTab_ImportExport();
     end
 end

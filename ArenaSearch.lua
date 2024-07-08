@@ -2,6 +2,7 @@ local _, ArenaAnalytics = ... -- Namespace
 ArenaAnalytics.Search = {}
 local Search = ArenaAnalytics.Search;
 
+local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
 
 -- DOCUMENTATION
@@ -606,7 +607,11 @@ local function ProcessInput(input)
     -- internal functions
 
     local function CommitCurrentSegment()
-        if(not currentSegment or #currentSegment.Tokens > 0) then
+        if(currentSegment and #currentSegment.Tokens > 0) then
+            if(not currentSegment.team and Options:Get("searchDefaultExplicitEnemy")) then
+                currentSegment.team = "enemyTeam";
+            end
+
             tinsert(playerSegments, currentSegment);
         end
 
@@ -700,7 +705,7 @@ local function ProcessInput(input)
         elseif char == ' ' then
             CommitCurrentWord()
             displayString = displayString .. char;
-        elseif char == ',' then
+        elseif char == ',' or char == '.' or char == ';' then
             CommitCurrentWord()
             CommitCurrentToken()
             CommitCurrentSegment()
