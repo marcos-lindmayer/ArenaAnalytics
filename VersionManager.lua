@@ -237,7 +237,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     end);
 
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
-    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+    ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
 	ArenaAnalytics.updateLastSession();
     ArenaAnalytics.Import:tryHide();
 

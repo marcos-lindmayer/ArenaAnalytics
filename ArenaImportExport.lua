@@ -146,7 +146,7 @@ function Import:reset()
 end
 
 function Import:tryHide()
-    if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil and ArenaAnalytics:hasStoredMatches()) then
+    if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil and ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
         ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText("");
         ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
@@ -172,7 +172,7 @@ function Import:parseRawData(data)
     
     if(isImporting) then
         ArenaAnalytics:Print("Another import already in progress!");
-    elseif(not ArenaAnalyticsSettings["allowImportDataMerge"] and ArenaAnalytics:hasStoredMatches()) then
+    elseif(not ArenaAnalyticsSettings["allowImportDataMerge"] and ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalytics:Print("Import failed due to existing stored matches!");
         Import:reset();
     elseif(dataSource == "Invalid") then
@@ -749,7 +749,7 @@ function Import:addCachedArenasToMatchHistory_ArenaAnalytics(nextIndex)
         end        
     end
 
-    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+    ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
 
     Import:completeImport();
 end
@@ -765,7 +765,7 @@ function Import:completeImport()
         end
     end);
     
-    ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+    ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
     ArenaAnalytics:updateLastSession();    
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
     ArenaAnalytics.Filter:RefreshFilters();
@@ -811,7 +811,7 @@ end
 
 -- Returns a CSV-formatted string using MatchHistoryDB info
 function Export:combineExportCSV()
-    if(not ArenaAnalytics:hasStoredMatches()) then
+    if(not ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalytics:Log("Export: No games to export!");
         return "No games to export!";
     end
@@ -918,7 +918,7 @@ function Export:FinalizeExportCSV(exportTable)
     ArenaAnalytics:Log("Attempting export.. FinalizeExportCSV");
 
     -- Show export with the new CSV string
-    if (ArenaAnalytics:hasStoredMatches()) then
+    if (ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalytics.AAtable:CreateExportDialogFrame();
         ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetText(table.concat(exportTable, "\n"));
 	    ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:HighlightText();

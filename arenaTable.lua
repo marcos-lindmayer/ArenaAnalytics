@@ -332,7 +332,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.unsavedWarning:Show();
 
     -- First time user import popup if no matches are stored
-    if (not ArenaAnalytics:hasStoredMatches()) then
+    if (not ArenaAnalytics:HasStoredMatches()) then
         AAtable:tryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
     end
 
@@ -509,7 +509,7 @@ end
 
 -- Creates the Export DB frame
 function AAtable:CreateExportDialogFrame()
-    if (not ArenaAnalytics:hasStoredMatches()) then
+    if (not ArenaAnalytics:HasStoredMatches()) then
         return;
     end
 
@@ -901,7 +901,7 @@ function AAtable:handleArenaCountChanged()
     AAtable:RefreshLayout();
     AAtable:forceCompFilterRefresh();
 
-    if(not ArenaAnalytics:hasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
+    if(not ArenaAnalytics:HasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
         ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
     end
 

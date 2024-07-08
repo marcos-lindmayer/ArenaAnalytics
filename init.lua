@@ -73,7 +73,7 @@ ArenaAnalytics.commands = {
 
 	["updatesessions"] = function()
 		ArenaAnalytics:Print("Updating sessions in MatchHistoryDB.");
-		ArenaAnalytics:recomputeSessionsForMatchHistoryDB();
+		ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
 
         ArenaAnalyticsScrollFrame:Hide();
 	end,
@@ -116,7 +116,7 @@ ArenaAnalytics.commands = {
 		if(not Options:Get("debuggingEnabled")) then
 			ArenaAnalytics:Print("Clearing MatchHistoryDB requires enabling |cffBBBBBB/aa debug|r. Not intended for users!");
 		else -- Debug mode is enabled, allow debug clearing the DB
-			if (ArenaAnalytics:hasStoredMatches()) then
+			if (ArenaAnalytics:HasStoredMatches()) then
 				ArenaAnalytics:Log("Clearing MatchHistoryDB.");
 				MatchHistoryDB = {}
 				ArenaAnalytics.AAtable:tryShowimportDialogFrame(ArenaAnalyticsScrollFrame);

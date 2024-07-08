@@ -349,7 +349,7 @@ function setupTab_ImportExport()
     -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
     parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() ArenaAnalytics.AAtable:tryShowimportDialogFrame() end);
     parent.importButton.stateFunc = function()
-        if(Options:Get("allowImportDataMerge") or not ArenaAnalytics:hasStoredMatches()) then
+        if(Options:Get("allowImportDataMerge") or not ArenaAnalytics:HasStoredMatches()) then
             exportOptionsFrame.importButton:Enable();
         else
             exportOptionsFrame.importButton:Disable();

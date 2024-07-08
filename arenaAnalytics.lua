@@ -38,14 +38,14 @@ function ArenaAnalytics:GetActiveBattlefieldID()
 	ArenaAnalytics:Log("Failed to find battlefield ID");
 end
 
-function ArenaAnalytics:recomputeSessionsForMatchHistoryDB()
+function ArenaAnalytics:RecomputeSessionsForMatchHistoryDB()
 	-- Assign session to filtered matches
 	local session = 1
 	for i = 1, #MatchHistoryDB do
 		local current = MatchHistoryDB[i];
 		local prev = MatchHistoryDB[i - 1];
 
-		if(prev and not ArenaAnalytics:isMatchesSameSession(prev, current)) then
+		if(prev and not ArenaAnalytics:IsMatchesSameSession(prev, current)) then
 			session = session + 1;
 		end
 
@@ -53,12 +53,12 @@ function ArenaAnalytics:recomputeSessionsForMatchHistoryDB()
 	end
 end
 
-function ArenaAnalytics:hasStoredMatches()
+function ArenaAnalytics:HasStoredMatches()
 	return (MatchHistoryDB ~= nil and #MatchHistoryDB > 0);
 end
 
 -- Check if 2 arenas are in the same session
-function ArenaAnalytics:isMatchesSameSession(arena1, arena2)
+function ArenaAnalytics:IsMatchesSameSession(arena1, arena2)
 	if(not arena1 or not arena2) then
 		return false;
 	end
@@ -67,17 +67,17 @@ function ArenaAnalytics:isMatchesSameSession(arena1, arena2)
 		return false;
 	end
 	
-	if(not ArenaAnalytics:arenasHaveSameParty(arena1, arena2)) then
+	if(not ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)) then
 		return false;
 	end
 
 	return true;
 end
 
-function ArenaAnalytics:teamContainsPlayer(team, player)
-	if(team and player) then
-		for i = 1, #team do
-			if (team[i]["name"] ~= player) then
+function ArenaAnalytics:TeamContainsPlayer(team, playerName)
+	if(team and playerName) then
+		for _,player in ipairs(team) do
+			if (player["name"] == playerName) then
 				return true;
 			end
 		end
@@ -85,12 +85,12 @@ function ArenaAnalytics:teamContainsPlayer(team, player)
 end
 
 -- Checks if 2 arenas have the same party members
-function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
+function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
     if(arena1["bracket"] ~= arena2["bracket"]) then
         return false;
     end
 
-    if(arena1 == nil or arena2 == nil or arena1["team"] == nil or arena2["team"] == nil) then
+    if(not arena1 or not arena2 or not arena1["team"] or not arena2["team"]) then
         return false;
     end
 
@@ -99,10 +99,10 @@ function ArenaAnalytics:arenasHaveSameParty(arena1, arena2)
 	local smallerTeam = teamOneIsSmaller and arena1["team"] or arena2["team"];
 	local largerTeam = teamOneIsSmaller and arena2["team"] or arena1["team"];
 
-	for i = 1, #smallerTeam do
-		local player = smallerTeam[i]["name"];
-		if (player) then
-			if(not ArenaAnalytics:teamContainsPlayer(largerTeam, player)) then
+	for _,player in ipairs(smallerTeam) do
+		local playerName = player["name"];
+		if (playerName) then
+			if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, playerName)) then
 				return false;
 			end
 		end
@@ -415,7 +415,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	-- Assign session
 	local session = ArenaAnalytics:getLastSession();
 	local lastMatch = ArenaAnalytics:getLastMatch(false);
-	if (not ArenaAnalytics:isMatchesSameSession(lastMatch, arenaData)) then
+	if (not ArenaAnalytics:IsMatchesSameSession(lastMatch, arenaData)) then
 		session = session + 1;
 	end
 	arenaData["session"] = session;
