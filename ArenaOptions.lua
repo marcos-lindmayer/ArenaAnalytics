@@ -8,10 +8,10 @@ ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {}
 
 local defaults = {};
 
--- Adds a setting that 
+-- Adds a setting with loaded or default value.
 local function AddSetting(setting, default)
     assert(setting ~= nil);
-    assert(default ~= nil);
+    assert(default ~= nil, "Nil values for settings are not supported.");
 
     ArenaAnalyticsSettings[setting] = ArenaAnalyticsSettings[setting] ~= nil and ArenaAnalyticsSettings[setting] or default;
     assert(ArenaAnalyticsSettings[setting] ~= nil);
@@ -25,11 +25,11 @@ local function AddTransientSetting(setting, default)
     ArenaAnalyticsSettings[setting] = default;
 end
 
-Options.hasOptionsLoaded = false;
+local hasOptionsLoaded = nil;
 function Options:LoadSettings()
-    if Options.hasOptionsLoaded then return end;
+    if hasOptionsLoaded then return end;
 
-    ArenaAnalytics:Log("Loading settings..")
+    ArenaAnalytics:Log("Loading settings..");
     
     -- General
     AddSetting("unsavedWarningThreshold", 10);
@@ -59,38 +59,52 @@ function Options:LoadSettings()
     -- Debugging
     AddSetting("debuggingEnabled", false);
 
-    Options.hasOptionsLoaded = true;
-    ArenaAnalytics:Log("Settings loaded successfully.")
+    hasOptionsLoaded = true;
+    ArenaAnalytics:Log("Settings loaded successfully.");
+    return true;
+end
+
+function Options:HasLoaded()
+    return hasOptionsLoaded;
 end
 
 -- Gets a setting, regardless of location between 
 function Options:Get(setting)
-    if(Options.hasOptionsLoaded == false) then
-        ArenaAnalytics:Log("Force loaded settings to immediately get:", setting);
-        Options:LoadSettings();
-    end
+    assert(setting);
 
-    assert(setting ~= nil);
+    if(hasOptionsLoaded == false) then
+        ArenaAnalytics:Log("Force loaded settings to immediately get:", setting);
+        local successful = Options:LoadSettings();
+        if not successful then return end;
+    end
     
     local value = ArenaAnalyticsSettings[setting];
-    assert(value ~= nil);
-    
+
+    if(value == nil) then
+        ArenaAnalytics:Log("Setting not found: ", setting, value)
+        return nil;
+    end
+
     return value;
 end
 
 function Options:Set(setting, value)
-    if(Options.hasOptionsLoaded == false) then
+    assert(setting);
+
+    if(hasOptionsLoaded == false) then
         ArenaAnalytics:Log("Force loaded settings to immediately set:", setting, " to value: ", value);
-        Options:LoadSettings();
+        local successful = Options:LoadSettings();
+        if not successful then return end;
     end
 
-    assert(setting);
-    assert(ArenaAnalyticsSettings[setting] ~= nil);
+    assert(ArenaAnalyticsSettings[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
     
     if(setting and ArenaAnalyticsSettings[setting] ~= nil) then
         value = value or defaults[setting]; -- Treat nil as default
+
+        local oldValue = ArenaAnalyticsSettings[setting];
         ArenaAnalyticsSettings[setting] = value;
-        ArenaAnalytics:Log("Setting setting: ", setting, "to:", value);
+        ArenaAnalytics:Log("Setting option: ", setting, "new:", value, "old:", oldValue);
     end
 end
 
@@ -229,8 +243,6 @@ local function CreateCheckbox(setting, parent, x, text, func)
         else
             HandleFiltersUpdated();
         end
-
-		ArenaAnalytics:Log(setting .. ": ", Options:Get(setting));
 	end);
 
     SetupTooltip(checkbox, {checkbox, checkbox.text});
@@ -278,8 +290,6 @@ local function CreateInputBox(setting, parent, x, text, func)
 		inputBox:HighlightText(0,0);
         
 		ArenaAnalytics.AAtable:checkUnsavedWarningThreshold();
-
-        ArenaAnalytics:Log("Setting ", setting, " changed to: ", newValue, ". Old value: ", oldValue);
     end);
 
     SetupTooltip(inputBox, {inputBox, inputBox.text});
