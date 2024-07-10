@@ -55,6 +55,7 @@ function Options:LoadSettings()
 
     -- Search
     AddSetting("searchDefaultExplicitEnemy", true);
+    AddSetting("searchHideTooltipQuickSearch", false);
 
     -- Debugging
     AddSetting("debuggingEnabled", false);
@@ -306,7 +307,7 @@ local function CreateInputBox(setting, parent, x, text, func)
 end
 
 -------------------------------------------------------------------
--- General Options
+-- General Tab
 -------------------------------------------------------------------
 function SetupTab_General()
     -- Title
@@ -323,7 +324,7 @@ function SetupTab_General()
 end
 
 -------------------------------------------------------------------
--- Filter Options Tab
+-- Filter Tab
 -------------------------------------------------------------------
 function SetupTab_Filters()
     local filterOptionsFrame = CreateFrame("frame");
@@ -355,7 +356,7 @@ function SetupTab_Filters()
 end
 
 -------------------------------------------------------------------
--- Search Options Tab
+-- Search Tab
 -------------------------------------------------------------------
 function SetupTab_Search()
     local filterOptionsFrame = CreateFrame("frame");
@@ -372,10 +373,11 @@ function SetupTab_Search()
 
     -- Setup options
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team. Prefix player segment '|cff00ccff+|r' to force friendly team.");
+    parent.searchDefaultExplicitEnemy = CreateCheckbox("searchHideTooltipQuickSearch", parent, offsetX, "Hide Quick Search shortcuts on player tooltips.");
 end
 
 -------------------------------------------------------------------
--- Import/Export Options Tab
+-- Import/Export Tab
 -------------------------------------------------------------------
 function SetupTab_ImportExport()
     exportOptionsFrame = CreateFrame("frame");

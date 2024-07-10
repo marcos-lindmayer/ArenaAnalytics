@@ -2,6 +2,8 @@ local _, ArenaAnalytics = ...; -- Namespace
 ArenaAnalytics.Tooltips = {};
 local Tooltips = ArenaAnalytics.Tooltips;
 
+local Options = ArenaAnalytics.Options;
+
 function Tooltips:DrawMinimapTooltip()
     GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
     GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. ArenaAnalytics:getVersion() .. "|r");
@@ -59,15 +61,15 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         playerName = playerName:match("(.*)-") or "";
     end
 
-    player = playerName or "Unknown";
-    faction = playerTable["faction"] or "Unknown";
-    race = playerTable["race"] or "Unknown Race";
-    class = playerTable["class"] or "";
-    spec = playerTable["spec"] or "";
-    damage = playerTable["damage"] or "-";
-    healing = playerTable["healing"] or "-";
-    kills = playerTable["kills"] or "-";
-    deaths = playerTable["deaths"] or "-";
+    local player = playerName or "???";
+    local faction = playerTable["faction"] or "???";
+    local race = playerTable["race"] or "???";
+    local class = playerTable["class"] or "";
+    local spec = playerTable["spec"] or "";
+    local damage = playerTable["damage"] or "-";
+    local healing = playerTable["healing"] or "-";
+    local kills = playerTable["kills"] or "-";
+    local deaths = playerTable["deaths"] or "-";
 
     local function ColorText(text)
         return "|cff999999" .. text or "" .. "|r";
@@ -96,11 +98,25 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         return "|cffffffff" .. value .. "|r";
     end
 
+    -- Create the tooltip
     GameTooltip:SetOwner(playerFrame, "ANCHOR_RIGHT");
     GameTooltip:AddLine(player);    
     GameTooltip:AddDoubleLine(race, ArenaAnalytics:ApplyClassColor(spec .. " " .. class, class));
-    GameTooltip:AddLine("");
+
     GameTooltip:AddDoubleLine(ColorText("Damage: ") .. FormatValue(damage), ColorText("Healing: ") .. FormatValue(healing));
     GameTooltip:AddDoubleLine(ColorText("Kills: ") .. FormatValue(kills), ColorText("Deaths: ") .. FormatValue(deaths));
+
+    local function ColorTips(key, text)
+        return "|cff999999" .. key .. "|r|cffCCCCCC" .. text .. "|r";
+    end
+
+    if(not Options:Get("searchHideTooltipQuickSearch")) then
+        GameTooltip:AddLine(" ");
+        GameTooltip:AddLine("Quick Search:");
+        GameTooltip:AddDoubleLine(ColorTips("LMB:", " Add value"), ColorTips("RMB:", " Add inversed"));
+        GameTooltip:AddDoubleLine(ColorTips("Nomod:", " Player Name"), ColorTips("Shift:", " Class/Spec"));
+        GameTooltip:AddDoubleLine(ColorTips("Ctrl:", " Race"), ColorTips("Alt:", " Append search"));
+    end
+
     GameTooltip:Show();
 end

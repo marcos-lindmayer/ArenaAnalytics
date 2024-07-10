@@ -206,9 +206,6 @@ end
 -- Search Type Data tables
 ---------------------------------
 
--- TODO: Update to allow order here to determine priority for shared keywords 
-    -- (E.g., "Frost" would match first found here (Death Knight or Mage))
-    -- For now, it's sorted by the spec ID forcing constant priority here.
 SearchTokenTypeTable = {
     ["class"] = {
         ["noSpace"] = false,
@@ -324,13 +321,6 @@ SearchTokenTypeTable = {
             ["horde"] = {"horde"},
         }
     },
-    ["team"] = {
-        ["noSpace"] = true,
-        ["values"] = {
-            ["team"] = {"friend", "team", "ally", "help", "partner"},
-            ["enemyTeam"] = {"enemy", "foe", "harm"},
-        }
-    },
     ["role"] = {
         ["noSpace"] = true,
         ["values"] = {
@@ -338,6 +328,14 @@ SearchTokenTypeTable = {
             ["healer"] = {"healer"},
             ["dps"] = {"damage dealer", "damage", "dps"},
         },
+    },
+    ["team"] = {
+        ["requireExact"] = true,
+        ["noSpace"] = true,
+        ["values"] = {
+            ["team"] = {"friend", "team", "ally", "help", "partner"},
+            ["enemyTeam"] = {"enemy", "foe", "harm"},
+        }
     },
     ["logical"] = {
         ["requireExact"] = true,
@@ -358,7 +356,6 @@ local function CalculateMatchScore(searchInput, matchedValue, startIndex)
     return (matchedCountScore * 0.5) + (differenceScore * 0.3) + (startIndexScore * 0.2);
 end
 
--- TODO: Look for best match, not just first unless it's exact.
 -- Find typeKey, valueKey, noSpace from SearchTokenTypeTable
 local function FindSearchValueDataForToken(token)
     assert(token);
