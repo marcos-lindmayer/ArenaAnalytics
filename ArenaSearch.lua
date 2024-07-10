@@ -974,6 +974,10 @@ function Search:QuickSearch(mouseButton, name, class, spec, race, team)
     local prefix, tokens = '', {};
     local isNegated = (mouseButton == "RightButton");
 
+    if(isNegated) then
+        tinsert(tokens, "not");
+    end
+
     if(team == "team") then
         prefix = '+';
     elseif(team == "enemyTeam") then
@@ -981,15 +985,19 @@ function Search:QuickSearch(mouseButton, name, class, spec, race, team)
     end
 
     if(not IsShiftKeyDown() and not IsControlKeyDown()) then
-        local shouldHideMyRealm = true;
-        local shouldHideAnyRealm = true;
+        name = name or "";
+        if(name:find('-')) then
+            -- TODO: Convert to options
+            local shouldHideMyRealm = true;
+            local shouldHideAnyRealm = true;
 
-        if(shouldHideAnyRealm) then
-            name = name:match("(.*)-") or "";
-        elseif(shouldHideMyRealm) then
-            local _, realm = UnitFullName("player");
-            if(realm and name:find(realm)) then
-                name = name:match("(.*)-") or "";
+            if(shouldHideAnyRealm) then
+                name = name:match("(.*)-") or name or "";
+            elseif(shouldHideMyRealm) then
+                local _, realm = UnitFullName("player");
+                if(realm and name:find(realm)) then
+                    name = name:match("(.*)-") or "";
+                end
             end
         end
 
@@ -1024,7 +1032,7 @@ function Search:QuickSearch(mouseButton, name, class, spec, race, team)
         end
     end
 
-    Search:CommitQuickSearch(prefix, tokens, isNegated);
+    Search:CommitQuickSearch(prefix, tokens, false);
 end
 
 local function SplitAtLastComma(input)

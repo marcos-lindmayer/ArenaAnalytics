@@ -28,6 +28,10 @@ local function getMatch(matchIndex)
     return ArenaAnalytics.filteredMatchHistory[matchIndex];
 end
 
+local function IsValidMatch(index)
+    return (index and ArenaAnalytics.filteredMatchHistory[index] ~= nil or false);
+end
+
 local function selectMatchByIndex(index, autoCommit, isDeselect)
     autoCommit = autoCommit or IsControlKeyDown();
     if(getMatch(index) ~= nil) then
@@ -105,6 +109,11 @@ end
 
 -- Helper function to select a range of matches
 local function selectRange(startIndex, endIndex, includeStartSession, includeEndSession, isDeselect)
+    if(not IsValidMatch(index)) then
+        ArenaAnalytics:Log("Invalid filtered match index in selectRange! Selection ignored..");
+        return;
+    end
+
     local minIndex = math.min(startIndex, endIndex)
     local maxIndex = math.max(startIndex, endIndex)
     local startSession = ArenaAnalytics.filteredMatchHistory[startIndex]["session"]
@@ -124,6 +133,11 @@ end
 
 -- Helper function to select or deselect a session by index
 local function selectSessionByIndex(index, autoCommit, isDeselect)
+    if(not IsValidMatch(index)) then
+        ArenaAnalytics:Log("Invalid filtered match index in selectSessionByIndex! Selection ignored..");
+        return;
+    end
+
     local session = ArenaAnalytics.filteredMatchHistory[index]["session"]
 
     -- Select or deselect the match at the given index using selectMatchByIndex
@@ -174,7 +188,12 @@ local function clearLatestSelections()
 end
 
 -- Main function to handle click events on match entries
-function Selection:handleMatchEntryClicked(key, isDoubleClick, index)
+function Selection:handleMatchEntryClicked(key, isDoubleClick, index)    
+    if(not IsValidMatch(index)) then
+        ArenaAnalytics:Log("Invalid filtered match index in handleMatchEntryClicked! Selection ignored..");
+        return;
+    end
+
     -- whether we're changing the endpoint of a multiselect
     local startIndex = latestSelectionInfo["start"] and latestSelectionInfo["start"]["index"] or nil;
     local isStartSessionSelect = latestSelectionInfo["start"] and latestSelectionInfo["start"]["isSessionSelect"];
