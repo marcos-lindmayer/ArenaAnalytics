@@ -23,7 +23,7 @@ If any alt is found, the player is considered to be found in the match.
 Example: Hydr|hxii-firemaw|romeboy (Search matches if any one of the alts are found)
 
 Exact Search:
-Each character name may be surrouned by quotation marks must be exact. This functions both with or without explicit server.
+Each character name may be surrounded by quotation marks must be exact. This functions both with or without explicit server.
 Without quotation marks, the name accepts partial matches for player names.
 Example: "Hydr", "hxii-firemaw"
 

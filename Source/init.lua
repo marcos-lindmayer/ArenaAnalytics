@@ -126,11 +126,9 @@ ArenaAnalytics.commands = {
 		end
 	end,
 
+	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function()
-		local specKeyString = "Mage|Frost";
-        local class, spec = specKeyString:match("([^|]+)|(.+)");
-        local specID = ArenaAnalytics.Constants:getAddonSpecializationID(class, spec);
-		ArenaAnalytics:Log(specID, class, spec)
+
 	end,	
 };
 
