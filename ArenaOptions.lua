@@ -54,7 +54,7 @@ function Options:LoadSettings()
     AddSetting("allowImportDataMerge", false);
 
     -- Search
-    AddSetting("searchDefaultExplicitEnemy", true);
+    AddSetting("searchDefaultExplicitEnemy", false);
     AddSetting("searchHideTooltipQuickSearch", false);
 
     -- Debugging
