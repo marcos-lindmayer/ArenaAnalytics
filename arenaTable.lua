@@ -247,7 +247,6 @@ function AAtable:OnLoad()
 
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnChar", function(self)
         Search:Update(self:GetText());
-        self:SetText(Search:GetDisplay());
     end);
         
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextSet", function(self) 
@@ -580,40 +579,16 @@ function AAtable:OnShow()
     ArenaAnalyticsScrollFrame:Hide();
 end
 
-local function addPlayerToQuickSearch(previousSearch, prefix, playerToAdd)
-    previousSearch = previousSearch or "";
-    playerToAdd = playerToAdd or "";
-
-    local newSearch = prefix .. playerToAdd;
-    local existingSearch = playerToAdd:gsub("-", "%%-");
-    if(previousSearch ~= "" and previousSearch:find(playerToAdd:gsub("-", "%%-")) ~= nil) then
-        -- Clear existing prefix
-        previousSearch = previousSearch:gsub("-"..existingSearch, playerToAdd);
-        previousSearch = previousSearch:gsub("+"..existingSearch, playerToAdd);
-
-        newSearch = previousSearch:gsub(existingSearch, newSearch);
-    else
-        if(previousSearch ~= "" and previousSearch:sub(-1) ~= '|') then
-            previousSearch = previousSearch .. ", ";
-        end
-        
-        newSearch = previousSearch .. newSearch;
-    end
-    
-    Search:CommitSearch(newSearch);
-    ArenaAnalyticsScrollFrame.searchBox:SetText(Search:GetDisplay());
-end
-
-local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, matchKey, scrollEntry)
-    if(match == nil or match[matchKey] == nil) then
+local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKey, scrollEntry)
+    if(match == nil or match[teamKey] == nil) then
         return;
     end
 
     for i = 1, #teamPlayerFrames do
-        local player = match[matchKey][i];
+        local player = match[teamKey][i];
         local playerFrame = teamPlayerFrames[i];
         if (player and playerFrame) then
-            playerFrame.team = matchKey;
+            playerFrame.team = teamKey;
             playerFrame.playerIndex = i;
             playerFrame.matchIndex = matchIndex;
             
@@ -641,32 +616,11 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, matchK
 
             playerFrame:SetAttribute("name", playerName);
 
-            -- Set click to copy name
-            if (playerFrame) then
-                playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
-                playerFrame:SetScript("OnClick", function(frame, btn)
-                    -- Specify explicit team prefix for search
-                    local prefix = '';
-                    if(IsControlKeyDown()) then
-                        -- Search for this player on your team
-                        prefix = '+';
-                    elseif(IsAltKeyDown()) then
-                        -- Search for this player on enemy team
-                        prefix = '-'
-                    elseif (btn == "RightButton") then
-                        prefix = matchKey == "team" and '+' or '-';                        
-                    end
-
-                    -- Include server with quick search shortcut? (Requires old data to be updated to be included)
-                    if(IsShiftKeyDown()) then
-                        -- Search for this player on any team
-                        addPlayerToQuickSearch(ArenaAnalyticsScrollFrame.searchBox:GetText(), prefix, playerName);
-                    else
-                        -- Search for the player
-                        addPlayerToQuickSearch("", prefix, playerName);
-                    end
-                end);
-            end
+            -- Quick Search
+            playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+            playerFrame:SetScript("OnClick", function(frame, btn)
+                Search:QuickSearch(btn, playerName, class, spec, player["race"], teamKey);
+            end);
 
             -- Add spec info
             if(class) then

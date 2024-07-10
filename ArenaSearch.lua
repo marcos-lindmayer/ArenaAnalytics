@@ -65,6 +65,112 @@ local function ColorizeToken(token)
     return text and "|cffFFFFFF" .. text .. "|r" or "";
 end
 
+local QuickSearchValueTable = {
+    ["class"] = {
+        ["death knight"] = "DK",
+        ["demon hunter"] = "DH",
+        ["druid"] = "Druid",
+        ["hunter"] = "Hunt",
+        ["mage"] = "Mage",
+        ["monk"] = "Monk",
+        ["paladin"] = "Pala",
+        ["priest"] = "Priest",
+        ["rogue"] = "Rog",
+        ["shaman"] = "Sham",
+        ["warlock"] = "Lock",
+        ["warrior"] = "Warrior"
+    },
+    ["spec"] = {
+        -- Druid
+        ["druid|restoration"] = "RDruid",
+        ["druid|feral"] = "Feral",
+        ["druid|balance"] = "Balance",
+        -- Paladin
+        ["paladin|holy"] = "HPala",
+        ["paladin|protection"] = "Prot Pala",
+        ["paladin|preg"] = "Preg",
+        ["paladin|retribution"] = "Ret",
+        -- Shaman
+        ["shaman|restoration"] = "RSham",
+        ["shaman|elemental"] = "Ele",
+        ["shaman|enhancement"] = "Enh",
+        -- Death Knight
+        ["death knight|unholy"] = "UH",
+        ["death knight|frost"] = "Frost DK",
+        ["death knight|blood"] = "Blood",
+        -- Hunter
+        ["hunter|beast mastery"] = "BM",
+        ["hunter|marksmanship"] = "MM",
+        ["hunter|survival"] = "Surv",
+        -- Mage
+        ["mage|frost"] = "Frost Mage",
+        ["mage|fire"] = "Fire",
+        ["mage|arcane"] = "Arcane",
+        -- Rogue
+        ["rogue|subtlety"] = "Sub",
+        ["rogue|assassination"] = "Assa",
+        ["rogue|combat"] = "Combat",
+        ["rogue|outlaw"] = "Outlaw",
+        -- Warlock
+        ["warlock|affliction"] = "Affli",
+        ["warlock|destruction"] = "Destro",
+        ["warlock|demonology"] = "Demo",
+        -- Warrior
+        ["warrior|protection"] = "Prot War",
+        ["warrior|arms"] = "Arms",
+        ["warrior|fury"] = "Fury",
+        -- Priest
+        ["priest|discipline"] = "Disc",
+        ["priest|holy"] = "HPriest",
+        ["priest|shadow"] = "Shadow"
+    },
+    ["race"] = {
+        ["blood elf"] = "Belf",
+        ["draenei"] = "Draenei",
+        ["dwarf"] = "Dwarf",
+        ["gnome"] = "Gnome",
+        ["goblin"] = "Goblin",
+        ["human"] = "Human",
+        ["night elf"] = "Nelf",
+        ["orc"] = "Orc",
+        ["pandaren"] = "Pandaren",
+        ["tauren"] = "Tauren",
+        ["troll"] = "Troll",
+        ["undead"] = "Undead",
+        ["worgen"] = "Worgen",
+        ["void elf"] = "Velf",
+        ["lightforged draenei"] = "LDraenei",
+        ["nightborne"] = "Nightborne",
+        ["highmountain tauren"] = "HTauren",
+        ["zandalari troll"] = "ZTroll",
+        ["kul tiran"] = "KTiran",
+        ["dark iron dwarf"] = "DIDwarf",
+        ["mag'har orc"] = "MOrc",
+        ["mechagnome"] = "MGnome",
+        ["vulpera"] = "Vulpera"
+    },
+}
+
+function Search:GetShortQuickSearch(typeKey, longValue)
+    assert(QuickSearchValueTable[typeKey]);
+    longValue = longValue or "";
+    return QuickSearchValueTable[typeKey][longValue:lower()] or longValue;
+end
+
+function Search:GetShortQuickSearchSpec(class, spec)
+    local shortName = nil;
+    if(spec) then
+        local specKey = class .. "|" .. spec;
+        shortName = QuickSearchValueTable["spec"][specKey:lower()];
+    else
+        shortName = QuickSearchValueTable["class"][class:lower()];
+    end
+
+    ArenaAnalytics:Log("Short name for class: ", class, " and spec: ", spec, "=",shortName);
+
+    return shortName;
+end
+
 ---------------------------------
 -- Prefix Data
 ---------------------------------
@@ -125,13 +231,13 @@ SearchTokenTypeTable = {
     },
     ["spec"] = {
         ["noSpace"] = false,
-        ["priorityValues"] = {
+        ["values"] = {
+            -- Ambiguous
             ["frost"] = {"frost"},
             ["restoration"] = {"restoration", "resto"},
             ["holy"] = {"holy"},
             ["protection"] = {"protection", "prot"},
-        },
-        ["values"] = {
+
             -- Druid
             [1] = { "restoration druid", "resto druid", "rdruid", "rd" },
             [2] = { "feral", "fdruid" },
@@ -175,8 +281,8 @@ SearchTokenTypeTable = {
             [73] = { "demonology", "demo" },
 
             -- Warrior
-            [81] = { "protection warrior", "protection warr", "prot warrior", "prot warr", "protection war", "prot war", "pwarrior", "pwarr", "pwar" },
-            [82] = { "arms", "awarrior", "awarr", "awar" },
+            [81] = { "protection warrior", "protection warr", "prot warrior", "prot warr", "protection war", "prot war", "pwarrior", "pwarr" },
+            [82] = { "arms", "awarrior", "awarr" },
             [83] = { "fury", "fwarrior", "fwarr", "fwar" },
             
             -- Priest
@@ -223,8 +329,8 @@ SearchTokenTypeTable = {
     ["team"] = {
         ["noSpace"] = true,
         ["values"] = {
-            ["ally"] = {"friend", "team", "ally", "help"},
-            ["enemy"] = {"enemy", "foe", "harm"},
+            ["team"] = {"friend", "team", "ally", "help", "partner"},
+            ["enemyTeam"] = {"enemy", "foe", "harm"},
         }
     },
     ["role"] = {
@@ -236,15 +342,16 @@ SearchTokenTypeTable = {
         },
     },
     ["logical"] = {
+        ["requireExact"] = true,
         ["values"] = {
-            ["not"] = { "not" }
+            ["not"] = { "not", "inverse" }
         }
     }
 }
 
-local maxPartialSearchDiff = 5;
-
 local function CalculateMatchScore(searchInput, matchedValue, startIndex)
+    local maxPartialSearchDiff = 5;
+
     local matchedCountScore = (#searchInput / #matchedValue);
     local differenceScore = 1 - ((#matchedValue - #searchInput) / maxPartialSearchDiff)
     local startIndexScore = 1 - ((startIndex * startIndex) / (#matchedValue * #matchedValue));
@@ -280,21 +387,17 @@ local function FindSearchValueDataForToken(token)
     end
 
     local function FindTokenValueKey(valueTable, searchType)
-        local keys = (searchType == "spec") and {"priorityValues", "values"} or {"values"};
-        for _,key in ipairs(keys) do
-            local table = key and valueTable[key] or nil;
-            if(table) then
-                for valueKey, values in pairs(table) do
-                    for _, value in ipairs(values) do
-                        assert(value);
-                        if(lowerCaseValue == value) then
-                            return valueKey, true, value;
-                        elseif(not token["exact"]) then
-                            local foundStartIndex = value:find(lowerCaseValue);
-                            if(foundStartIndex ~= nil) then
-                                TryUpdateBestMatch(value, valueKey, searchType, valueTable["noSpace"], foundStartIndex);
-                            end
-                        end
+        assert(valueTable and valueTable["values"]);
+
+        for valueKey, values in pairs(valueTable["values"]) do
+            for _, value in ipairs(values) do
+                assert(value);
+                if(lowerCaseValue == value) then
+                    return valueKey, true, value;
+                elseif(not token["exact"] and not valueTable["requireExact"]) then
+                    local foundStartIndex = value:find(lowerCaseValue);
+                    if(foundStartIndex ~= nil) then
+                        TryUpdateBestMatch(value, valueKey, searchType, valueTable["noSpace"], foundStartIndex);
                     end
                 end
             end
@@ -440,15 +543,14 @@ end
 
 local function CheckSegmentForPlayer(segment, player)
     assert(segment ~= nil);
-    if(player == nil) then
-        return;
-    end
+    assert(player ~= nil);
 
     for i,token in ipairs(segment.Tokens) do
-        if(not CheckTokenForPlayer(token, player)) then
+        if(CheckTokenForPlayer(token, player) == (token["negated"] or false)) then
             return false;
         end
     end
+
     return true;
 end
 
@@ -458,7 +560,8 @@ local function CheckSegmentForMatch(segment, match, alreadyMatchedPlayers)
 
     for _,team in ipairs(teams) do
         for _, player in ipairs(match[team]) do
-            if CheckSegmentForPlayer(segment, player) then
+            local checkResult = CheckSegmentForPlayer(segment, player);
+            if(checkResult) then
                 if(alreadyMatchedPlayers[player["name"]] == nil) then
                     alreadyMatchedPlayers[player["name"]] = true;
                     return true;
@@ -485,7 +588,7 @@ local function CheckSimplePass(match)
     -- Look for segments with no matches or no unique matches
     for _,segment in ipairs(activePlayerSegments) do
         local segmentResult = CheckSegmentForMatch(segment, match, alreadyMatchedPlayers);
-        
+
         if(segment.inversed) then
             return (segmentResult == false);
         elseif(segmentResult == nil) then
@@ -594,6 +697,8 @@ local function ProcessInput(input)
     local currentToken = nil;
     local currentWord = ""
 
+    local isTokenNegated = false;
+
     local index = 1;
 
     local displayString = "";
@@ -625,10 +730,26 @@ local function ProcessInput(input)
 
         currentToken["value"] = ToLower(currentToken["keyword"] or currentToken["value"]);
 
-        if(currentToken["value"] and currentToken["value"] ~= "") then
-            tinsert(currentSegment.Tokens, currentToken);
+        if(currentToken["explicitType"] == "logical") then
+            if(currentToken["value"] == "not") then
+                ArenaAnalytics:Log("Inversed segment!")
+                currentSegment.inversed = true;
+            end
+        elseif(currentToken["explicitType"] == "team") then
+            if(currentToken["value"] == "team") then
+                currentSegment.team = "team";
+            elseif(currentToken["value"] == "team") then
+                currentSegment.team = "enemyTeam";
+            end
+        else -- Commit a real search token
+            currentToken["negated"] = isTokenNegated or nil;
+            
+            if(currentToken["value"] and currentToken["value"] ~= "") then
+                tinsert(currentSegment.Tokens, currentToken);
+            end
         end
         currentToken = nil;
+        isTokenNegated = false;
     end
 
     local function CommitCurrentWord()
@@ -680,24 +801,28 @@ local function ProcessInput(input)
         local char = input:sub(index, index)
         
         if char == "+" then
-            if #currentSegment.Tokens == 0 and currentWord == "" then
+            if ((#currentSegment.Tokens == 0 and currentWord == "") and lastChar ~= '+' and lastChar ~= '-') then
                 currentSegment.team = "team";
                 displayString = displayString .. ColorizeSymbol(char);
             else
                 displayString = displayString .. ColorizeInvalid(char);
             end
         elseif char == '-' then
-            if #currentSegment.Tokens == 0 and currentWord == "" then
-                currentSegment.team = "enemyTeam";
-                displayString = displayString .. ColorizeSymbol(char);
+            if (lastChar ~= '+' and lastChar ~= '-') then
+                if(#currentSegment.Tokens == 0 and currentWord == "") then
+                    currentSegment.team = "enemyTeam";
+                    displayString = displayString .. ColorizeSymbol(char);
+                else
+                    displayString = displayString .. char;
+                    currentWord = currentWord .. char;
+                end
             else
-                currentWord = currentWord .. char;
-                displayString = displayString .. char;
+                displayString = displayString .. ColorizeInvalid(char);
             end
         elseif char == '!' then
-            if(#currentSegment.Tokens == 0 and not currentToken and (currentWord == "" or lastChar == ':')) then
-                ArenaAnalytics:Log(#currentSegment.Tokens, currentWord == "", lastChar == ':');
-                currentSegment.inversed = true;
+            if((currentWord == "" or lastChar == ':') and lastChar ~= '!') then
+                CommitCurrentToken();
+                isTokenNegated = true;
                 displayString = displayString .. ColorizeSymbol(char);
             else
                 displayString = displayString .. ColorizeInvalid(char);
@@ -755,7 +880,6 @@ local function ProcessInput(input)
                 index = endIdx
                 displayString = displayString .. ColorizeSymbol('(') .. scope .. ColorizeSymbol(')');
             else -- Invalid scope
-                -- TODO: Add red color
                 displayString = displayString .. ColorizeInvalid(char);
             end
         elseif char == ")" then
@@ -827,7 +951,7 @@ function Search:CommitSearch(input)
     for i,segment in ipairs(activePlayerSegments) do
         for j,token in ipairs(segment.Tokens) do
             assert(token and token["value"]);
-            ArenaAnalytics:Log("Token", j, "in segment",i, "has values:", token["value"], token["exact"], token["explicitType"], segment.team, segment.inversed);
+            ArenaAnalytics:Log("  Token", j, "in segment",i, "has values:", token["value"], token["exact"], token["explicitType"], token["negated"], segment.team, segment.inversed);
         end
     end
 
@@ -841,4 +965,120 @@ function Search:Update(input)
     Search.current["raw"] = raw;
     Search.current["display"] = display;
     Search.current["data"] = playerrSegments;
+
+    ArenaAnalyticsScrollFrame.searchBox:SetText(display);
+end
+
+---------------------------------
+-- Quick Search
+---------------------------------
+
+function Search:QuickSearch(mouseButton, name, class, spec, race, team)
+    local prefix, tokens = '', {};
+    local isNegated = (mouseButton == "RightButton");
+
+    if(team == "team") then
+        prefix = '+';
+    elseif(team == "enemyTeam") then
+        prefix = '-';
+    end
+
+    if(not IsShiftKeyDown() and not IsControlKeyDown()) then
+        local shouldHideMyRealm = true;
+        local shouldHideAnyRealm = true;
+
+        if(shouldHideAnyRealm) then
+            name = name:match("(.*)-") or "";
+        elseif(shouldHideMyRealm) then
+            local _, realm = UnitFullName("player");
+            if(realm and name:find(realm)) then
+                name = name:match("(.*)-") or "";
+            end
+        end
+
+        if(name == "") then
+            return;
+        end
+
+        -- Add name only
+        tinsert(tokens, name);
+    else
+        if(IsControlKeyDown() and race ~= nil) then
+            -- Add race if available
+            local shortName = Search:GetShortQuickSearchSpec("race", race);
+            tinsert(tokens, "r:"..(shortName or race));
+        end
+        
+        if(IsShiftKeyDown() and class ~= nil) then
+            local shortName = Search:GetShortQuickSearchSpec(class, spec);
+            if(ForceDebugNilError(shortName)) then
+                local shortNamePrefix = spec and "s:" or "c:";
+                tinsert(tokens, shortNamePrefix .. shortName);
+            else
+                local simpleToken = "";
+                -- Add spec
+                if(spec ~= nil and spec ~= "") then
+                    simpleToken = simpleToken .. negatedPrefix .. " ";
+                end
+
+                -- Add class
+                tinsert(tokens, simpleToken.."c:"..class);
+            end
+        end
+    end
+
+    Search:CommitQuickSearch(prefix, tokens, isNegated);
+end
+
+local function SplitAtLastComma(input)
+    local before, after = input:match("^(.*),%s*(.*)$");
+    
+    if before then
+        before = before .. ",";
+    else
+        before = "";
+        after = input;
+    end
+
+    return before, after;
+end
+
+function Search:CommitQuickSearch(prefix, tokens, isNegated)
+    assert(tokens and #tokens > 0);
+    
+    local previousSearch = IsAltKeyDown() and SanitizeInput(Search.current["display"] or "") or "";
+    local previousSegments, currentSegment = SplitAtLastComma(previousSearch);
+    
+    local negatedSymbol = isNegated and '!' or '';
+    
+    -- Add, replace or skip each token
+    -- Split value into table
+    for _,token in ipairs(tokens) do
+        local escapedToken = token:gsub("-", "%-");
+        ArenaAnalytics:Print(token)
+
+        -- TODO: Look for existing token of same explicit type instead? (Avoids cases of requiring multiple of the same race. Possibly allowing multiple negated but only one non-negated?)
+        if(currentSegment:find(escapedToken)) then
+            if(isNegated) then
+                if(not currentSegment:find('!'..escapedToken)) then
+                    currentSegment = currentSegment:gsub(escapedToken, '!'..token);
+                end
+            else
+                currentSegment = currentSegment:gsub('!'..escapedToken, token);
+            end
+        else -- Unique token, add directly
+            if(currentSegment ~= "") then
+                currentSegment = currentSegment .. " ";
+            end
+            currentSegment =  currentSegment .. negatedSymbol .. token;
+        end
+    end
+    
+    -- No previous segment, or a previous segment that ends with comma and only exclamation marks or spaces after
+    local isNewSegment = previousSearch == "" or previousSearch:match(",[%s!]*$");
+    if(isNewSegment) then
+        currentSegment = prefix .. currentSegment;
+    end
+    
+    Search:CommitSearch(previousSegments .. currentSegment);
 end

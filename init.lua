@@ -193,10 +193,11 @@ function ArenaAnalytics:NoFormatting(text)
 end
 
 -- Debug function to force a nil error if input is nil
-function ForceDebugNilError(value)
+function ForceDebugNilError(value, msg)
 	if(Options:Get("debuggingEnabled")) then
-		assert(value ~= nil);
+		assert(value ~= nil, msg);
 	end
+	return value;
 end
 
 -- Returns devault theme color
