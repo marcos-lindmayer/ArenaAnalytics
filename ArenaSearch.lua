@@ -166,8 +166,6 @@ function Search:GetShortQuickSearchSpec(class, spec)
         shortName = QuickSearchValueTable["class"][class:lower()];
     end
 
-    ArenaAnalytics:Log("Short name for class: ", class, " and spec: ", spec, "=",shortName);
-
     return shortName;
 end
 
@@ -732,7 +730,6 @@ local function ProcessInput(input)
 
         if(currentToken["explicitType"] == "logical") then
             if(currentToken["value"] == "not") then
-                ArenaAnalytics:Log("Inversed segment!")
                 currentSegment.inversed = true;
             end
         elseif(currentToken["explicitType"] == "team") then
@@ -1055,7 +1052,6 @@ function Search:CommitQuickSearch(prefix, tokens, isNegated)
     -- Split value into table
     for _,token in ipairs(tokens) do
         local escapedToken = token:gsub("-", "%-");
-        ArenaAnalytics:Print(token)
 
         -- TODO: Look for existing token of same explicit type instead? (Avoids cases of requiring multiple of the same race. Possibly allowing multiple negated but only one non-negated?)
         if(currentSegment:find(escapedToken)) then
