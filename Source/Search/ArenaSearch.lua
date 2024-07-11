@@ -55,7 +55,12 @@ Search.current = {
     ["data"] = nil, -- Search data as a table for efficient comparisons
 }
 
-activePlayerSegments = {};
+local activeSearchData = {};
+
+local function ResetActiveData()
+    activeSearchData = { segments = {}, nonInversedCount = 0 }
+end
+ResetActiveData();
 
 ---------------------------------
 -- Search matching logic
@@ -209,7 +214,7 @@ local function CheckSimplePass(match)
     local alreadyMatchedPlayers = {}
 
     -- Look for segments with no matches or no unique matches
-    for _,segment in ipairs(activePlayerSegments) do
+    for _,segment in ipairs(activeSearchData.segments) do
         local segmentResult = CheckSegmentForMatch(segment, match, alreadyMatchedPlayers);
 
         if(segmentResult == nil) then
@@ -228,7 +233,7 @@ end
 
 -- Main Matching Function to Check Feasibility
 function Search:DoesMatchPassSearch(match)
-    if(#activePlayerSegments == 0) then
+    if(#activeSearchData.segments == 0) then
         return true;
     end
 
@@ -237,11 +242,10 @@ function Search:DoesMatchPassSearch(match)
         return false;
     end
 
-    -- TODO: Get active non-inversed segments
     -- Cannot match a search with more players than the match has data for.
     local matchPlayerCount = #match["team"] + #match["enemyTeam"];
-    if(#activePlayerSegments > matchPlayerCount) then
-        --return false;
+    if(activeSearchData.nonInversedCount > matchPlayerCount) then
+        return false;
     end
 
     -- Simple pass first
@@ -278,7 +282,7 @@ function Search:GetDisplay()
 end
 
 function Search:IsEmpty()
-    return Search.current["raw"] == "" and Search.current["display"] == "" and Search.current[data] == nil and #activePlayerSegments == 0;
+    return Search.current["raw"] == "" and Search.current["display"] == "" and Search.current[data] == nil and #activeSearchData.segments == 0;
 end
 
 function Search:Reset()
@@ -291,7 +295,7 @@ function Search:Reset()
         ["display"] = "",
         ["data"] = nil,
     }
-    activePlayerSegments = {}
+    ResetActiveData();
 
     -- Trigger filter refresh
     ArenaAnalytics.Filters:RefreshFilters();
@@ -300,14 +304,14 @@ end
 function Search:CommitSearch(input)
     -- Update active search filter
     Search:Update(input);
-    activePlayerSegments = Search.current["data"];
+    activeSearchData = Search.current["data"];
     
-    ArenaAnalytics:Log("Committing Search..", #activePlayerSegments);
+    ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. (activeSearchData.nonInversedCount or 0) .. ")");
 
-    for i,segment in ipairs(activePlayerSegments) do
+    for i,segment in ipairs(activeSearchData.segments) do
         for j,token in ipairs(segment.Tokens) do
             assert(token and token["value"]);
-            ArenaAnalytics:Log("  Token", j, "in segment",i, " has values:", token["value"], " exact:", token["exact"], " explicitType:", token["explicitType"], " negated:", token["negated"], " team:", segment.team, " inversed:", segment.inversed);
+            ArenaAnalytics:Log("  Token", j, "in segment",i, "  Values:", token["value"], (token["exact"] and " exact" or ""), (token["explicitType"] and (" Type:"..token["explicitType"]) or ""), (token["negated"] and " Negated" or ""), (segment.team and (" "..segment.team) or ""), (segment.inversed and "Inversed" or ""));
         end
     end
 

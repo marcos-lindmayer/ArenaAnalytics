@@ -64,6 +64,9 @@ function Options:LoadSettings()
     AddSetting("searchDefaultExplicitEnemy", false);
     AddSetting("searchHideTooltipQuickSearch", false);
 
+    AddSetting("quickSearchExcludeAnyRealm", false);
+    AddSetting("quickSearchExcludeMyRealm", false);
+
     -- Debugging
     AddSetting("debuggingEnabled", false);
 
@@ -105,10 +108,13 @@ function Options:Set(setting, value)
         if not successful then return end;
     end
 
-    assert(ArenaAnalyticsSettings[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
+    ArenaAnalyticsDebugAssert(ArenaAnalyticsSettings[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
     
     if(setting and ArenaAnalyticsSettings[setting] ~= nil) then
-        value = value or defaults[setting]; -- Treat nil as default
+        if(value == nil) then
+            assert(defaults[setting] ~= nil);        
+            value = defaults[setting];
+        end        
 
         local oldValue = ArenaAnalyticsSettings[setting];
         ArenaAnalyticsSettings[setting] = value;
@@ -122,7 +128,7 @@ local ArenaAnalyticsOptionsFrame = nil;
 function Options:TriggerStateUpdates()
     if(exportOptionsFrame and exportOptionsFrame.importButton and exportOptionsFrame.importButton.stateFunc) then
         exportOptionsFrame.importButton.stateFunc();
-    end        
+    end
 end
 
 
@@ -290,7 +296,7 @@ local function CreateInputBox(setting, parent, x, text, func)
     end);
 
     inputBox:SetScript("OnEditFocusLost", function(self)
-		local oldValue = tonumber(Options:Get(setting)) or 25;
+		local oldValue = tonumber(Options:Get(setting));
 		local newValue = tonumber(inputBox:GetText());
         Options:Set(setting, newValue or oldValue)
 		inputBox:SetText(tonumber(Options:Get(setting)));
@@ -381,6 +387,24 @@ function SetupTab_Search()
     -- Setup options
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team. Prefix player segment '|cff00ccff+|r' to force friendly team.");
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchHideTooltipQuickSearch", parent, offsetX, "Hide Quick Search shortcuts on player tooltips.");
+
+    CreateSpace();
+
+    -- Exclude any realm
+    parent.quickSearchExcludeAnyRealm = CreateCheckbox("quickSearchExcludeAnyRealm", parent, offsetX, "Quick Search excludes realms.", function()
+        filterOptionsFrame.quickSearchExcludeMyRealm:stateFunc();
+    end);
+
+    -- Exclude my realm
+    parent.quickSearchExcludeMyRealm = CreateCheckbox("quickSearchExcludeMyRealm", parent, offsetX, "Quick Search excludes my realm.");
+    parent.quickSearchExcludeMyRealm.stateFunc = function()
+        if(not Options:Get("quickSearchExcludeAnyRealm")) then
+            filterOptionsFrame.quickSearchExcludeMyRealm:Enable();
+        else
+            filterOptionsFrame.quickSearchExcludeMyRealm:Disable();
+        end
+    end
+    parent.quickSearchExcludeMyRealm:stateFunc();
 end
 
 -------------------------------------------------------------------

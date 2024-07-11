@@ -619,7 +619,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
             -- Quick Search
             playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
             playerFrame:SetScript("OnClick", function(frame, btn)
-                Search:QuickSearch(btn, playerName, class, spec, player["race"], teamKey);
+                Search:QuickSearch(btn, player["name"], class, spec, player["race"], teamKey);
             end);
 
             -- Add spec info

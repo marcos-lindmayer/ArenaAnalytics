@@ -214,10 +214,10 @@ function ArenaAnalytics:NoFormatting(text)
 	return text and text:gsub("|", "||") or "";
 end
 
--- Debug function to force a nil error if input is nil
-function ForceDebugNilError(value, msg)
+-- Assert if debug is enabled. Returns value to allow wrapping within if statements.
+function ArenaAnalyticsDebugAssert(value, msg)
 	if(Options:Get("debuggingEnabled")) then
-		assert(value ~= nil, msg);
+		assert(value, msg);
 	end
 	return value;
 end

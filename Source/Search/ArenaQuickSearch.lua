@@ -134,15 +134,12 @@ function Search:QuickSearch(mouseButton, name, class, spec, race, team)
         name = name or "";
         if(name:find('-')) then
             -- TODO: Convert to options
-            local shouldHideMyRealm = true;
-            local shouldHideAnyRealm = true;
-
-            if(shouldHideAnyRealm) then
+            if(Options:Get("quickSearchExcludeAnyRealm")) then
                 name = name:match("(.*)-") or name or "";
-            elseif(shouldHideMyRealm) then
+            elseif(Options:Get("quickSearchExcludeMyRealm")) then
                 local _, realm = UnitFullName("player");
                 if(realm and name:find(realm)) then
-                    name = name:match("(.*)-") or "";
+                    name = name:match("(.*)-") or name or "";
                 end
             end
         end
@@ -162,7 +159,7 @@ function Search:QuickSearch(mouseButton, name, class, spec, race, team)
         
         if(IsShiftKeyDown() and class ~= nil) then
             local shortName = Search:GetShortQuickSearchSpec(class, spec);
-            if(ForceDebugNilError(shortName)) then
+            if(ArenaAnalyticsDebugAssert(shortName ~= nil)) then
                 local shortNamePrefix = spec and "s:" or "c:";
                 tinsert(tokens, shortNamePrefix .. shortName);
             else
@@ -198,6 +195,17 @@ function Search:CommitQuickSearch(prefix, tokens, isNegated)
     assert(tokens and #tokens > 0);
     
     local previousSearch = IsAltKeyDown() and Search:SanitizeInput(Search.current["display"] or "") or "";
+    
+    local isNewSegment = previousSearch == "" or previousSearch:match(",[%s!]*$");
+
+    -- TODO: Consider if we want an option for this
+    -- Forces new segment per quick search.
+    local forceNewSegment = true;
+    if(forceNewSegment and not isNewSegment) then
+        previousSearch = previousSearch .. ", ";
+        isNewSegment = true;
+    end
+
     local previousSegments, currentSegment = SplitAtLastComma(previousSearch);
     
     local negatedSymbol = isNegated and '!' or '';
@@ -225,7 +233,6 @@ function Search:CommitQuickSearch(prefix, tokens, isNegated)
     end
     
     -- No previous segment, or a previous segment that ends with comma and only exclamation marks or spaces after
-    local isNewSegment = previousSearch == "" or previousSearch:match(",[%s!]*$");
     if(isNewSegment) then
         currentSegment = prefix .. currentSegment;
     end

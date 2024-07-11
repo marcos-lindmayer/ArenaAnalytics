@@ -64,7 +64,7 @@ end
 
 -- Process the input string for symbols: Double quotation marks, commas, parenthesis, spaces
 function Search:ProcessInput(input)
-    local playerSegments = {}
+    local tokenizedData = { segments = {}, nonInversedCount = 0 }
 
     local currentSegment = { Tokens = {}}
     local currentToken = nil;
@@ -78,7 +78,7 @@ function Search:ProcessInput(input)
 
     input = Search:SanitizeInput(input);
     if(input == "") then
-        return playerSegments, displayString, input;
+        return tokenizedData, displayString, input;
     end
 
     ----------------------------
@@ -90,7 +90,11 @@ function Search:ProcessInput(input)
                 currentSegment.team = "enemyTeam";
             end
 
-            tinsert(playerSegments, currentSegment);
+            if(not currentSegment.inversed) then
+                tokenizedData.nonInversedCount = tokenizedData.nonInversedCount + 1;
+            end
+
+            tinsert(tokenizedData.segments, currentSegment);
         end
 
         currentSegment = { Tokens = {}}
@@ -270,7 +274,7 @@ function Search:ProcessInput(input)
     CommitCurrentToken()
     CommitCurrentSegment()
 
-    return playerSegments, displayString, input;
+    return tokenizedData, displayString, input;
 end
 
 function Search:ProcessScope(input, startIndex, endSymbol)    

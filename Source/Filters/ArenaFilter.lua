@@ -309,7 +309,7 @@ local function doesMatchPassFilter_Season(match)
     if match == nil then return false end;
 
     local season = currentFilters["Filter_Season"];
-    ForceDebugNilError(season);
+    ArenaAnalyticsDebugAssert(season ~= nil);
     if(season == "All") then
         return true;
     end

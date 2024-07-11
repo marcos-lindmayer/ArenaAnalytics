@@ -282,7 +282,7 @@ function ArenaTracker:HandleArenaExit()
 	if(currentArena["isRated"] == true) then
 		local newRating = GetPersonalRatedInfo(bracketId);
 		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
-		ForceDebugNilError(ArenaAnalyticsCachedBracketRatings[bracketId]);
+		ArenaAnalyticsDebugAssert(ArenaAnalyticsCachedBracketRatings[bracketId] ~= nil);
 		
 		if(oldRating == nil or oldRating == "SKIRMISH") then
 			oldRating = ArenaAnalytics:getLastRating();
