@@ -1,5 +1,5 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
-ArenaAnalytics.Constants = Constants;
+local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
