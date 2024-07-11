@@ -1,6 +1,7 @@
-local _, ArenaAnalytics = ...; -- Namespace
-local SpecSpells = {}
-ArenaAnalytics.SpecSpells = SpecSpells;
+local _, ArenaAnalytics = ...; -- Addon Namespace
+local SpecSpells = ArenaAnalytics.SpecSpells;
+
+-------------------------------------------------------------------------
 
 local specSpells = {
     -- DRUID

@@ -1,11 +1,13 @@
 local _, ArenaAnalytics = ... -- Namespace
-ArenaAnalytics.Search = {}
 local Search = ArenaAnalytics.Search;
 
+-- Local module aliases
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
 
--- DOCUMENTATION
+-------------------------------------------------------------------------
+
+-- DOCUMENTATION (TODO: Update this)
 -- Player Name
 --  Charactername // name:Charactername // n:Charactername // Charactername-server // etc
 
@@ -932,7 +934,7 @@ function Search:Reset()
     activePlayerSegments = {}
 
     -- Trigger filter refresh
-    ArenaAnalytics.Filter:RefreshFilters();
+    ArenaAnalytics.Filters:RefreshFilters();
 end
 
 function Search:CommitSearch(input)
@@ -950,7 +952,7 @@ function Search:CommitSearch(input)
     end
 
     -- Force filter refresh
-    ArenaAnalytics.Filter:RefreshFilters();
+    ArenaAnalytics.Filters:RefreshFilters();
 end
 
 function Search:Update(input)

@@ -1,8 +1,8 @@
-local _, ArenaAnalytics = ...;
-ArenaAnalytics.MoreFilters = {};
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local MoreFilters = ArenaAnalytics.MoreFilters;
 
-local Filter = ArenaAnalytics.Filter;
+-- Local module aliases
+local Filters = ArenaAnalytics.Filters;
 
 -------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ local function addDynamicOptions_Season(self, level, filter, info, settings)
         info.func = self.SetValue;
         info.arg1 = filter;
         info.arg2 = season;
-        info.checked = (season == Filter:GetCurrent(filter));
+        info.checked = (season == Filters:GetCurrent(filter));
         info.text = seasonText;
 
         UIDropDownMenu_AddButton(info, level);
@@ -83,7 +83,7 @@ UIDropDownMenu_Initialize(MoreFilters.dropdown, function(self, level, filter)
             info.hasArrow = values["options"] and #values["options"] > 0;
             info.arg1 = key;
             info.func = self.ResetValue;
-            info.checked = Filter:GetCurrent(key) ~= Filter:GetDefault(key, true);
+            info.checked = Filters:GetCurrent(key) ~= Filters:GetDefault(key, true);
 
             local newButton = UIDropDownMenu_AddButton(info);
             newButton:RegisterForClicks("LeftButtonDown", "RightButtonDown");
@@ -107,7 +107,7 @@ UIDropDownMenu_Initialize(MoreFilters.dropdown, function(self, level, filter)
             info.func = self.SetValue;
             info.arg1 = filter;
             info.arg2 = option;
-            info.checked = (option == Filter:GetCurrent(filter));
+            info.checked = (option == Filters:GetCurrent(filter));
             info.text = option;
             UIDropDownMenu_AddButton(info, level);
         end
@@ -124,7 +124,7 @@ end);
 -- Implement the function to change the value for a given filter
 function MoreFilters.dropdown:SetValue(filter, newValue)
     -- Update the filter for the new value
-    Filter:SetFilter(filter, newValue);
+    Filters:SetFilter(filter, newValue);
     UIDropDownMenu_RefreshAll(MoreFilters.dropdown, true);
     CloseDropDownMenus();
 end
@@ -132,7 +132,7 @@ end
 -- Implement the function to change the value for a given filter
 function MoreFilters.dropdown:ResetValue(filter)
     -- Update the filter for the new value
-    Filter:ResetToDefault(filter, true);
+    Filters:ResetToDefault(filter, true);
     UIDropDownMenu_RefreshAll(MoreFilters.dropdown, true);
     CloseDropDownMenus();
 end
@@ -140,7 +140,7 @@ end
 function MoreFilters:ResetAll()
     for filter,_ in pairs(dropdownInfo) do
         -- Update the filter for the new value
-        Filter:ResetToDefault(filter, true);
+        Filters:ResetToDefault(filter, true);
         UIDropDownMenu_RefreshAll(MoreFilters.dropdown, true);
         CloseDropDownMenus();
     end

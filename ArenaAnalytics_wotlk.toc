@@ -7,9 +7,9 @@
 ## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSettings
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsCharacterSettings
 
+Source/init.lua
 Source/UI/HybridScroll.xml
 Source/ArenaOptions.lua
-Source/init.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaSpecSpells_Wotlk.lua
 Source/ArenaAPI_Wotlk.lua

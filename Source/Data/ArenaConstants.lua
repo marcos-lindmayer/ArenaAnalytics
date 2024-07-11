@@ -1,10 +1,7 @@
---[[ 
-	Thanks to Gladdy for spec detection db 
-]]
-
-local _, ArenaAnalytics = ...; -- Namespace
-local Constants = {}
+local _, ArenaAnalytics = ...; -- Addon Namespace
 ArenaAnalytics.Constants = Constants;
+
+-------------------------------------------------------------------------
 
 Constants.currentSeasonStartInt = 1687219201;
 

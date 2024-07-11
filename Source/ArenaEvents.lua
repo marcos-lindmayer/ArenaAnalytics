@@ -1,6 +1,10 @@
-local _, ArenaAnalytics = ... -- Namespace
-ArenaAnalytics.Events = {}
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local Events = ArenaAnalytics.Events;
+
+-- Local module aliases
+local ArenaTracker = ArenaAnalytics.ArenaTracker;
+
+-------------------------------------------------------------------------
 
 local arenaEventsRegistered = false;
 local eventFrame = CreateFrame("Frame");
@@ -25,20 +29,20 @@ end
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
 local function HandleGlobalEvents(prefix, eventType, ...)
 	if (IsActiveBattlefieldArena()) then
-		if (not ArenaAnalytics.ArenaTracker:IsTrackingArena()) then
+		if (not ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-				ArenaAnalytics.ArenaTracker:HandleArenaEnter(...);
+				ArenaTracker:HandleArenaEnter(...);
 			end
 			
 			ArenaAnalytics.Events:RegisterArenaEvents();
 		end
 	else -- Not in arena
 		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-			ArenaAnalytics.ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
+			ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
 		elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
-			if(ArenaAnalytics.ArenaTracker:IsTrackingArena()) then
+			if(ArenaTracker:IsTrackingArena()) then
 				ArenaAnalytics.Events:UnregisterArenaEvents();
-				ArenaAnalytics.ArenaTracker:HandleArenaExit();
+				ArenaTracker:HandleArenaExit();
 			end
 		end
 	end
@@ -51,7 +55,7 @@ local function ParseArenaTimerMessages(msg)
 		if string.find(msg, v) then
 			-- Time is zero according to the broadcast message, and 
 			if (k == 0) then
-				ArenaAnalytics.ArenaTracker:HandleArenaStart();
+				ArenaTracker:HandleArenaStart();
 			end
 		end
 	end
@@ -63,13 +67,13 @@ end
 -- CHAT_MSG_BG_SYSTEM_NEUTRAL: Detect if the arena started
 local function HandleArenaEvents(_, eventType, ...)
 	if (IsActiveBattlefieldArena()) then 
-		if (ArenaAnalytics.ArenaTracker:IsTrackingArena()) then
+		if (ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
-				ArenaAnalytics.ArenaTracker:HandleArenaEnd();
+				ArenaTracker:HandleArenaEnd();
 				ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
 				Events:UnregisterArenaEvents();
 			elseif (eventType == "UNIT_AURA" or eventType == "COMBAT_LOG_EVENT_UNFILTERED" or eventType == "ARENA_OPPONENT_UPDATE") then
-				ArenaAnalytics.ArenaTracker:ProcessCombatLogEvent(eventType, ...);
+				ArenaTracker:ProcessCombatLogEvent(eventType, ...);
 			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
 				ParseArenaTimerMessages(...);
 			end

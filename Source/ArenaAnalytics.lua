@@ -1,7 +1,10 @@
-local _, ArenaAnalytics = ...; -- Namespace
-ArenaAnalytics.AAmatch = {};
-
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local AAmatch = ArenaAnalytics.AAmatch;
+
+-- Local module aliases
+local API = ArenaAnalytics.API;
+
+-------------------------------------------------------------------------
 
 -- Character SavedVariables match history
 MatchHistoryDB = MatchHistoryDB or { }
@@ -431,7 +434,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	-- Refresh and reset current arena
 	ArenaAnalytics.ArenaTracker:ResetCurrentArenaValues();
 	
-	ArenaAnalytics.Filter:RefreshFilters();
+	ArenaAnalytics.Filters:RefreshFilters();
 
 	ArenaAnalytics.AAtable:tryStartSessionDurationTimer();
 end

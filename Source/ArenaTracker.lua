@@ -1,6 +1,12 @@
 local _, ArenaAnalytics = ... -- Namespace
-ArenaAnalytics.ArenaTracker = {}
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
+
+-- Local module aliases
+local AAmatch = ArenaAnalytics.AAmatch;
+local Constants = ArenaAnalytics.Constants;
+local SpecSpells = ArenaAnalytics.SpecSpells;
+
+-------------------------------------------------------------------------
 
 function ArenaTracker:getCurrentArena()
 	return currentArena;
@@ -134,7 +140,7 @@ function ArenaTracker:HandleArenaEnter(...)
 		local race = UnitRace("player");
 		local GUID = UnitGUID("player");
 		local name = currentArena["playerName"];
-		local spec = ArenaAnalytics.AAmatch:getPlayerSpec();
+		local spec = AAmatch:getPlayerSpec();
 		local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
 		table.insert(currentArena["party"], player);
 	end
@@ -292,7 +298,7 @@ function ArenaTracker:HandleArenaExit()
 	end
 
 	-- Update all the cached bracket ratings
-	ArenaAnalytics.AAmatch:updateCachedBracketRatings();
+	AAmatch:updateCachedBracketRatings();
 
 	ArenaAnalytics:insertArenaToMatchHistory(currentArena);
 end
@@ -353,7 +359,7 @@ function ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, race
 		["kills"] = kills,
 		["deaths"] = deaths,
 		["race"] = race,
-		["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
+		["faction"] = Constants:GetFactionByRace(race),
 		["class"] = class,
 		["damage"] = damage,
 		["healing"] = healing,
@@ -520,7 +526,7 @@ end
 -- caster if they weren't defined yet, or adds a new unit with it
 function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	-- Check if spell belongs to spec defining spells
-	local spec, shouldDebug = ArenaAnalytics.SpecSpells:GetSpec(spellID);
+	local spec, shouldDebug = SpecSpells:GetSpec(spellID);
 	if(shouldDebug ~= nil) then
 		ArenaAnalytics:Log("DEBUG ID Detected spec: ", sourceGUID, spellID, spellName);
 	end

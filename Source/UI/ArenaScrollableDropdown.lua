@@ -1,10 +1,11 @@
--- Namespace for managing versions, including backwards compatibility and converting data
-local _, ArenaAnalytics = ...;
-ArenaAnalytics.Dropdown = {};
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local Dropdown = ArenaAnalytics.Dropdown;
 
+-- Local module aliases
 local Options = ArenaAnalytics.Options;
-local Filter = ArenaAnalytics.Filter;
+local Filter = ArenaAnalytics.Filters;
+
+-------------------------------------------------------------------------
 
 local baseName = "ArenaScrollableDropdown";
 local defaultEntryHeight = 25;

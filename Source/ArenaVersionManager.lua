@@ -1,8 +1,13 @@
 -- Namespace for managing versions, including backwards compatibility and converting data
-local _, ArenaAnalytics = ...;
-ArenaAnalytics.VersionManager = {};
-
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local VersionManager = ArenaAnalytics.VersionManager;
+
+-- Local module aliases
+local Constants = ArenaAnalytics.Constants;
+local Filters = ArenaAnalytics.Filters;
+local Import = ArenaAnalytics.Import;
+
+-------------------------------------------------------------------------
 
 -- True if data sync was detected with a later version.
 VersionManager.newDetectedVersion = false;
@@ -110,7 +115,7 @@ local function updateGroupDataToNewFormat(group)
             ["class"] = class,
             ["spec"] = spec,
             ["race"] = player["race"],
-            ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(player["race"]),
+            ["faction"] = Constants:GetFactionByRace(player["race"]),
             ["killingBlows"] = tonumber(player["killingBlows"]),
             ["deaths"] = tonumber(player["deaths"]),
             ["damageDone"] = tonumber(player["damageDone"]),
@@ -133,7 +138,7 @@ local function convertCompToShortFormat(comp, bracket)
         end
 
         local class, spec = specKeyString:match("([^|]+)|(.+)");
-        local specID = ArenaAnalytics.Constants:getAddonSpecializationID(class, spec, true);
+        local specID = Constants:getAddonSpecializationID(class, spec, true);
         if(specID == nil) then
             return nil;
         end
@@ -239,10 +244,10 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
     ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
 	ArenaAnalytics.updateLastSession();
-    ArenaAnalytics.Import:tryHide();
+    Import:tryHide();
 
     -- Refresh filters
-    ArenaAnalytics.Filter:RefreshFilters();
+    Filters:RefreshFilters();
 
     -- Remove old storage
     ArenaAnalyticsDB = nil;

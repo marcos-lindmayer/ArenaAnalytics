@@ -1,7 +1,7 @@
-local _, ArenaAnalytics = ...;
-ArenaAnalytics.Selection = {};
-
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local Selection = ArenaAnalytics.Selection;
+
+-- Local module aliases
 local Options = ArenaAnalytics.Options;
 
 ------------------------------------------------------------------
@@ -109,13 +109,17 @@ end
 
 -- Helper function to select a range of matches
 local function selectRange(startIndex, endIndex, includeStartSession, includeEndSession, isDeselect)
-    if(not IsValidMatch(index)) then
+    assert(startIndex);
+    assert(endIndex);
+
+    local minIndex = min(startIndex, endIndex);
+    local maxIndex = max(startIndex, endIndex);
+
+    if(not IsValidMatch(minIndex) or not IsValidMatch(maxIndex)) then
         ArenaAnalytics:Log("Invalid filtered match index in selectRange! Selection ignored..");
         return;
     end
 
-    local minIndex = math.min(startIndex, endIndex)
-    local maxIndex = math.max(startIndex, endIndex)
     local startSession = ArenaAnalytics.filteredMatchHistory[startIndex]["session"]
     local endSession = ArenaAnalytics.filteredMatchHistory[endIndex]["session"]
     

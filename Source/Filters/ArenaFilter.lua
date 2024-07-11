@@ -1,8 +1,10 @@
-local _, ArenaAnalytics = ... -- Namespace
-ArenaAnalytics.Filter = {}
+local _, ArenaAnalytics = ...; -- Addon Namespace
+local Filters = ArenaAnalytics.Filters;
 
-local Filter = ArenaAnalytics.Filter;
+-- Local module aliases
 local Options = ArenaAnalytics.Options;
+
+-------------------------------------------------------------------------
 
 -- Currently applied filters
 local currentFilters = {}
@@ -16,7 +18,7 @@ local defaults = {
     ["Filter_EnemyComp"] = "All",
 }
 
-function Filter:GetDefault(filter, skipOverrides)
+function Filters:GetDefault(filter, skipOverrides)
     -- overrides
     if(not skipOverrides) then
         if(filter == "Filter_Date" and Options:Get("defaultCurrentSessionFilter")) then
@@ -32,10 +34,10 @@ function Filter:GetDefault(filter, skipOverrides)
 end
 
 -- Clearing filters, optionally keeping filters explicitly applied through options
-function Filter:resetFilters(forceDefaults)
+function Filters:resetFilters(forceDefaults)
     currentFilters = {
-        ["Filter_Date"] = Filter:GetDefault("Filter_Date", forceDefaults),
-        ["Filter_Season"] = Filter:GetDefault("Filter_Season", forceDefaults),
+        ["Filter_Date"] = Filters:GetDefault("Filter_Date", forceDefaults),
+        ["Filter_Season"] = Filters:GetDefault("Filter_Season", forceDefaults),
         ["Filter_Map"] = defaults["Filter_Map"], 
         ["Filter_Bracket"] = defaults["Filter_Bracket"], 
         ["Filter_Comp"] = {
@@ -50,10 +52,10 @@ function Filter:resetFilters(forceDefaults)
 
     ArenaAnalytics.Search:Reset();
 end
-Filter:resetFilters(false);
+Filters:resetFilters(false);
 
 -- Get the current value, defaulting to 
-function Filter:GetCurrent(filter, subcategory, fallback)
+function Filters:GetCurrent(filter, subcategory, fallback)
     if(filter ~= nil) then
         if(subcategory ~= nil) then
             return currentFilters[filter] and currentFilters[filter][subcategory] or defaults[filter][subcategory] or fallback;
@@ -63,7 +65,7 @@ function Filter:GetCurrent(filter, subcategory, fallback)
     end
 end
 
-function Filter:GetCurrentDisplay(filter)
+function Filters:GetCurrentDisplay(filter)
     if(filter == nil) then
         return "";
     end
@@ -71,7 +73,7 @@ function Filter:GetCurrentDisplay(filter)
     return currentFilters[filter]["display"] or currentFilters[filter]["data"] or currentFilters[filter] or "";
 end
 
-function Filter:GetCurrentData(filter)
+function Filters:GetCurrentData(filter)
     if(filter == nil) then
         return "";
     end
@@ -79,7 +81,7 @@ function Filter:GetCurrentData(filter)
     return currentFilters[filter]["data"] or currentFilters[filter] or "";
 end
 
-function Filter:isFilterActive(filterName)
+function Filters:isFilterActive(filterName)
     if(filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
         return currentFilters[filterName]["data"] ~= defaults[filterName];
     end
@@ -93,46 +95,46 @@ function Filter:isFilterActive(filterName)
     return false;
 end
 
-function Filter:getActiveFilterCount()
+function Filters:getActiveFilterCount()
     local count = 0;
     if(not ArenaAnalytics.Search:IsEmpty()) then
         count = count + 1;
     end
-    if(Filter:isFilterActive("Filter_Date")) then
+    if(Filters:isFilterActive("Filter_Date")) then
         count = count + 1;
     end
-    if(Filter:isFilterActive("Filter_Season")) then
+    if(Filters:isFilterActive("Filter_Season")) then
         count = count + 1;
     end
-    if(Filter:isFilterActive("Filter_Map")) then
+    if(Filters:isFilterActive("Filter_Map")) then
         count = count + 1;
     end
-    if(Filter:isFilterActive("Filter_Bracket")) then
+    if(Filters:isFilterActive("Filter_Bracket")) then
         count = count + 1;
     end
-    if(Filter:isFilterActive("Filter_Comp")) then
+    if(Filters:isFilterActive("Filter_Comp")) then
         count = count + 1;
     end
-    if(Filter:isFilterActive("Filter_EnemyComp")) then
+    if(Filters:isFilterActive("Filter_EnemyComp")) then
         count = count + 1; 
     end
     return count;
 end
 
 -- Changes the current filter upon selecting one from its dropdown
-function Filter:changeFilter(dropdown, value, tooltip)
+function Filters:changeFilter(dropdown, value, tooltip)
     ArenaAnalytics.Selection:ClearSelectedMatches();
 
     dropdown.selected:SetText(value);
     
-    Filter:SetFilter(dropdown.filterName, value, tooltip);
+    Filters:SetFilter(dropdown.filterName, value, tooltip);
 
     if dropdown.list:IsShown() then   
         dropdown.list:Hide();
     end    
 end
 
-function Filter:SetFilter(filter, value, display)
+function Filters:SetFilter(filter, value, display)
     if(filter == nil) then
         ArenaAnalytics:Log("SetFilter failed due to nil filter");
         return;
@@ -162,10 +164,10 @@ function Filter:SetFilter(filter, value, display)
     end
     
     ArenaAnalytics.Selection:ClearSelectedMatches();
-    Filter:RefreshFilters();
+    Filters:RefreshFilters();
 end
 
-function Filter:SetDisplay(filter, display)
+function Filters:SetDisplay(filter, display)
     assert(filter ~= nil);
     assert(currentFilters[filter] ~= nil);
     assert(currentFilters[filter]["display"] ~= nil); -- TODO: Decide if we wanna assert this
@@ -176,10 +178,10 @@ function Filter:SetDisplay(filter, display)
     end
 end
 
-function Filter:ResetToDefault(filter, skipOverrides)
+function Filters:ResetToDefault(filter, skipOverrides)
     -- Update the filter for the new value
-    local defaultValue = Filter:GetDefault(filter, skipOverrides);
-    Filter:SetFilter(filter, defaultValue);
+    local defaultValue = Filters:GetDefault(filter, skipOverrides);
+    Filters:SetFilter(filter, defaultValue);
 end
 
 -- TODO: Decide what to do with nil win. Might be better to not include its stats at all (Though still wanna count as a played comp)?
@@ -206,7 +208,7 @@ end
 
 -- TODO: Consider moving to ArenaAnalytics.lua?
 -- Get all played comps with total played and total wins for matches that pass filters
-function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
+function Filters:getPlayedCompsWithTotalAndWins(isEnemyComp)
     local compKey = isEnemyComp and "enemyComp" or "comp";
     local playedComps = {
         { ["comp"] = "All" }
@@ -216,7 +218,7 @@ function Filter:getPlayedCompsWithTotalAndWins(isEnemyComp)
     if(bracket ~= "All") then        
         for i=1, #MatchHistoryDB do
             local match = MatchHistoryDB[i];
-            if(match and match["bracket"] == bracket and Filter:doesMatchPassAllFilters(match, compKey)) then
+            if(match and match["bracket"] == bracket and Filters:doesMatchPassAllFilters(match, compKey)) then
                 local comp = match[compKey];
 
                 if(comp ~= nil) then
@@ -337,7 +339,7 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
     return match[compKey] == currentFilters[compFilterKey]["data"];
 end
 
-function Filter:doesMatchPassGameSettings(match)
+function Filters:doesMatchPassGameSettings(match)
     if (not Options:Get("showSkirmish") and not match["isRated"]) then
         return false;
     end
@@ -346,8 +348,8 @@ function Filter:doesMatchPassGameSettings(match)
 end
 
 -- check all filters
-function Filter:doesMatchPassAllFilters(match, excluded)
-    if(not Filter:doesMatchPassGameSettings(match)) then
+function Filters:doesMatchPassAllFilters(match, excluded)
+    if(not Filters:doesMatchPassGameSettings(match)) then
         return false;
     end
 
@@ -390,14 +392,14 @@ function Filter:doesMatchPassAllFilters(match, excluded)
 end
 
 -- Returns matches applying current match filters
-function Filter:RefreshFilters()
+function Filters:RefreshFilters()
     ArenaAnalytics.filteredMatchHistory = {}
 
     for i=1, #MatchHistoryDB do
         local match = MatchHistoryDB[i];
         if(match == nil) then
             ArenaAnalytics:Log("Invalid match at index: ", i);
-        elseif(Filter:doesMatchPassAllFilters(match)) then
+        elseif(Filters:doesMatchPassAllFilters(match)) then
             table.insert(ArenaAnalytics.filteredMatchHistory, match);
         end
     end

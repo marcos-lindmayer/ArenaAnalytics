@@ -1,13 +1,13 @@
-local _, ArenaAnalytics = ...;
-HybridScrollMixin = {};
-ArenaAnalytics.AAtable = HybridScrollMixin;
+local _, ArenaAnalytics = ...; -- Addon Namespace
+local AAtable = ArenaAnalytics.AAtable;
+HybridScrollMixin = ArenaAnalytics.AAtable; -- HybridScroll.xml wants access to this
 
-local AAtable = ArenaAnalytics.AAtable
-
+-- Local module aliases
 local Options = ArenaAnalytics.Options;
-local Filter = ArenaAnalytics.Filter;
+local Filters = ArenaAnalytics.Filters;
 local Search = ArenaAnalytics.Search;
 
+-------------------------------------------------------------------------
 
 local hasLoaded = false;
 
@@ -34,7 +34,7 @@ local wins, sessionGames, sessionWins = 0, 0, 0;
 function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         ArenaAnalytics.Selection:ClearSelectedMatches();
-        ArenaAnalytics.Filter:RefreshFilters();
+        Filters:RefreshFilters();
         AAtable:RefreshLayout();
 
         AAtable:closeFilterDropdowns();
@@ -360,7 +360,7 @@ function AAtable:OnLoad()
 
     hasLoaded = true;
 
-    ArenaAnalytics.Filter:RefreshFilters();
+    Filters:RefreshFilters();
     AAtable:UpdateSelected();
 
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame, "RIGHT", 10, 0, "More Filters");
@@ -385,14 +385,14 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() 
         ArenaAnalytics:Log("Clearing filters..");
 
-        ArenaAnalytics.Filter:resetFilters(IsShiftKeyDown());
+        Filters:resetFilters(IsShiftKeyDown());
 
         -- Reset filters UI
         ArenaAnalyticsScrollFrame.searchBox:SetText("");
         ArenaAnalyticsScrollFrame.filterBracketDropdown:Reset();
         AAtable:forceCompFilterRefresh();
         
-        ArenaAnalytics.Filter:RefreshFilters();
+        Filters:RefreshFilters();
         CloseDropDownMenus();
     end);
     
@@ -743,13 +743,13 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
         return;
     end
 
-    local isDisabled = Filter:GetCurrent("Filter_Bracket") == "All";
+    local isDisabled = Filters:GetCurrent("Filter_Bracket") == "All";
     local disabledText = "Select bracket to enable filter"
 
     -- Dropdown data
     local filter = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
     local title = isEnemyComp and "Enemy Comp: Games | Comp | Winrate" or "Comp: Games | Comp | Winrate";
-    local entries = ArenaAnalytics.Filter:getPlayedCompsWithTotalAndWins(isEnemyComp);
+    local entries = Filters:getPlayedCompsWithTotalAndWins(isEnemyComp);
     local default = isDisabled and disabledText or nil;
 
     local dropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 265, 25);
@@ -925,7 +925,7 @@ function AAtable:RefreshLayout()
     end
 
     if(ArenaAnalyticsScrollFrame.filterBtn_ClearFilters) then
-        local activeFilterCount = ArenaAnalytics.Filter:getActiveFilterCount();
+        local activeFilterCount = Filters:getActiveFilterCount();
         if(activeFilterCount > 0) then
             ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("(" .. activeFilterCount .." active)");
             ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Enable();

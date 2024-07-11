@@ -1,6 +1,13 @@
-local _, ArenaAnalytics = ...; -- Namespace
-ArenaAnalytics.Options = {};
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local Options = ArenaAnalytics.Options;
+
+-- Local module aliases
+local Filters = ArenaAnalytics.Filters;
+local AAtable = ArenaAnalytics.AAtable;
+local Tooltips = ArenaAnalytics.Tooltips;
+local Export = ArenaAnalytics.Export;
+
+-------------------------------------------------------------------------
 
 -- TODO: Consider making some settings character specific (For cases like one char having lots of games desiring different comp filter limits)
 -- User settings
@@ -141,9 +148,9 @@ end
 -------------------------------------------------------------------
 
 local function HandleFiltersUpdated()
-    ArenaAnalytics.Filter:resetFilters(false);
-    ArenaAnalytics.Filter:RefreshFilters();
-    ArenaAnalytics.AAtable:forceCompFilterRefresh();
+    Filters:resetFilters(false);
+    Filters:RefreshFilters();
+    AAtable:forceCompFilterRefresh();
 end
 
 -------------------------------------------------------------------
@@ -159,7 +166,7 @@ local function SetupTooltip(owner, frames)
     for i,frame in ipairs(frames) do
         frame:SetScript("OnEnter", function ()
             if(owner.tooltip) then
-                ArenaAnalytics.Tooltips:DrawOptionTooltip(owner, owner.tooltip);
+                Tooltips:DrawOptionTooltip(owner, owner.tooltip);
             end
         end);
 
@@ -290,7 +297,7 @@ local function CreateInputBox(setting, parent, x, text, func)
         inputBox:SetCursorPosition(0);
 		inputBox:HighlightText(0,0);
         
-		ArenaAnalytics.AAtable:checkUnsavedWarningThreshold();
+		AAtable:checkUnsavedWarningThreshold();
     end);
 
     SetupTooltip(inputBox, {inputBox, inputBox.text});
@@ -391,12 +398,12 @@ function SetupTab_ImportExport()
 
     parent.tabHeader = CreateHeader("Import / Export", TabHeaderSize, parent, nil, 15, -15);
 
-    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() ArenaAnalytics.Export:combineExportCSV() end);
+    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() Export:combineExportCSV() end);
     
     CreateSpace();
 
     -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
-    parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() ArenaAnalytics.AAtable:tryShowimportDialogFrame() end);
+    parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() AAtable:tryShowimportDialogFrame() end);
     parent.importButton.stateFunc = function()
         if(Options:Get("allowImportDataMerge") or not ArenaAnalytics:HasStoredMatches()) then
             exportOptionsFrame.importButton:Enable();
@@ -418,7 +425,7 @@ end
 -------------------------------------------------------------------
 -- Initialize Options Menu
 -------------------------------------------------------------------
-function Options.Initialzie()
+function Options.Initialize()
     if not ArenaAnalyticsOptionsFrame then
         ArenaAnalyticsOptionsFrame = CreateFrame("Frame");
         ArenaAnalyticsOptionsFrame.name = "Arena|cff00ccffAnalytics|r";

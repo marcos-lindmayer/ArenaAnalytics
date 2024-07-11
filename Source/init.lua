@@ -1,8 +1,32 @@
 local _, ArenaAnalytics = ...; -- Namespace
 
+-- Declare Module Namespaces
+ArenaAnalytics.Constants = {};
+ArenaAnalytics.SpecSpells = {};
+
+ArenaAnalytics.AAtable = {};
+ArenaAnalytics.Selection = {};
+ArenaAnalytics.Dropdown = {};
+ArenaAnalytics.Tooltips = {};
+
+ArenaAnalytics.Options = {};
+ArenaAnalytics.AAmatch = {};
+ArenaAnalytics.API = {};
+ArenaAnalytics.Events = {};
+ArenaAnalytics.ArenaTracker = {}
+
+ArenaAnalytics.Search = {};
+ArenaAnalytics.Filters = {};
+ArenaAnalytics.MoreFilters = {};
+
+ArenaAnalytics.Import = {};
+ArenaAnalytics.Export = {};
+ArenaAnalytics.VersionManager = {};
+
+-- Local module aliases
 local Options = ArenaAnalytics.Options;
 
-local version = "";
+-------------------------------------------------------------------------
 
 function ArenaAnalyticsToggle()
 	ArenaAnalytics:Toggle();
@@ -120,7 +144,7 @@ ArenaAnalytics.commands = {
 				ArenaAnalytics:Log("Clearing MatchHistoryDB.");
 				MatchHistoryDB = {}
 				ArenaAnalytics.AAtable:tryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
-				ArenaAnalytics.Filter:RefreshFilters();
+				ArenaAnalytics.Filters:RefreshFilters();
 				ArenaAnalytics.unsavedArenaCount = 0;
 			end
 		end
@@ -293,6 +317,8 @@ local function createMinimapButton()
 end
 
 function ArenaAnalytics:init()
+	ArenaAnalytics:Log("Initializing..");
+
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
@@ -342,9 +368,9 @@ function ArenaAnalytics:init()
 	end
 
 	-- Initialize options menu
-	ArenaAnalytics.Options.Initialzie();
+	ArenaAnalytics.Options.Initialize();
 
-	ArenaAnalytics.Filter:resetFilters(false);
+	ArenaAnalytics.Filters:resetFilters(false);
 
 	createMinimapButton();
 
@@ -364,7 +390,7 @@ end
 function ArenaAnalytics:delayedInit(event, name, ...)
 	if (name ~= "ArenaAnalytics") then return end
 
-	C_Timer.After(0, function() ArenaAnalytics.init() end);
+	C_Timer.After(1, function() ArenaAnalytics.init() end);
 end
 
 local events = CreateFrame("Frame");

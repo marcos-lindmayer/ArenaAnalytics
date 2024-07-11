@@ -1,8 +1,10 @@
-local _, ArenaAnalytics = ...; -- Namespace
-ArenaAnalytics.Tooltips = {};
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local Tooltips = ArenaAnalytics.Tooltips;
 
+-- Local module aliases
 local Options = ArenaAnalytics.Options;
+
+-------------------------------------------------------------------------
 
 function Tooltips:DrawMinimapTooltip()
     GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");

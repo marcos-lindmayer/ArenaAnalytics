@@ -1,8 +1,8 @@
 -- API adjusted functions to let calling code stay version agnostic.
-local _, ArenaAnalytics = ...; -- Namespace
-local API = {}
-ArenaAnalytics.API = API;
+local _, ArenaAnalytics = ...; -- Addon Namespace
+local API = ArenaAnalytics.API;
 
+-------------------------------------------------------------------------
 
 -- Get local player current spec
 function API:GetMySpec()

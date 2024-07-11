@@ -1,11 +1,11 @@
-local _, ArenaAnalytics = ...;
-ArenaAnalytics.Import = {};
-ArenaAnalytics.Export = {};
-
+local _, ArenaAnalytics = ...; -- Addon Namespace
 local Import = ArenaAnalytics.Import;
 local Export = ArenaAnalytics.Export;
 
+-- Local module aliases
 local Options = ArenaAnalytics.Options;
+
+-------------------------------------------------------------------------
 
 local isImporting = false;
 local cachedValues = {};
@@ -768,7 +768,7 @@ function Import:completeImport()
     ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
     ArenaAnalytics:updateLastSession();    
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
-    ArenaAnalytics.Filter:RefreshFilters();
+    ArenaAnalytics.Filters:RefreshFilters();
     
     ArenaAnalytics:Print("Import complete. " .. (#MatchHistoryDB - existingArenaCount) .. " arenas added!");
     ArenaAnalytics:Log("Import ignored", arenasSkippedByDate, "arenas due to their date.");
