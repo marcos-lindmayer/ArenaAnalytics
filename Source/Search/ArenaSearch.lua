@@ -182,7 +182,7 @@ local function CheckSegmentForMatch(segment, match, alreadyMatchedPlayers)
     for _,team in ipairs(teams) do
         for _, player in ipairs(match[team]) do
             if(CheckSegmentForPlayer(segment, player)) then
-                if(not alreadyMatchedPlayers) then
+                if(not alreadyMatchedPlayers or segment.inversed) then
                     -- Skip conflict handling
                     return true;
                 elseif(alreadyMatchedPlayers[player["name"]] == nil) then
@@ -212,16 +212,17 @@ local function CheckSimplePass(match)
     for _,segment in ipairs(activePlayerSegments) do
         local segmentResult = CheckSegmentForMatch(segment, match, alreadyMatchedPlayers);
 
-        if(segment.inversed) then
-            return (segmentResult == false);
-        elseif(segmentResult == nil) then
+        if(segmentResult == nil) then
             return nil; -- Segment detected conflict
-        elseif(not segmentResult) then
-            return false; -- Failed to pass.
         end
+        
+        local successValue = not segment.inversed;
+        if(segmentResult ~= successValue) then
+            return false; -- Failed to pass.
+        end    
     end
-
-    -- All segments found a match without conflict
+    
+    -- All segments passed without conflict
     return true;
 end
 
@@ -236,10 +237,11 @@ function Search:DoesMatchPassSearch(match)
         return false;
     end
 
+    -- TODO: Get active non-inversed segments
     -- Cannot match a search with more players than the match has data for.
     local matchPlayerCount = #match["team"] + #match["enemyTeam"];
     if(#activePlayerSegments > matchPlayerCount) then
-        return false;
+        --return false;
     end
 
     -- Simple pass first
@@ -305,7 +307,7 @@ function Search:CommitSearch(input)
     for i,segment in ipairs(activePlayerSegments) do
         for j,token in ipairs(segment.Tokens) do
             assert(token and token["value"]);
-            ArenaAnalytics:Log("  Token", j, "in segment",i, "has values:", token["value"], token["exact"], token["explicitType"], token["negated"], segment.team, segment.inversed);
+            ArenaAnalytics:Log("  Token", j, "in segment",i, " has values:", token["value"], " exact:", token["exact"], " explicitType:", token["explicitType"], " negated:", token["negated"], " team:", segment.team, " inversed:", segment.inversed);
         end
     end
 
