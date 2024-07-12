@@ -73,171 +73,60 @@
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.Duration" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:Show();
-                        else
-                            print(self.tooltip);
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="Team2">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT"  relativeKey="$parent.Team1" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="Team3">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT"   relativeKey="$parent.Team2" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="Team4">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT"   relativeKey="$parent.Team3" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="Team5">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.Team4" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="EnemyTeam1">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.MMR" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="EnemyTeam2">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.EnemyTeam1" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="EnemyTeam3">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.EnemyTeam2" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="EnemyTeam4">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.EnemyTeam3" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
             <Button parentKey="EnemyTeam5">
                 <Size x="24" y="24"/>
                 <Anchors>
                     <Anchor point="LEFT" relativeKey="$parent.EnemyTeam4" relativePoint="RIGHT" x="0" y="0"/>
                 </Anchors>
-                <Scripts>
-                    <OnEnter>
-                        if (self.tooltip) then
-                            self.tooltip:SetOwner(self, "ANCHOR_RIGHT");
-                            self.tooltip:Show();
-                        end
-                    </OnEnter>
-                    <OnLeave>
-                        GameTooltip:Hide();
-                    </OnLeave>
-                </Scripts>
             </Button>
         </Frames>
     </Frame>

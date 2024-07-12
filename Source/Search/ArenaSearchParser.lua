@@ -306,6 +306,5 @@ function Search:ProcessScope(input, startIndex, endSymbol)
         index = index + 1;
     end
 
-    ArenaAnalytics:Print(endIndex, scope, display);
     return endIndex, scope, display, isNegated;
 end

@@ -43,8 +43,10 @@ ArenaAnalytics.commands = {
 	["help"] = function()
 		print(" ");
 		ArenaAnalytics:Print("List of slash commands:");
-		ArenaAnalytics:Print("|cff00cc66/aa|r");
+		ArenaAnalytics:Print("|cff00cc66/aa|r Togggles ArenaAnalytics main panel.");
 		ArenaAnalytics:Print("|cff00cc66/aa played|r Prints total duration of tracked arenas.");
+		ArenaAnalytics:Print("|cff00cc66/aa version|r Prints the current ArenaAnalytics version.");
+		ArenaAnalytics:Print("|cff00cc66/aa total|r Prints total unfiltered matches.");
 		print(" ");
 	end,
 	

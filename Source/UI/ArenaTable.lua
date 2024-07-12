@@ -406,9 +406,7 @@ function AAtable:OnLoad()
 end
 
 function AAtable:tryShowimportDialogFrame(parent)
-    if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
-        ArenaAnalytics:Print("Creating import frame..");
-        
+    if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then       
         ArenaAnalyticsScrollFrame.importDialogFrame = CreateFrame("Frame", "ArenaAnalyticsImportFrame", parent or UIParent, "BasicFrameTemplateWithInset")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetPoint("CENTER")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetSize(475, 145)
