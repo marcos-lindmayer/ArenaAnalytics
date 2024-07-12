@@ -385,7 +385,12 @@ function SetupTab_Search()
     parent.tabHeader = CreateHeader("Search", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
-    parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team. Prefix player segment '|cff00ccff+|r' to force friendly team.");
+    parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team. Prefix player segment '|cff00ccff+|r' to force friendly team.", function()
+        if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchTitle)) then
+            ArenaAnalyticsScrollFrame.searchTitle:SetText(Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search");
+        end
+    end);
+
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchHideTooltipQuickSearch", parent, offsetX, "Hide Quick Search shortcuts on player tooltips.");
 
     CreateSpace();
