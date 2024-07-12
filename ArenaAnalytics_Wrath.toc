@@ -15,7 +15,7 @@ Source/ArenaOptions.lua
 Source/ArenaEvents.lua
 Source/ArenaTracker.lua
 Source/ArenaVersionManager.lua
-Source/ArenaAPI_Wotlk.lua
+Source/ArenaAPI_Wrath.lua
 
 Source/UI/HybridScroll.xml
 Source/UI/ArenaTable.lua
@@ -24,7 +24,7 @@ Source/UI/ArenaTooltips.lua
 Source/UI/ArenaScrollableDropdown.lua
 
 Source/Data/ArenaConstants.lua
-Source/Data/ArenaSpecSpells_Wotlk.lua
+Source/Data/ArenaSpecSpells_Wrath.lua
 
 Source/Search/ArenaSearch.lua
 Source/Search/ArenaSearchParser.lua
