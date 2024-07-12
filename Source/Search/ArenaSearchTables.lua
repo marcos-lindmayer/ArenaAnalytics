@@ -191,7 +191,6 @@ SearchTokenTypeTable = {
         ["requireExact"] = true,
         ["values"] = {
             ["not"] = { "not", "inverse" },
---            ["any"] = { "any" } -- TODO: Determine if there's any logical use case 
         }
     }
 }

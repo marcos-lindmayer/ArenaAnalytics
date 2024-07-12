@@ -219,7 +219,7 @@ end
 -- Assert if debug is enabled. Returns value to allow wrapping within if statements.
 function ArenaAnalyticsDebugAssert(value, msg)
 	if(Options:Get("debuggingEnabled")) then
-		assert(value, msg);
+		assert(value, "Debug Assertion failed! " .. (msg or ""));
 	end
 	return value;
 end

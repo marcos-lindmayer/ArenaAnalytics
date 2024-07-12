@@ -278,7 +278,7 @@ function Search:Get(key)
 end
 
 function Search:GetDisplay()
-    return Search.current["display"] or Search.current["raw"] or "???";
+    return Search.current["display"] or Search.current["raw"] or "";
 end
 
 function Search:IsEmpty()
@@ -302,6 +302,8 @@ function Search:Reset()
 end
 
 function Search:CommitSearch(input)
+    Search.isCommitting = true;
+
     -- Update active search filter
     Search:Update(input);
     activeSearchData = Search.current["data"];
@@ -317,14 +319,21 @@ function Search:CommitSearch(input)
 
     -- Force filter refresh
     ArenaAnalytics.Filters:RefreshFilters();
+
+    Search.isCommitting = nil;
 end
 
 function Search:Update(input)
-    local playerrSegments, display, raw = Search:ProcessInput(input);
+    local searchBox = ArenaAnalyticsScrollFrame.searchBox;
+
+    local oldCursorPosition = searchBox:GetCursorPosition();
+    local newSearchData, display, raw, newCursorPosition = Search:ProcessInput(input, oldCursorPosition);
 
     Search.current["raw"] = raw;
     Search.current["display"] = display;
-    Search.current["data"] = playerrSegments;
+    Search.current["data"] = newSearchData;
 
-    ArenaAnalyticsScrollFrame.searchBox:SetText(display);
+    -- Update the searchbox
+    searchBox:SetText(display);
+    searchBox:SetCursorPosition(newCursorPosition);
 end

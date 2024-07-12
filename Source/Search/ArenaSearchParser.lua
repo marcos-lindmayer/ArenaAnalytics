@@ -33,9 +33,12 @@ local function CreateToken(text, isExact)
             newToken["keyword"] = valueKey;
         elseif(not newToken["explicitType"] and newToken["value"]:find(' ') == nil) then
             -- Tokens without spaces fall back to name type
-            ArenaAnalytics:Log("Search: Forced fallback to name search type.")
             newToken["explicitType"] = "name";
             newToken["noSpace"] = true;
+
+            if(Search.isCommitting) then
+                ArenaAnalytics:Log("Search: Forced fallback to name search type.")
+            end
         end
     end
 
@@ -62,8 +65,31 @@ function Search:SanitizeInput(input)
     return output;
 end
 
+local function SanitizeCursorPosition(input, oldCursorPosition)
+    assert(input);
+
+    if(oldCursorPosition == 0) then
+        return 0;
+    end
+
+    if(oldCursorPosition == #input) then
+        return -1;
+    end
+
+    local stringBeforeCursor = input:sub(1, oldCursorPosition);
+    local sanitizedString = Search:SanitizeInput(stringBeforeCursor);
+
+    return #sanitizedString;
+end
+
+local function CalculateScopeCursorIndex(currentDisplayLength, startIndex, endIndex, cursorIndex)
+    if(cursorIndex >= startIndex and cursorIndex <= endIndex) then
+        return currentDisplayLength + 13 + (cursorIndex - startIndex);
+    end
+end
+
 -- Process the input string for symbols: Double quotation marks, commas, parenthesis, spaces
-function Search:ProcessInput(input)
+function Search:ProcessInput(input, oldCursorPosition)
     local tokenizedData = { segments = {}, nonInversedCount = 0 }
 
     local currentSegment = { Tokens = {}}
@@ -76,9 +102,12 @@ function Search:ProcessInput(input)
 
     local displayString = "";
 
+    local newCursorPosition = 0;
+    local sanitizedCursorPos = SanitizeCursorPosition(input, oldCursorPosition);
     input = Search:SanitizeInput(input);
+
     if(input == "") then
-        return tokenizedData, displayString, input;
+        return tokenizedData, displayString, input, newCursorPosition;
     end
 
     ----------------------------
@@ -172,27 +201,18 @@ function Search:ProcessInput(input)
     while index <= #input do
         local char = input:sub(index, index)
         
-        if char == "+" then
-            if ((#currentSegment.Tokens == 0 and currentWord == "") and lastChar ~= '+' and lastChar ~= '-') then
+        if char == "+" then -- Disabled in favor of "team" keyword
+            if (false and (#currentSegment.Tokens == 0 and currentWord == "") and lastChar ~= '+' and lastChar ~= '-') then
                 currentSegment.team = "team";
                 displayString = displayString .. Search:ColorizeSymbol(char);
             else
                 displayString = displayString .. Search:ColorizeInvalid(char);
             end
-        elseif char == '-' then
-            if (lastChar ~= '+' and lastChar ~= '-') then
-                if(#currentSegment.Tokens == 0 and currentWord == "") then
-                    currentSegment.team = "enemyTeam";
-                    displayString = displayString .. Search:ColorizeSymbol(char);
-                else
-                    displayString = displayString .. char;
-                    currentWord = currentWord .. char;
-                end
-            else
-                displayString = displayString .. Search:ColorizeInvalid(char);
-            end
-        elseif char == '!' then
-            if((currentWord == "" or lastChar == ':') and lastChar ~= '!') then
+        elseif char == '-'  and currentWord ~= "" and lastChar ~= ':' then -- Separator for name-realm
+            displayString = displayString .. char;
+            currentWord = currentWord .. char;
+        elseif char == '!' or char == '-' then -- Negated token
+            if((currentWord == "" or lastChar == ':') and lastChar ~= '!' and lastChar ~= '-') then
                 CommitCurrentToken();
                 isTokenNegated = true;
                 displayString = displayString .. Search:ColorizeSymbol(char);
@@ -226,7 +246,12 @@ function Search:ProcessInput(input)
 
                 -- Commit the new token immediately
                 CommitCurrentToken();
-                                
+
+                local cursorIndex = CalculateScopeCursorIndex(#displayString, index, endIndex, sanitizedCursorPos);
+                if(cursorIndex) then
+                    newCursorPosition = cursorIndex;
+                end
+
                 index = endIndex;
                 
                 displayString = displayString .. Search:ColorizeSymbol('"') .. display .. Search:ColorizeSymbol('"');
@@ -234,7 +259,7 @@ function Search:ProcessInput(input)
                 displayString = displayString .. Search:ColorizeInvalid(char);
             end
         elseif char == "(" then
-            local endIndex, scope, display, isNegated = Search:ProcessScope(input, index, '"');
+            local endIndex, scope, display, isNegated = Search:ProcessScope(input, index, ')');
             if endIndex then
                 if(lastChar ~= ':') then
                     CommitCurrentWord();
@@ -247,10 +272,15 @@ function Search:ProcessInput(input)
 
                 -- Commit the new token immediately
                 CommitCurrentToken();
-                                
+
+                local cursorIndex = CalculateScopeCursorIndex(#displayString, index, endIndex, sanitizedCursorPos);
+                if(cursorIndex) then
+                    newCursorPosition = cursorIndex;
+                end
+
                 index = endIndex;
                 
-                displayString = displayString .. Search:ColorizeSymbol('"') .. display .. Search:ColorizeSymbol('"');
+                displayString = displayString .. Search:ColorizeSymbol('(') .. display .. Search:ColorizeSymbol(')');
             else -- Invalid scope
                 displayString = displayString .. Search:ColorizeInvalid(char);
             end
@@ -264,6 +294,10 @@ function Search:ProcessInput(input)
             currentWord = currentWord .. char
             displayString = displayString .. char;
         end
+
+        if(index == sanitizedCursorPos) then
+            newCursorPosition = #displayString;
+        end
         
         lastChar = char;
         index = index + 1
@@ -274,7 +308,11 @@ function Search:ProcessInput(input)
     CommitCurrentToken()
     CommitCurrentSegment()
 
-    return tokenizedData, displayString, input;
+    if(sanitizedCursorPos == -1) then
+        newCursorPosition = #displayString;
+    end
+
+    return tokenizedData, displayString, input, newCursorPosition;
 end
 
 function Search:ProcessScope(input, startIndex, endSymbol)    

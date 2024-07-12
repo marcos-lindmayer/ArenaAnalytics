@@ -102,10 +102,10 @@ end
 
 function Search:GetShortQuickSearchSpec(class, spec)
     local shortName = nil;
-    if(spec) then
+    if(spec and spec ~= "") then
         local specKey = class .. "|" .. spec;
         shortName = QuickSearchValueTable["spec"][specKey:lower()];
-    else
+    elseif(class and class ~= "") then
         shortName = QuickSearchValueTable["class"][class:lower()];
     end
 
@@ -116,7 +116,9 @@ end
 -- Quick Search
 ---------------------------------
 
-function Search:QuickSearch(mouseButton, name, class, spec, race, team)
+function Search:QuickSearch(mouseButton, player, team)
+    assert(player);
+
     local prefix, tokens = '', {};
     local isNegated = (mouseButton == "RightButton");
 
@@ -125,13 +127,13 @@ function Search:QuickSearch(mouseButton, name, class, spec, race, team)
     end
 
     if(team == "team") then
-        prefix = '+';
+        tinsert(tokens, "team");
     elseif(team == "enemyTeam") then
-        prefix = '-';
+        tinsert(tokens, "enemy");
     end
 
     if(not IsShiftKeyDown() and not IsControlKeyDown()) then
-        name = name or "";
+        name = player["name"] or "";
         if(name:find('-')) then
             -- TODO: Convert to options
             if(Options:Get("quickSearchExcludeAnyRealm")) then
@@ -151,16 +153,20 @@ function Search:QuickSearch(mouseButton, name, class, spec, race, team)
         -- Add name only
         tinsert(tokens, name);
     else
-        if(IsControlKeyDown() and race ~= nil) then
+        if(IsControlKeyDown() and player["race"] ~= nil) then
             -- Add race if available
-            local shortName = Search:GetShortQuickSearchSpec("race", race);
+            local race =  player["race"];
+            local shortName = Search:GetShortQuickSearch("race", race);
             tinsert(tokens, "r:"..(shortName or race));
         end
         
-        if(IsShiftKeyDown() and class ~= nil) then
+        if(IsShiftKeyDown() and player["class"] ~= nil) then
+            local class = player["class"];
+            local spec = player["spec"];
+
             local shortName = Search:GetShortQuickSearchSpec(class, spec);
-            if(ArenaAnalyticsDebugAssert(shortName ~= nil)) then
-                local shortNamePrefix = spec and "s:" or "c:";
+            if(ArenaAnalyticsDebugAssert(shortName ~= nil, ("No shortname found for class: " .. (class or "nil") .. " spec: " .. (spec or "nil")))) then
+                local shortNamePrefix = (spec and spec ~= "") and "s:" or "c:";
                 tinsert(tokens, shortNamePrefix .. shortName);
             else
                 local simpleToken = "";

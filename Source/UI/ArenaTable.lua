@@ -245,21 +245,25 @@ function AAtable:OnLoad()
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
     end);
 
-    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnChar", function(self)
+    local superOnTextChanged = ArenaAnalyticsScrollFrame.searchBox:GetScript("OnTextChanged");
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextChanged", function(self)
+        assert(superOnTextChanged);
+        superOnTextChanged(self);
+
         Search:Update(self:GetText());
     end);
-        
+
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextSet", function(self) 
         if(self:GetText() == "" and not Search:IsEmpty()) then
+            ArenaAnalytics:Log("Clearing search..");
             Search:CommitSearch("");
             self:SetText("");
         end
     end);
         
-    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEditFocusLost", function(self) 
-        -- Clear white spaces
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus();
         Search:CommitSearch(self:GetText());
-        self:SetText(Search:GetDisplay());
     end);
 
     -- Dropdown data
@@ -617,7 +621,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
             -- Quick Search
             playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
             playerFrame:SetScript("OnClick", function(frame, btn)
-                Search:QuickSearch(btn, player["name"], class, spec, player["race"], teamKey);
+                Search:QuickSearch(btn, player, teamKey);
             end);
 
             -- Add spec info
