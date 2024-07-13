@@ -185,7 +185,7 @@ function Filters:ResetToDefault(filter, skipOverrides)
 end
 
 -- TODO: Decide what to do with nil win. Might be better to not include its stats at all (Though still wanna count as a played comp)?
-local function findOrAddCompValues(comps, comp, isWin)
+local function findOrAddCompValues(comps, comp, isWin, mmr)
     if(comp == nil) then return end;
 
     for i,existingComp in ipairs(comps) do
@@ -195,6 +195,12 @@ local function findOrAddCompValues(comps, comp, isWin)
             if (isWin) then
                 existingComp["wins"] = existingComp["wins"] + 1;
             end
+
+            if(mmr) then
+                existingComp["mmr"] = existingComp["mmr"] + mmr;
+                existingComp["mmrCount"] = existingComp["mmrCount"] + 1;
+            end
+                
             return;
         end
     end
@@ -202,7 +208,9 @@ local function findOrAddCompValues(comps, comp, isWin)
     tinsert(comps, {
         ["comp"] = comp,
         ["played"] = 1,
-        ["wins"] = isWin and 1 or 0
+        ["wins"] = isWin and 1 or 0,
+        ["mmr"] = mmr or 0,
+        ["mmrCount"] = mmr and 1 or 0, -- Separated in case of missing mmr
     });
 end
 
@@ -222,18 +230,29 @@ function Filters:getPlayedCompsWithTotalAndWins(isEnemyComp)
                 local comp = match[compKey];
 
                 if(comp ~= nil) then
-                    findOrAddCompValues(playedComps, comp, match["won"]);
+                    findOrAddCompValues(playedComps, comp, match["won"], match["mmr"]);
                 end
             end
         end
 
-        -- Compute winrates
+        -- Compute winrates and average mmr
         for i=#playedComps, 1, -1 do
             local compTable = playedComps[i];
 
+            -- Calculate winrate
             local played = compTable["played"] or 0;
             local wins = compTable["wins"] or 0;
             compTable["winrate"] = (played > 0) and math.floor(wins * 100 / played) or 0;
+
+            -- Calculate average MMR
+            local mmrCount = compTable["mmrCount"];
+            if(compTable["mmr"] and mmrCount and mmrCount > 0) then
+                compTable["mmr"] = floor(compTable["mmr"] / compTable["mmrCount"]);
+                compTable["mmrCount"] = nil;
+            else -- No MMR data
+                compTable["mmr"] = nil;
+                compTable["mmrCount"] = nil;
+            end
         end
     end
     return playedComps;

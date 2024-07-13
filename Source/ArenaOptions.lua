@@ -49,8 +49,12 @@ function Options:LoadSettings()
     
     AddSetting("showSkirmish", false);
 
+    AddSetting("showCompDropdownInfoText", true);
+
     AddSetting("sortCompFilterByTotalPlayed", false);
+    AddSetting("compDisplayAverageMmr", true);
     AddSetting("showSelectedCompStats", false);
+
     AddSetting("outliers", 0); -- Minimum games to appear on comp dropdowns
     AddSetting("dropdownVisibileLimit", 10);
     
@@ -351,19 +355,49 @@ function SetupTab_Filters()
     local offsetX = 20;
     
     parent.tabHeader = CreateHeader("Filters", TabHeaderSize, parent, nil, 15, -15);
-
+    
+    parent.showSkirmish = CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
+    
+    CreateSpace();
+    
     -- Setup options
     parent.defaultCurrentSeasonFilter = CreateCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
     parent.defaultCurrentSessionFilter = CreateCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
     
     CreateSpace();
     
-    parent.showSkirmish = CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
-    
+    parent.compFilterSortByTotal = CreateCheckbox("showCompDropdownInfoText", parent, offsetX, "Show info text by comp dropdown titles.", function()
+        if(ArenaAnalyticsScrollFrame.filterCompsDropdown) then
+            if(Options:Get("showCompDropdownInfoText")) then
+                ArenaAnalyticsScrollFrame.filterCompsDropdown.title.details:Show();
+            else
+                ArenaAnalyticsScrollFrame.filterCompsDropdown.title.details:Hide();
+            end
+        end
+        if(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown) then
+            if(Options:Get("showCompDropdownInfoText")) then
+                ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.title.details:Show();
+            else
+                ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.title.details:Hide();
+            end
+        end
+    end);
+
     CreateSpace();
-    
+
     parent.compFilterSortByTotal = CreateCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
     parent.showSelectedCompStats = CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
+    parent.compFilterSortByTotal = CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
+        local details = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
+        if(ArenaAnalyticsScrollFrame.filterCompsDropdown) then
+            ArenaAnalyticsScrollFrame.filterCompsDropdown.title.details:SetText(details);
+        end
+
+        if(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown) then
+            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.title.details:SetText(details);
+        end
+    end);
+
     parent.unsavedWarning = CreateInputBox("outliers", parent, offsetX, "Minimum games required to appear on comp filter.");
     parent.unsavedWarning = CreateInputBox("dropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
 end

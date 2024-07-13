@@ -2,7 +2,12 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local AAmatch = ArenaAnalytics.AAmatch;
 
 -- Local module aliases
+local Constants = ArenaAnalytics.Constants;
+local ArenaTracker = ArenaAnalytics.ArenaTracker;
+local Filters = ArenaAnalytics.Filters;
+local AAtable = ArenaAnalytics.AAtable;
 local API = ArenaAnalytics.API;
+local Import = ArenaAnalytics.Import;
 
 -------------------------------------------------------------------------
 
@@ -271,11 +276,11 @@ function ArenaAnalytics:SortGroup(group, isPlayerPriority)
             end
         end
 
-		local specID_A = ArenaAnalytics.Constants:getAddonSpecializationID(classA, specA);
-        local priorityValueA = ArenaAnalytics.Constants:getSpecPriorityValue(specID_A);
+		local specID_A = Constants:getAddonSpecializationID(classA, specA);
+        local priorityValueA = Constants:getSpecPriorityValue(specID_A);
 
-		local specID_B = ArenaAnalytics.Constants:getAddonSpecializationID(classB, specB);
-        local priorityValueB = ArenaAnalytics.Constants:getSpecPriorityValue(specID_B);
+		local specID_B = Constants:getAddonSpecializationID(classB, specB);
+        local priorityValueB = Constants:getSpecPriorityValue(specID_B);
 
 		if(priorityValueA == priorityValueB) then
 			return nameA < nameB;
@@ -327,7 +332,7 @@ function AAmatch:getArenaComp(teamTable, bracket)
 			return nil;
 		end
 
-		local specID = ArenaAnalytics.Constants:getAddonSpecializationID(player["class"], player["spec"], true);
+		local specID = Constants:getAddonSpecializationID(player["class"], player["spec"], true);
 		if(specID == nil) then
 			return nil;
 		end
@@ -343,7 +348,7 @@ function AAmatch:getArenaComp(teamTable, bracket)
 end
 
 -- Calculates arena duration, turns arena data into friendly strings, adds it to MatchHistoryDB
--- and triggers a layout refresh on ArenaAnalytics.arenaTable
+-- and triggers a layout refresh on ArenaAnalytics.AAtable
 function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	local hasStartTime = tonumber(newArena["startTime"]) and newArena["startTime"] > 0;
 	if(not hasStartTime) then
@@ -398,7 +403,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 		["date"] = tonumber(newArena["startTime"]) or time(),
 		["season"] = season,
 		["session"] = nil,
-		["map"] = ArenaAnalytics.AAmatch:getMapNameById(newArena["mapId"]), 
+		["map"] = AAmatch:getMapNameById(newArena["mapId"]), 
 		["bracket"] = bracket,
 		["duration"] = newArena["duration"],
 		["team"] = newArena["party"],
@@ -412,7 +417,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 		["comp"] = newArena["comp"],
 		["enemyComp"] = newArena["enemyComp"],
 		["won"] = newArena["wonByPlayer"],
-		["firstDeath"] = ArenaAnalytics.ArenaTracker:GetFirstDeathFromCurrentArena();
+		["firstDeath"] = ArenaTracker:GetFirstDeathFromCurrentArena();
 	}
 
 	-- Assign session
@@ -427,21 +432,21 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	-- Insert arena data as a new MatchHistoryDB entry
 	table.insert(MatchHistoryDB, arenaData);
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
-	ArenaAnalytics.Import:tryHide();
+	Import:tryHide();
 
 	ArenaAnalytics:Print("Arena recorded!");
 	
 	-- Refresh and reset current arena
-	ArenaAnalytics.ArenaTracker:ResetCurrentArenaValues();
+	ArenaTracker:ResetCurrentArenaValues();
 	
-	ArenaAnalytics.Filters:RefreshFilters();
+	Filters:RefreshFilters();
 
-	ArenaAnalytics.AAtable:tryStartSessionDurationTimer();
+	AAtable:tryStartSessionDurationTimer();
 end
 
 -- Returns the player's spec
 function AAmatch:getPlayerSpec()
-	local spec = ArenaAnalytics.API:GetMySpec();
+	local spec = API:GetMySpec();
 
 	-- TODO: Decide if we wanna keep this, make it a setting, or remove it.
 	if (spec == nil and false) then -- Workaround for when GetTalentTabInfo returns nil

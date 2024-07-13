@@ -79,16 +79,17 @@ local function GetCompDisplayString(compEntry, isPlayerPriority, isSelectedDispl
     end
 
     local display = ArenaAnalytics.AAtable:getCompIconString(comp, isPlayerPriority) or "???";
-    
+
     -- Skip adding stats for selected, if option desires them hidden
     if(isSelectedDisplay and not Options:Get("showSelectedCompStats")) then
-        return display, 0;
+        return display, 0, nil;
     end
 
     -- Setup string values (Prefix and suffix for total played and winrate)
     local played = compEntry["played"] or "|cffff0000" .. "0" .. "|r";
     --local wins = compEntry["wins"] or 0;
-    local winrate = compEntry["winrate"] ;
+    local winrate = compEntry["winrate"];
+    local averageMMR = compEntry["mmr"] and "|cffcccccc" .. compEntry["mmr"] .. "|r";
     
     local playedPrefix = played and (played .. "  ") or "|cffff0000" .. "0  " .. "|r";
     local winrateSuffix = winrate and ("  " .. winrate .. "%") or "|cffff0000" .. "  0%" .. "|r";
@@ -96,7 +97,22 @@ local function GetCompDisplayString(compEntry, isPlayerPriority, isSelectedDispl
     -- Complete display string including icons
     display = playedPrefix .. display .. winrateSuffix; -- TODO: Consider custom icon management setup?
     local textOffsetX = ComputeStringOffset(playedPrefix, winrateSuffix);
-    return display, textOffsetX;
+
+    if(Options:Get("compDisplayAverageMmr")) then
+        textOffsetX = textOffsetX - 12;
+    end
+
+    return display, textOffsetX, averageMMR;
+end
+
+local function AddAverageMMR(frame, mmr)
+    assert(frame);
+
+    if(Options:Get("compDisplayAverageMmr") and mmr) then
+        frame.mmrText = ArenaAnalyticsCreateText(frame, "RIGHT", frame, "RIGHT", -5, -1.25, mmr, 9);
+    else
+        frame.mmrText = nil;
+    end
 end
 
 local function HandleClick(dropdown, value, display)
@@ -142,8 +158,11 @@ local function RemoveEntriesByOptions(entries)
 end
 
 local function SetSelectedText(selectedFrame, entry, isPlayerPriority, filter)
-    local display, offsetX = GetCompDisplayString(entry, isPlayerPriority, true);
-    selectedFrame.text = ArenaAnalyticsCreateText(selectedFrame, "CENTER", selectedFrame, "CENTER", offsetX, 0, display);
+    local display, offsetX, averageMMR = GetCompDisplayString(entry, isPlayerPriority, true);
+    local fontSize = (display == "All" and 12 or 11);
+    selectedFrame.text = ArenaAnalyticsCreateText(selectedFrame, "CENTER", selectedFrame, "CENTER", offsetX, -1.25, display, fontSize);
+    AddAverageMMR(selectedFrame, averageMMR);
+
     selectedFrame:SetText("");
 
     Filter:SetDisplay(filter, display);
@@ -200,10 +219,11 @@ local function CreateCompEntryButton(frameName, dropdown, filter, width, height,
     
     local info = {}
     info.comp = comp;
-    info.display, info.textOffsetX = GetCompDisplayString(entry, isPlayerPriority);
+    info.display, info.textOffsetX, averageMMR = GetCompDisplayString(entry, isPlayerPriority);
 
     local button = CreateButton(frameName, dropdown, dropdown.list.content, width, height, "");
-    button.text = ArenaAnalyticsCreateText(button, "CENTER", button, "CENTER", info.textOffsetX, 0, info.display);
+    button.text = ArenaAnalyticsCreateText(button, "CENTER", button, "CENTER", info.textOffsetX, -1.25, info.display, 11);
+    AddAverageMMR(button, averageMMR);
 
     button:SetScript("OnClick", function(args)
         HandleClick(dropdown, info.comp, info.display);
@@ -261,6 +281,21 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
         dropdown.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
         dropdown.title:SetPoint("TOPLEFT", 0, 15);
         dropdown.title:SetText(title);
+
+        if(isCompDropdown) then
+            dropdown.title.details = dropdown:CreateFontString(nil, "OVERLAY");
+            dropdown.title.details:SetFont("Fonts\\FRIZQT__.TTF", 8.25, "");
+            dropdown.title.details:SetPoint("TOPRIGHT", -4, 13);
+
+            local details = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate"
+            dropdown.title.details:SetText(details);
+
+            if(Options:Get("showCompDropdownInfoText")) then
+                dropdown.title.details:Show();
+            else
+                dropdown.title.details:Hide();
+            end
+        end
     end
 
     -- Selected (main) button for this dropdown

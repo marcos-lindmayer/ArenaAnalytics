@@ -129,9 +129,9 @@ function AAtable:getCompIconString(comp, isPlayerPriority)
 end
 
 -- Returns string frame
-function ArenaAnalyticsCreateText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text)
+function ArenaAnalyticsCreateText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text, fontSize)
     local fontString = relativeFrame:CreateFontString(nil, "OVERLAY");
-    fontString:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
+    fontString:SetFont("Fonts\\FRIZQT__.TTF", fontSize or 12, "");
     fontString:SetPoint(anchor, refFrame, relPoint, xOff, yOff);
     fontString:SetText(text);
     return fontString
@@ -227,9 +227,9 @@ function AAtable:OnLoad()
 
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
     ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, -27);
-    ArenaAnalyticsScrollFrame.searchBox:SetSize(155, 55);
+    ArenaAnalyticsScrollFrame.searchBox:SetSize(220, 55);
     ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
-    ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(513);
+    ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(1024);
 
     ArenaAnalyticsScrollFrame.searchTitle = ArenaAnalyticsScrollFrame.searchBox:CreateFontString(nil, "OVERLAY");
     ArenaAnalyticsScrollFrame.searchTitle:SetPoint("TOPLEFT", -4, 0);
@@ -750,11 +750,11 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
 
     -- Dropdown data
     local filter = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
-    local title = isEnemyComp and "Enemy Comp: Games | Comp | Winrate" or "Comp: Games | Comp | Winrate";
+    local title = isEnemyComp and "Enemy Comp:" or "Comp:";
     local entries = Filters:getPlayedCompsWithTotalAndWins(isEnemyComp);
     local default = isDisabled and disabledText or nil;
 
-    local dropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 265, 25);
+    local dropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 235, 25);
     local parent = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
     dropdown:SetPoint("LEFT", parent, "RIGHT", 10, 0);
 
