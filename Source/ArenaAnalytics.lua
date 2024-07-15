@@ -16,9 +16,13 @@ MatchHistoryDB = MatchHistoryDB or { }
 
 ArenaAnalytics.unsavedArenaCount = 0;
 
-ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {
-	-- Character specific settings
-}
+ArenaAnalytics.filteredMatchHistory = { };
+
+ArenaAnalytics.lastSession = 1;
+
+function ArenaAnalytics:UpdateLastSession()
+	ArenaAnalytics.lastSession = ArenaAnalytics:getLastSession();
+end
 
 -- TODO: Confirm that all events are still used correctly, then delete after refactoring tracking & events
 local eventTracker = {

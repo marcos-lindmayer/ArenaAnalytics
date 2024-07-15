@@ -19,14 +19,6 @@ local function colorText(text, color)
     return "|c" .. color .. text .. "|r"
 end
 
-ArenaAnalytics.filteredMatchHistory = { };
-
-ArenaAnalytics.lastSession = 1;
-
-function ArenaAnalytics:updateLastSession()
-	ArenaAnalytics.lastSession = ArenaAnalytics:getLastSession();
-end
-
 -- Filtered stats
 local wins, sessionGames, sessionWins = 0, 0, 0;
 
@@ -860,8 +852,6 @@ function AAtable:handleArenaCountChanged()
     if(not ArenaAnalytics:HasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
         ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
     end
-
-    local matches = ArenaAnalytics.filteredMatchHistory;
 
     wins, sessionGames, sessionWins = 0,0,0;
     -- Update arena count & winrate

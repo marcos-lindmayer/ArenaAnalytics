@@ -196,7 +196,7 @@ local function findOrAddCompValues(comps, comp, isWin, mmr)
                 existingComp["wins"] = existingComp["wins"] + 1;
             end
 
-            if(mmr) then
+            if(tonumber(mmr)) then
                 existingComp["mmr"] = existingComp["mmr"] + mmr;
                 existingComp["mmrCount"] = existingComp["mmrCount"] + 1;
             end
@@ -209,7 +209,7 @@ local function findOrAddCompValues(comps, comp, isWin, mmr)
         ["comp"] = comp,
         ["played"] = 1,
         ["wins"] = isWin and 1 or 0,
-        ["mmr"] = mmr or 0,
+        ["mmr"] = tonumber(mmr) or 0,
         ["mmrCount"] = mmr and 1 or 0, -- Separated in case of missing mmr
     });
 end

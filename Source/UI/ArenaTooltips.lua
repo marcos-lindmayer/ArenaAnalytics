@@ -116,8 +116,8 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         GameTooltip:AddLine(" ");
         GameTooltip:AddLine("Quick Search:");
         GameTooltip:AddDoubleLine(ColorTips("LMB:", " Add value"), ColorTips("RMB:", " Add inversed"));
-        GameTooltip:AddDoubleLine(ColorTips("Nomod:", " Player Name"), ColorTips("Shift:", " Class/Spec"));
-        GameTooltip:AddDoubleLine(ColorTips("Ctrl:", " Race"), ColorTips("Alt:", " Append search"));
+        GameTooltip:AddDoubleLine(ColorTips("Nomod:", " Player Name"), ColorTips("Shift:", " Append search"));
+        GameTooltip:AddDoubleLine(ColorTips("Ctrl:", " Class/Spec"), ColorTips("Alt:", " Race")); -- TODO: Swap alt and shift
     end
 
     GameTooltip:Show();

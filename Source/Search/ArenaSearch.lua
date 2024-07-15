@@ -55,12 +55,7 @@ Search.current = {
     ["data"] = nil, -- Search data as a table for efficient comparisons
 }
 
-local activeSearchData = {};
-
-local function ResetActiveData()
-    activeSearchData = { segments = {}, nonInversedCount = 0 }
-end
-ResetActiveData();
+local activeSearchData = { segments = {}, nonInversedCount = 0 };
 
 ---------------------------------
 -- Search matching logic
@@ -117,8 +112,8 @@ local function CheckTypeForPlayer(searchType, token, player)
             searchType = "name";
         end
     elseif (searchType == "faction") then
-        local playerFaction = player["faction"] or Constants:GetFactionByRace(player["race"]) or "";
-        if(playerFaction ~= "") then
+        local playerFaction = Search:SafeToLower(player["faction"] or Constants:GetFactionByRace(player["race"]) or "");
+        if(playerFaction ~= "" and playerFaction ~= "neutral") then
             local isFactionMatch = not token["exact"] and playerFaction:find(token["value"]) or (token["value"] == playerFaction:lower());
             return isFactionMatch;
         else
@@ -156,7 +151,6 @@ local function CheckTokenForPlayer(token, player)
         end
     else -- Loop through all types
         local types = { "name", "spec", "class", "race", "faction" }
-        local foundMatch = false;
         for _,searchType in ipairs(types) do
             if(CheckTypeForPlayer(searchType, token, player)) then
                 return true;
@@ -179,6 +173,10 @@ local function CheckSegmentForPlayer(segment, player)
 
     return true;
 end
+
+---------------------------------
+-- Simple Pass
+---------------------------------
 
 local function CheckSegmentForMatch(segment, match, alreadyMatchedPlayers)
     local teams = segment.team and {segment.team} or {"team", "enemyTeam"};
@@ -231,6 +229,157 @@ local function CheckSimplePass(match)
     return true;
 end
 
+---------------------------------
+-- Advanced Pass
+---------------------------------
+
+local function PruneUniqueMatches(segmentMatches, playerMatches)
+    if(#segmentMatches == 0 and #playerMatches == 0) then
+        return;
+    end
+    
+    local changed = true;
+
+    local function PruneLockedValues(tableToPrune, valueToRemove)
+        for i = #tableToPrune, 1, -1 do
+            local matches = tableToPrune[i];
+            
+            for j = #matches, 1, -1 do
+                local value = matches[j];
+                if(value and value == valueToRemove) then
+                    if(#matches == 1) then
+                        table.remove(tableToPrune, i);
+                    else
+                        table.remove(matches, j);
+                    end
+
+                    changed = true;
+                    break;
+                end
+            end
+        end
+    end
+
+    local function LockUniqueMatches(tableToCheck, pairedTable)
+        for i = #tableToCheck, 1, -1 do
+            local matches = tableToCheck[i];
+            
+            if #matches == 1 then
+                local value = matches[1];
+                if(pairedTable[value] ~= nil and #pairedTable[value] > 0) then
+                    table.remove(tableToCheck, i);
+                    
+                    PruneLockedValues(tableToCheck, value);
+                    pairedTable[value] = nil;
+                else
+                    return false;
+                end
+            end
+        end
+        return true;
+    end
+
+    while changed do
+        changed = false
+
+        -- Find segments with only one matched player
+        if(LockUniqueMatches(segmentMatches, playerMatches) == false) then
+            return false;
+        end
+
+        -- Find players with only one matched segment
+        if(LockUniqueMatches(playerMatches, segmentMatches) == false) then
+            return false;
+        end
+    end
+end
+
+local function recursivelyMatchSegments(segmentMatches, segmentIndex, alreadyMatchedPlayers)
+    if segmentIndex > #segmentMatches then
+        return true;
+    end
+
+    local segment = segmentMatches[segmentIndex];
+    if(#segment == 0) then
+        ArenaAnalytics:Log("Recursion found empty segment matches")
+        return false;
+    end
+
+    ArenaAnalytics:Log("Recursion concat: ", table.concat(segment, ", "));
+
+    for _, player in ipairs(segment) do
+        if not alreadyMatchedPlayers[player] then
+            alreadyMatchedPlayers[player] = true;
+            if recursivelyMatchSegments(segmentMatches, segmentIndex + 1, alreadyMatchedPlayers) then
+                return true;
+            end
+            alreadyMatchedPlayers[player] = nil;
+        end
+    end
+
+    return false;
+end
+
+local function CheckAdvancedPass(match)
+    print(" ");
+    local segmentMatches, playerMatches = {}, {}
+
+    local matchedTables = {}
+    local currentIndex = 1;
+
+    -- Fill matched tables
+    for segmentIndex, segment in ipairs(activeSearchData.segments) do
+        local teams = segment.team and {segment.team} or {"team", "enemyTeam"};
+        
+        for _, team in ipairs(teams) do
+            for playerIndex, player in ipairs(match[team]) do
+                local segmentResult = CheckSegmentForPlayer(segment, player);
+                
+                if(segmentResult) then
+                    if(segment.inversed) then
+                        -- Inverse segments fail the pass if they match
+                        return false;
+                    end
+                    
+                    local playerKey = team .. playerIndex;
+                    
+                    -- Add player to segment matches
+                    segmentMatches[currentIndex] = segmentMatches[currentIndex] or {};
+                    tinsert(segmentMatches[currentIndex], playerKey);
+                    
+                    -- Add segment to player matches
+                    playerMatches[playerKey] = playerMatches[playerKey] or {};
+                    tinsert(playerMatches[playerKey], currentIndex);
+                end
+            end
+        end
+        
+        -- Failed to find a match for the segment
+        if(not segment.inversed and not segmentMatches[currentIndex]) then
+            ArenaAnalytics:Log("No matches for segment: ", segmentIndex);
+            return false;
+        end
+
+        currentIndex = currentIndex + 1;
+    end
+
+    -- If all segment matches were removed by pruning, then unique matches were found
+    if(#segmentMatches == 0) then
+        return true;
+    end
+
+    table.sort(segmentMatches, function(a, b)
+        return #a < #b;
+    end);
+
+    local alreadyMatchedPlayers = {};
+    return recursivelyMatchSegments(segmentMatches, 1, alreadyMatchedPlayers);
+end
+
+---------------------------------
+-- Check Match for Search
+---------------------------------
+
 -- Main Matching Function to Check Feasibility
 function Search:DoesMatchPassSearch(match)
     if(#activeSearchData.segments == 0) then
@@ -250,15 +399,13 @@ function Search:DoesMatchPassSearch(match)
 
     -- Simple pass first
     local simplePassResult = CheckSimplePass(match);
-    if(simplePassResult) then
-        return true; -- All segments passed through simple pass
-    end
-
-    if(simplePassResult == nil) then
-        -- Run advanced pass
-        ArenaAnalytics:Log("Search simple pass got no final result. Falling back to advanced check pass. NYI.");
+    if(simplePassResult == false) then
+        -- Simple pass failed explicitly
         return false;
-    elseif(simplePassResult == false) then
+    end
+    
+    -- Advanced pass in case of segment conflict from simple pass
+    if(simplePassResult == nil and not CheckAdvancedPass(match)) then
         return false;
     end
 
@@ -290,15 +437,7 @@ function Search:Reset()
         return;
     end
 
-    Search.current = {
-        ["raw"] = "",
-        ["display"] = "",
-        ["data"] = nil,
-    }
-    ResetActiveData();
-
-    -- Trigger filter refresh
-    ArenaAnalytics.Filters:RefreshFilters();
+    Search:CommitSearch("");
 end
 
 function Search:CommitSearch(input)
@@ -308,7 +447,7 @@ function Search:CommitSearch(input)
     Search:Update(input);
     activeSearchData = Search.current["data"];
     
-    ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. (activeSearchData.nonInversedCount or 0) .. ")");
+    ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
 
     for i,segment in ipairs(activeSearchData.segments) do
         for j,token in ipairs(segment.Tokens) do
@@ -333,7 +472,7 @@ function Search:Update(input)
     Search.current["display"] = display;
     Search.current["data"] = newSearchData;
 
-    -- Update the searchbox
+    -- Update the searchBox
     searchBox:SetText(display);
     searchBox:SetCursorPosition(newCursorPosition);
 end

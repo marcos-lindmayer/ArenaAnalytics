@@ -190,7 +190,7 @@ SearchTokenTypeTable = {
     ["logical"] = {
         ["requireExact"] = true,
         ["values"] = {
-            ["not"] = { "not", "inverse" },
+            ["not"] = { "not", "no", "inverse" },
         }
     }
 }

@@ -13,6 +13,9 @@ local Export = ArenaAnalytics.Export;
 -- User settings
 ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
 
+-- Unused.
+ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {}
+
 local defaults = {};
 
 -- Adds a setting with loaded or default value.

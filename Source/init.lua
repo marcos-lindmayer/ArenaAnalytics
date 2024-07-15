@@ -347,7 +347,7 @@ function ArenaAnalytics:init()
 	SLASH_AuraTracker2 = "/ArenaAnalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
-	ArenaAnalytics:updateLastSession();
+	ArenaAnalytics:UpdateLastSession();
 
 	Options:LoadSettings();
 

@@ -766,7 +766,7 @@ function Import:completeImport()
     end);
     
     ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
-    ArenaAnalytics:updateLastSession();    
+    ArenaAnalytics:UpdateLastSession();
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
     ArenaAnalytics.Filters:RefreshFilters();
     

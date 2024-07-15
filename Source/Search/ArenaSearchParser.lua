@@ -126,7 +126,7 @@ function Search:ProcessInput(input, oldCursorPosition)
             tinsert(tokenizedData.segments, currentSegment);
         end
 
-        currentSegment = { Tokens = {}}
+        currentSegment = { Tokens = {}, nonInversedCount = 0 }
     end
 
     local function CommitCurrentToken()

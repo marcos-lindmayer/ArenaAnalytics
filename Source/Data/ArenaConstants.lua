@@ -217,16 +217,35 @@ function Constants:GetSpecRole(specID)
 end
 
 local raceToFaction = {
-    ["Undead"] = "Horde",
-    ["Blood Elf"] = "Horde",
+    -- Horde Races
     ["Orc"] = "Horde",
+    ["Undead"] = "Horde",
     ["Tauren"] = "Horde",
     ["Troll"] = "Horde",
+    ["Blood Elf"] = "Horde",
+    ["Goblin"] = "Horde",
+    ["Nightborne"] = "Horde",
+    ["Highmountain Tauren"] = "Horde",
+    ["Mag'har Orc"] = "Horde",
+    ["Vulpera"] = "Horde",
+    ["Zandalari Troll"] = "Horde",
+
+    -- Alliance Races
     ["Human"] = "Alliance",
-    ["Draenei"] = "Alliance",
+    ["Dwarf"] = "Alliance",
     ["Night Elf"] = "Alliance",
     ["Gnome"] = "Alliance",
-    ["Dwarf"] = "Alliance"    
+    ["Draenei"] = "Alliance",
+    ["Worgen"] = "Alliance",
+    ["Void Elf"] = "Alliance",
+    ["Lightforged Draenei"] = "Alliance",
+    ["Dark Iron Dwarf"] = "Alliance",
+    ["Kul Tiran"] = "Alliance",
+    ["Mechagnome"] = "Alliance",
+
+    -- Neutral Races
+    ["Pandaren"] = "Neutral",
+    ["Dracthyr"] = "Neutral"
 }
 
 function Constants:GetFactionByRace(race)

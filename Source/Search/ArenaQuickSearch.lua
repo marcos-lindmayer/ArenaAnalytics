@@ -132,7 +132,7 @@ function Search:QuickSearch(mouseButton, player, team)
         tinsert(tokens, "enemy");
     end
 
-    if(not IsShiftKeyDown() and not IsControlKeyDown()) then
+    if(not IsAltKeyDown() and not IsControlKeyDown()) then
         name = player["name"] or "";
         if(name:find('-')) then
             -- TODO: Convert to options
@@ -153,14 +153,14 @@ function Search:QuickSearch(mouseButton, player, team)
         -- Add name only
         tinsert(tokens, name);
     else
-        if(IsControlKeyDown() and player["race"] ~= nil) then
+        if(IsAltKeyDown() and player["race"] ~= nil) then
             -- Add race if available
             local race =  player["race"];
             local shortName = Search:GetShortQuickSearch("race", race);
             tinsert(tokens, "r:"..(shortName or race));
         end
         
-        if(IsShiftKeyDown() and player["class"] ~= nil) then
+        if(IsControlKeyDown() and player["class"] ~= nil) then
             local class = player["class"];
             local spec = player["spec"];
 
@@ -188,7 +188,7 @@ local function SplitAtLastComma(input)
     local before, after = input:match("^(.*),%s*(.*)$");
     
     if before then
-        before = before .. ",";
+        before = before .. ", ";
     else
         before = "";
         after = input;
@@ -200,7 +200,7 @@ end
 function Search:CommitQuickSearch(prefix, tokens, isNegated)
     assert(tokens and #tokens > 0);
     
-    local previousSearch = IsAltKeyDown() and Search:SanitizeInput(Search.current["display"] or "") or "";
+    local previousSearch = IsShiftKeyDown() and Search:SanitizeInput(Search.current["display"] or "") or "";
     
     local isNewSegment = previousSearch == "" or previousSearch:match(",[%s!]*$");
 
@@ -243,5 +243,6 @@ function Search:CommitQuickSearch(prefix, tokens, isNegated)
         currentSegment = prefix .. currentSegment;
     end
     
+    ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
     Search:CommitSearch(previousSegments .. currentSegment);
 end
