@@ -347,6 +347,14 @@ function AAmatch:getArenaComp(teamTable, bracket)
 	return table.concat(newComp, '|');
 end
 
+local function PrunePlayerGUIDs(group)
+	for _,player in ipairs(group) do
+		if(player) then
+			player["GUID"] = nil;
+		end
+	end
+end
+
 -- Calculates arena duration, turns arena data into friendly strings, adds it to MatchHistoryDB
 -- and triggers a layout refresh on ArenaAnalytics.AAtable
 function ArenaAnalytics:insertArenaToMatchHistory(newArena)
@@ -376,6 +384,10 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 		newArena["enemyRatingDelta"] = "";
 		newArena["enemyMMR"] = "-";
 	end
+
+	-- Clear GUIDs before storage
+	PrunePlayerGUIDs(newArena["party"]);
+	PrunePlayerGUIDs(newArena["enemy"]);
 
 	ArenaAnalytics:SortGroup(newArena["party"], true);
 	ArenaAnalytics:SortGroup(newArena["enemy"], false);

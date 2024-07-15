@@ -238,7 +238,7 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
 
     entries = entries or {}
 
-    width = width and max(width, 1) or 1; -- At least 1, to avoid content is considered visible
+    width = width and max(width, 1) or 1; -- At least 1, to ensure content is considered visible
     entryHeight = entryHeight or defaultEntryHeight;
 
     local dropdownName = baseName .. "_".. filter;

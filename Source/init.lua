@@ -23,6 +23,8 @@ ArenaAnalytics.Import = {};
 ArenaAnalytics.Export = {};
 ArenaAnalytics.VersionManager = {};
 
+ArenaAnalytics.DataSync = {};
+
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
 

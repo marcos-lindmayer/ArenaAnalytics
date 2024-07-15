@@ -145,7 +145,7 @@ function ArenaTracker:HandleArenaEnter(...)
 		table.insert(currentArena["party"], player);
 	end
 
-	if(ArenaAnalytics.DataSync) then
+	if(ArenaAnalytics.DataSync.loaded) then
 		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
 	end
 	

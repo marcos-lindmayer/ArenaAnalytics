@@ -110,7 +110,7 @@ local function updateGroupDataToNewFormat(group)
         local spec = (player["spec"] and #player["spec"] > 2) and player["spec"] or nil;
 
         local updatedPlayerTable = {
-            ["GUID"] = player["GUID"] or "",
+            ["GUID"] = player["GUID"] or nil,
             ["name"] = player["name"] or "",
             ["class"] = class,
             ["spec"] = spec,
