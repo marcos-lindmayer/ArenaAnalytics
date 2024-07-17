@@ -171,31 +171,31 @@ end
 -- TODO: Improve the update logic
 -- Updating selected comp text
 local function UpdateSelectedCompText(selectedFrame, selectedText, filter, entries, isPlayerPriority)
-    if (selectedText == nil) then
-        local foundCompData = false;
-
-        if(#entries > 1) then
-            for i, entry in ipairs(entries) do 
-                local text = entry["comp"] or entry;
-
-                -- Update the currently displayed entry with new values
-                if(text == Filter:GetCurrentData(filter)) then
-                    SetSelectedText(selectedFrame, entry, isPlayerPriority, filter);
-                    return;
-                end            
-            end
-        end
-
-        -- No entries contained data for selected comp with current filters
-        if(Filter:GetCurrentData(filter) ~= "All" ) then
-            local lastFilter = {["comp"] = Filter:GetCurrentData(filter)};
-            SetSelectedText(selectedFrame, lastFilter, isPlayerPriority, filter);
-            return;
-        end
-
-        selectedFrame:SetText(Filter:GetCurrentDisplay(filter));
-        selectedFrame.text = nil;
+    if (selectedText ~= nil) then
+        return;
     end
+
+    if(#entries > 1) then
+        for i, entry in ipairs(entries) do 
+            local text = entry["comp"] or entry;
+
+            -- Update the currently displayed entry with new values
+            if(text == Filter:GetCurrentData(filter)) then
+                SetSelectedText(selectedFrame, entry, isPlayerPriority, filter);
+                return;
+            end            
+        end
+    end
+
+    -- No entries contained data for selected comp with current filters
+    if(Filter:GetCurrentData(filter) ~= "All" ) then
+        local lastFilter = {["comp"] = Filter:GetCurrentData(filter)};
+        SetSelectedText(selectedFrame, lastFilter, isPlayerPriority, filter);
+        return;
+    end
+
+    selectedFrame:SetText(Filter:GetCurrentDisplay(filter));
+    selectedFrame.text = nil;
 end
 
 local function CreateSimpleEntryButton(frameName, dropdown, filter, width, height, text)

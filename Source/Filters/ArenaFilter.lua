@@ -411,7 +411,7 @@ function Filters:doesMatchPassAllFilters(match, excluded)
 end
 
 -- Returns matches applying current match filters
-function Filters:RefreshFilters()
+function Filters:RefreshFilters_OLD()
     ArenaAnalytics.filteredMatchHistory = {}
 
     for i=1, #MatchHistoryDB do
@@ -419,17 +419,17 @@ function Filters:RefreshFilters()
         if(match == nil) then
             ArenaAnalytics:Log("Invalid match at index: ", i);
         elseif(Filters:doesMatchPassAllFilters(match)) then
-            table.insert(ArenaAnalytics.filteredMatchHistory, match);
+            table.insert(ArenaAnalytics.filteredMatchHistory, i);
         end
     end
 
     -- Assign session to filtered matches
     local session = 1
     for i = #ArenaAnalytics.filteredMatchHistory, 1, -1 do
-        local current = ArenaAnalytics.filteredMatchHistory[i];
-        local prev = ArenaAnalytics.filteredMatchHistory[i - 1];
+        local current = ArenaAnalytics:GetFilteredMatch(i)
+        local prev = ArenaAnalytics:GetFilteredMatch(i - 1)
 
-        ArenaAnalytics.filteredMatchHistory[i]["filteredSession"] = session;
+        current["filteredSession"] = session;
 
         if ((not prev or prev["session"] ~= current["session"])) then
             session = session + 1;
@@ -438,4 +438,59 @@ function Filters:RefreshFilters()
 
     -- This will also call AAtable:forceCompFilterRefresh()
     ArenaAnalytics.AAtable:handleArenaCountChanged();
+end
+
+-- TODO: Fix up this, to support multi-frame refreshing
+-- Returns matches applying current match filters
+function Filters:RefreshFilters(onCompleteFunc)
+    ArenaAnalytics.filteredMatchHistory = {}
+    
+    local currentIndex = 1
+    local RefreshBatchSize = 3000
+
+    local function Finalize()
+        -- Assign session to filtered matches
+        local session = 1
+        for i = #ArenaAnalytics.filteredMatchHistory, 1, -1 do
+            local current = ArenaAnalytics:GetFilteredMatch(i)
+            local prev = ArenaAnalytics:GetFilteredMatch(i - 1)
+    
+            current["filteredSession"] = session
+    
+            if not prev or prev["session"] ~= current["session"] then
+                session = session + 1
+            end
+        end
+    
+        -- This will also call AAtable:forceCompFilterRefresh()
+        ArenaAnalytics.AAtable:handleArenaCountChanged()
+
+        if(onCompleteFunc) then
+            onCompleteFunc();
+        end
+    end
+
+    local function ProcessBatch()
+        local endIndex = forceSingleFrameUpdate and #MatchHistoryDB or min(currentIndex + RefreshBatchSize - 1, #MatchHistoryDB)
+    
+        for i = currentIndex, endIndex do
+            local match = MatchHistoryDB[i]
+            if match == nil then
+                ArenaAnalytics:Log("Invalid match at index: ", i)
+            elseif Filters:doesMatchPassAllFilters(match) then
+                table.insert(ArenaAnalytics.filteredMatchHistory, i)
+            end
+        end
+
+        currentIndex = endIndex + 1
+
+        if currentIndex <= #MatchHistoryDB then
+            C_Timer.After(0, ProcessBatch)
+        else
+            Finalize()
+        end
+    end
+
+    -- Start processing batches
+    ProcessBatch()
 end

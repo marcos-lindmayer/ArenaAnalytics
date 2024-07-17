@@ -49,7 +49,7 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         return;
     end
 
-    local match = ArenaAnalytics.filteredMatchHistory[matchIndex];
+    local match = ArenaAnalytics:GetFilteredMatch(matchIndex);
     local playerTable = match and match[teamKey] and match[teamKey][playerIndex] or nil;
 
     if(not playerTable) then

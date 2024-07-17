@@ -26,8 +26,9 @@ local wins, sessionGames, sessionWins = 0, 0, 0;
 function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         ArenaAnalytics.Selection:ClearSelectedMatches();
-        Filters:RefreshFilters();
-        AAtable:RefreshLayout();
+        Filters:RefreshFilters(function()
+            AAtable:RefreshLayout();
+        end);
 
         AAtable:closeFilterDropdowns();
 
@@ -152,9 +153,9 @@ function AAtable:UpdateSelected()
     end
 
     for index in pairs(uniqueSelected) do
-        if(ArenaAnalytics.filteredMatchHistory[index]) then
+        if(ArenaAnalytics:GetFilteredMatch(index)) then
             selectedGamesCount = selectedGamesCount + 1;
-            if (ArenaAnalytics.filteredMatchHistory[index]["won"]) then
+            if (ArenaAnalytics:GetFilteredMatch(index)["won"]) then
                 selectedWins = selectedWins + 1;
             end
         else
@@ -289,9 +290,6 @@ function AAtable:OnLoad()
         end
     end);
 
-    -- Settings window
-    -- ArenaAnalytics.Options_OLD:createSettingsFrame();
-
     -- Table headers
     ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "TOPLEFT", -5, -47, "Date");
     ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
@@ -356,8 +354,7 @@ function AAtable:OnLoad()
 
     hasLoaded = true;
 
-    Filters:RefreshFilters();
-    AAtable:UpdateSelected();
+    ArenaAnalytics.AAtable:handleArenaCountChanged();
 
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame, "RIGHT", 10, 0, "More Filters");
     ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown, "RIGHT", 10, 0);
@@ -397,6 +394,10 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetPoint("BOTTOM", ArenaAnalyticsScrollFrame.filterBtn_ClearFilters, "TOP", 0, 5);
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
+
+    Filters:RefreshFilters(function()
+        AAtable:UpdateSelected();
+    end);
 
     AAtable:OnShow();
 end
@@ -856,7 +857,7 @@ function AAtable:handleArenaCountChanged()
     wins, sessionGames, sessionWins = 0,0,0;
     -- Update arena count & winrate
     for i=#ArenaAnalytics.filteredMatchHistory, 1, -1 do
-        local match = ArenaAnalytics.filteredMatchHistory[i];
+        local match = ArenaAnalytics:GetFilteredMatch(i);
         if(match) then 
             if(match["won"]) then 
                 wins = wins + 1; 
@@ -937,7 +938,7 @@ function AAtable:RefreshLayout()
         local button = buttons[buttonIndex];
         local matchIndex = #ArenaAnalytics.filteredMatchHistory - (buttonIndex + offset - 1);
 
-        local match = ArenaAnalytics.filteredMatchHistory[matchIndex];
+        local match = ArenaAnalytics:GetFilteredMatch(matchIndex);
         if (match ~= nil) then
             setColorForSession(button, match["filteredSession"], matchIndex);
             button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");

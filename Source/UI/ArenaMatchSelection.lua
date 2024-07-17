@@ -24,17 +24,13 @@ local latestSelectionInfo = {
 Selection.latestMultiSelect = {}
 Selection.latestDeselect = {}
 
-local function getMatch(matchIndex)
-    return ArenaAnalytics.filteredMatchHistory[matchIndex];
-end
-
 local function IsValidMatch(index)
-    return (index and ArenaAnalytics.filteredMatchHistory[index] ~= nil or false);
+    return ArenaAnalytics:GetFilteredMatch(index) ~= nil;
 end
 
 local function selectMatchByIndex(index, autoCommit, isDeselect)
     autoCommit = autoCommit or IsControlKeyDown();
-    if(getMatch(index) ~= nil) then
+    if(ArenaAnalytics:GetFilteredMatch(index) ~= nil) then
         if (isDeselect) then
             if autoCommit then
                 Selection.selectedGames[index] = nil;
@@ -94,8 +90,8 @@ end
 
 -- returns true if two given indices are for matches with the same session. False if either is nil.
 function Selection:isMatchesSameSession(index, otherIndex)
-    local match = getMatch(index);
-    local otherMatch = getMatch(otherIndex);
+    local match = ArenaAnalytics:GetFilteredMatch(index);
+    local otherMatch = ArenaAnalytics:GetFilteredMatch(otherIndex);
     if(match == nil or otherMatch == nil) then
         return false;
     end
@@ -120,13 +116,13 @@ local function selectRange(startIndex, endIndex, includeStartSession, includeEnd
         return;
     end
 
-    local startSession = ArenaAnalytics.filteredMatchHistory[startIndex]["session"]
-    local endSession = ArenaAnalytics.filteredMatchHistory[endIndex]["session"]
+    local startSession = ArenaAnalytics:GetFilteredMatch(startIndex)["session"]
+    local endSession = ArenaAnalytics:GetFilteredMatch(endIndex)["session"]
     
     for i = minIndex, maxIndex do
         -- Skip matches that belong to the same session as the start and end index,
         -- unless includeStartSession or includeEndSession is true
-        local session = ArenaAnalytics.filteredMatchHistory[i]["session"];
+        local session = ArenaAnalytics:GetFilteredMatch(i)["session"];
         local isStartSession = session == startSession;
         local isEndSession = session == endSession;
         if ((includeStartSession and (isStartSession or not isEndSession)) or (includeEndSession and isEndSession)) then
@@ -142,7 +138,7 @@ local function selectSessionByIndex(index, autoCommit, isDeselect)
         return;
     end
 
-    local session = ArenaAnalytics.filteredMatchHistory[index]["session"]
+    local session = ArenaAnalytics:GetFilteredMatch(index)["session"]
 
     -- Select or deselect the match at the given index using selectMatchByIndex
     selectMatchByIndex(index, autoCommit, isDeselect)
@@ -153,11 +149,11 @@ local function selectSessionByIndex(index, autoCommit, isDeselect)
     -- Nested for loops to expand in both directions until reaching a match with a different session
     for _, delta in ipairs(deltas) do
         local i = index + delta
-        local potentialMatch = getMatch(i)
+        local potentialMatch = ArenaAnalytics:GetFilteredMatch(i)
         while potentialMatch and potentialMatch["session"] == session do
             selectMatchByIndex(i, autoCommit, isDeselect)
             i = i + delta
-            potentialMatch = getMatch(i)
+            potentialMatch = ArenaAnalytics:GetFilteredMatch(i)
         end
     end
 end 

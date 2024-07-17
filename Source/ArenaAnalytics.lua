@@ -18,6 +18,11 @@ ArenaAnalytics.unsavedArenaCount = 0;
 
 ArenaAnalytics.filteredMatchHistory = { };
 
+function ArenaAnalytics:GetFilteredMatch(index)
+	local realMatchIndex = ArenaAnalytics.filteredMatchHistory[index];
+	return realMatchIndex and MatchHistoryDB[realMatchIndex];
+end
+
 ArenaAnalytics.lastSession = 1;
 
 function ArenaAnalytics:UpdateLastSession()

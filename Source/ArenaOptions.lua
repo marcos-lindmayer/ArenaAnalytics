@@ -162,8 +162,9 @@ end
 
 local function HandleFiltersUpdated()
     Filters:resetFilters(false);
-    Filters:RefreshFilters();
-    AAtable:forceCompFilterRefresh();
+    Filters:RefreshFilters(function()
+        AAtable:forceCompFilterRefresh();
+    end);
 end
 
 -------------------------------------------------------------------
