@@ -378,7 +378,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() 
         ArenaAnalytics:Log("Clearing filters..");
 
-        Filters:resetFilters(IsShiftKeyDown());
+        Filters:ResetAll(IsShiftKeyDown());
 
         -- Reset filters UI
         ArenaAnalyticsScrollFrame.searchBox:SetText("");

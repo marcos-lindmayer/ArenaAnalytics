@@ -194,7 +194,9 @@ local function UpdateSelectedCompText(selectedFrame, selectedText, filter, entri
         return;
     end
 
-    selectedFrame:SetText(Filter:GetCurrentDisplay(filter));
+    local text = Filter:GetCurrentDisplay(filter);
+    ArenaAnalytics:Log("Current Display: ", text)
+    selectedFrame:SetText(text);
     selectedFrame.text = nil;
 end
 

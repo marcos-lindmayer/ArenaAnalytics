@@ -161,7 +161,7 @@ end
 -------------------------------------------------------------------
 
 local function HandleFiltersUpdated()
-    Filters:resetFilters(false);
+    Filters:ResetAll(false);
     Filters:RefreshFilters(function()
         AAtable:forceCompFilterRefresh();
     end);

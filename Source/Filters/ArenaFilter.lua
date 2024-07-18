@@ -9,14 +9,29 @@ local Options = ArenaAnalytics.Options;
 -- Currently applied filters
 local currentFilters = {}
 
-local defaults = {
-    ["Filter_Date"] = "All Time",
-    ["Filter_Season"] = "All",
-    ["Filter_Map"] = "All",
-    ["Filter_Bracket"] = "All",
-    ["Filter_Comp"] = "All",
-    ["Filter_EnemyComp"] = "All",
-}
+local defaults = {}
+
+-- Adds a filter, setting current and default values
+local function AddFilter(filter, default)
+    assert(filter ~= nil);
+    assert(default ~= nil, "Nil values for filters are not supported. Using values as display texts.");
+
+    currentFilters[filter] = default;
+    defaults[filter] = default;
+end
+
+AddFilter("Filter_Date", "All Time");
+AddFilter("Filter_Season", "All");
+AddFilter("Filter_Map", "All");
+AddFilter("Filter_Bracket", "All");
+AddFilter("Filter_Comp", {["data"] = "All", ["display"] = "All"}); -- TODO: Confirm this is backwards compatible temporarily. TODO (Long term) Replace the need for separation for dropdown overhaul!
+AddFilter("Filter_EnemyComp", {["data"] = "All", ["display"] = "All"}); -- TODO: Confirm this is backwards compatible temporarily. TODO (Long term) Replace the need for separation for dropdown overhaul!
+
+-- TODO: Phase out complex GetCurrent() when dropdown overhaul (0.6.x) is done
+function Filters:Get(filter)
+    assert(filter and currentFilters[filter]);
+    return currentFilters[filter];
+end
 
 function Filters:GetDefault(filter, skipOverrides)
     -- overrides
@@ -33,27 +48,27 @@ function Filters:GetDefault(filter, skipOverrides)
     return defaults[filter];
 end
 
+function Filters:Reset(filter, skipOverrides)
+    assert(currentFilters[filter] and defaults[filter]);
+
+    currentFilters[filter] = defaults[filter];
+end
+
 -- Clearing filters, optionally keeping filters explicitly applied through options
-function Filters:resetFilters(forceDefaults)
+function Filters:ResetAll(forceDefaults)
     currentFilters = {
         ["Filter_Date"] = Filters:GetDefault("Filter_Date", forceDefaults),
         ["Filter_Season"] = Filters:GetDefault("Filter_Season", forceDefaults),
-        ["Filter_Map"] = defaults["Filter_Map"], 
-        ["Filter_Bracket"] = defaults["Filter_Bracket"], 
-        ["Filter_Comp"] = {
-            ["data"] = defaults["Filter_Comp"],
-            ["display"] = defaults["Filter_Comp"]
-        },
-        ["Filter_EnemyComp"] = {
-            ["data"] = defaults["Filter_EnemyComp"],
-            ["display"] = defaults["Filter_EnemyComp"]
-        }
+        ["Filter_Map"] = Filters:GetDefault("Filter_Map"),
+        ["Filter_Bracket"] = Filters:GetDefault("Filter_Bracket"),
+        ["Filter_Comp"] = Filters:GetDefault("Filter_Comp"),
+        ["Filter_EnemyComp"] = Filters:GetDefault("Filter_EnemyComp"),
     };
 
     ArenaAnalytics.Search:Reset();
 end
-Filters:resetFilters(false);
 
+-- DEPRECATED
 -- Get the current value, defaulting to 
 function Filters:GetCurrent(filter, subcategory, fallback)
     if(filter ~= nil) then
@@ -65,6 +80,7 @@ function Filters:GetCurrent(filter, subcategory, fallback)
     end
 end
 
+-- DEPRECATED
 function Filters:GetCurrentDisplay(filter)
     if(filter == nil) then
         return "";
@@ -73,6 +89,7 @@ function Filters:GetCurrentDisplay(filter)
     return currentFilters[filter]["display"] or currentFilters[filter]["data"] or currentFilters[filter] or "";
 end
 
+-- DEPRECATED
 function Filters:GetCurrentData(filter)
     if(filter == nil) then
         return "";
@@ -81,9 +98,10 @@ function Filters:GetCurrentData(filter)
     return currentFilters[filter]["data"] or currentFilters[filter] or "";
 end
 
-function Filters:isFilterActive(filterName)
+-- TODO: Simplify using Filters:Get(filter) and Filters:GetDefault(filter)
+function Filters:IsFilterActive(filterName)
     if(filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
-        return currentFilters[filterName]["data"] ~= defaults[filterName];
+        return currentFilters[filterName]["data"] ~= defaults[filterName]["data"];
     end
     
     local filter = currentFilters[filterName];
@@ -100,61 +118,43 @@ function Filters:getActiveFilterCount()
     if(not ArenaAnalytics.Search:IsEmpty()) then
         count = count + 1;
     end
-    if(Filters:isFilterActive("Filter_Date")) then
+    if(Filters:IsFilterActive("Filter_Date")) then
         count = count + 1;
     end
-    if(Filters:isFilterActive("Filter_Season")) then
+    if(Filters:IsFilterActive("Filter_Season")) then
         count = count + 1;
     end
-    if(Filters:isFilterActive("Filter_Map")) then
+    if(Filters:IsFilterActive("Filter_Map")) then
         count = count + 1;
     end
-    if(Filters:isFilterActive("Filter_Bracket")) then
+    if(Filters:IsFilterActive("Filter_Bracket")) then
         count = count + 1;
     end
-    if(Filters:isFilterActive("Filter_Comp")) then
+    if(Filters:IsFilterActive("Filter_Comp")) then
         count = count + 1;
     end
-    if(Filters:isFilterActive("Filter_EnemyComp")) then
+    if(Filters:IsFilterActive("Filter_EnemyComp")) then
         count = count + 1; 
     end
     return count;
 end
 
--- Changes the current filter upon selecting one from its dropdown
-function Filters:changeFilter(dropdown, value, tooltip)
-    ArenaAnalytics.Selection:ClearSelectedMatches();
-
-    dropdown.selected:SetText(value);
-    
-    Filters:SetFilter(dropdown.filterName, value, tooltip);
-
-    if dropdown.list:IsShown() then   
-        dropdown.list:Hide();
-    end    
-end
-
+-- TODO: Refactor when dropdown overhaul simplifies comp filters
 function Filters:SetFilter(filter, value, display)
     if(filter == nil) then
         ArenaAnalytics:Log("SetFilter failed due to nil filter");
         return;
     end
 
-    display = display or value;
+    ArenaAnalytics:Log("Setting filter: ", filter, " -- ", value, " -- ", display)
 
     -- Reset comp filters when bracket filter changes
     if (filter == "Filter_Bracket") then
-        currentFilters["Filter_Comp"] = {
-            ["data"] = "All",
-            ["display"] = "All"
-        };
-        currentFilters["Filter_EnemyComp"] = {
-            ["data"] = "All",
-            ["display"] = "All"
-        };
+        Filters:Reset("Filter_Comp");
+        Filters:Reset("Filter_EnemyComp");
     end
     
-    if (filter == "Filter_Comp" or filter == "Filter_EnemyComp") then
+    if (display ~= nil) then
         currentFilters[filter] = {
             ["data"] = value;
             ["display"] = display;
@@ -300,7 +300,7 @@ local function doesMatchPassFilter_Date(match)
     if match == nil then return false end;
 
     local value = currentFilters["Filter_Date"] and currentFilters["Filter_Date"] or "";
-    value = value:lower();
+    value = value and value:lower() or "";
     local seconds = 0;
     if(value == "all time" or value == "") then
         return true;

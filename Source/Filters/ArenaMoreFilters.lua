@@ -3,6 +3,7 @@ local MoreFilters = ArenaAnalytics.MoreFilters;
 
 -- Local module aliases
 local Filters = ArenaAnalytics.Filters;
+local Dropdown = ArenaAnalytics.Dropdown;
 
 -------------------------------------------------------------------------
 
@@ -124,7 +125,10 @@ end);
 -- Implement the function to change the value for a given filter
 function MoreFilters.dropdown:SetValue(filter, newValue)
     -- Update the filter for the new value
-    Filters:SetFilter(filter, newValue);
+    local isCompFilter = filter == "Filter_Comp" or filter == "Filter_EnemyComp";
+    local display = isCompFilter and newValue or nil;
+
+    Filters:SetFilter(filter, newValue, display);
     UIDropDownMenu_RefreshAll(MoreFilters.dropdown, true);
     CloseDropDownMenus();
 end
@@ -145,5 +149,3 @@ function MoreFilters:ResetAll()
         CloseDropDownMenus();
     end
 end
-
--------------------------------------------------------------------------

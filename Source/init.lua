@@ -154,7 +154,7 @@ ArenaAnalytics.commands = {
 
 	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function()
-
+		
 	end,	
 };
 
@@ -372,7 +372,7 @@ function ArenaAnalytics:init()
 	-- Initialize options menu
 	ArenaAnalytics.Options.Initialize();
 
-	ArenaAnalytics.Filters:resetFilters(false);
+	ArenaAnalytics.Filters:ResetAll(false);
 
 	createMinimapButton();
 
@@ -382,10 +382,7 @@ function ArenaAnalytics:init()
 		ArenaAnalytics.ArenaTracker:HandleArenaEnter();
 	end
 
-	local title = "Bracket";
-    local filter = "Filter_Bracket";
-    local default = "All"
-    local entries = { "All", "2v2", "3v3", "5v5" };
+	ArenaAnalytics.Dropdown:CreateTest();
 end
 
 -- Delay the init a frame, to allow all files to be loaded
