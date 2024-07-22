@@ -27,28 +27,27 @@ Dropdown.__index = Dropdown
 Dropdown._internal = {}
 local internal = Dropdown._internal;
 
-function internal:RetrieveValue(valueOrFunc)
+function internal:RetrieveValue(valueOrFunc, dropdownButton)
     if(type(valueOrFunc) == "function") then
-        return valueOrFunc();
+        return valueOrFunc(dropdownButton);
     end
     return valueOrFunc;
 end
 
-
 function Dropdown:CreateNew(dropdownType, frameName, parent, width, height, config)
     local self = setmetatable({}, Dropdown);
     self.frame = CreateFrame("Frame", frameName.."Frame", parent);
+    self.frame:SetPoint("CENTER");
+    self.frame:SetSize(width, height);
 
     self.name = frameName;
     self.type = dropdownType;
 
     -- Setup the button 
-    self.selected = Dropdown.Button:Create(self, nil, width, height, config.mainButton);
-
+    self.selected = Dropdown.Button:Create(self, true, nil, width, height, config.mainButton);
+    
     -- Setup the main dropdown level
-    self.list = Dropdown.List:Create(self, width, config.entries);
-
-
+    self.list = Dropdown.List:Create(self, true, width, height, config.entries);
 
     return self
 end
@@ -57,10 +56,55 @@ function Dropdown:GetFrame()
     return self.frame;
 end
 
+function Dropdown:GetName()
+    return self.name;
+end
+
+function Dropdown:GetDropdownType()
+    return self.type;
+end
+
+-- Set the point of the main dropdown button
+function Dropdown:SetPoint(...)
+    self.frame:SetPoint(...);
+end
+
 function Dropdown:Toggle()
     self.list:Toggle();
 end
 
+function Dropdown:Hide()
+    self.list:Hide();
+end
+
 function Dropdown:IsVisible()
     self.list:IsVisible();
+end
+
+function Dropdown:DebugPrint()
+    local function log(level, ...)
+        description = description or "nil";
+        value = value or "nil";
+        level = tonumber(level) or 0;
+
+        local indentation = "";
+        for i=1, level do
+            indentation = indentation .. "   ";
+        end
+
+        ArenaAnalytics:Log(indentation, ...);
+    end
+
+    print(" ");
+    log(0, "Arena Dropdown");
+    log(1, "name:", self.name);
+    log(1, "parent:", self.frame:GetParent():GetName(), "  (", self.frame:GetParent(), ")");
+    log(1, "point:", self.frame:GetPoint());
+    log(1, "visible:", self.frame:IsVisible());
+
+    
+    log(2, "btn visible:", self.selected.btn:IsVisible());
+    log(2, "btn size:", self.selected.btn:GetSize());
+    log(2, "btn point", self.selected.btn:GetPoint());
+    log(2, "btn parent:", self.selected.btn:GetParent():GetName());
 end

@@ -154,7 +154,7 @@ ArenaAnalytics.commands = {
 
 	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function()
-		
+		ArenaAnalytics.Dropdown:CreateTest();
 	end,	
 };
 
@@ -382,7 +382,9 @@ function ArenaAnalytics:init()
 		ArenaAnalytics.ArenaTracker:HandleArenaEnter();
 	end
 
-	ArenaAnalytics.Dropdown:CreateTest();
+	if(Options:Get("debuggingEnabled")) then
+		ArenaAnalytics.Dropdown:CreateTest();
+	end
 end
 
 -- Delay the init a frame, to allow all files to be loaded

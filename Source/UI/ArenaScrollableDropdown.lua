@@ -256,7 +256,7 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
     -- Setup dropdown list
     dropdown.list = CreateFrame("ScrollFrame", dropdownName .. "_List", dropdown, "UIPanelScrollFrameTemplate");
     dropdown.list:SetPoint("TOP", dropdown, "BOTTOM");
-    dropdown.list:SetFrameStrata("HIGH");
+    dropdown.list:SetFrameStrata("TOOLTIP");
     dropdown.list:SetClipsChildren(true); -- Ensure content clipping
     dropdown.list.scrollBarHideable = true; -- Make scrollbar hideable when not needed
     dropdown.list:SetSize(width, entryHeight * maxVisibleEntries);
@@ -303,6 +303,7 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
     -- Selected (main) button for this dropdown
     dropdown.selected = CreateButton(dropdownName .. "_selected", dropdown, nil, width, entryHeight, (selectedText or ""));
     dropdown.selected:SetPoint("CENTER");
+
     dropdown.selected:RegisterForClicks("LeftButtonDown", "RightButtonDown");
     dropdown.selected:SetScript("OnClick", function (frame, btn)
         if(btn == "RightButton") then

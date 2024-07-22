@@ -48,10 +48,20 @@ function Filters:GetDefault(filter, skipOverrides)
     return defaults[filter];
 end
 
-function Filters:Reset(filter, skipOverrides)
-    assert(currentFilters[filter] and defaults[filter]);
+function Filters:Set(filter, value)
+    assert(filter and currentfilters[filter]);
+    value = value or Filters:GetDefault(filter);
 
+    currentfilters[filter] = value;
+    
+    Filters:RefreshFilters();
+end
+
+function Filters:Reset(filter, skipOverrides)
+    assert(currentFilters[filter] and defaults[filter], "Invalid filter: " .. (filter and filter or "nil"));
     currentFilters[filter] = defaults[filter];
+
+    Filters:RefreshFilters();
 end
 
 -- Clearing filters, optionally keeping filters explicitly applied through options
@@ -66,6 +76,7 @@ function Filters:ResetAll(forceDefaults)
     };
 
     ArenaAnalytics.Search:Reset();
+    Filters:RefreshFilters();
 end
 
 -- DEPRECATED
