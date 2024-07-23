@@ -127,7 +127,7 @@ function ArenaTracker:HandleArenaEnter(...)
 	
 	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(teamSize);
 	if(isRated and ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
-		local lastRating = ArenaAnalytics:getLastRating(teamSize);
+		local lastRating = ArenaAnalytics:GetLatestRating(teamSize);
 		ArenaAnalytics:Log("Fallback: Updating cached rating to rating of last rated entry.");
 		ArenaAnalyticsCachedBracketRatings[bracketId] = lastRating;
 	end
@@ -285,7 +285,7 @@ function ArenaTracker:HandleArenaExit()
 		ArenaAnalyticsDebugAssert(ArenaAnalyticsCachedBracketRatings[bracketId] ~= nil);
 		
 		if(oldRating == nil or oldRating == "SKIRMISH") then
-			oldRating = ArenaAnalytics:getLastRating();
+			oldRating = ArenaAnalytics:GetLatestRating();
 		end
 		
 		local deltaRating = newRating - oldRating;

@@ -8,37 +8,35 @@ List.__index = List;
 
 -------------------------------------------------------------------------
 
-local verticalPadding = 5;
-local horizontalPadding = 3;
+List.verticalPadding = 5;
+List.horizontalPadding = 3;
 
-function List:Create(parent, isMainList, width, height, entries)
+function List:Create(parent, level, width, height, entries)
     assert(entries ~= nil);
 
     local self = setmetatable({}, List);
 
+    Dropdown:HideActiveDropdownsFromLevel(level, true);
+
     self.name = (parent.name .. "List");
     self.parent = parent;
+    self.level = level;
 
     self.width = width;
-    self.maxHeight = height * 10;
+    self.maxHeight = height * 10 + List.verticalPadding * 2;
+    self.entries = entries;
 
-    self.backdrop = CreateFrame("Frame", self.name, parent:GetFrame(), "TooltipBackdropTemplate");
+    self.backdrop = CreateFrame("Frame", self.name, parent:GetOwner(), "TooltipBackdropTemplate");
     self.backdrop:SetSize(width, 1);
     self.backdrop:SetFrameStrata("TOOLTIP")
-    self.backdrop:Hide();
+    self.backdrop:Show();
 
     self:SetBackdropAlpha(0.85);
     
-    if(isMainList) then
-        self.backdrop:SetPoint("TOP", parent:GetFrame(), "BOTTOM");
-    else
-        self.backdrop:SetPoint("TOPLEFT", parent:GetFrame(), "TOPRIGHT");
-    end
-
     -- Setup scroll frame, in case we got too many entries to show
     self.scrollFrame = CreateFrame("scrollFrame", self.name .. "_ScrollFrame", self.backdrop, "UIPanelScrollFrameTemplate");
     self.scrollFrame:SetPoint("TOP", self.backdrop, "TOP", 0, -5);
-    self.scrollFrame:SetSize(width-horizontalPadding*2, self.backdrop:GetHeight() - 10);
+    self.scrollFrame:SetSize(width - List.horizontalPadding*2, self.backdrop:GetHeight());
     self.scrollFrame:SetClipsChildren(true);
     self.scrollFrame.scrollBarHideable = true;
 
@@ -55,38 +53,49 @@ function List:Create(parent, isMainList, width, height, entries)
 
     self.scrollFrame:SetScript("OnScrollRangeChanged", function(scrollFrame)
         local viewHeight = scrollFrame:GetHeight()
-        local contentHeight = scrollFrame.content:GetHeight() + verticalPadding * 2;
+        local contentHeight = scrollFrame.content:GetHeight();
         local maxScroll = math.max(contentHeight - viewHeight, 0)
         
         scrollFrame:UpdateScrollChildRect();
         scrollFrame.ScrollBar:SetMinMaxValues(0, maxScroll);
     end);
     
-
     self.entryFrames = {}
-    self:AddEntries(entries, self.scrollFrame.content:GetWidth() - 10, 20);
+    self:Refresh();
+    
+    Dropdown:AddActiveDropdown(level, self);
 
-    return self
+    return self;
+end
+
+function List:Refresh()
+    -- Get most recent entries list, in case of a dynamic function
+    local entries = Dropdown._internal:RetrieveValue(self.entries, self);
+    
+    -- Clear old entries
+    self.entryFrames = {}
+
+    -- Add new entries
+    self:AddEntries(entries, self.scrollFrame.content:GetWidth() - 10, 20);
 end
 
 function List:AddEntries(entries, width, height)
     assert(entries);
-    height = 20
 
-    local accumulatedHeight = 0;
+    local accumulatedHeight = List.verticalPadding * 2;
     local lastFrame = nil;
 
     for i, entry in ipairs(entries) do 
-        local entryFrame = Dropdown.Button:Create(self, false, i, width, height, entry);
+        local entryFrame = Dropdown.EntryFrame:Create(self, i, width, height, entry);
         entryFrame:Show()
 
         if(not lastFrame) then
-            entryFrame:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT", 2, -verticalPadding);
+            entryFrame:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT", 2, -List.verticalPadding);
         else
             entryFrame:SetPoint("TOP", lastFrame, "BOTTOM");
         end
 
-        accumulatedHeight = accumulatedHeight + entryFrame:GetHeight();
+        accumulatedHeight = ceil(accumulatedHeight + entryFrame:GetHeight());
         
         lastFrame = entryFrame:GetFrame();
         table.insert(self.entryFrames, entryFrame);
@@ -94,11 +103,10 @@ function List:AddEntries(entries, width, height)
 
     self.scrollFrame.content:SetHeight(accumulatedHeight);
 
-    local listHeight = min((accumulatedHeight), self.maxHeight);
-    ArenaAnalytics:Log(listHeight, self.maxHeight);
-    self.scrollFrame:SetHeight(listHeight + verticalPadding * 2 - 10);
-    self.backdrop:SetHeight(listHeight + verticalPadding * 2);
-
+    local listHeight = min(accumulatedHeight, self.maxHeight);
+    self.scrollFrame:SetHeight(listHeight - 0);
+    self.backdrop:SetHeight(self.scrollFrame:GetHeight() + 10);
+    
     self:SetupScrollbar();
     
     self.scrollFrame:UpdateScrollChildRect(); -- Ensure the scroll child rect is updated
@@ -114,10 +122,10 @@ function List:SetupScrollbar()
     local contentHeight = self.scrollFrame.content:GetHeight();
     
     -- Workaround for scrollbar not hiding automatically
-    if (viewHeight < contentHeight) then
-        scrollbar.ScrollUpButton:SetAlpha(1);
+    if ((viewHeight + 0.01) < contentHeight) then
+        scrollbar:SetAlpha(1);
     else
-        scrollbar.ScrollUpButton:SetAlpha(0);
+        scrollbar:SetAlpha(0);
     end
 
     -- Hide the scroll up and down buttons
@@ -139,6 +147,10 @@ function List:SetBackdropAlpha(alpha)
 	self.backdrop:SetBackdropColor(bgR, bgG, bgB, alpha);
 end
 
+function List:GetOwner()
+    return self.parent:GetOwner();
+end
+
 function List:GetFrame()
     return self.scrollFrame.content;
 end
@@ -148,7 +160,11 @@ function List:GetName()
 end
 
 function List:GetDropdownType()
-    return parent:GetDropdownType();
+    return self.type or parent:GetDropdownType();
+end
+
+function List:IsMouseOver()
+    return self.backdrop:IsMouseOver(5,-5,-5,5);
 end
 
 function List:Toggle()
@@ -168,5 +184,19 @@ function List:Show()
 end
 
 function List:Hide()
+    Dropdown:HideActiveDropdownsFromLevel(self.level+1, false);
     self.backdrop:Hide();
+    ArenaAnalytics:Log("Dropdown list hidden, level:", self.level, " Highest active level: ", Dropdown:GetHighestActiveDropdownLevel());
+end
+
+function List:GetPoint()
+    local point, parent, relativePoint, x, y = self.backdrop:GetPoint();
+    if(parent ~= nil) then
+        parent = parent:GetName();
+    end
+    return point, parent, relativePoint, x, y;
+end
+
+function List:SetPoint(...)
+    return self.backdrop:SetPoint(...);
 end

@@ -41,6 +41,7 @@ Source/iconClass.lua
 
 Source/UI/Dropdowns/ArenaDropdown.lua
 Source/UI/Dropdowns/ArenaDropdownList.lua
+Source/UI/Dropdowns/ArenaDropdownEntry.lua
 Source/UI/Dropdowns/ArenaDropdownButton.lua
 
 Source/UI/Dropdowns/ArenaDropdownTest.lua

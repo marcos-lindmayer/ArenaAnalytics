@@ -49,10 +49,10 @@ function Filters:GetDefault(filter, skipOverrides)
 end
 
 function Filters:Set(filter, value)
-    assert(filter and currentfilters[filter]);
+    assert(filter and currentFilters[filter]);
     value = value or Filters:GetDefault(filter);
 
-    currentfilters[filter] = value;
+    currentFilters[filter] = value;
     
     Filters:RefreshFilters();
 end
@@ -280,16 +280,16 @@ local function doesMatchPassFilter_Map(match)
     local arenaMaps = {
         ["Nagrand Arena"] = "NA", 
         ["Ruins of Lordaeron"] = "RoL", 
-        ["Blade Edge Arena"] = "BEA", 
+        ["Blade's Edge Arena"] = "BEA", 
         ["Dalaran Arena"] = "DA"
     }
     local filterMap = arenaMaps[currentFilters["Filter_Map"]];
+    assert(filterMap, "Map filter did not match a valid map. Filter: " .. (currentFilters["Filter_Map"] or "nil"));
     
     if(filterMap == nil) then
-        ArenaAnalytics:Log("Map filter did not match a valid map. Filter: ", currentFilters["Filter_Map"]);
         filterMap = "All"
         currentFilters["Filter_Map"] = filterMap;
-        ArenaAnalyticsScrollFrame.filterMap.selected = filterMap;
+        ArenaAnalyticsScrollFrame.filterMapDropdown.selected:SetText(filterMap);
     end
 
     return match["map"] == filterMap;
@@ -316,7 +316,7 @@ local function doesMatchPassFilter_Date(match)
     if(value == "all time" or value == "") then
         return true;
     elseif(value == "current session") then        
-        return match["session"] == ArenaAnalytics:getLastSession();
+        return match["session"] == ArenaAnalytics:GetLatestSession();
     elseif(value == "last day") then
         seconds = 86400;
     elseif(value == "last week") then

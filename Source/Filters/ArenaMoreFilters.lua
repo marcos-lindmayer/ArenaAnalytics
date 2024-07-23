@@ -11,7 +11,7 @@ local Dropdown = ArenaAnalytics.Dropdown;
 local dropdownInfo = {
     ["Filter_Date"] = { ["text"] = "Date", ["options"] = {"All Time" , "Current Session", "Last Day", "Last Week", "Last Month", "Last 3 Months", "Last 6 Months", "Last Year"} },
     ["Filter_Season"] = { ["text"] = "Season", ["options"] = {"All" , "Current Season"} },
-    ["Filter_Map"] = { ["text"] = "Maps", ["options"] = {"All" ,"Nagrand Arena" ,"Ruins of Lordaeron", "Blade Edge Arena", "Dalaran Arena"} },
+    ["Filter_Map"] = { ["text"] = "Maps", ["options"] = {"All" ,"Nagrand Arena" ,"Ruins of Lordaeron", "Blade's Edge Arena", "Dalaran Arena"} },
 }
 
 -------------------------------------------------------------------------
@@ -19,7 +19,7 @@ local dropdownInfo = {
 local titlePrefix = "Title:";
 local function addDynamicOptions_Season(self, level, filter, info, settings)
     -- TODO: Custom logic for filling out season (Group by expansion and disable/hide if no matches were played that season?)
-    local lastSeason =  math.max(GetCurrentArenaSeason(), (tonumber(ArenaAnalytics:getLastSeason()) or 0));
+    local lastSeason =  math.max(GetCurrentArenaSeason(), (tonumber(ArenaAnalytics:GetLatestSeason()) or 0));
     if(lastSeason == nil or lastSeason == 0) then
         ArenaAnalytics:Log("Invalid last season. Unable to add seasons");
         return;

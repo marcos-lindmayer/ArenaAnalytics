@@ -873,7 +873,7 @@ function AAtable:handleArenaCountChanged()
     end
 
     -- Update displayed session stats text
-    local _, expired = ArenaAnalytics:getLastSession();
+    local _, expired = ArenaAnalytics:GetLatestSession();
     local sessionText = expired and "Last session: " or "Current session: ";
     sessionText = colorText(sessionText, bottomStatsPrefixColor);
     local sessionStats = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
@@ -1059,7 +1059,7 @@ local function setLatestSessionDurationText(expired, startTime, endTime)
 end
 
 local function handleSessionDurationTimer()
-    local _,expired, startTime, endTime = ArenaAnalytics:getLastSessionStartAndEndTime();
+    local _,expired, startTime, endTime = ArenaAnalytics:GetLatestSessionStartAndEndTime();
 
     isSessionTimerActive = false;
     
@@ -1075,7 +1075,7 @@ local function handleSessionDurationTimer()
 end
 
 function AAtable:tryStartSessionDurationTimer()
-    local _,expired, startTime, endTime = ArenaAnalytics:getLastSessionStartAndEndTime();
+    local _,expired, startTime, endTime = ArenaAnalytics:GetLatestSessionStartAndEndTime();
     -- Update text
     setLatestSessionDurationText(expired, startTime, endTime);
     

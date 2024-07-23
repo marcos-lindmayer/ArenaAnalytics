@@ -7,42 +7,55 @@ local Filters = ArenaAnalytics.Filters;
 -------------------------------------------------------------------------
 -- Test Dropdown Usage
 
-local function SetFilterValue(dropdownButton, btn)
+local function SetFilterValue(entryFrame, btn)
     if(btn == "RightButton") then
-        Filters:Reset(dropdownButton.key);
+        Filters:Reset(entryFrame.key);
     else
-        Filters:Set(dropdownButton.key, (dropdownButton.value or dropdownButton.label));
+        Filters:Set(entryFrame.key, (entryFrame.value or entryFrame.label));
     end
 
-    Filters:Refresh();
-    dropdownButton:Refresh();
+    Filters:RefreshFilters();
+    entryFrame:Refresh();
 end
 
-local function ResetFilterValue(dropdownButton, btn)
-    assert(dropdownButton.key ~= nil);
+local function ResetFilterValue(entryFrame, btn)
+    assert(entryFrame.key ~= nil);
 
-    Filters:Reset(dropdownButton.key);
-    dropdownButton:Refresh();
+    Filters:Reset(entryFrame.key);
+    entryFrame:Refresh();
 end
 
-local function IsFilterEntryChecked(dropdownButton)
-    return Filters:Get(dropdownButton.key) == (dropdownButton.value or dropdownButton.label);
+local function IsFilterEntryChecked(entryFrame)
+    return Filters:Get(entryFrame.key) == (entryFrame.value or entryFrame.label);
 end
 
-local function IsFilterActive(dropdownButton)
-    assert(dropdownButton.key)
-    return Filters:IsFilterActive(dropdownButton.key);
+local function IsFilterActive(entryFrame)
+    assert(entryFrame.key)
+    return Filters:IsFilterActive(entryFrame.key);
 end
 
 local function generateSeasonData()
     local currentSeason = GetCurrentArenaSeason()
-    local seasons = {}
+    local latestSeason =  math.max(currentSeason, (tonumber(ArenaAnalytics:GetLatestSeason()) or 0));
+    if(latestSeason == nil or latestSeason == 0) then
+        ArenaAnalytics:Log("Invalid latest season. Unable to add seasons");
+        return;
+    end
 
-    tinsert(seasons, {
-        label = "All",
-        key = "Filter_Season",
-        onClick = SetFilterValue,
-    });
+    local seasons = {
+        {
+            label = "All",
+            key = "Filter_Season",
+            onClick = SetFilterValue,
+            checked = IsFilterEntryChecked
+        },
+        {
+            label = "Current Season",
+            key = "Filter_Season",
+            onClick = SetFilterValue,
+            checked = IsFilterEntryChecked
+        }
+    }
 
     local expansions = {
         {"The Burning Crusade", 1},
@@ -56,66 +69,55 @@ local function generateSeasonData()
         {"Dragonflight", 34},
     }
 
-    for season=1, lastSeason do
+    for season=1, latestSeason do
         local seasonText = "Season " .. season;
 
         for _,expansion in ipairs(expansions) do
             if(expansion[2] == season) then
                 -- Add expansion title
-
-                info.text = expansion[1];
-                UIDropDownMenu_AddButton(info, level);
+                -- TODO: Implement title entries    
+                table.insert(seasons, {
+                    label = expansion[1],
+                });
                 break;
             end
-
-            table.insert(seasons, {
-                label = "Season " .. season,
-                value = season,
-                key = "Filter_Season",
-                onClick = SetFilterValue,
-                checked = function() return Filter:GetCurrent("Filter_Season") == season end,
-            });
         end
 
-        
-    end
-
-    for _, expansion in ipairs(expansions) do
-        local title, firstSeason = expansion[1], expansion[2]
-        table.insert(seasons, {label = title, type = "title"})
-        for season = 1, currentSeason do
-            table.insert(seasons, {
-                label = "Season " .. season,
-                value = "Season" .. season,
-                onClick = SetFilterValue,
-                checked = IsFilterEntryChecked,
-            })
-        end
+        table.insert(seasons, {
+            label = "Season " .. season,
+            value = season,
+            key = "Filter_Season",
+            onClick = SetFilterValue,
+            checked = function() return Filters:GetCurrent("Filter_Season") == season end,
+        });
     end
 
     return seasons
 end
 
 local function AddTestEntry(label)
-return {
-        label = label,
-        key = "Filter_Map",
-        nested = {
-            { label = "All",                key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-            { label = "Nagrand Arena",      key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-            { label = "Blade's Edge Arena", key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-            { label = "Dalaran Arena",      key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-            { label = "Ruins of Lordaeron", key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked }
-        },
-        onClick = ResetFilterValue,
-        checked = IsFilterActive,
-        tooltip = "Filter matches by map",
-    };
+    if(false) then
+        return {
+            label = label,
+            key = "Filter_Map",
+            nested = {
+                { label = "All",                key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
+                { label = "Nagrand Arena",      key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
+                { label = "Blade's Edge Arena", key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
+                { label = "Dalaran Arena",      key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
+                { label = "Ruins of Lordaeron", key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked }
+            },
+            onClick = ResetFilterValue,
+            checked = IsFilterActive,
+            tooltip = "Filter matches by map",
+        };
+    end
 end
 
 local moreFiltersConfig = {
     mainButton = {
         label = "More Filters",
+        template = "UIServiceButtonTemplate"
     },
     entries = {
         {
@@ -144,11 +146,11 @@ local moreFiltersConfig = {
             label = "Maps",
             key = "Filter_Map",
             nested = {
-                { label = "All",                key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Nagrand Arena",      key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Blade's Edge Arena", key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Dalaran Arena",      key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Ruins of Lordaeron", key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked }
+                { label = "All",                key = "Filter_Map",                 onClick = SetFilterValue,   checked = IsFilterEntryChecked },
+                { label = "Nagrand Arena",      key = "Filter_Map", value = "NA",   onClick = SetFilterValue,   checked = IsFilterEntryChecked },
+                { label = "Blade's Edge Arena", key = "Filter_Map", value = "BEA",   onClick = SetFilterValue,   checked = IsFilterEntryChecked },
+                { label = "Dalaran Arena",      key = "Filter_Map", value = "DA",   onClick = SetFilterValue,   checked = IsFilterEntryChecked },
+                { label = "Ruins of Lordaeron", key = "Filter_Map", value = "RoL",   onClick = SetFilterValue,   checked = IsFilterEntryChecked }
             },
             onClick = ResetFilterValue,
             checked = IsFilterActive,
@@ -188,6 +190,6 @@ function Dropdown:CreateTest()
         return;
     end
 
-    Dropdown.testDropdown = Dropdown:CreateNew("Simple", "TestDropdown", UIParent, 200, 25, moreFiltersConfig);
+    Dropdown.testDropdown = Dropdown:CreateNew(UIParent, "Simple", "TestDropdown", 200, 25, moreFiltersConfig);
     Dropdown.testDropdown:SetPoint("CENTER", UIParent, "CENTER", 0, 350);
 end

@@ -26,7 +26,7 @@ end
 ArenaAnalytics.lastSession = 1;
 
 function ArenaAnalytics:UpdateLastSession()
-	ArenaAnalytics.lastSession = ArenaAnalytics:getLastSession();
+	ArenaAnalytics.lastSession = ArenaAnalytics:GetLatestSession();
 end
 
 -- TODO: Confirm that all events are still used correctly, then delete after refactoring tracking & events
@@ -176,7 +176,7 @@ function ArenaAnalytics:ShouldSkipMatchForSessions(match)
 end
 
 -- Returns the whether last session and whether it has expired by time
-function ArenaAnalytics:getLastSession()
+function ArenaAnalytics:GetLatestSession()
 	for i=#MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
 		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
@@ -190,7 +190,7 @@ end
 
 -- TODO: Study to determine risk of no start time detected
 -- Returns the start and end times of the last session
-function ArenaAnalytics:getLastSessionStartAndEndTime()
+function ArenaAnalytics:GetLatestSessionStartAndEndTime()
 	local lastSession, expired, bestStartTime, endTime = nil,true;
 
 	for i=#MatchHistoryDB, 1, -1 do
@@ -216,7 +216,7 @@ function ArenaAnalytics:getLastSessionStartAndEndTime()
 end
 
 -- Returns last saved rating on selected bracket (teamSize)
-function ArenaAnalytics:getLastSeason()
+function ArenaAnalytics:GetLatestSeason()
 	for i = #MatchHistoryDB, 1, -1 do
 		local match = MatchHistoryDB[i];
 		if(match ~= nil and match["season"] and match["season"] ~= 0) then
@@ -228,7 +228,7 @@ function ArenaAnalytics:getLastSeason()
 end
 
 -- Returns last saved rating on selected bracket (teamSize)
-function ArenaAnalytics:getLastRating(teamSize)
+function ArenaAnalytics:GetLatestRating(teamSize)
 	local bracket = ArenaAnalytics:getBracketFromTeamSize(teamSize);
 
 	for i = #MatchHistoryDB, 1, -1 do
@@ -309,9 +309,9 @@ ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil a
 -- Updates the cached bracket rating for each bracket
 function AAmatch:updateCachedBracketRatings()
 	if(IsActiveBattlefieldArena()) then
-		ArenaAnalyticsCachedBracketRatings[1] = ArenaAnalytics:getLastRating(2); -- 2v2
-		ArenaAnalyticsCachedBracketRatings[2] = ArenaAnalytics:getLastRating(3); -- 3v3
-		ArenaAnalyticsCachedBracketRatings[3] = ArenaAnalytics:getLastRating(4); -- 5v5
+		ArenaAnalyticsCachedBracketRatings[1] = ArenaAnalytics:GetLatestRating(2); -- 2v2
+		ArenaAnalyticsCachedBracketRatings[2] = ArenaAnalytics:GetLatestRating(3); -- 3v3
+		ArenaAnalyticsCachedBracketRatings[3] = ArenaAnalytics:GetLatestRating(4); -- 5v5
 	else
 		ArenaAnalyticsCachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
 		ArenaAnalyticsCachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
@@ -430,7 +430,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	}
 
 	-- Assign session
-	local session = ArenaAnalytics:getLastSession();
+	local session = ArenaAnalytics:GetLatestSession();
 	local lastMatch = ArenaAnalytics:getLastMatch(false);
 	if (not ArenaAnalytics:IsMatchesSameSession(lastMatch, arenaData)) then
 		session = session + 1;
