@@ -33,6 +33,10 @@ Source/Search/ArenaSearchColors.lua
 Source/Search/ArenaQuickSearch.lua
 
 Source/Filters/ArenaFilter.lua
+Source/Filters/ArenaFilterTables.lua
+Source/Filters/ArenaFilterTable_Brackets.lua
+Source/Filters/ArenaFilterTable_Comps.lua
+Source/Filters/ArenaFilterTable_MoreFilters.lua
 Source/Filters/ArenaMoreFilters.lua
 
 Source/ImportExport/ArenaImportExport.lua

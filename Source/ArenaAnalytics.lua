@@ -10,6 +10,139 @@ local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
 
 -------------------------------------------------------------------------
+-- Current filtered comp data
+
+local currentFilterCompData = { }
+
+function ArenaAnalytics:ResetCurrentCompData()
+    currentFilterCompData = { ["Filter_Comp"] = {}, ["Filter_EnemyComp"] = {} }
+end
+ArenaAnalytics:ResetCurrentCompData();
+
+function ArenaAnalytics:SetCompData(compKey, comp, wins, winrate, mmr)
+    assert(ArenaAnalytics:IsValidCompKey(compKey), "Assert failed: Invalid CompKey!");
+    assert(comp, "Assert failed: Invalid comp!");
+
+    currentFilterCompData[compKey] = currentFilterCompData[compKey] or {};
+
+    currentFilterCompData[compKey][comp] = {
+        wins,
+        winrate,
+        mmr
+    }
+end
+
+function ArenaAnalytics:GetCurrentCompData(compKey, comp)
+    assert(compKey);
+
+    if(comp ~= nil and currentFilterCompData[compKey]) then
+        return currentFilterCompData[compKey][comp];
+    else
+        return currentFilterCompData[compKey];
+    end
+end
+
+function ArenaAnalytics:UpdateCurrentCompData()
+	currentFilterCompData = {}
+	currentFilterCompData["Filter_Comp"] = ArenaAnalytics:GetPlayedCompsWithTotalAndWins(false);
+	currentFilterCompData["Filter_EnemyComp"] = ArenaAnalytics:GetPlayedCompsWithTotalAndWins(true);
+
+	AAtable:ForceRefreshFilterDropdowns("UpdateCurrentCompData");
+end
+
+-- TODO: Decide what to do with nil win. Might be better to not include its stats at all (Though still wanna count as a played comp)?
+local function findOrAddCompValues(playedComps, comp, isWin, mmr)
+	assert(playedComps ~= nil);	
+    if(comp == nil) then return end;
+
+	local existingComp = playedComps[comp];
+	if(existingComp ~= nil) then
+		playedComps[comp].played = playedComps[comp].played + 1;
+
+		if(isWin) then
+			playedComps[comp].wins = playedComps[comp].wins + 1;
+		end
+
+		if(tonumber(mmr)) then
+			playedComps[comp].mmr = playedComps[comp].mmr + tonumber(mmr);
+			playedComps[comp].mmrCount = playedComps[comp].mmrCount + 1;
+		end
+	else -- Insert new
+		playedComps[comp] = {
+			played = 1,
+			wins = isWin and 1 or 0,
+			mmr = tonumber(mmr) or 0,
+			mmrCount = tonumber(mmr) and 1 or 0, -- Separated in case of missing mmr
+		};
+	end    
+end
+
+-- TODO: Consider moving to ArenaAnalytics.lua?
+-- Get all played comps with total played and total wins for matches that pass filters
+function ArenaAnalytics:GetPlayedCompsWithTotalAndWins(isEnemyComp)
+    local compKey = isEnemyComp and "enemyComp" or "comp";
+    local playedComps = {};
+
+    local bracket = Filters:Get("Filter_Bracket");
+    if(bracket == "All") then
+		return playedComps;
+	end
+
+	for i=1, #MatchHistoryDB do
+		local match = MatchHistoryDB[i];
+		if(match and match["bracket"] == bracket and Filters:doesMatchPassAllFilters(match, compKey)) then
+			local comp = match[compKey];
+
+			if(comp ~= nil) then
+				findOrAddCompValues(playedComps, comp, match["won"], match["mmr"]);
+			end
+		end
+	end
+
+	-- Compute winrates and average mmr
+	for i=#playedComps, 1, -1 do
+		local compTable = playedComps[i];
+
+		-- Calculate winrate
+		local played = compTable["played"] or 0;
+		local wins = compTable["wins"] or 0;
+		compTable["winrate"] = (played > 0) and math.floor(wins * 100 / played) or 0;
+
+		-- Calculate average MMR
+		local mmrCount = compTable["mmrCount"];
+		if(compTable["mmr"] and mmrCount and mmrCount > 0) then
+			compTable["mmr"] = floor(compTable["mmr"] / compTable["mmrCount"]);
+			compTable["mmrCount"] = nil;
+		else -- No MMR data
+			compTable["mmr"] = nil;
+			compTable["mmrCount"] = nil;
+		end
+	end
+
+	-- Iterate over each comp in the comps table
+	for comp, compTable in pairs(playedComps) do
+		-- Calculate winrate
+		local played = tonumber(compTable.played) or 0;
+		local wins = tonumber(compTable.wins) or 0;
+		compTable.winrate = (played > 0) and math.floor(wins * 100 / played) or 0;
+
+		-- Calculate average MMR
+		local mmr = tonumber(mmr);
+		local mmrCount = tonumber(compTable.mmrCount);
+		if mmr and mmrCount and mmrCount > 0 then
+			compTable.mmr = math.floor(mmr / mmrCount);
+			compTable.mmrCount = nil;
+		else
+			-- No MMR data
+			compTable.mmr = nil;
+			compTable.mmrCount = nil;
+		end
+	end
+
+    return playedComps;
+end
+
+-------------------------------------------------------------------------
 
 -- Character SavedVariables match history
 MatchHistoryDB = MatchHistoryDB or { }

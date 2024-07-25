@@ -8,7 +8,6 @@ local Options = ArenaAnalytics.Options;
 
 -- Currently applied filters
 local currentFilters = {}
-
 local defaults = {}
 
 -- Adds a filter, setting current and default values
@@ -24,12 +23,15 @@ AddFilter("Filter_Date", "All Time");
 AddFilter("Filter_Season", "All");
 AddFilter("Filter_Map", "All");
 AddFilter("Filter_Bracket", "All");
-AddFilter("Filter_Comp", {["data"] = "All", ["display"] = "All"}); -- TODO: Confirm this is backwards compatible temporarily. TODO (Long term) Replace the need for separation for dropdown overhaul!
-AddFilter("Filter_EnemyComp", {["data"] = "All", ["display"] = "All"}); -- TODO: Confirm this is backwards compatible temporarily. TODO (Long term) Replace the need for separation for dropdown overhaul!
+AddFilter("Filter_Comp", "All");
+AddFilter("Filter_EnemyComp", "All");
 
--- TODO: Phase out complex GetCurrent() when dropdown overhaul (0.6.x) is done
+function Filters:IsValidCompKey(compKey)
+    return compKey == "Filter_Comp" or compKey == "Filter_EnemyComp";
+end
+
 function Filters:Get(filter)
-    assert(filter and currentFilters[filter]);
+    assert(filter and currentFilters[filter], "Invalid filter: " .. (filter or "nil"));
     return currentFilters[filter];
 end
 
@@ -52,6 +54,13 @@ function Filters:Set(filter, value)
     assert(filter and currentFilters[filter]);
     value = value or Filters:GetDefault(filter);
 
+    -- Reset comp filters when bracket filter changes
+    if (filter == "Filter_Bracket") then
+        Filters:Reset("Filter_Comp");
+        Filters:Reset("Filter_EnemyComp");
+    end
+
+    ArenaAnalytics:Log("Setting filter:", filter, "to value:", value);
     currentFilters[filter] = value;
     
     Filters:RefreshFilters();
@@ -59,7 +68,7 @@ end
 
 function Filters:Reset(filter, skipOverrides)
     assert(currentFilters[filter] and defaults[filter], "Invalid filter: " .. (filter and filter or "nil"));
-    currentFilters[filter] = defaults[filter];
+    currentFilters[filter] = Filters:GetDefault(filter, skipOverrides);
 
     Filters:RefreshFilters();
 end
@@ -111,12 +120,8 @@ end
 
 -- TODO: Simplify using Filters:Get(filter) and Filters:GetDefault(filter)
 function Filters:IsFilterActive(filterName)
-    if(filterName == "Filter_Comp" or filterName == "Filter_EnemyComp") then
-        return currentFilters[filterName]["data"] ~= defaults[filterName]["data"];
-    end
-    
     local filter = currentFilters[filterName];
-    if (filter) then
+    if (filter ~= nil) then
         return filter ~= defaults[filterName];
     end
 
@@ -195,80 +200,6 @@ function Filters:ResetToDefault(filter, skipOverrides)
     Filters:SetFilter(filter, defaultValue);
 end
 
--- TODO: Decide what to do with nil win. Might be better to not include its stats at all (Though still wanna count as a played comp)?
-local function findOrAddCompValues(comps, comp, isWin, mmr)
-    if(comp == nil) then return end;
-
-    for i,existingComp in ipairs(comps) do
-        if (existingComp["comp"] == comp) then
-            existingComp["played"] = existingComp["played"] + 1;
-
-            if (isWin) then
-                existingComp["wins"] = existingComp["wins"] + 1;
-            end
-
-            if(tonumber(mmr)) then
-                existingComp["mmr"] = existingComp["mmr"] + mmr;
-                existingComp["mmrCount"] = existingComp["mmrCount"] + 1;
-            end
-                
-            return;
-        end
-    end
-
-    tinsert(comps, {
-        ["comp"] = comp,
-        ["played"] = 1,
-        ["wins"] = isWin and 1 or 0,
-        ["mmr"] = tonumber(mmr) or 0,
-        ["mmrCount"] = mmr and 1 or 0, -- Separated in case of missing mmr
-    });
-end
-
--- TODO: Consider moving to ArenaAnalytics.lua?
--- Get all played comps with total played and total wins for matches that pass filters
-function Filters:getPlayedCompsWithTotalAndWins(isEnemyComp)
-    local compKey = isEnemyComp and "enemyComp" or "comp";
-    local playedComps = {
-        { ["comp"] = "All" }
-    };
-
-    local bracket = currentFilters["Filter_Bracket"];
-    if(bracket ~= "All") then        
-        for i=1, #MatchHistoryDB do
-            local match = MatchHistoryDB[i];
-            if(match and match["bracket"] == bracket and Filters:doesMatchPassAllFilters(match, compKey)) then
-                local comp = match[compKey];
-
-                if(comp ~= nil) then
-                    findOrAddCompValues(playedComps, comp, match["won"], match["mmr"]);
-                end
-            end
-        end
-
-        -- Compute winrates and average mmr
-        for i=#playedComps, 1, -1 do
-            local compTable = playedComps[i];
-
-            -- Calculate winrate
-            local played = compTable["played"] or 0;
-            local wins = compTable["wins"] or 0;
-            compTable["winrate"] = (played > 0) and math.floor(wins * 100 / played) or 0;
-
-            -- Calculate average MMR
-            local mmrCount = compTable["mmrCount"];
-            if(compTable["mmr"] and mmrCount and mmrCount > 0) then
-                compTable["mmr"] = floor(compTable["mmr"] / compTable["mmrCount"]);
-                compTable["mmrCount"] = nil;
-            else -- No MMR data
-                compTable["mmr"] = nil;
-                compTable["mmrCount"] = nil;
-            end
-        end
-    end
-    return playedComps;
-end
-
 -- check map filter
 local function doesMatchPassFilter_Map(match)
     if match == nil then return false end;
@@ -277,19 +208,11 @@ local function doesMatchPassFilter_Map(match)
         return true;
     end
     
-    local arenaMaps = {
-        ["Nagrand Arena"] = "NA", 
-        ["Ruins of Lordaeron"] = "RoL", 
-        ["Blade's Edge Arena"] = "BEA", 
-        ["Dalaran Arena"] = "DA"
-    }
-    local filterMap = arenaMaps[currentFilters["Filter_Map"]];
-    assert(filterMap, "Map filter did not match a valid map. Filter: " .. (currentFilters["Filter_Map"] or "nil"));
+    local filterMap = currentFilters["Filter_Map"];
     
     if(filterMap == nil) then
         filterMap = "All"
         currentFilters["Filter_Map"] = filterMap;
-        ArenaAnalyticsScrollFrame.filterMapDropdown.selected:SetText(filterMap);
     end
 
     return match["map"] == filterMap;
@@ -361,12 +284,12 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
     end
     
     local compFilterKey = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
-    if(currentFilters[compFilterKey]["data"] == "All") then
+    if(currentFilters[compFilterKey] == "All") then
         return true;
     end
     
     local compKey = isEnemyComp and "enemyComp" or "comp";
-    return match[compKey] == currentFilters[compFilterKey]["data"];
+    return match[compKey] == currentFilters[compFilterKey];
 end
 
 function Filters:doesMatchPassGameSettings(match)
@@ -447,8 +370,8 @@ function Filters:RefreshFilters_OLD()
         end
     end
 
-    -- This will also call AAtable:forceCompFilterRefresh()
-    ArenaAnalytics.AAtable:handleArenaCountChanged();
+    -- This will also call AAtable:ForceRefreshFilterDropdowns()
+    ArenaAnalytics.AAtable:handleArenaCountChanged("RefreshFilters_OLD");
 end
 
 -- TODO: Fix up this, to support multi-frame refreshing
@@ -473,8 +396,8 @@ function Filters:RefreshFilters(onCompleteFunc)
             end
         end
     
-        -- This will also call AAtable:forceCompFilterRefresh()
-        ArenaAnalytics.AAtable:handleArenaCountChanged()
+        -- This will also call AAtable:ForceRefreshFilterDropdowns()
+        ArenaAnalytics.AAtable:handleArenaCountChanged("RefreshFilters")
 
         if(onCompleteFunc) then
             onCompleteFunc();

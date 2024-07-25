@@ -3,38 +3,12 @@ local Dropdown = ArenaAnalytics.Dropdown;
 
 -- Local module aliases
 local Filters = ArenaAnalytics.Filters;
+local FilterTables = ArenaAnalytics.FilterTables;
 
 -------------------------------------------------------------------------
 -- Test Dropdown Usage
 
-local function SetFilterValue(entryFrame, btn)
-    if(btn == "RightButton") then
-        Filters:Reset(entryFrame.key);
-    else
-        Filters:Set(entryFrame.key, (entryFrame.value or entryFrame.label));
-    end
-
-    Filters:RefreshFilters();
-    entryFrame:Refresh();
-end
-
-local function ResetFilterValue(entryFrame, btn)
-    assert(entryFrame.key ~= nil);
-
-    Filters:Reset(entryFrame.key);
-    entryFrame:Refresh();
-end
-
-local function IsFilterEntryChecked(entryFrame)
-    return Filters:Get(entryFrame.key) == (entryFrame.value or entryFrame.label);
-end
-
-local function IsFilterActive(entryFrame)
-    assert(entryFrame.key)
-    return Filters:IsFilterActive(entryFrame.key);
-end
-
-local function generateSeasonData()
+local function GenerateSeasonData()
     local currentSeason = GetCurrentArenaSeason()
     local latestSeason =  math.max(currentSeason, (tonumber(ArenaAnalytics:GetLatestSeason()) or 0));
     if(latestSeason == nil or latestSeason == 0) then
@@ -46,14 +20,14 @@ local function generateSeasonData()
         {
             label = "All",
             key = "Filter_Season",
-            onClick = SetFilterValue,
-            checked = IsFilterEntryChecked
+            onClick = FilterTables.SetFilterValue,
+            checked = FilterTables.IsFilterEntryChecked
         },
         {
             label = "Current Season",
             key = "Filter_Season",
-            onClick = SetFilterValue,
-            checked = IsFilterEntryChecked
+            onClick = FilterTables.SetFilterValue,
+            checked = FilterTables.IsFilterEntryChecked
         }
     }
 
@@ -87,7 +61,7 @@ local function generateSeasonData()
             label = "Season " .. season,
             value = season,
             key = "Filter_Season",
-            onClick = SetFilterValue,
+            onClick = FilterTables.SetFilterValue,
             checked = function() return Filters:GetCurrent("Filter_Season") == season end,
         });
     end
@@ -101,14 +75,14 @@ local function AddTestEntry(label)
             label = label,
             key = "Filter_Map",
             nested = {
-                { label = "All",                key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Nagrand Arena",      key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Blade's Edge Arena", key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Dalaran Arena",      key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Ruins of Lordaeron", key = "Filter_Map",     onClick = SetFilterValue,   checked = IsFilterEntryChecked }
+                { label = "All",                key = "Filter_Map",     onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Nagrand Arena",      key = "Filter_Map",     onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Blade's Edge Arena", key = "Filter_Map",     onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Dalaran Arena",      key = "Filter_Map",     onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Ruins of Lordaeron", key = "Filter_Map",     onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked }
             },
-            onClick = ResetFilterValue,
-            checked = IsFilterActive,
+            onClick = FilterTables.ResetFilterValue,
+            checked = FilterTables.IsFilterActive,
             tooltip = "Filter matches by map",
         };
     end
@@ -116,44 +90,43 @@ end
 
 local moreFiltersConfig = {
     mainButton = {
-        label = "More Filters",
-        template = "UIServiceButtonTemplate"
+        label = "More Filters"
     },
     entries = {
         {
             label = "Season",
             key = "Filter_Season",
-            nested = generateSeasonData,
-            onClick = ResetFilterValue,
-            checked = IsFilterActive,
+            nested = GenerateSeasonData,
+            onClick = FilterTables.ResetFilterValue,
+            checked = FilterTables.IsFilterActive,
             tooltip = "Filter matches by season"
         },
         {
             label = "Date",
             key = "Filter_Date",
             nested = {
-                { label = "All Time",           key = "Filter_Date",    onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Current Session",    key = "Filter_Date",    onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Today",              key = "Filter_Date",    onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Last Week",          key = "Filter_Date",    onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Last Month",         key = "Filter_Date",    onClick = SetFilterValue,   checked = IsFilterEntryChecked }
+                { label = "All Time",           key = "Filter_Date",    onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Current Session",    key = "Filter_Date",    onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Last Day",           key = "Filter_Date",    onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Last Week",          key = "Filter_Date",    onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Last Month",         key = "Filter_Date",    onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked }
             },
-            onClick = ResetFilterValue,
-            checked = IsFilterActive,
+            onClick = FilterTables.ResetFilterValue,
+            checked = FilterTables.IsFilterActive,
             tooltip = "Filter matches by date"
         },
         {
             label = "Maps",
             key = "Filter_Map",
             nested = {
-                { label = "All",                key = "Filter_Map",                 onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Nagrand Arena",      key = "Filter_Map", value = "NA",   onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Blade's Edge Arena", key = "Filter_Map", value = "BEA",   onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Dalaran Arena",      key = "Filter_Map", value = "DA",   onClick = SetFilterValue,   checked = IsFilterEntryChecked },
-                { label = "Ruins of Lordaeron", key = "Filter_Map", value = "RoL",   onClick = SetFilterValue,   checked = IsFilterEntryChecked }
+                { label = "All",                key = "Filter_Map",                 onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Nagrand Arena",      key = "Filter_Map", value = "NA",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Blade's Edge Arena", key = "Filter_Map", value = "BEA",  onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Dalaran Arena",      key = "Filter_Map", value = "DA",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Ruins of Lordaeron", key = "Filter_Map", value = "RoL",  onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked }
             },
-            onClick = ResetFilterValue,
-            checked = IsFilterActive,
+            onClick = FilterTables.ResetFilterValue,
+            checked = FilterTables.IsFilterActive,
             tooltip = "Filter matches by map",
         },
         AddTestEntry("Test1"),
@@ -182,7 +155,7 @@ function Dropdown:CreateTest()
     if(Dropdown.testDropdown) then
         Dropdown.testDropdown:Hide();
 
-        if(Dropdown.testDropdown.selected:IsVisible()) then
+        if(Dropdown.testDropdown.selected:IsShown()) then
             Dropdown.testDropdown.selected:Hide();
         else
             Dropdown.testDropdown.selected:Show();
@@ -190,6 +163,50 @@ function Dropdown:CreateTest()
         return;
     end
 
-    Dropdown.testDropdown = Dropdown:CreateNew(UIParent, "Simple", "TestDropdown", 200, 25, moreFiltersConfig);
+    Dropdown.testDropdown = Dropdown:Create(UIParent, "Simple", "TestDropdown", moreFiltersConfig, 200, 25);
     Dropdown.testDropdown:SetPoint("CENTER", UIParent, "CENTER", 0, 350);
 end
+
+local moreFiltersConfig = {
+    mainButton = {
+        label = "More Filters"
+    },
+    entries = {
+        {
+            label = "Season",
+            key = "Filter_Season",
+            nested = GenerateSeasonData,
+            onClick = FilterTables.ResetFilterValue,
+            checked = FilterTables.IsFilterActive,
+            tooltip = "Filter matches by season"
+        },
+        {
+            label = "Date",
+            key = "Filter_Date",
+            nested = {
+                { label = "All Time",           key = "Filter_Date",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Current Session",    key = "Filter_Date",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Last Day",           key = "Filter_Date",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Last Week",          key = "Filter_Date",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Last Month",         key = "Filter_Date",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked }
+            },
+            onClick = FilterTables.ResetFilterValue,
+            checked = FilterTables.IsFilterActive,
+            tooltip = "Filter matches by date"
+        },
+        {
+            label = "Maps",
+            key = "Filter_Map",
+            nested = {
+                { label = "All",                key = "Filter_Map",                   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Nagrand Arena",      key = "Filter_Map",   value = "NA",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Blade's Edge Arena", key = "Filter_Map",   value = "BEA",  onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Dalaran Arena",      key = "Filter_Map",   value = "DA",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
+                { label = "Ruins of Lordaeron", key = "Filter_Map",   value = "RoL",  onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked }
+            },
+            onClick = FilterTables.ResetFilterValue,
+            checked = FilterTables.IsFilterActive,
+            tooltip = "Filter matches by map",
+        },
+    }
+}

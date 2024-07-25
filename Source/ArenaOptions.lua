@@ -6,6 +6,7 @@ local Filters = ArenaAnalytics.Filters;
 local AAtable = ArenaAnalytics.AAtable;
 local Tooltips = ArenaAnalytics.Tooltips;
 local Export = ArenaAnalytics.Export;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -163,7 +164,7 @@ end
 local function HandleFiltersUpdated()
     Filters:ResetAll(false);
     Filters:RefreshFilters(function()
-        AAtable:forceCompFilterRefresh();
+        AAtable:ForceRefreshFilterDropdowns("HandleFiltersUpdated");
     end);
 end
 
@@ -221,7 +222,7 @@ local function CreateButton(setting, parent, x, width, text, func)
     assert(type(func) == "function");
 
     -- Create the button
-    local button = CreateFrame("Button", "ArenaAnalyticsButton_" .. (setting or text or ""), parent, "UIPanelButtonTemplate")
+    local button = CreateFrame("Button", "ArenaAnalyticsButton_" .. (setting or text or ""), parent, AAtable:GetDropdownTemplate())
     
     -- Set the button's position
     button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
@@ -425,7 +426,7 @@ function SetupTab_Search()
     -- Setup options
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team. Prefix player segment '|cff00ccff+|r' to force friendly team.", function()
         if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchTitle)) then
-            ArenaAnalyticsScrollFrame.searchTitle:SetText(Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search");
+            ArenaAnalyticsScrollFrame.searchBox.title:SetText(Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search");
         end
     end);
 

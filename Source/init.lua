@@ -17,6 +17,7 @@ ArenaAnalytics.ArenaTracker = {}
 
 ArenaAnalytics.Search = {};
 ArenaAnalytics.Filters = {};
+ArenaAnalytics.FilterTables = {};
 ArenaAnalytics.MoreFilters = {};
 
 ArenaAnalytics.Import = {};
@@ -25,6 +26,7 @@ ArenaAnalytics.VersionManager = {};
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
+local FilterTables = ArenaAnalytics.FilterTables;
 
 -------------------------------------------------------------------------
 
@@ -340,12 +342,18 @@ function ArenaAnalytics:init()
 		ArenaAnalytics:Log("Failed to register Addon Message Prefix: 'ArenaAnalytics'!")
 	end
 
-	----------------------------------
+	---------------------------------
 	-- Register Slash Commands
-	----------------------------------
+	---------------------------------
 	SLASH_AuraTracker1 = "/AA";
 	SLASH_AuraTracker2 = "/ArenaAnalytics";
 	SlashCmdList.AuraTracker = HandleSlashCommands;
+
+	---------------------------------
+	-- Initialize modules
+	---------------------------------
+
+	FilterTables:Init();
 
 	ArenaAnalytics:UpdateLastSession();
 
@@ -380,10 +388,6 @@ function ArenaAnalytics:init()
 	if (IsActiveBattlefieldArena()) then
 		ArenaAnalytics.Events:RegisterArenaEvents();
 		ArenaAnalytics.ArenaTracker:HandleArenaEnter();
-	end
-
-	if(Options:Get("debuggingEnabled")) then
-		ArenaAnalytics.Dropdown:CreateTest();
 	end
 end
 

@@ -69,7 +69,7 @@ local function addDynamicOptions_Season(self, level, filter, info, settings)
 end
  
 -- Create the dropdown, and configure its appearance
-MoreFilters.dropdown = CreateFrame("Frame", "MoreFiltersDropdownFrame", ArenaAnalyticsScrollFrame.filterBtn_MoreFilters, "UIDropDownMenuTemplate")
+MoreFilters.dropdown = CreateFrame("Frame", "MoreFiltersDropdownFrame", ArenaAnalyticsScrollFrame, "UIDropDownMenuTemplate")
 
 -- Create and bind the initialization function to the dropdown menu
 UIDropDownMenu_Initialize(MoreFilters.dropdown, function(self, level, filter)

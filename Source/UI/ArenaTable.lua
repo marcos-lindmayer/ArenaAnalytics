@@ -5,7 +5,10 @@ HybridScrollMixin = ArenaAnalytics.AAtable; -- HybridScroll.xml wants access to 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
+local FilterTables = ArenaAnalytics.FilterTables;
 local Search = ArenaAnalytics.Search;
+local Dropdown = ArenaAnalytics.Dropdown;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -30,7 +33,7 @@ function ArenaAnalytics:Toggle()
             AAtable:RefreshLayout();
         end);
 
-        AAtable:closeFilterDropdowns();
+        Dropdown:CloseAll();
 
         ArenaAnalyticsScrollFrame:Show();
     else
@@ -38,16 +41,24 @@ function ArenaAnalytics:Toggle()
     end
 end
 
+function AAtable:GetDropdownTemplate(overrideTemplate)
+    return overrideTemplate or API.defaultButtonTemplate or "UIPanelButtonTemplate";
+end
+
 -- Returns button based on params
-function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOffset, text)
-    local btn = CreateFrame("Button", nil, relativeFrame, "UIServiceButtonTemplate");
+function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOffset, text, template)
+    local btn = CreateFrame("Button", nil, relativeFrame, AAtable:GetDropdownTemplate(template));
     btn:SetPoint(point, relativeFrame, relativePoint, xOffset, yOffset);
     btn:SetSize(120, 25);
     btn:SetText(text);
-    btn.money:Hide();
     btn:SetNormalFontObject("GameFontHighlight");
     btn:SetHighlightFontObject("GameFontHighlight");
     btn:SetDisabledFontObject("GameFontDisableSmall");
+    
+    if(btn.money) then
+        btn.money:Hide();
+    end
+    
     return btn;
 end
 
@@ -177,18 +188,18 @@ function AAtable:UpdateSelected()
     ArenaAnalyticsScrollFrame.selectedStats:SetText(newSelectedText)
 end
 
-function AAtable:closeFilterDropdowns()
-    if(ArenaAnalyticsScrollFrame.filterMapDropdown) then
-        ArenaAnalyticsScrollFrame.filterMapDropdown.list:Hide();
-    end
-    if(ArenaAnalyticsScrollFrame.filterBracketDropdown) then
-        ArenaAnalyticsScrollFrame.filterBracketDropdown.list:Hide();
-    end
-    if(ArenaAnalyticsScrollFrame.filterCompsDropdown) then
-        ArenaAnalyticsScrollFrame.filterCompsDropdown.list:Hide();
-    end
-    if(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown) then
-        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list:Hide();
+local function CreateFilterTitle(filterFrame, title, info, offsetX, size)
+    filterFrame.title = filterFrame:CreateFontString(nil, "OVERLAY");
+    filterFrame.title:SetFont("Fonts\\FRIZQT__.TTF", size or 12, "");
+    filterFrame.title:SetPoint("TOPLEFT", offsetX or 2, 15);
+    filterFrame.title:SetText(title);
+
+    if(info) then
+        filterFrame.title.info = filterFrame:CreateFontString(nil, "OVERLAY");
+        filterFrame.title.info:SetFont("Fonts\\FRIZQT__.TTF", 8.25, "");
+        filterFrame.title.info:SetPoint("TOPRIGHT", -5, 12);
+
+        filterFrame.title.info:SetText("|cffbbbbbb" .. info .. "|r");
     end
 end
 
@@ -219,16 +230,14 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
 
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
-    ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, -27);
-    ArenaAnalyticsScrollFrame.searchBox:SetSize(220, 55);
+    ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 32, -44);
+    ArenaAnalyticsScrollFrame.searchBox:SetSize(220, 25);
     ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
     ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(1024);
 
-    ArenaAnalyticsScrollFrame.searchTitle = ArenaAnalyticsScrollFrame.searchBox:CreateFontString(nil, "OVERLAY");
-    ArenaAnalyticsScrollFrame.searchTitle:SetPoint("TOPLEFT", -4, 0);
-    ArenaAnalyticsScrollFrame.searchTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-    ArenaAnalyticsScrollFrame.searchTitle:SetText(Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search");
-
+    local searchTitle = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
+    CreateFilterTitle(ArenaAnalyticsScrollFrame.searchBox, searchTitle, nil, -5);
+    
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEnterPressed", function()
         ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
     end);
@@ -259,15 +268,15 @@ function AAtable:OnLoad()
         Search:CommitSearch(self:GetText());
     end);
 
-    -- Dropdown data
-    local title = "Bracket";
-    local filter = "Filter_Bracket";
-    local default = "All"
-    local entries = { "All", "2v2", "3v3", "5v5" };
-
+    -- Filter Bracket Dropdown
     ArenaAnalyticsScrollFrame.filterBracketDropdown = nil;
-    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 65, 25);
-    ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);    
+    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(ArenaAnalyticsScrollFrame, "Simple", "FilterBracket", FilterTables.brackets, 65, 25);
+    ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);
+
+    CreateFilterTitle(ArenaAnalyticsScrollFrame.filterBracketDropdown, "Bracket");
+
+    AAtable:createDropdownForFilterComps(false); -- isEnemyComp == false
+    AAtable:createDropdownForFilterComps(true);
 
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
     ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
@@ -291,7 +300,7 @@ function AAtable:OnLoad()
     end);
 
     -- Table headers
-    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "TOPLEFT", -5, -47, "Date");
+    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 28, -75, "Date");
     ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
     ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
     ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 118, 0, "Team");
@@ -315,7 +324,7 @@ function AAtable:OnLoad()
     
     AAtable:tryStartSessionDurationTimer();
 
-    ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 10, "Clear Selected");
+    ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 10, "Clear Selected", AAtable:GetDropdownTemplate());
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(110)
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function() ArenaAnalytics.Selection:ClearSelectedMatches() end);
@@ -352,26 +361,10 @@ function AAtable:OnLoad()
 
     HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListMatch");
 
-    hasLoaded = true;
-
-    ArenaAnalytics.AAtable:handleArenaCountChanged();
-
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame, "RIGHT", 10, 0, "More Filters");
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown, "RIGHT", 10, 0);
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetWidth(90);
-
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:RegisterForClicks("LeftButtonDown", "RightButtonDown");
-
-    ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetScript("OnClick", function(frame, btn)
-        if(btn == "RightButton") then
-            -- Clear all filters related to this
-            ArenaAnalytics.MoreFilters:ResetAll();
-        else
-            ToggleDropDownMenu(1, nil, ArenaAnalytics.MoreFilters.dropdown, "cursor", 3, -10);
-        end
-    end);
-
-    ArenaAnalyticsScrollFrame.filterBtn_ClearFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.filterBtn_MoreFilters, "RIGHT", 10, 0, "Clear");
+    ArenaAnalyticsScrollFrame.moreFiltersDrodown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", "MoreFilters", FilterTables.moreFilters, 90, 25);
+    ArenaAnalyticsScrollFrame.moreFiltersDrodown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame(), "RIGHT", 10, 0);
+    
+    ArenaAnalyticsScrollFrame.filterBtn_ClearFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.moreFiltersDrodown:GetFrame(), "RIGHT", 10, 0, "Clear", AAtable:GetDropdownTemplate());
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetWidth(50);
 
     -- Clear all filters
@@ -382,15 +375,18 @@ function AAtable:OnLoad()
 
         -- Reset filters UI
         ArenaAnalyticsScrollFrame.searchBox:SetText("");
-        ArenaAnalyticsScrollFrame.filterBracketDropdown:Reset();
-        AAtable:forceCompFilterRefresh();
+        ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh("ClearFilters");
+        AAtable:ForceRefreshFilterDropdowns("OnLoad");
+
+        -- Refresh active dropdowns
+        Dropdown:RefreshAll("ClearFilters");
         
         Filters:RefreshFilters();
         CloseDropDownMenus();
     end);
     
     -- Active Filters text count
-    ArenaAnalyticsScrollFrame.activeFilterCountText = ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:CreateFontString(nil, "OVERLAY")
+    ArenaAnalyticsScrollFrame.activeFilterCountText = ArenaAnalyticsScrollFrame.moreFiltersDrodown:GetFrame():CreateFontString(nil, "OVERLAY")
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetPoint("BOTTOM", ArenaAnalyticsScrollFrame.filterBtn_ClearFilters, "TOP", 0, 5);
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
@@ -398,6 +394,10 @@ function AAtable:OnLoad()
     Filters:RefreshFilters(function()
         AAtable:UpdateSelected();
     end);
+    
+    hasLoaded = true;
+
+    ArenaAnalytics.AAtable:handleArenaCountChanged();
 
     AAtable:OnShow();
 end
@@ -571,7 +571,6 @@ end
 
 function AAtable:OnShow()
     AAtable:RefreshLayout();
-    ArenaAnalyticsScrollFrame:Hide();
 end
 
 local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKey, scrollEntry)
@@ -734,73 +733,85 @@ end
 
 -- Create dropdowns for the Comp filters
 function AAtable:createDropdownForFilterComps(isEnemyComp)
-    if(not hasLoaded) then
-        return;
-    end
-
+    -- TODO: Add support for these, and move to new dropdown filter tables!
     local isDisabled = Filters:GetCurrent("Filter_Bracket") == "All";
     local disabledText = "Select bracket to enable filter"
-
-    -- Dropdown data
-    local filter = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
-    local title = isEnemyComp and "Enemy Comp:" or "Comp:";
-    local entries = Filters:getPlayedCompsWithTotalAndWins(isEnemyComp);
-    local default = isDisabled and disabledText or nil;
-
-    local dropdown = ArenaAnalytics.Dropdown:Create(filter, entries, default, title, 235, 25);
-    local parent = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
-    dropdown:SetPoint("LEFT", parent, "RIGHT", 10, 0);
-
+    
+    local config = isEnemyComp and FilterTables.enemyComps or FilterTables.comps;
+    local frameName = isEnemyComp and "FitlerEnemyComp" or "FilterComp";
+    local newDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", frameName, config, 235, 25);
+    local relativeFrame = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
+    newDropdown:SetPoint("LEFT", relativeFrame:GetFrame(), "RIGHT", 10, 0);
+    
     if(isDisabled) then
         -- Set tooltip when comp is disabled
-        dropdown.list:Hide();
-        dropdown.selected:Disable();
+        newDropdown:Hide();
+    --  newDropdown.selected:Disable();
     end
+    
+    local title = isEnemyComp and "Enemy Comp" or "Comp"
+    local info = nil;
+    if(Options:Get("showCompDropdownInfoText")) then
+        info = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
+    end
+    
+    CreateFilterTitle(newDropdown, title, info);
+    
 
     if(isEnemyComp) then
-        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = dropdown;
+        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = newDropdown;
     else
-        ArenaAnalyticsScrollFrame.filterCompsDropdown = dropdown;
+        ArenaAnalyticsScrollFrame.filterCompsDropdown = newDropdown;
     end
 end
 
 -- Forcefully clear and recreate the comp filters for new filters. Optionally staying visible.
-function AAtable:forceCompFilterRefresh(keepVisibility)
-    local wasCompFilterVisible, wasEnemyCompFilterVisible = false, false
+function AAtable:ForceRefreshFilterDropdowns(debugContext)
+    local useNew = true;
+    
+    if(useNew) then
+        ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh((debugContext or "") .. " -> ForceRefresh");
+        ArenaAnalyticsScrollFrame.filterCompsDropdown:Refresh((debugContext or "") .. " -> ForceRefresh");
+        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Refresh((debugContext or "") .. " -> ForceRefresh");
 
-    -- Clear existing comp frame
-    if(ArenaAnalyticsScrollFrame.filterCompsDropdown and ArenaAnalyticsScrollFrame.filterCompsDropdown.list) then
-        wasCompFilterVisible = ArenaAnalyticsScrollFrame.filterCompsDropdown.list:IsShown();
-        ArenaAnalyticsScrollFrame.filterCompsDropdown:Hide();
+    else -- DEPRECATED
+
+        local wasCompFilterVisible, wasEnemyCompFilterVisible = false, false
+
+        -- Clear existing comp frame
+        if(ArenaAnalyticsScrollFrame.filterCompsDropdown and ArenaAnalyticsScrollFrame.filterCompsDropdown.list) then
+            wasCompFilterVisible = ArenaAnalyticsScrollFrame.filterCompsDropdown.list:IsShown();
+            ArenaAnalyticsScrollFrame.filterCompsDropdown:Hide();
+            ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
+        end
         ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
-    end
-    ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
-    
-    -- Clear existing enemy comp frame
-    if(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown ~= nil and ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list) then
-        wasEnemyCompFilterVisible = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list:IsShown();
-        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Hide();
-        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = nil;
-    end
-    ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
-    
-    -- Create updated frames (Friendly first!)
-    AAtable:createDropdownForFilterComps(false); -- isEnemyComp == false
-    AAtable:createDropdownForFilterComps(true);
+        
+        -- Clear existing enemy comp frame
+        if(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown ~= nil and ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list) then
+            wasEnemyCompFilterVisible = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list:IsShown();
+            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Hide();
+            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = nil;
+        end
+        ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
+        
+        -- Create updated frames (Friendly first!)
+        AAtable:createDropdownForFilterComps(false); -- isEnemyComp == false
+        AAtable:createDropdownForFilterComps(true);
 
-    -- Update visibility to match previous visibility, if desired
-    if(keepVisibility == true) then
-        if (wasCompFilterVisible == true) then
-            ArenaAnalyticsScrollFrame.filterCompsDropdown:ShowDropdown();
+        -- Update visibility to match previous visibility, if desired
+        if(keepVisibility == true) then
+            if (wasCompFilterVisible == true) then
+                ArenaAnalyticsScrollFrame.filterCompsDropdown:ShowDropdown();
+            end
+
+            if(wasEnemyCompFilterVisible == true) then
+                ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:ShowDropdown();
+            end
         end
 
-        if(wasEnemyCompFilterVisible == true) then
-            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:ShowDropdown();
+        if(ArenaAnalyticsScrollFrame.moreFiltersDrodown ~= nil) then
+            ArenaAnalyticsScrollFrame.moreFiltersDrodown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame(), "RIGHT", 10, 0);
         end
-    end
-
-    if(ArenaAnalyticsScrollFrame.filterBtn_MoreFilters ~= nil) then
-        ArenaAnalyticsScrollFrame.filterBtn_MoreFilters:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown, "RIGHT", 10, 0);
     end
 end
 
@@ -847,8 +858,8 @@ function AAtable:handleArenaCountChanged()
 
     ArenaAnalytics.Options:TriggerStateUpdates()
 
+    ArenaAnalytics:UpdateCurrentCompData();
     AAtable:RefreshLayout();
-    AAtable:forceCompFilterRefresh();
 
     if(not ArenaAnalytics:HasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
         ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
@@ -876,10 +887,12 @@ function AAtable:handleArenaCountChanged()
     local _, expired = ArenaAnalytics:GetLatestSession();
     local sessionText = expired and "Last session: " or "Current session: ";
     sessionText = colorText(sessionText, bottomStatsPrefixColor);
-    local sessionStats = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
-    local sessionWinsColoured =  "|cff00cc66" .. sessionWins .. "|r";
-    local sessionLossesColoured =  "|cffff0000" .. (sessionGames - sessionWins) .. "|r";
-    ArenaAnalyticsScrollFrame.sessionStats:SetText(sessionText .. sessionGames .. " arena" .. (sessionGames ~= 1 and "s" or "") .. "   " .. sessionWinsColoured .. " / " .. sessionLossesColoured .. "  " .. sessionStats .. "% Winrate");
+    local winrateText = sessionGames > 0 and math.floor(sessionWins * 100 / sessionGames) or 0;
+    local winsText =  "|cff00cc66" .. sessionWins .. "|r";
+    local lossesText =  "|cffff0000" .. (sessionGames - sessionWins) .. "|r";
+
+    local arenaText = " arena" .. (sessionGames ~= 1 and "s" or "");
+    ArenaAnalyticsScrollFrame.sessionStats:SetText(sessionText .. sessionGames .. arenaText .. "   " .. winsText .. " / " .. lossesText .. "  " .. winrateText .. "% Winrate");
 
     -- Update the 
     local totalArenas = #ArenaAnalytics.filteredMatchHistory;

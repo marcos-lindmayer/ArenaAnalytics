@@ -235,7 +235,7 @@ local function CreateCompEntryButton(frameName, dropdown, filter, width, height,
 end
 
 -- Create the dropdown frame
-function Dropdown:Create(filter, entries, selectedText, title, width, entryHeight)
+function Dropdown:Create_DEPRECATED(filter, entries, selectedText, title, width, entryHeight)
     assert(filter);
 
     entries = entries or {}
@@ -277,29 +277,6 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
     dropdown.list:SetScrollChild(dropdown.list.content);
     dropdown.list.content:SetSize(width, entryHeight * #entries);
 
-    -- Setup Title (Optional)
-    if title then
-        dropdown.title = dropdown:CreateFontString(nil, "OVERLAY");
-        dropdown.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-        dropdown.title:SetPoint("TOPLEFT", 0, 15);
-        dropdown.title:SetText(title);
-
-        if(isCompDropdown) then
-            dropdown.title.details = dropdown:CreateFontString(nil, "OVERLAY");
-            dropdown.title.details:SetFont("Fonts\\FRIZQT__.TTF", 8.25, "");
-            dropdown.title.details:SetPoint("TOPRIGHT", -4, 13);
-
-            local details = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate"
-            dropdown.title.details:SetText(details);
-
-            if(Options:Get("showCompDropdownInfoText")) then
-                dropdown.title.details:Show();
-            else
-                dropdown.title.details:Hide();
-            end
-        end
-    end
-
     -- Selected (main) button for this dropdown
     dropdown.selected = CreateButton(dropdownName .. "_selected", dropdown, nil, width, entryHeight, (selectedText or ""));
     dropdown.selected:SetPoint("CENTER");
@@ -310,13 +287,13 @@ function Dropdown:Create(filter, entries, selectedText, title, width, entryHeigh
             -- Clear all filters related to this
             Filter:ResetToDefault(filter, true);
             dropdown.selected:SetText(Filter:GetCurrentDisplay(filter));
-            ArenaAnalytics.AAtable:closeFilterDropdowns();
+            --ArenaAnalytics.AAtable:closeFilterDropdowns();
         else
             local dropdown = frame:GetAttribute("dropdown")
             if (dropdown.list:IsShown()) then
                 dropdown.list:Hide();
             else
-                ArenaAnalytics.AAtable:closeFilterDropdowns();
+                --ArenaAnalytics.AAtable:closeFilterDropdowns();
                 dropdown:ShowDropdown();
             end
         end
