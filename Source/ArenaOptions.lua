@@ -12,10 +12,10 @@ local API = ArenaAnalytics.API;
 
 -- TODO: Consider making some settings character specific (For cases like one char having lots of games desiring different comp filter limits)
 -- User settings
-ArenaAnalyticsSettings = ArenaAnalyticsSettings and ArenaAnalyticsSettings or {};
+ArenaAnalyticsSettings = ArenaAnalyticsSettings or {};
 
 -- Unused.
-ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings and ArenaAnalyticsCharacterSettings or {}
+ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings or {}
 
 local defaults = {};
 
@@ -24,7 +24,9 @@ local function AddSetting(setting, default)
     assert(setting ~= nil);
     assert(default ~= nil, "Nil values for settings are not supported.");
 
-    ArenaAnalyticsSettings[setting] = ArenaAnalyticsSettings[setting] ~= nil and ArenaAnalyticsSettings[setting] or default;
+    if(ArenaAnalyticsSettings[setting] == nil) then
+        ArenaAnalyticsSettings[setting] = default;
+    end
     assert(ArenaAnalyticsSettings[setting] ~= nil);
 
     -- Cache latest defaults
@@ -122,7 +124,7 @@ function Options:Set(setting, value)
         if(value == nil) then
             assert(defaults[setting] ~= nil);        
             value = defaults[setting];
-        end        
+        end
 
         local oldValue = ArenaAnalyticsSettings[setting];
         ArenaAnalyticsSettings[setting] = value;
@@ -222,7 +224,7 @@ local function CreateButton(setting, parent, x, width, text, func)
     assert(type(func) == "function");
 
     -- Create the button
-    local button = CreateFrame("Button", "ArenaAnalyticsButton_" .. (setting or text or ""), parent, AAtable:GetDropdownTemplate())
+    local button = CreateFrame("Button", "ArenaAnalyticsButton_" .. (setting or text or ""), parent, "UIPanelButtonTemplate");
     
     -- Set the button's position
     button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
@@ -372,18 +374,21 @@ function SetupTab_Filters()
     CreateSpace();
     
     parent.compFilterSortByTotal = CreateCheckbox("showCompDropdownInfoText", parent, offsetX, "Show info text by comp dropdown titles.", function()
-        if(ArenaAnalyticsScrollFrame.filterCompsDropdown) then
+        local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
+        if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
             if(Options:Get("showCompDropdownInfoText")) then
-                ArenaAnalyticsScrollFrame.filterCompsDropdown.title.details:Show();
+                dropdownFrame.title.info:Show();
             else
-                ArenaAnalyticsScrollFrame.filterCompsDropdown.title.details:Hide();
+                dropdownFrame.title.info:Hide();
             end
         end
-        if(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown) then
+
+        dropdownFrame = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown;
+        if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
             if(Options:Get("showCompDropdownInfoText")) then
-                ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.title.details:Show();
+                dropdownFrame.title.info:Show();
             else
-                ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.title.details:Hide();
+                dropdownFrame.title.info:Hide();
             end
         end
     end);
@@ -393,13 +398,16 @@ function SetupTab_Filters()
     parent.compFilterSortByTotal = CreateCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
     parent.showSelectedCompStats = CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
     parent.compFilterSortByTotal = CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
-        local details = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
-        if(ArenaAnalyticsScrollFrame.filterCompsDropdown) then
-            ArenaAnalyticsScrollFrame.filterCompsDropdown.title.details:SetText(details);
+        local info = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
+        
+        local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
+        if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
+            dropdownFrame.title.info:SetText(info);
         end
-
-        if(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown) then
-            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.title.details:SetText(details);
+        
+        dropdownFrame = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown;
+        if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
+            dropdownFrame.title.info:SetText(info);
         end
     end);
 

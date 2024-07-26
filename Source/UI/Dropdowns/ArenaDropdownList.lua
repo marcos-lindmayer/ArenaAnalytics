@@ -2,7 +2,6 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Dropdown = ArenaAnalytics.Dropdown;
 
 -- Setup local subclass
-Dropdown.List = {};
 local List = Dropdown.List;
 List.__index = List;
 
@@ -12,8 +11,8 @@ List.verticalPadding = 5;
 List.horizontalPadding = 3;
 List.maxVisibleEntries = 10;
 
-function List:Create(parent, level, width, height, entries)
-    assert(entries ~= nil, "Assertion failed: nil entries list");
+function List:Create(parent, level, listInfo)
+    assert(listInfo ~= nil and listInfo.entries, "Assertion failed: Invalid list info.");
 
     local self = setmetatable({}, List);
 
@@ -21,11 +20,13 @@ function List:Create(parent, level, width, height, entries)
     self.parent = parent;
     self.level = level;
 
-    self.width = width;
-    self.height = height;
-    self.maxHeight = height * List.maxVisibleEntries + List.verticalPadding * 2;
+    -- nil width calculates desired width dynamically
+    self.explicitWidth = listInfo.meta.width or nil; 
 
-    self.entries = entries;
+    self.entryHeight = listInfo.meta.height or listInfo.meta.entryHeight or 20;
+    self.maxHeight = self.entryHeight * List.maxVisibleEntries + List.verticalPadding * 2;
+
+    self.entries = listInfo.entries;
 
     self.backdrop = CreateFrame("Frame", self.name, parent:GetOwner(), "TooltipBackdropTemplate");
     self.backdrop:SetSize(1, 1);
@@ -83,7 +84,7 @@ function List:Refresh(debugContext)
     self.entryFrames = {}
 
     -- Add new entries
-    self:AddEntries(entries, self.width);
+    self:AddEntries(entries);
     
     Dropdown:AddActiveDropdown(self.level, self);
     
@@ -91,15 +92,17 @@ function List:Refresh(debugContext)
     self.scrollFrame:UpdateScrollChildRect(); -- Ensure the scroll child rect is updated
 end
 
-function List:AddEntries(entries, width)
+function List:AddEntries(entries)
     assert(entries, "Assert failed: Nil entries.");
 
+    local width = self.explicitWidth or self:GetWidth();
+
     local accumulatedHeight = List.verticalPadding * 2;
-    local longestEntryWidth = width or 0;
+    local longestEntryWidth = width; -- Cannot be smaller than explicit width
     local lastFrame = nil;
 
     for i, entry in ipairs(entries) do 
-        local entryFrame = Dropdown.EntryFrame:Create(self, i, width - 10, 20, entry);
+        local entryFrame = Dropdown.EntryFrame:Create(self, i, self.explicitWidth, self.entryHeight, entry);
 
         if(not lastFrame) then
             entryFrame:SetPoint("TOP", self.scrollFrame.content, "TOP", 2, -List.verticalPadding);
@@ -117,11 +120,11 @@ function List:AddEntries(entries, width)
         table.insert(self.entryFrames, entryFrame);
     end
 
-    local desiredWidth = Round(max(width, longestEntryWidth));
-    if(width ~= desiredWidth) then
-        for _,entry in ipairs(self.entryFrames) do
-            entry:SetWidth(longestEntryWidth);
-        end
+    local desiredBuffer = (self.explicitWidth ~= nil) and 0 or 15;
+    local desiredWidth = ceil(max(width, longestEntryWidth)) + desiredBuffer;
+
+    for _,entry in ipairs(self.entryFrames) do
+        entry:SetWidth(desiredWidth);
     end
 
     self.scrollFrame.content:SetHeight(accumulatedHeight);
@@ -215,10 +218,18 @@ function List:SetPoint(...)
     return self.backdrop:SetPoint(...);
 end
 
+function List:GetSize()
+    return self.backdrop:GetSize();
+end
+
 function List:SetSize(width, height)
-    self.backdrop:SetSize(width, min(height, self.maxHeight));
-    self.scrollFrame:SetSize(width - List.horizontalPadding*2, self.backdrop:GetHeight()-10);
+    self.backdrop:SetSize(width+5, min(height, self.maxHeight));
+    self.scrollFrame:SetSize(self.backdrop:GetWidth() - List.horizontalPadding*2, self.backdrop:GetHeight()-10);
     self.scrollFrame.content:SetWidth(self.scrollFrame:GetWidth());
+end
+
+function List:GetWidth()
+    return self.backdrop:GetWidth();
 end
 
 ---------------------------------

@@ -23,13 +23,15 @@ local function GenerateSeasonData()
             label = "All",
             key = "Filter_Season",
             onClick = FilterTables.SetFilterValue,
-            checked = FilterTables.IsFilterEntryChecked
+            checked = FilterTables.IsFilterEntryChecked,
+            alignment = "CENTER",
         },
         {
             label = "Current Season",
             key = "Filter_Season",
             onClick = FilterTables.SetFilterValue,
-            checked = FilterTables.IsFilterEntryChecked
+            checked = FilterTables.IsFilterEntryChecked,
+            alignment = "LEFT",
         }
     }
 
@@ -51,10 +53,11 @@ local function GenerateSeasonData()
         for _,expansion in ipairs(expansions) do
             if(expansion[2] == season) then
                 -- Add expansion title
-                -- TODO: Implement title entries    
+                -- TODO: Implement title entries
                 table.insert(seasons, {
                     label = expansion[1],
                     fontColor = "FFD100",
+                    alignment = "LEFT",
                 });
                 break;
             end
@@ -62,6 +65,7 @@ local function GenerateSeasonData()
 
         table.insert(seasons, {
             label = "Season " .. season,
+            alignment = "LEFT",
             value = season,
             key = "Filter_Season",
             onClick = FilterTables.SetFilterValue,
@@ -72,13 +76,15 @@ local function GenerateSeasonData()
     return seasons
 end
 
-local dates = {"All Time" , "Current Session", "Last Day", "Last Week", "Last Month", "Last 3 Months", "Last 6 Months", "Last Year"};
 local function GenerateDateEntries(dates)
     local dateTable = {}
 
     for _,date in ipairs(dates) do
+        assert(date and date ~= "", "Invalid Date in dates table.");
+
         tinsert(dateTable, {
-            label = date or "???",
+            label = date,
+            alignment = "LEFT",
             key = "Filter_Date",
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
@@ -91,10 +97,14 @@ end
 local function GenerateMapEntries(maps)
     local mapTable = {}
 
-    for _,map in ipairs(maps) do
+    for _,data in ipairs(maps) do
+        assert(data and data.name ~= "", "Invalid map in available maps table.");
+
         tinsert(mapTable, {
-            label = map or "???",
+            label = data.name,
+            alignment = "LEFT",
             key = "Filter_Map",
+            value = data.key,
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
         });
@@ -114,14 +124,18 @@ local function OnMainButtonClicked(dropdownContext, btn)
 end
 
 function FilterTables:Init_MoreFilters()
+    local dates = {"All Time" , "Current Session", "Last Day", "Last Week", "Last Month", "Last 3 Months", "Last 6 Months", "Last Year"};
+
     FilterTables.moreFilters = {
         mainButton = {
             label = "More Filters",
+            alignment = "CENTER",
             onClick = OnMainButtonClicked,
         },
         entries = {
             {
                 label = "Season",
+                alignment = "LEFT",
                 key = "Filter_Season",
                 nested = GenerateSeasonData,
                 onClick = FilterTables.ResetFilterValue,
@@ -129,6 +143,7 @@ function FilterTables:Init_MoreFilters()
             },
             {
                 label = "Date",
+                alignment = "LEFT",
                 key = "Filter_Date",
                 nested = GenerateDateEntries(dates), -- Generate immediately (Static)
                 onClick = FilterTables.ResetFilterValue,
@@ -136,17 +151,12 @@ function FilterTables:Init_MoreFilters()
             },
             {
                 label = "Maps",
+                alignment = "LEFT",
                 key = "Filter_Map",
-                nested = {
-                    { label = "All",                key = "Filter_Map",                 onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
-                    { label = "Nagrand Arena",      key = "Filter_Map", value = "NA",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
-                    { label = "Blade's Edge Arena", key = "Filter_Map", value = "BEA",  onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
-                    { label = "Dalaran Arena",      key = "Filter_Map", value = "DA",   onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked },
-                    { label = "Ruins of Lordaeron", key = "Filter_Map", value = "RoL",  onClick = FilterTables.SetFilterValue,   checked = FilterTables.IsFilterEntryChecked }
-                },
+                nested = GenerateMapEntries(API.availableMaps),
                 onClick = FilterTables.ResetFilterValue,
                 checked = FilterTables.IsFilterActive,
             },
-        }
+        },        
     }
 end

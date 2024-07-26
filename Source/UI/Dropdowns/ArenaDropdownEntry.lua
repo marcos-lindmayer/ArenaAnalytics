@@ -2,9 +2,11 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Dropdown = ArenaAnalytics.Dropdown;
 
 -- Setup local subclass
-Dropdown.EntryFrame = {};
 local EntryFrame = Dropdown.EntryFrame;
 EntryFrame.__index = EntryFrame;
+
+-- Local module aliases
+local Display = ArenaAnalytics.Dropdown.Display;
 
 -------------------------------------------------------------------------
 
@@ -27,11 +29,16 @@ function EntryFrame:Create(parent, index, width, height, config)
     self.name = (parent:GetName() .. "Entry") .. (index and index or "");
 
     -- Temp for nested list
-    self.width = width;
+    self.width = max(1, max(width or 0, parent:GetWidth()) - 5);
+
     self.height = height;
 
     -- Config
     self:SetConfig(config);
+
+    -- Initiate display
+    self.displayFunc = config.displayFunc;
+    self.display = Display:Create(self, self.displayFunc);
 
     -- Setup button
     self.btn = CreateFrame("Button", self.name, parent:GetFrame());
@@ -40,7 +47,7 @@ function EntryFrame:Create(parent, index, width, height, config)
     self.btn:SetNormalFontObject("GameFontHighlight");
     self.btn:SetHighlightFontObject("GameFontHighlight");
     self.btn:SetDisabledFontObject("GameFontDisableSmall");
-    self.btn:SetSize(width, height);
+    self.btn:SetSize(self.width, height);
     self.btn:SetText("");
     
 
@@ -87,7 +94,6 @@ function EntryFrame:SetConfig(config)
     self.label = config.label;
     self.key = config.key;
     self.value = config.value or config.label;
-    self.displayFunc = config.displayFunc or Dropdown.SetTextDisplay;
     self.nested = config.nested;
     
     self.onClick = config.onClick;
@@ -108,11 +114,9 @@ function EntryFrame:CreateNestedList()
     if(self.nested ~= nil) then
         local parent = self.parent;
 
-        nested = Dropdown:RetrieveValue(self.nested, self);
-        assert(nested and #nested > 0);
-
-        local newDropdown = Dropdown.List:Create(self, parent.level + 1, self.width, self.height, nested);
-        newDropdown:SetPoint("TOPLEFT", self:GetFrame(), "TOPRIGHT", 0, 5 + Dropdown.List.verticalPadding);
+        local listInfo = Dropdown:MakeListInfoTable(self.nested, self);
+        local newDropdown = Dropdown.List:Create(self, parent.level + 1, listInfo);
+        newDropdown:SetPoint("TOPLEFT", self:GetFrame(), "TOPRIGHT", -4.5, 5 + Dropdown.List.verticalPadding);
         newDropdown:Show();
     end
 end
@@ -123,10 +127,10 @@ function EntryFrame:Refresh(debugContext)
     self:UpdateCheckbox();
     self:UpdateNestedArrow();
 
-    Dropdown:CallSetDisplay(self);
+    self.display:Refresh();
 
-    local desiredWidth = max(self.width, self:ComputeRequiredWidth());
-    self:SetWidth(desiredWidth)
+    local desiredWidth = max(self.width, self:ComputeMinimumWidth());
+    self:SetWidth(desiredWidth);
 end
 
 function EntryFrame:UpdateCheckbox()
@@ -134,7 +138,7 @@ function EntryFrame:UpdateCheckbox()
         if(not self.checkbox) then
             self.checkbox = self.btn:CreateTexture(nil, "OVERLAY");
             self.checkbox:SetTexture("Interface\\Common\\UI-DropDownRadioChecks");
-            self.checkbox:SetPoint("LEFT", self.btn, "LEFT", 2, 0);
+            self.checkbox:SetPoint("LEFT", self.btn, "LEFT", 5, 0);
             self.checkbox:SetSize(16, 16);
             self.checkbox:Show();
         end
@@ -154,7 +158,7 @@ function EntryFrame:UpdateNestedArrow()
     if(self.nested ~= nil) then
         self.arrow = self.btn:CreateTexture(nil, "OVERLAY");
         self.arrow:SetTexture("Interface\\ChatFrame\\ChatFrameExpandArrow");
-        self.arrow:SetPoint("RIGHT", self.btn, "RIGHT", -2, 0);
+        self.arrow:SetPoint("RIGHT", self.btn, "RIGHT", -4, 0);
         self.arrow:SetSize(16, 16);
         self.arrow:Show();
     else
@@ -162,22 +166,11 @@ function EntryFrame:UpdateNestedArrow()
     end
 end
 
-function EntryFrame:ComputeRequiredWidth()
-    local minimumWidth = 20; -- Minimum padding
-
-    -- Checkbox
-    if(self.checkbox) then
-        minimumWidth = minimumWidth + self.checkbox:GetWidth() + 4;
-    end
-
-    -- Nested arrow
-    if(self.arrow) then
-        minimumWidth = minimumWidth + self.arrow:GetWidth() + 4;
-    end
+function EntryFrame:ComputeMinimumWidth()
+    local minimumWidth = self:GetCheckboxWidth() + self:GetArrowWidth() + 0;
 
     -- Display Width
     if(self.display) then
-        assert(self.display.GetWidth, "Dropdown display must support GetWidth()");
         minimumWidth = minimumWidth + self.display:GetWidth();
     end
 
@@ -208,6 +201,22 @@ end
 
 function EntryFrame:GetDropdownType()
     return self.parent:GetDropdownType();
+end
+
+function EntryFrame:GetCheckboxWidth()
+    if(self.checkbox) then
+        local offsetX = select(4, self.checkbox:GetPoint());
+        return self.checkbox:GetWidth() + abs(offsetX);
+    end
+    return 0;
+end
+
+function EntryFrame:GetArrowWidth()
+    if(self.arrow) then        
+        local offsetX = select(4, self.arrow:GetPoint());
+        return self.arrow:GetWidth() + abs(offsetX);
+    end
+    return 0;
 end
 
 ---------------------------------

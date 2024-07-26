@@ -194,7 +194,7 @@ function Constants:getSpecPriorityValue(specID)
     return tonumber(specID) or 0
 end
 
-function Constants:getClassAndSpec(specID)
+function Constants:GetClassAndSpec(specID)
     local data = classAndSpecByID[tonumber(specID)];
     if (not data) then 
         ArenaAnalytics:Log("Failed to find spec for ID: ", specID)
@@ -352,7 +352,7 @@ function ArenaAnalyticsGetClassIcon(className)
 end
 
 -- Returns spec icon path string
-function ArenaAnalyticsGetSpecIcon(spec, class)
+function ArenaAnalyticsGetSpecIcon(class, spec)
     if(spec ~= nil) then
         if (spec == "Subtlety") then
             return [[Interface\Icons\ability_stealth]];
@@ -419,6 +419,23 @@ function ArenaAnalyticsGetSpecIcon(spec, class)
         end
     end
 	return "";
+end
+
+local mapsList = {
+    [562] = "BEA", -- Blade's Edge Arena
+    [572] = "RoL", -- Ruins of Lordaeron
+    [559] = "NA", -- Nagrand Arena
+    [4406] = "RoV", -- Ring of Valor
+    [617] = "DA", -- Dalaran Arena
+}
+
+function Constants:GetMapKeyByID(id)
+    if(id == nil) then
+        return nil;
+    end
+
+    assert(mapsList[id]);
+    return mapsList[id];
 end
 
 function ArenaAnalytics:getBracketFromTeamSize(teamSize)

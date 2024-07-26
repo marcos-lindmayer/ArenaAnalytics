@@ -6,8 +6,14 @@ ArenaAnalytics.SpecSpells = {};
 
 ArenaAnalytics.AAtable = {};
 ArenaAnalytics.Selection = {};
-ArenaAnalytics.Dropdown = {};
 ArenaAnalytics.Tooltips = {};
+ArenaAnalytics.ArenaIcon = {};
+
+ArenaAnalytics.Dropdown = {};
+ArenaAnalytics.Dropdown.List = {};
+ArenaAnalytics.Dropdown.Button = {};
+ArenaAnalytics.Dropdown.EntryFrame = {};
+ArenaAnalytics.Dropdown.Display = {};
 
 ArenaAnalytics.Options = {};
 ArenaAnalytics.AAmatch = {};

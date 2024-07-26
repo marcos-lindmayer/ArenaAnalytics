@@ -6,6 +6,19 @@ local API = ArenaAnalytics.API;
 
 API.defaultButtonTemplate = "UIServiceButtonTemplate";
 
+API.availableBrackets = {
+	{ name = "2v2", key = "2v2"},
+	{ name = "3v3", key = "3v3"},
+	{ name = "5v5", key = "5v5"},
+};
+
+API.availableMaps = {
+	{ name = "Blade's Edge Arena", key = "BEA"},
+	{ name = "Dalaran Arena", key = "DA"},
+	{ name = "Nagrand Arena", key = "NA"},
+	{ name = "Ruins of Lordaeron", key = "RoL"},
+};
+
 -- Get local player current spec
 function API:GetMySpec()
     local spec = nil
@@ -22,13 +35,4 @@ function API:GetMySpec()
 	spec = spec == "Feral Combat" and "Feral" or spec
 
     return spec;
-end
-
--- Get Wrath Brackets
-function API:GetBrackets()
-	return { 
-		{ name = "2v2", key = "2v2"},
-		{ name = "3v3", key = "3v3"},
-		{ name = "5v5", key = "5v5"},
-	};
 end

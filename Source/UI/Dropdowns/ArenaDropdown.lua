@@ -37,51 +37,6 @@ function Dropdown:RetrieveValue(valueOrFunc, contextFrame)
     return valueOrFunc;
 end
 
-function Dropdown:CallSetDisplay(dropdownContext)
-    if(dropdownContext and dropdownContext.displayFunc) then
-        dropdownContext.displayFunc(dropdownContext);
-        
-        if(dropdownContext.display) then
-            assert(dropdownContext.display.GetWidth, "Assertion failed: Dropdown display must support GetWidth(). Context: ", dropdownContext:GetName());
-        end
-    end
-end
-
-function Dropdown.SetTextDisplay(dropdownContext)
-    assert(dropdownContext);
-    --ArenaAnalytics:Log(dropdownContext:GetName(), "had its display set!");
-
-    local label = Dropdown:RetrieveValue(dropdownContext.label, dropdownContext);
-    assert(label);
-
-    label = label:gsub("|", "||");
-
-    local hex = dropdownContext.fontColor;
-    if(hex) then
-        label = "|cff" .. hex .. label .. "|r";
-        ArenaAnalytics:Log(label);
-    end
-
-    if(true) then
-        dropdownContext.btn:SetText(label);
-        return;
-    end
-
-    local size = dropdownContext.fontSize;
-    local offsetX = dropdownContext.offsetX or 0;
-    local alignment = dropdownContext.alignment or "LEFT";
-
-    if(dropdownContext.checkbox) then
-        offsetX = offsetX + dropdownContext.checkbox:GetWidth();
-    end
-
-    dropdownContext.display = dropdownContext:GetFrame():CreateFontString(nil, "OVERLAY");
-    dropdownContext.display:SetFont("Fonts\\FRIZQT__.TTF", size or 12, "");
-    dropdownContext.display:SetPoint(alignment, offsetX + 5, 0);
-    dropdownContext.display:SetText(label);
-
-end
-
 ---------------------------------
 -- Active Dropdowns
 ---------------------------------
@@ -175,11 +130,6 @@ function Dropdown:Create(parent, dropdownType, frameName, config, width, height)
     self.type = dropdownType;
 
     self.entries = config.entries;
-    self.listInfo = self:MakeListInfoTable(config.entries);
-
-    -- Update meta data, if any was explicitly provided
-    self.listInfo.meta.width = width or self.listInfo.width;
-    self.listInfo.meta.height = height or self.listInfo.height;
 
     -- Setup the button 
     if(config.mainButton ~= nil) then
@@ -265,6 +215,10 @@ function Dropdown:SetPoint(...)
     self.frame:SetPoint(...);
 end
 
+function Dropdown:GetWidth()
+    return self.frame:GetWidth();
+end
+
 ---------------------------------
 -- Visibility
 ---------------------------------
@@ -283,7 +237,13 @@ end
 
 function Dropdown:Show()
     if(not self:IsShown()) then
-        self.list = Dropdown.List:Create(self, 1, self.width, self.height, self.entries);
+        local listInfo = self:MakeListInfoTable(self.entries);
+
+        -- Update meta data, if any was explicitly provided
+        listInfo.meta.width = self.width or self.listInfo.width;
+        listInfo.meta.height = self.height or self.listInfo.height;
+
+        self.list = Dropdown.List:Create(self, 1, listInfo);
         self.list:SetPoint("TOP", self.selected:GetFrame(), "BOTTOM");
         self.list:Show();
     end

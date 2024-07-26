@@ -4,6 +4,10 @@ local Export = ArenaAnalytics.Export;
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
+local Filters = ArenaAnalytics.Filters;
+local Constants = ArenaAnalytics.Constants;
+local AAtable = ArenaAnalytics.AAtable;
+local AAmatch = ArenaAnalytics.AAmatch;
 
 -------------------------------------------------------------------------
 
@@ -138,7 +142,7 @@ end
 function Import:reset()
     ArenaAnalyticsScrollFrame.importDialogFrame.button:Enable();
     ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText("");
-    ArenaAnalytics.AAtable:RefreshLayout(true);
+    AAtable:RefreshLayout(true);
 
     cachedValues = {};
     cachedArenas = {};
@@ -496,7 +500,7 @@ function Import:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
             ["isRated"] = arena["isRated"],
             ["date"] = unixDate,
             ["season"] = ArenaAnalytics:computeSeasonFromMatchDate(unixDate),
-            ["map"] = ArenaAnalytics.AAmatch:getMapNameById(tonumber(arena["zoneId"])), 
+            ["map"] = Constants:GetMapKeyByID(tonumber(arena["zoneId"])), 
             ["bracket"] = bracket,
             ["duration"] = tonumber(arena["duration"]) or 0,
             ["team"] = group,
@@ -507,8 +511,8 @@ function Import:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
             ["enemyRating"] = tonumber(arena["enemyNewTeamRating"]), 
             ["enemyRatingDelta"] = tonumber(arena["enemyDiffRating"]),
             ["enemyMmr"] = tonumber(arena["enemyMmr"]),
-            ["comp"] = ArenaAnalytics.AAmatch:getArenaComp(group, bracket),
-            ["enemyComp"] = ArenaAnalytics.AAmatch:getArenaComp(enemyGroup, bracket),
+            ["comp"] = AAmatch:getArenaComp(group, bracket),
+            ["enemyComp"] = AAmatch:getArenaComp(enemyGroup, bracket),
             ["won"] = arena["teamColor"] == arena["winnerColor"] and true or false,
             ["firstDeath"] = nil,
             ["importInfo"] = {"ArenaStats", (existingArenaCount > 0 and true or false)} -- Import Source, isMergeImport
@@ -541,7 +545,7 @@ function Import:createGroupTable_ArenaStats(arena, groupType, size)
                 ["name"] = name or "",
                 ["kills"] = nil,
                 ["deaths"] = nil,
-                ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
+                ["faction"] = Constants:GetFactionByRace(race),
                 ["race"] = race,
                 ["class"] = isDK and "Death Knight" or class and string.lower(class):gsub("^%l", string.upper) or nil,
                 ["damage"] = nil,
@@ -733,8 +737,8 @@ function Import:addCachedArenasToMatchHistory_ArenaAnalytics(nextIndex)
             ["enemyRating"] = tonumber(cachedArena["enemyRating"]), 
             ["enemyRatingDelta"] = tonumber(cachedArena["enemyRatingDelta"]),
             ["enemyMmr"] = tonumber(cachedArena["enemyMmr"]),
-            ["comp"] = ArenaAnalytics.AAmatch:getArenaComp(team, cachedArena["bracket"]),
-            ["enemyComp"] = ArenaAnalytics.AAmatch:getArenaComp(enemyTeam, cachedArena["bracket"]),
+            ["comp"] = AAmatch:getArenaComp(team, cachedArena["bracket"]),
+            ["enemyComp"] = AAmatch:getArenaComp(enemyTeam, cachedArena["bracket"]),
             ["won"] = cachedArena["won"],
             ["firstDeath"] = cachedArena["firstDeath"] ~= "" and cachedArena["firstDeath"] or nil,
             ["importInfo"] = {"ArenaAnalytics", (existingArenaCount > 0 and true or false)} -- Import Source, isMergeImport
@@ -768,7 +772,7 @@ function Import:completeImport()
     ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
     ArenaAnalytics:UpdateLastSession();
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
-    ArenaAnalytics.Filters:RefreshFilters();
+    Filters:RefreshFilters();
     
     ArenaAnalytics:Print("Import complete. " .. (#MatchHistoryDB - existingArenaCount) .. " arenas added!");
     ArenaAnalytics:Log("Import ignored", arenasSkippedByDate, "arenas due to their date.");
@@ -788,7 +792,7 @@ function Import:createGroupTable_ArenaAnalytics(arena, groupType, size)
                 ["name"] = name,
                 ["kills"] = arena[groupType ..  i .. "Kills"],
                 ["deaths"] = arena[groupType ..  i .. "Deaths"],
-                ["faction"] = ArenaAnalytics.Constants:GetFactionByRace(race),
+                ["faction"] = Constants:GetFactionByRace(race),
                 ["race"] = race,
                 ["class"] = class,
                 ["damage"] = arena[groupType ..  i .. "Damage"],
@@ -919,7 +923,7 @@ function Export:FinalizeExportCSV(exportTable)
 
     -- Show export with the new CSV string
     if (ArenaAnalytics:HasStoredMatches()) then
-        ArenaAnalytics.AAtable:CreateExportDialogFrame();
+        AAtable:CreateExportDialogFrame();
         ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetText(table.concat(exportTable, "\n"));
 	    ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:HighlightText();
         

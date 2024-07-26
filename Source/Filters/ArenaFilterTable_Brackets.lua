@@ -13,11 +13,10 @@ FilterTables.brackets = { }
 local function AddBracket(bracket)
     tinsert(FilterTables.brackets.entries, {
         label = bracket.name or bracket,
+        alignment = "CENTER",
         key = "Filter_Bracket",
         value = bracket.key,
-        alignment = "CENTER",
         onClick = FilterTables.SetFilterValue,
-        checked = FilterTables.IsFilterEntryChecked,
     })
 end
 
@@ -25,6 +24,7 @@ function FilterTables:Init_Brackets()
     FilterTables.brackets = { 
         mainButton = {
             label = FilterTables.GetCurrentFilterValue,
+            alignment = "CENTER",
             key = "Filter_Bracket",
             onClick = FilterTables.ResetFilterValue,
         },
@@ -33,7 +33,7 @@ function FilterTables:Init_Brackets()
 
     AddBracket("All");
     
-    local brackets = API.GetBrackets() or {};
+    local brackets = API.availableBrackets or {};
     for _,bracket in ipairs(brackets) do
         AddBracket(bracket);
     end

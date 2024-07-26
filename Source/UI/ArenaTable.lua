@@ -78,7 +78,7 @@ function AAtable:getCompIconString(comp, isPlayerPriority)
     local classTable = { }
 
     comp:gsub("([^|]+)", function(specID)
-        local class, spec = ArenaAnalytics.Constants:getClassAndSpec(specID);
+        local class, spec = ArenaAnalytics.Constants:GetClassAndSpec(specID);
 
         if(specID and class and spec) then
             tinsert(classTable, {specID, class, spec});
@@ -133,10 +133,10 @@ function AAtable:getCompIconString(comp, isPlayerPriority)
 end
 
 -- Returns string frame
-function ArenaAnalyticsCreateText(relativeFrame, anchor, refFrame, relPoint, xOff, yOff, text, fontSize)
-    local fontString = relativeFrame:CreateFontString(nil, "OVERLAY");
+function ArenaAnalyticsCreateText(parent, anchor, relativeFrame, relPoint, xOff, yOff, text, fontSize)
+    local fontString = parent:CreateFontString(nil, "OVERLAY");
     fontString:SetFont("Fonts\\FRIZQT__.TTF", fontSize or 12, "");
-    fontString:SetPoint(anchor, refFrame, relPoint, xOff, yOff);
+    fontString:SetPoint(anchor, relativeFrame, relPoint, xOff, yOff);
     fontString:SetText(text);
     return fontString
 end
@@ -196,15 +196,21 @@ local function CreateFilterTitle(filterFrame, title, info, offsetX, size)
 
     if(info) then
         filterFrame.title.info = filterFrame:CreateFontString(nil, "OVERLAY");
-        filterFrame.title.info:SetFont("Fonts\\FRIZQT__.TTF", 8.25, "");
-        filterFrame.title.info:SetPoint("TOPRIGHT", -5, 12);
+        filterFrame.title.info:SetFont("Fonts\\FRIZQT__.TTF", 8, "");
+        filterFrame.title.info:SetPoint("TOPRIGHT", -5, 11);
 
         filterFrame.title.info:SetText("|cffbbbbbb" .. info .. "|r");
+
+        if(not Options:Get("showCompDropdownInfoText")) then
+            filterFrame.title.info:Hide();
+        end
     end
 end
 
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
+    ArenaAnalytics:UpdateCurrentCompData();
+
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
     
     ArenaAnalyticsScrollFrame.filterCompsDropdown = {}
@@ -270,7 +276,7 @@ function AAtable:OnLoad()
 
     -- Filter Bracket Dropdown
     ArenaAnalyticsScrollFrame.filterBracketDropdown = nil;
-    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(ArenaAnalyticsScrollFrame, "Simple", "FilterBracket", FilterTables.brackets, 65, 25);
+    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(ArenaAnalyticsScrollFrame, "Simple", "FilterBracket", FilterTables.brackets, 55, 25);
     ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);
 
     CreateFilterTitle(ArenaAnalyticsScrollFrame.filterBracketDropdown, "Bracket");
@@ -397,7 +403,7 @@ function AAtable:OnLoad()
     
     hasLoaded = true;
 
-    ArenaAnalytics.AAtable:handleArenaCountChanged();
+    ArenaAnalytics.AAtable:handleArenaCountChanged(true);
 
     AAtable:OnShow();
 end
@@ -591,8 +597,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
 
             if (playerFrame.texture == nil) then
                 -- No textures? Set them
-                local teamTexture = playerFrame:CreateTexture();
-                playerFrame.texture = teamTexture
+                playerFrame.texture = playerFrame:CreateTexture();
                 playerFrame.texture:SetPoint("LEFT", playerFrame ,"RIGHT", -26, 0);
                 playerFrame.texture:SetSize(26,26)
             end
@@ -630,7 +635,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
                     playerFrame.specOverlay.texture:SetTexture(nil);
                 end
 
-                local specIcon = spec and ArenaAnalyticsGetSpecIcon(spec, class) or nil;
+                local specIcon = spec and ArenaAnalyticsGetSpecIcon(class, spec) or nil;
                 playerFrame.specOverlay.texture:SetTexture(specIcon);
 
                 if (not Options:Get("alwaysShowSpecOverlay")) then
@@ -850,7 +855,7 @@ function AAtable:checkUnsavedWarningThreshold()
 end
 
 -- Updates the displayed data for a new match
-function AAtable:handleArenaCountChanged()
+function AAtable:handleArenaCountChanged(isLoadCall)
     if(not hasLoaded) then
         -- Load will trigger call soon
         return;
@@ -858,8 +863,11 @@ function AAtable:handleArenaCountChanged()
 
     ArenaAnalytics.Options:TriggerStateUpdates()
 
-    ArenaAnalytics:UpdateCurrentCompData();
-    AAtable:RefreshLayout();
+    if(not isLoadCall) then
+        ArenaAnalytics:UpdateCurrentCompData();
+        AAtable:ForceRefreshFilterDropdowns();
+        AAtable:RefreshLayout();
+    end
 
     if(not ArenaAnalytics:HasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
         ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
@@ -1041,6 +1049,8 @@ function AAtable:RefreshLayout()
     local totalHeight = #ArenaAnalytics.filteredMatchHistory * buttonHeight;
     local shownHeight = #buttons * buttonHeight;
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
+
+	AAtable:ForceRefreshFilterDropdowns();
 end
 
 ----------------------------------------------------------------------------------------------------------------------------

@@ -54,13 +54,17 @@ function Filters:Set(filter, value)
     assert(filter and currentFilters[filter]);
     value = value or Filters:GetDefault(filter);
 
+    if(value == currentFilters[filter]) then
+        return;
+    end
+
     -- Reset comp filters when bracket filter changes
     if (filter == "Filter_Bracket") then
         Filters:Reset("Filter_Comp");
         Filters:Reset("Filter_EnemyComp");
     end
 
-    ArenaAnalytics:Log("Setting filter:", filter, "to value:", value);
+    ArenaAnalytics:Log("Setting filter:", filter, "to value:", (value and value:gsub("|", "||") or "nil"));
     currentFilters[filter] = value;
     
     Filters:RefreshFilters();
@@ -68,9 +72,8 @@ end
 
 function Filters:Reset(filter, skipOverrides)
     assert(currentFilters[filter] and defaults[filter], "Invalid filter: " .. (filter and filter or "nil"));
-    currentFilters[filter] = Filters:GetDefault(filter, skipOverrides);
-
-    Filters:RefreshFilters();
+    local default = Filters:GetDefault(filter, skipOverrides);
+    Filters:Set(filter, default);
 end
 
 -- Clearing filters, optionally keeping filters explicitly applied through options
@@ -371,7 +374,7 @@ function Filters:RefreshFilters_OLD()
     end
 
     -- This will also call AAtable:ForceRefreshFilterDropdowns()
-    ArenaAnalytics.AAtable:handleArenaCountChanged("RefreshFilters_OLD");
+    ArenaAnalytics.AAtable:handleArenaCountChanged();
 end
 
 -- TODO: Fix up this, to support multi-frame refreshing
@@ -396,8 +399,7 @@ function Filters:RefreshFilters(onCompleteFunc)
             end
         end
     
-        -- This will also call AAtable:ForceRefreshFilterDropdowns()
-        ArenaAnalytics.AAtable:handleArenaCountChanged("RefreshFilters")
+        ArenaAnalytics.AAtable:handleArenaCountChanged();
 
         if(onCompleteFunc) then
             onCompleteFunc();

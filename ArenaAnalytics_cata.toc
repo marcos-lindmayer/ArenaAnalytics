@@ -22,6 +22,7 @@ Source/UI/ArenaTable.lua
 Source/UI/ArenaMatchSelection.lua
 Source/UI/ArenaTooltips.lua
 Source/UI/ArenaScrollableDropdown.lua
+Source/UI/ArenaIcon.lua
 
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaSpecSpells_Cata.lua
@@ -47,5 +48,6 @@ Source/UI/Dropdowns/ArenaDropdown.lua
 Source/UI/Dropdowns/ArenaDropdownList.lua
 Source/UI/Dropdowns/ArenaDropdownEntry.lua
 Source/UI/Dropdowns/ArenaDropdownButton.lua
+Source/UI/Dropdowns/ArenaDropdownDisplay.lua
 
 Source/UI/Dropdowns/ArenaDropdownTest.lua

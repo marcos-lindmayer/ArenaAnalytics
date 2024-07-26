@@ -2,11 +2,11 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Dropdown = ArenaAnalytics.Dropdown;
 
 -- Setup local subclass
-Dropdown.Button = {};
 local Button = Dropdown.Button;
 Button.__index = Button;
 
 -- Local module aliases
+local Display = Dropdown.Display;
 local API = ArenaAnalytics.API;
 local AAtable = ArenaAnalytics.AAtable;
 
@@ -38,8 +38,10 @@ function Button:Create(parent, width, height, config)
     self.label = config.label;
     self.key = config.key;
     self.value = config.value or config.label;
-    self.displayFunc = config.displayFunc or Dropdown.SetTextDisplay;
     self.onClick = config.onClick;
+
+    self.displayFunc = config.displayFunc;
+    self.display = Display:Create(self, self.displayFunc);
 
     self.alignment = config.alignment;
     
@@ -81,7 +83,7 @@ function Button:Refresh(debugContext)
         --ArenaAnalytics:Print("Refreshing ", self:GetName(), " for context: ", debugContext);
     end
 
-    Dropdown:CallSetDisplay(self);
+    self.display:Refresh();
 end
 
 ---------------------------------
@@ -106,6 +108,16 @@ end
 
 function Button:GetDropdownType()
     return parent:GetDropdownType();
+end
+
+
+function Button:GetCheckboxWidth()
+    return 0; -- Display expects this function on parent
+end
+
+
+function Button:GetArrowWidth()
+    return 0; -- Display expects this function on parent
 end
 
 ---------------------------------

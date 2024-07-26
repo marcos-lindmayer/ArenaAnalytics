@@ -70,7 +70,7 @@ local function GenerateSeasonData()
 end
 
 local function AddTestEntry(label)
-    if(false) then
+    if(true) then
         return {
             label = label,
             key = "Filter_Map",
