@@ -236,8 +236,8 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
 
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
-    ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 32, -44);
-    ArenaAnalyticsScrollFrame.searchBox:SetSize(220, 25);
+    ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 35, -44);
+    ArenaAnalyticsScrollFrame.searchBox:SetSize(225, 25);
     ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
     ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(1024);
 
@@ -306,7 +306,7 @@ function AAtable:OnLoad()
     end);
 
     -- Table headers
-    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 28, -75, "Date");
+    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, -75, "Date");
     ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
     ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
     ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 118, 0, "Team");
@@ -738,10 +738,6 @@ end
 
 -- Create dropdowns for the Comp filters
 function AAtable:createDropdownForFilterComps(isEnemyComp)
-    -- TODO: Add support for these, and move to new dropdown filter tables!
-    local isDisabled = Filters:GetCurrent("Filter_Bracket") == "All";
-    local disabledText = "Select bracket to enable filter"
-    
     local config = isEnemyComp and FilterTables.enemyComps or FilterTables.comps;
     local frameName = isEnemyComp and "FitlerEnemyComp" or "FilterComp";
     local newDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", frameName, config, 235, 25);

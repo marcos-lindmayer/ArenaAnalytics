@@ -16,6 +16,7 @@ function Display:Create(parent, displayFunc)
     assert(parent);
     assert(parent.GetCheckboxWidth, "Dropdown Display parent must include GetCheckboxWidth()!");
     assert(parent.GetArrowWidth, "Dropdown Display parent must include GetArrowWidth()!");
+    assert(not displayFunc or type(displayFunc) == "function");
     
     local self = setmetatable({}, Display);
 
@@ -32,8 +33,10 @@ end
 
 function Display:Refresh()
     self:Reset();
-    
-    if(type(self.displayFunc) == "function") then
+
+    if(self.parent:IsDisabled()) then
+        Display.SetDisabledText(self.parent, self)
+    elseif(self.displayFunc) then
         self.displayFunc(self.parent, self);
     else
         Display.SetText(self.parent, self)
@@ -104,6 +107,44 @@ function Display:GetWidth()
 end
 
 -------------------------------------------------------------------------
+-- Helpers
+
+local function CreateText(parent, text, size, color)
+    local fontString = parent:CreateFontString(nil, "OVERLAY");
+    fontString:SetFont("Fonts\\FRIZQT__.TTF", size or 12, "");
+    fontString:SetText("|cff" .. color .. text .. "|r");
+    return fontString;
+end
+
+-------------------------------------------------------------------------
+-- Disabled Text Display
+
+function Display.SetDisabledText(dropdownContext, display)
+    assert(dropdownContext and display);
+    display:Reset();
+
+    local label = Dropdown:RetrieveValue(dropdownContext.disabledText, dropdownContext);
+    local fontSize = dropdownContext.disabledSize or dropdownContext.fontSize or 10;
+    local fontColor = dropdownContext.disabledColor or "888888";
+
+    local fontString = CreateText(dropdownContext:GetFrame(), label, fontSize, fontColor);
+
+    local offsetX = 0;
+    if(dropdownContext.alignment) then
+        local desiredPadding = 3;
+
+        if(dropdownContext.alignment == "LEFT") then
+            offsetX = desiredPadding;
+        elseif(dropdownContext.alignment == "RIGHT") then
+            offsetX = -desiredPadding;
+        end
+    end
+
+    display:AddFrame(fontString, dropdownContext.alignment, offsetX);
+end
+
+
+-------------------------------------------------------------------------
 -- Simple Text Display
 
 function Display.SetText(dropdownContext, display)
@@ -111,10 +152,10 @@ function Display.SetText(dropdownContext, display)
     display:Reset();
 
     local label = Dropdown:RetrieveValue(dropdownContext.label, dropdownContext);
+    local fontSize = dropdownContext.fontSize or 12;
+    local fontColor = dropdownContext.fontColor or "ffffff";
 
-    local fontString = dropdownContext:GetFrame():CreateFontString(nil, "OVERLAY");
-    fontString:SetFont("Fonts\\FRIZQT__.TTF", fontSize or 12, "");
-    fontString:SetText(label);
+    local fontString = CreateText(dropdownContext:GetFrame(), label, fontSize, fontColor);
 
     local offsetX = 0;
 
@@ -140,12 +181,14 @@ function Display.SetComp(dropdownContext, display)
     display:Reset();
     
     local comp = Dropdown:RetrieveValue(dropdownContext.label, dropdownContext);
+    local fontSize = dropdownContext.fontSize or 12;
+    local fontColor = dropdownContext.disabledColor or "ffffff";
 
     local padding = 1;
     
     -- Create container
     local containerFrame = CreateFrame("Frame", display:GetName() .. "CompContainer", dropdownContext:GetFrame());
-    containerFrame:SetSize(10, 26);
+    containerFrame:SetSize(10, 27);
     
     local totalWidth = 0;
     local offsetX = 0;
@@ -154,8 +197,8 @@ function Display.SetComp(dropdownContext, display)
 
     -- Construct the container contents
     if(comp == "All") then
-        containerFrame.text = ArenaAnalyticsCreateText(containerFrame, "LEFT", containerFrame, "LEFT", 0, 0, comp, 12);
-        containerFrame.text:SetPoint("LEFT", containerFrame, "LEFT", 0, 0);
+        containerFrame.text = CreateText(containerFrame, comp, fontSize, fontColor);
+        containerFrame.text:SetPoint("LEFT", 0, 0);
         
         local width = containerFrame.text:GetWidth() 
         totalWidth = totalWidth + width;
@@ -163,15 +206,20 @@ function Display.SetComp(dropdownContext, display)
         -- Get data
         local played = tonumber(compData.played);
         local winrate = tonumber(compData.winrate);
+
+        if(played and played > 9999) then
+            fontSize = min(fontSize, 10);
+        end
         
         local lastFrame = nil
         
         -- Add played text
         local playedPrefix = played and (played .. " ") or "|cffff0000" .. "0  " .. "|r";
-        containerFrame.played = ArenaAnalyticsCreateText(containerFrame, "LEFT", containerFrame, "LEFT", 0, 0, playedPrefix, 11);
-        totalWidth = totalWidth + containerFrame.played:GetWidth() + padding;
+        containerFrame.played = CreateText(containerFrame, playedPrefix, fontSize, fontColor);
+        containerFrame.played:SetPoint("LEFT", padding, 0);
         
         lastFrame = containerFrame.played;
+        totalWidth = totalWidth + containerFrame.played:GetWidth() + padding;
         
         -- Add each player spec icon
         for specID in comp:gmatch("([^|]+)") do
@@ -183,11 +231,13 @@ function Display.SetComp(dropdownContext, display)
             totalWidth = totalWidth + iconFrame:GetWidth() + padding;
         end
         
-        -- TODO: Add played text
+        -- Add winrate text
         local winrateSuffix = winrate and (" " .. winrate .. "%") or "|cffff0000" .. "  0%" .. "|r";
-        containerFrame.winrate = ArenaAnalyticsCreateText(lastFrame, "LEFT", lastFrame, "RIGHT", 0, 0, winrateSuffix, 11);
-        totalWidth = totalWidth + containerFrame.winrate:GetWidth() + padding;
+        containerFrame.winrate = CreateText(containerFrame, winrateSuffix, fontSize, fontColor);
+        containerFrame.winrate:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0);
+
         lastFrame = containerFrame.winrate;
+        totalWidth = totalWidth + containerFrame.winrate:GetWidth() + padding;
         
         -- Calculate alignment offset
         local prefixWidth = containerFrame.played:GetWidth();
@@ -201,12 +251,12 @@ function Display.SetComp(dropdownContext, display)
         if(mmr) then
             local averageMMR = mmr and "|cffcccccc" .. mmr .. "|r" or ""
 
-            local mmrText = ArenaAnalyticsCreateText(dropdownContext:GetFrame(), "RIGHT", dropdownContext:GetFrame(), "RIGHT", -5, 0, averageMMR, 8.5);
-            display:AddFrame(mmrText, "RIGHT", -7);
+            local mmrText = ArenaAnalyticsCreateText(dropdownContext:GetFrame(), "RIGHT", dropdownContext:GetFrame(), "RIGHT", -5, 0, averageMMR, 8);
+            display:AddFrame(mmrText, "RIGHT", -10);
         end
 
         -- Move off center to make room for mmr
-        totalWidth = totalWidth + 7;
+        totalWidth = totalWidth + 5;
     end
 
     containerFrame:SetWidth(totalWidth);

@@ -33,8 +33,13 @@ function Button:Create(parent, width, height, config)
     -- Temp for nested list
     self.width = width;
     self.height = height;
-
+    
     -- Config
+    self.disabled = config.disabled;
+    self.disabledText = config.disabledText;
+    self.disabledColor = config.disabledColor;
+    self.disabledSize = config.disabledSize;
+
     self.label = config.label;
     self.key = config.key;
     self.value = config.value or config.label;
@@ -73,14 +78,16 @@ function Button:Create(parent, width, height, config)
 
     end);
 
-    self:Refresh("Button:Create");
+    self:Refresh();
 
     return self;
 end
 
-function Button:Refresh(debugContext)
-    if(self:GetName() == "FilterCompDropdownButton") then  
-        --ArenaAnalytics:Print("Refreshing ", self:GetName(), " for context: ", debugContext);
+function Button:Refresh()    
+    if(self:IsDisabled()) then
+        self.btn:Disable();
+    else
+        self.btn:Enable();
     end
 
     self.display:Refresh();
@@ -110,6 +117,19 @@ function Button:GetDropdownType()
     return parent:GetDropdownType();
 end
 
+function Button:IsDisabled()
+    if(self.disabled ~= nil) then
+        return Dropdown:RetrieveValue(self.disabled, self);
+    end
+    return false;
+end
+
+function Button:GetDisabledText()
+    if(self.disabledText ~= nil) then
+        return Dropdown:RetrieveValue(self.disabledText, self);
+    end
+    return "Disabled";
+end    
 
 function Button:GetCheckboxWidth()
     return 0; -- Display expects this function on parent

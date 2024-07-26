@@ -67,11 +67,11 @@ function EntryFrame:Create(parent, index, width, height, config)
         end
 
         -- Refresh all active dropdowns
-        Dropdown:RefreshAll("EntryFrame:Create");
+        Dropdown:RefreshAll();
 
         local selectedFrame = self:GetSelectedFrame();
         if(selectedFrame and selectedFrame.Refresh) then
-            selectedFrame:Refresh("EntryFrame:Create Selected");
+            selectedFrame:Refresh();
         end
     end);
 
@@ -85,21 +85,28 @@ function EntryFrame:Create(parent, index, width, height, config)
         self.highlight:Hide();
     end);
     
-    self:Refresh("EntryFrame:Create");
+    self:Refresh();
 
     return self;
 end
 
 function EntryFrame:SetConfig(config)
+    self.isTitle = config.isTitle;
+
     self.label = config.label;
     self.key = config.key;
     self.value = config.value or config.label;
     self.nested = config.nested;
     
-    self.onClick = config.onClick;
-
-    self.checked = config.checked;
     self.disabled = config.disabled;
+    self.disabledText = config.disabledText;
+    self.disabledColor = config.disabledColor;
+    self.disabledSize = config.disabledSize;
+    
+    self.onClick = config.onClick;
+    
+    self.checked = config.checked;
+    
 
     self.alignment = config.alignment;
     self.offsetX = config.offsetX;
@@ -121,8 +128,12 @@ function EntryFrame:CreateNestedList()
     end
 end
 
-function EntryFrame:Refresh(debugContext)
-    --ArenaAnalytics:Log("Refreshing ", self:GetName(), " for context: ", debugContext);
+function EntryFrame:Refresh()
+    if(self:IsDisabled() or self.isTitle) then
+        self.btn:Disable();
+    else
+        self.btn:Enable();
+    end
 
     self:UpdateCheckbox();
     self:UpdateNestedArrow();
@@ -202,6 +213,20 @@ end
 function EntryFrame:GetDropdownType()
     return self.parent:GetDropdownType();
 end
+
+function EntryFrame:IsDisabled()
+    if(self.disabled ~= nil) then
+        return Dropdown:RetrieveValue(self.disabled, self);
+    end
+    return false;
+end
+
+function EntryFrame:GetDisabledText()
+    if(self.disabledText ~= nil) then
+        return Dropdown:RetrieveValue(self.disabledText, self);
+    end
+    return "Disabled";
+end    
 
 function EntryFrame:GetCheckboxWidth()
     if(self.checkbox) then

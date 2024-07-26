@@ -32,9 +32,8 @@ function FilterTables.SetFilterValue(dropdownContext, btn)
     else
         Filters:Set(dropdownContext.key, (dropdownContext.value or dropdownContext.label));
     end
-
-    Filters:RefreshFilters();
-    dropdownContext:Refresh("FilterTables.SetFilterValue");
+    
+    dropdownContext:Refresh();
 end
 
 function FilterTables.IsFilterEntryChecked(dropdownContext)

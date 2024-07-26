@@ -48,13 +48,11 @@ local function GenerateSeasonData()
     }
 
     for season=1, latestSeason do
-        local seasonText = "Season " .. season;
-
+        -- Add expansion title
         for _,expansion in ipairs(expansions) do
             if(expansion[2] == season) then
-                -- Add expansion title
-                -- TODO: Implement title entries
                 table.insert(seasons, {
+                    isTitle = true,
                     label = expansion[1],
                     fontColor = "FFD100",
                     alignment = "LEFT",

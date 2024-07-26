@@ -64,7 +64,7 @@ function Filters:Set(filter, value)
         Filters:Reset("Filter_EnemyComp");
     end
 
-    ArenaAnalytics:Log("Setting filter:", filter, "to value:", (value and value:gsub("|", "||") or "nil"));
+    ArenaAnalytics:Log("Setting filter:", filter, "to value:", (type(value) == "string" and value:gsub("|", "||") or "nil"));
     currentFilters[filter] = value;
     
     Filters:RefreshFilters();
@@ -377,9 +377,16 @@ function Filters:RefreshFilters_OLD()
     ArenaAnalytics.AAtable:handleArenaCountChanged();
 end
 
--- TODO: Fix up this, to support multi-frame refreshing
+Filters.isRefreshing = nil;
 -- Returns matches applying current match filters
 function Filters:RefreshFilters(onCompleteFunc)
+    if(Filters.isRefreshing) then
+        ArenaAnalytics:Log("Refreshing called while locked. Has onComplete: ", onCompleteFunc ~= nil);
+        return;
+    end
+    Filters.isRefreshing = true;
+    
+
     ArenaAnalytics.filteredMatchHistory = {}
     
     local currentIndex = 1
@@ -404,6 +411,8 @@ function Filters:RefreshFilters(onCompleteFunc)
         if(onCompleteFunc) then
             onCompleteFunc();
         end
+
+        Filters.isRefreshing = nil;
     end
 
     local function ProcessBatch()

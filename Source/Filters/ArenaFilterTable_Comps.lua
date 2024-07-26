@@ -14,6 +14,23 @@ local Display = Dropdown.Display;
 FilterTables.comps = { }
 FilterTables.enemyComps = { }
 
+local function IsDisabled()
+    return not Filters:IsFilterActive("Filter_Bracket");
+end
+
+local function MakeMainButtonTable(key)
+    return {
+        label = FilterTables.GetCurrentFilterValue,
+        displayFunc = Display.SetComp,
+        disabled = IsDisabled,
+        disabledText = "Select bracket to enable filter",
+        disabledSize = 9,
+        alignment = "CENTER",
+        key = key,
+        onClick = FilterTables.ResetFilterValue,
+    };
+end
+
 local function AddEntry(entryTable, comp, filterKey)
     tinsert(entryTable, {
         label = comp,
@@ -38,24 +55,12 @@ end
 
 function FilterTables:Init_Comps()
     FilterTables.comps = {
-        mainButton = {
-            label = FilterTables.GetCurrentFilterValue,
-            displayFunc = Display.SetComp,
-            alignment = "CENTER",
-            key = "Filter_Comp",
-            onClick = FilterTables.ResetFilterValue,
-        },
+        mainButton = MakeMainButtonTable("Filter_Comp"),
         entries = function() return GenerateCompEntries("Filter_Comp") end,
     }
 
     FilterTables.enemyComps = {
-        mainButton = {
-            label = FilterTables.GetCurrentFilterValue,
-            displayFunc = Display.SetComp,
-            alignment = "CENTER",
-            key = "Filter_EnemyComp",
-            onClick = FilterTables.ResetFilterValue,
-        },
+        mainButton = MakeMainButtonTable("Filter_EnemyComp"),
         entries = function() return GenerateCompEntries("Filter_EnemyComp") end,
     }
 end
