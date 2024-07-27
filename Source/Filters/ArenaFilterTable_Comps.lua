@@ -38,7 +38,7 @@ local function AddEntry(entryTable, comp, filterKey)
         alignment = "CENTER",
         key = filterKey,
         onClick = FilterTables.SetFilterValue,
-    })
+    });
 end
 
 local function GenerateCompEntries(key)

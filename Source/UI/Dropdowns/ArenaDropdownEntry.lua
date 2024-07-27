@@ -106,7 +106,6 @@ function EntryFrame:SetConfig(config)
     self.onClick = config.onClick;
     
     self.checked = config.checked;
-    
 
     self.alignment = config.alignment;
     self.offsetX = config.offsetX;
@@ -123,7 +122,7 @@ function EntryFrame:CreateNestedList()
 
         local listInfo = Dropdown:MakeListInfoTable(self.nested, self);
         local newDropdown = Dropdown.List:Create(self, parent.level + 1, listInfo);
-        newDropdown:SetPoint("TOPLEFT", self:GetFrame(), "TOPRIGHT", -4.5, 5 + Dropdown.List.verticalPadding);
+        newDropdown:SetPoint("TOPLEFT", self:GetFrame(), "TOPRIGHT", -2.5, 5 + Dropdown.List.verticalPadding);
         newDropdown:Show();
     end
 end

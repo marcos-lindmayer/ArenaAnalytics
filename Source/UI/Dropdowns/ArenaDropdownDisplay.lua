@@ -58,14 +58,13 @@ function Display:AddFrame(frame, alignment, offsetX)
 
     assert(frame);
 
+    alignment = alignment or self.parent.alignment or "CENTER";
     offsetX = tonumber(offsetX) or 0;
 
     if(alignment == "LEFT") then
         offsetX = offsetX + self.parent:GetCheckboxWidth();
     elseif(Alignment == "RIGHT") then
         offsetX = offsetX - self.parent:GetArrowWidth()
-    else -- Assign default value, in case it wasn't already set
-        alignment = self.parent.alignment or "CENTER";
     end
 
     frame:SetParent(self.parent:GetFrame());
@@ -110,11 +109,15 @@ end
 -- Helpers
 
 local function CreateText(parent, text, size, color)
+    color = color or "ffffff";
+    size = size or 12;
+
     local fontString = parent:CreateFontString(nil, "OVERLAY");
-    fontString:SetFont("Fonts\\FRIZQT__.TTF", size or 12, "");
+    fontString:SetFont("Fonts\\FRIZQT__.TTF", size, "");
     fontString:SetText("|cff" .. color .. text .. "|r");
     return fontString;
 end
+
 
 -------------------------------------------------------------------------
 -- Disabled Text Display
@@ -129,17 +132,7 @@ function Display.SetDisabledText(dropdownContext, display)
 
     local fontString = CreateText(dropdownContext:GetFrame(), label, fontSize, fontColor);
 
-    local offsetX = 0;
-    if(dropdownContext.alignment) then
-        local desiredPadding = 3;
-
-        if(dropdownContext.alignment == "LEFT") then
-            offsetX = desiredPadding;
-        elseif(dropdownContext.alignment == "RIGHT") then
-            offsetX = -desiredPadding;
-        end
-    end
-
+    local offsetX = dropdownContext.offsetX or 0;
     display:AddFrame(fontString, dropdownContext.alignment, offsetX);
 end
 
@@ -157,17 +150,8 @@ function Display.SetText(dropdownContext, display)
 
     local fontString = CreateText(dropdownContext:GetFrame(), label, fontSize, fontColor);
 
-    local offsetX = 0;
-
-    if(dropdownContext.alignment) then
-        local desiredPadding = 3;
-
-        if(dropdownContext.alignment == "LEFT") then
-            offsetX = desiredPadding;
-        elseif(dropdownContext.alignment == "RIGHT") then
-            offsetX = -desiredPadding;
-        end
-    end
+    local alignment = dropdownContext.alignment or "CENTER";
+    local offsetX = dropdownContext.offsetX or 0;
 
     display:AddFrame(fontString, dropdownContext.alignment, offsetX);
 end
@@ -191,7 +175,7 @@ function Display.SetComp(dropdownContext, display)
     containerFrame:SetSize(10, 27);
     
     local totalWidth = 0;
-    local offsetX = 0;
+    local offsetX = dropdownContext.offsetX or 0;
 
     local compData = ArenaAnalytics:GetCurrentCompData(dropdownContext.key, comp) or {}
 
@@ -249,10 +233,9 @@ function Display.SetComp(dropdownContext, display)
     if(Options:Get("compDisplayAverageMmr")) then        
         local mmr = tonumber(compData.mmr);
         if(mmr) then
-            local averageMMR = mmr and "|cffcccccc" .. mmr .. "|r" or ""
-
-            local mmrText = ArenaAnalyticsCreateText(dropdownContext:GetFrame(), "RIGHT", dropdownContext:GetFrame(), "RIGHT", -5, 0, averageMMR, 8);
-            display:AddFrame(mmrText, "RIGHT", -10);
+            --local mmrText = ArenaAnalyticsCreateText(dropdownContext:GetFrame(), "RIGHT", dropdownContext:GetFrame(), "RIGHT", -5, 0, averageMMR, 8);
+            local mmrText = CreateText(dropdownContext:GetFrame(), mmr, 8, "cccccc");
+            display:AddFrame(mmrText, "RIGHT", -7);
         end
 
         -- Move off center to make room for mmr
@@ -260,12 +243,6 @@ function Display.SetComp(dropdownContext, display)
     end
 
     containerFrame:SetWidth(totalWidth);
-
-    -- TODO: Remove TEMP background
-    containerFrame.background = containerFrame:CreateTexture();
-    containerFrame.background:SetPoint("CENTER")
-    containerFrame.background:SetSize(containerFrame:GetWidth(), containerFrame:GetHeight());
-    containerFrame.background:SetColorTexture(1, 0, 0, 0);
 
     display:AddFrame(containerFrame, "CENTER", offsetX);
 end

@@ -52,6 +52,8 @@ function List:Create(parent, level, listInfo)
     self.scrollFrame:SetScript("OnScrollRangeChanged", function(scrollFrame)
         self:UpdateScrollbarMinMax();
     end);
+
+    self.backdrop:SetScript("OnEnter", function() end);
     
     self.entryFrames = {}
     self:Refresh("List:Create");
@@ -105,7 +107,7 @@ function List:AddEntries(entries)
         local entryFrame = Dropdown.EntryFrame:Create(self, i, self.explicitWidth, self.entryHeight, entry);
 
         if(not lastFrame) then
-            entryFrame:SetPoint("TOP", self.scrollFrame.content, "TOP", 2, -List.verticalPadding);
+            entryFrame:SetPoint("TOP", self.scrollFrame.content, "TOP", 0, -List.verticalPadding);
         else
             entryFrame:SetPoint("TOP", lastFrame, "BOTTOM");
         end

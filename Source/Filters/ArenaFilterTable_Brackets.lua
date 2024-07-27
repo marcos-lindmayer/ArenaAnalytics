@@ -14,6 +14,7 @@ local function AddBracket(bracket)
     tinsert(FilterTables.brackets.entries, {
         label = bracket.name or bracket,
         alignment = "CENTER",
+        fontSize = 12,
         key = "Filter_Bracket",
         value = bracket.key,
         onClick = FilterTables.SetFilterValue,
@@ -25,6 +26,7 @@ function FilterTables:Init_Brackets()
         mainButton = {
             label = FilterTables.GetCurrentFilterValue,
             alignment = "CENTER",
+            fontSize = 12,
             key = "Filter_Bracket",
             onClick = FilterTables.ResetFilterValue,
         },

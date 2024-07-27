@@ -35,20 +35,7 @@ function Button:Create(parent, width, height, config)
     self.height = height;
     
     -- Config
-    self.disabled = config.disabled;
-    self.disabledText = config.disabledText;
-    self.disabledColor = config.disabledColor;
-    self.disabledSize = config.disabledSize;
-
-    self.label = config.label;
-    self.key = config.key;
-    self.value = config.value or config.label;
-    self.onClick = config.onClick;
-
-    self.displayFunc = config.displayFunc;
-    self.display = Display:Create(self, self.displayFunc);
-
-    self.alignment = config.alignment;
+    self:SetConfig(config);
     
     self.template = AAtable:GetDropdownTemplate(config.template);
     self.btn = CreateFrame("Button", self.name, parent:GetOwner(), self.template);
@@ -81,6 +68,24 @@ function Button:Create(parent, width, height, config)
     self:Refresh();
 
     return self;
+end
+
+function Button:SetConfig(config)
+    self.disabled = config.disabled;
+    self.disabledText = config.disabledText;
+    self.disabledColor = config.disabledColor;
+    self.disabledSize = config.disabledSize;
+
+    self.label = config.label;
+    self.key = config.key;
+    self.value = config.value or config.label;
+    self.onClick = config.onClick;
+
+    self.displayFunc = config.displayFunc;
+    self.display = Display:Create(self, self.displayFunc);
+
+    self.alignment = config.alignment;
+    self.offsetX = config.offsetX;
 end
 
 function Button:Refresh()    

@@ -20,18 +20,19 @@ local function GenerateSeasonData()
 
     local seasons = {
         {
-            label = "All",
+            label = "All Seasons",
+            alignment = "LEFT",
             key = "Filter_Season",
+            value = "All",
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
-            alignment = "CENTER",
         },
         {
             label = "Current Season",
+            alignment = "LEFT",
             key = "Filter_Season",
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
-            alignment = "LEFT",
         }
     }
 
@@ -54,6 +55,7 @@ local function GenerateSeasonData()
                 table.insert(seasons, {
                     isTitle = true,
                     label = expansion[1],
+                    offsetX = 7,
                     fontColor = "FFD100",
                     alignment = "LEFT",
                 });
