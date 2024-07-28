@@ -29,9 +29,11 @@ ArenaAnalytics.MoreFilters = {};
 ArenaAnalytics.Import = {};
 ArenaAnalytics.Export = {};
 ArenaAnalytics.VersionManager = {};
+ArenaAnalytics.Helpers = {};
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
+local Filters = ArenaAnalytics.Filters;
 local FilterTables = ArenaAnalytics.FilterTables;
 
 -------------------------------------------------------------------------
@@ -154,6 +156,7 @@ ArenaAnalytics.commands = {
 				ArenaAnalytics:Log("Clearing MatchHistoryDB.");
 				MatchHistoryDB = {}
 				ArenaAnalytics.AAtable:tryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
+				
 				ArenaAnalytics.Filters:Refresh();
 				ArenaAnalytics.unsavedArenaCount = 0;
 			end
@@ -162,7 +165,8 @@ ArenaAnalytics.commands = {
 
 	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function()
-		ArenaAnalytics.Dropdown:CreateTest();
+		print(" ");
+		ArenaAnalytics:Print("  ================================================  ");
 	end,	
 };
 
@@ -360,6 +364,8 @@ function ArenaAnalytics:init()
 	---------------------------------
 
 	FilterTables:Init();
+	Options:Init();
+	Filters:Init();
 
 	ArenaAnalytics:UpdateLastSession();
 
@@ -383,10 +389,6 @@ function ArenaAnalytics:init()
 		local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, channel)
 	end
 
-	-- Initialize options menu
-	ArenaAnalytics.Options.Initialize();
-
-	ArenaAnalytics.Filters:ResetAll(false);
 
 	createMinimapButton();
 

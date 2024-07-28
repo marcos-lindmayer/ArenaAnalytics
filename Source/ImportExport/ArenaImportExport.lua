@@ -772,6 +772,7 @@ function Import:completeImport()
     ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
     ArenaAnalytics:UpdateLastSession();
 	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
+    
     Filters:Refresh();
     
     ArenaAnalytics:Print("Import complete. " .. (#MatchHistoryDB - existingArenaCount) .. " arenas added!");
@@ -935,5 +936,5 @@ function Export:FinalizeExportCSV(exportTable)
     end
 
     exportTable = nil;
-    collectgarbage("collect")
+    collectgarbage("collect");
 end

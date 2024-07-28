@@ -53,18 +53,14 @@ function List:Create(parent, level, listInfo)
         self:UpdateScrollbarMinMax();
     end);
 
-    self.backdrop:SetScript("OnEnter", function() end);
-    
+    self.backdrop:SetScript("OnEnter", function()   end); -- Catch mouseover
+
     self.entryFrames = {}
     self:Refresh();
 
     self:Hide();
 
     return self;
-end
-
-function List:SetEntries(entries)
-    
 end
 
 function List:Refresh()
@@ -257,8 +253,6 @@ function List:Hide()
     self.backdrop:Hide();
     self = nil;
 end
-
-
 
 -- TODO: Test this.
 function List:IsMouseOver()

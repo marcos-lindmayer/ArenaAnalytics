@@ -91,17 +91,22 @@ end
 
 function Dropdown:CloseAll(destroy)
     Dropdown:HideActiveDropdownsFromLevel(1, destroy);
+
+    -- Close Blizzard dropdowns
+    CloseDropDownMenus();
 end
 
 function Dropdown:RefreshAll()
     for i = #Dropdown.dropdownLevelFrames, 1, -1 do
-        Dropdown.dropdownLevelFrames[i]:Refresh();
+        if(Dropdown.dropdownLevelFrames[i]:IsShown()) then
+            Dropdown.dropdownLevelFrames[i]:Refresh();
+        end
     end
 end
 
-function Dropdown:MakeListInfoTable(info, context)
-    context = context or self;
-    local retrievedInfo = Dropdown:RetrieveValue(info, context);
+function Dropdown:MakeListInfoTable(info, dropdownContext)
+    dropdownContext = dropdownContext or self;
+    local retrievedInfo = Dropdown:RetrieveValue(info, dropdownContext);
 
     local listInfo = {};
     listInfo.meta = retrievedInfo.meta or {};
@@ -144,6 +149,7 @@ function Dropdown:Create(parent, dropdownType, frameName, config, width, height)
 end
 
 function Dropdown:Refresh()
+    assert(self, "Invalid instance provided. Call Dropdown:RefreshAll() for a static alternative.");
     if(self.selected) then
         self.selected:Refresh();
     end
@@ -223,7 +229,7 @@ end
 ---------------------------------
 
 function Dropdown:IsShown()
-    return self.list and self.list:IsShown();
+    return self.list and self.list:IsShown() or false;
 end
 
 function Dropdown:Toggle()

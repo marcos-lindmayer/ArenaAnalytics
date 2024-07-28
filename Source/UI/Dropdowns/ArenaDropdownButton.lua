@@ -88,7 +88,7 @@ function Button:SetConfig(config)
     self.offsetX = config.offsetX;
 end
 
-function Button:Refresh()    
+function Button:Refresh()
     if(self:IsDisabled()) then
         self.btn:Disable();
     else
@@ -205,4 +205,20 @@ end
 
 function Button:IsShown()
     return self.btn:IsShown();
+end
+
+function Button:ShowList()
+    if(self.parent) then
+        self.parent:Show();
+    end
+end
+
+function Button:HideList()
+    if(self:IsListShown()) then
+        self.parent:Hide();
+    end
+end
+
+function Button:IsListShown()
+    return self.parent and self.parent:IsShown();
 end

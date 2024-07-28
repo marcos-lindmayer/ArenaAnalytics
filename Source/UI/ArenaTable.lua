@@ -29,6 +29,7 @@ local wins, sessionGames, sessionWins = 0, 0, 0;
 function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         ArenaAnalytics.Selection:ClearSelectedMatches();
+
         Filters:Refresh(function()
             AAtable:RefreshLayout();
         end);
@@ -164,16 +165,18 @@ function AAtable:UpdateSelected()
     end
 
     for index in pairs(uniqueSelected) do
-        if(ArenaAnalytics:GetFilteredMatch(index)) then
+        local match = ArenaAnalytics:GetFilteredMatch(index);
+        if(match) then
             selectedGamesCount = selectedGamesCount + 1;
-            if (ArenaAnalytics:GetFilteredMatch(index)["won"]) then
+            if (match["won"]) then
                 selectedWins = selectedWins + 1;
             end
         else
-            ArenaAnalytics:Log("Debug: Updating selected found index: ", index, " not found in filtered match history!")
+            ArenaAnalytics:Log("Updating selected found index: ", index, " not found in filtered match history!");
         end
     end
 
+    -- Update the UI
     local selectedPrefixText = colorText("Selected: ", bottomStatsPrefixColor);
     if (selectedGamesCount > 0) then
         local winrate = math.floor(selectedWins * 100 / selectedGamesCount)
@@ -353,7 +356,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:SetScript("OnDragStart", ArenaAnalyticsScrollFrame.StartMoving)
     ArenaAnalyticsScrollFrame:SetScript("OnDragStop", ArenaAnalyticsScrollFrame.StopMovingOrSizing)
     ArenaAnalyticsScrollFrame:SetScript("OnHide", function()
-        CloseDropDownMenus();
+        Dropdown:CloseAll();
     end);
 
     ArenaAnalyticsScrollFrame:SetScript("OnShow", function()
@@ -374,17 +377,7 @@ function AAtable:OnLoad()
     -- Clear all filters
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() 
         ArenaAnalytics:Log("Clearing filters..");
-
         Filters:ResetAll(IsShiftKeyDown());
-
-        -- Reset filters UI
-        ArenaAnalyticsScrollFrame.searchBox:SetText("");
-        ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh();
-        AAtable:ForceRefreshFilterDropdowns();
-
-        -- Refresh active dropdowns
-        Dropdown:RefreshAll();
-        CloseDropDownMenus();
     end);
     
     -- Active Filters text count
@@ -393,9 +386,9 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetPoint("BOTTOM", ArenaAnalyticsScrollFrame.filterBtn_ClearFilters, "TOP", 0, 5);
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
 
-    Filters:Refresh(function() AAtable:UpdateSelected() end);
-    
     hasLoaded = true;
+    
+    Filters:Refresh();
 
     ArenaAnalytics.AAtable:handleArenaCountChanged(true);
 
@@ -762,6 +755,11 @@ end
 
 -- Forcefully clear and recreate the comp filters for new filters. Optionally staying visible.
 function AAtable:ForceRefreshFilterDropdowns()
+    if(not hasLoaded) then
+        ArenaAnalytics:Log("ForceRefresh called before OnLoad. Skipped.");
+        return;
+    end
+
     ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh();
     ArenaAnalyticsScrollFrame.filterCompsDropdown:Refresh();
     ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Refresh();
@@ -994,8 +992,6 @@ function AAtable:RefreshLayout()
     local totalHeight = #ArenaAnalytics.filteredMatchHistory * buttonHeight;
     local shownHeight = #buttons * buttonHeight;
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
-
-	AAtable:ForceRefreshFilterDropdowns();
 end
 
 ----------------------------------------------------------------------------------------------------------------------------

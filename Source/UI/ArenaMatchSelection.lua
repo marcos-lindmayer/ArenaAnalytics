@@ -141,7 +141,7 @@ local function selectSessionByIndex(index, autoCommit, isDeselect)
     local session = ArenaAnalytics:GetFilteredMatch(index)["session"]
 
     -- Select or deselect the match at the given index using selectMatchByIndex
-    selectMatchByIndex(index, autoCommit, isDeselect)
+    selectMatchByIndex(index, autoCommit, isDeselect);
 
     -- Table with delta values
     local deltas = {-1, 1}
@@ -151,9 +151,9 @@ local function selectSessionByIndex(index, autoCommit, isDeselect)
         local i = index + delta
         local potentialMatch = ArenaAnalytics:GetFilteredMatch(i)
         while potentialMatch and potentialMatch["session"] == session do
-            selectMatchByIndex(i, autoCommit, isDeselect)
-            i = i + delta
-            potentialMatch = ArenaAnalytics:GetFilteredMatch(i)
+            selectMatchByIndex(i, autoCommit, isDeselect);
+            i = i + delta;
+            potentialMatch = ArenaAnalytics:GetFilteredMatch(i);
         end
     end
 end 

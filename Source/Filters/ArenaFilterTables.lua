@@ -32,8 +32,6 @@ function FilterTables.SetFilterValue(dropdownContext, btn)
     else
         Filters:Set(dropdownContext.key, (dropdownContext.value or dropdownContext.label));
     end
-    
-    dropdownContext:Refresh();
 end
 
 function FilterTables.IsFilterEntryChecked(dropdownContext)
@@ -52,7 +50,7 @@ function FilterTables.ResetFilterValue(dropdownContext, btn)
 
     if(btn == "RightButton") then
         Filters:Reset(dropdownContext.key, true);
-        dropdownContext:Refresh();
+        dropdownContext:HideList();
     else
         dropdownContext.parent:Toggle();
     end

@@ -19,12 +19,14 @@ local function AddFilter(filter, default)
     defaults[filter] = default;
 end
 
-AddFilter("Filter_Date", "All Time");
-AddFilter("Filter_Season", "All");
-AddFilter("Filter_Map", "All");
-AddFilter("Filter_Bracket", "All");
-AddFilter("Filter_Comp", "All");
-AddFilter("Filter_EnemyComp", "All");
+function Filters:Init() 
+    AddFilter("Filter_Date", "All Time");
+    AddFilter("Filter_Season", "All");
+    AddFilter("Filter_Map", "All");
+    AddFilter("Filter_Bracket", "All");
+    AddFilter("Filter_Comp", "All");
+    AddFilter("Filter_EnemyComp", "All");
+end
 
 function Filters:IsValidCompKey(compKey)
     return compKey == "Filter_Comp" or compKey == "Filter_EnemyComp";
@@ -64,7 +66,7 @@ function Filters:Set(filter, value)
         Filters:Reset("Filter_EnemyComp");
     end
 
-    ArenaAnalytics:Log("Setting filter:", filter, "to value:", (type(value) == "string" and value:gsub("|", "||") or "nil"));
+    --ArenaAnalytics:Log("Setting filter:", filter, "to value:", (type(value) == "string" and value:gsub("|", "||") or "nil"));
     currentFilters[filter] = value;
     
     Filters:Refresh();
@@ -88,6 +90,7 @@ function Filters:ResetAll(forceDefaults)
     };
 
     ArenaAnalytics.Search:Reset();
+
     Filters:Refresh();
 end
 
@@ -182,7 +185,6 @@ function Filters:SetFilter(filter, value, display)
         currentFilters[filter] = value;
     end
     
-    ArenaAnalytics.Selection:ClearSelectedMatches();
     Filters:Refresh();
 end
 
@@ -305,6 +307,10 @@ end
 
 -- check all filters
 function Filters:DoesMatchPassAllFilters(match, excluded)
+    if(not match) then
+        return false;
+    end
+
     if(not Filters:doesMatchPassGameSettings(match)) then
         return false;
     end
@@ -442,6 +448,43 @@ local function FinalizeCompDataTables(compData)
     end
 end
 
+local function UpdateFilteredSessions()
+    local session = 1
+    for i = #ArenaAnalytics.filteredMatchHistory, 1, -1 do
+        local current = ArenaAnalytics:GetFilteredMatch(i);
+        local prev = ArenaAnalytics:GetFilteredMatch(i - 1);
+
+        current["filteredSession"] = session;
+
+        if not prev or prev["session"] ~= current["session"] then
+            session = session + 1;
+        end
+    end
+end
+
+local function ProcessMatchIndex(index)
+    local match = ArenaAnalytics:GetMatch(index);
+    if(match and Filters:DoesMatchPassAllFilters(match, "comps")) then
+        local doesPassComp = doesMatchPassFilter_Comp(match, false);
+        local doesPassEnemyComp = doesMatchPassFilter_Comp(match, true);
+
+        if(Filters:IsFilterActive("Filter_Bracket")) then
+            if(doesPassEnemyComp) then
+                AddToCompData("Filter_Comp", match);
+            end
+            
+            if(doesPassComp) then
+                AddToCompData("Filter_EnemyComp", match);
+            end
+        end
+
+        if(doesPassComp and doesPassEnemyComp) then
+            table.insert(ArenaAnalytics.filteredMatchHistory, index);
+        end
+    end
+
+end
+
 Filters.isRefreshing = nil;
 -- Returns matches applying current match filters
 function Filters:Refresh(onCompleteFunc)
@@ -453,29 +496,21 @@ function Filters:Refresh(onCompleteFunc)
     
     -- Reset tables
     ArenaAnalytics.filteredMatchHistory = {}
+    ArenaAnalytics.Selection:ClearSelectedMatches();
     ResetTransientCompData();
     
     local currentIndex = 1;
-    local RefreshBatchSize = 3000;
+    local batchDurationLimit = 0.05;
 
     local function Finalize()
         -- Assign session to filtered matches
-        local session = 1
-        for i = #ArenaAnalytics.filteredMatchHistory, 1, -1 do
-            local current = ArenaAnalytics:GetFilteredMatch(i)
-            local prev = ArenaAnalytics:GetFilteredMatch(i - 1)
-    
-            current["filteredSession"] = session
-    
-            if not prev or prev["session"] ~= current["session"] then
-                session = session + 1
-            end
-        end
+        UpdateFilteredSessions();
 
         FinalizeCompDataTables();
         ArenaAnalytics:SetCurrentCompData(transientCompData);
         ResetTransientCompData();
     
+        ArenaAnalytics.AAtable:ForceRefreshFilterDropdowns();
         ArenaAnalytics.AAtable:handleArenaCountChanged();
 
         if(onCompleteFunc) then
@@ -486,39 +521,19 @@ function Filters:Refresh(onCompleteFunc)
     end
 
     local function ProcessBatch()
-        local endIndex = forceSingleFrameUpdate and #MatchHistoryDB or min(currentIndex + RefreshBatchSize - 1, #MatchHistoryDB);
+        local batchEndTime = GetTime() + batchDurationLimit;
 
-        for i = currentIndex, endIndex do
-            local match = MatchHistoryDB[i];
-            if match == nil then
-                ArenaAnalytics:Log("Invalid match at index: ", i)
-            elseif Filters:DoesMatchPassAllFilters(match, "comps") then
-                local doesPassComp = doesMatchPassFilter_Comp(match, false);
-                local doesPassEnemyComp = doesMatchPassFilter_Comp(match, true);
+        while currentIndex <= #MatchHistoryDB do
+            ProcessMatchIndex(currentIndex);
+            currentIndex = currentIndex + 1;
 
-                if(Filters:IsFilterActive("Filter_Bracket")) then
-                    if(doesPassComp) then
-                        AddToCompData("Filter_Comp", match);
-                    end
-                    
-                    if(doesPassEnemyComp) then
-                        AddToCompData("Filter_EnemyComp", match);
-                    end
-                end
-
-                if(doesPassComp and doesPassEnemyComp) then
-                    table.insert(ArenaAnalytics.filteredMatchHistory, i);
-                end
+            if(batchEndTime < GetTime()) then
+                C_Timer.After(0, ProcessBatch);
+                return;
             end
-
-            currentIndex = endIndex + 1
         end
         
-        if currentIndex <= #MatchHistoryDB then
-            C_Timer.After(0, ProcessBatch)
-        else
-            Finalize()
-        end
+        Finalize();
     end
 
     -- Start processing batches
@@ -527,7 +542,7 @@ end
 
 
 -----------------------------------------------------------------------------
--- TODO: Refactor the following into Filters:Refresh()
+-- DEPRECATED
 
 
 -- DEPRECATED

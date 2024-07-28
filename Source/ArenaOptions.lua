@@ -9,6 +9,15 @@ local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
+-- Standardized Updated Option Response Functions
+
+local function HandleSettingsChanged()
+    ArenaAnalytics:Log("Settings changed..")
+    Filters:ResetAll(false);
+end
+
+-------------------------------------------------------------------------
+
 
 -- TODO: Consider making some settings character specific (For cases like one char having lots of games desiring different comp filter limits)
 -- User settings
@@ -122,9 +131,15 @@ function Options:Set(setting, value)
     
     if(setting and ArenaAnalyticsSettings[setting] ~= nil) then
         if(value == nil) then
-            assert(defaults[setting] ~= nil);        
             value = defaults[setting];
         end
+        assert(value ~= nil);
+
+        if(value == ArenaAnalyticsSettings[setting]) then
+            return;
+        end
+
+        HandleSettingsChanged();
 
         local oldValue = ArenaAnalyticsSettings[setting];
         ArenaAnalyticsSettings[setting] = value;
@@ -157,17 +172,6 @@ function Options:Open()
         InterfaceOptionsFrame_OpenToCategory(ArenaAnalyticsOptionsFrame);
         InterfaceOptionsFrame_OpenToCategory(ArenaAnalyticsOptionsFrame);
     end
-end
-
--------------------------------------------------------------------
--- Standardized Updated Option Response Functions
--------------------------------------------------------------------
-
-local function HandleFiltersUpdated()
-    Filters:ResetAll(false);
-    Filters:Refresh(function()
-        AAtable:ForceRefreshFilterDropdowns();
-    end);
 end
 
 -------------------------------------------------------------------
@@ -265,8 +269,6 @@ local function CreateCheckbox(setting, parent, x, text, func)
         
         if(func) then
             func(setting);
-        else
-            HandleFiltersUpdated();
         end
 	end);
 
@@ -321,8 +323,6 @@ local function CreateInputBox(setting, parent, x, text, func)
 
     if(func) then
         func(setting);
-    else
-        HandleFiltersUpdated();
     end
 
     offsetY = offsetY - OptionsSpacing - inputBox:GetHeight() + 5;
@@ -433,7 +433,7 @@ function SetupTab_Search()
 
     -- Setup options
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team. Prefix player segment '|cff00ccff+|r' to force friendly team.", function()
-        if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchTitle)) then
+        if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchbox.title)) then
             ArenaAnalyticsScrollFrame.searchBox.title:SetText(Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search");
         end
     end);
@@ -501,7 +501,8 @@ end
 -------------------------------------------------------------------
 -- Initialize Options Menu
 -------------------------------------------------------------------
-function Options.Initialize()
+
+function Options:Init()
     if not ArenaAnalyticsOptionsFrame then
         ArenaAnalyticsOptionsFrame = CreateFrame("Frame");
         ArenaAnalyticsOptionsFrame.name = "Arena|cff00ccffAnalytics|r";

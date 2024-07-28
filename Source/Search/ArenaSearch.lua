@@ -305,8 +305,6 @@ local function recursivelyMatchSegments(segmentMatches, segmentIndex, alreadyMat
         return false;
     end
 
-    ArenaAnalytics:Log("Recursion concat: ", table.concat(segment, ", "));
-
     for _, player in ipairs(segment) do
         if not alreadyMatchedPlayers[player] then
             alreadyMatchedPlayers[player] = true;
@@ -321,7 +319,6 @@ local function recursivelyMatchSegments(segmentMatches, segmentIndex, alreadyMat
 end
 
 local function CheckAdvancedPass(match)
-    print(" ");
     local segmentMatches, playerMatches = {}, {}
 
     local matchedTables = {}
@@ -356,7 +353,6 @@ local function CheckAdvancedPass(match)
         
         -- Failed to find a match for the segment
         if(not segment.inversed and not segmentMatches[currentIndex]) then
-            ArenaAnalytics:Log("No matches for segment: ", segmentIndex);
             return false;
         end
 
@@ -447,6 +443,7 @@ function Search:CommitSearch(input)
     Search:Update(input);
     activeSearchData = Search.current["data"];
     
+    print(" ")
     ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
 
     for i,segment in ipairs(activeSearchData.segments) do

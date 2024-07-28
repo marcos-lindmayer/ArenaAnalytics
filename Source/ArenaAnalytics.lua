@@ -9,6 +9,7 @@ local AAtable = ArenaAnalytics.AAtable;
 local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
 local Options = ArenaAnalytics.Options;
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 -- Current filtered comp data
@@ -16,23 +17,11 @@ local Options = ArenaAnalytics.Options;
 local currentCompData = {
 	comp = { ["All"] = {} },
 	enemyComp = { ["All"] = {} },
- }
-
-function ArenaAnalytics:DeepCopy(original)
-    local copy = {}
-    for k, v in pairs(original) do
-        if type(v) == "table" then
-            copy[k] = ArenaAnalytics:DeepCopy(v);
-        else
-            copy[k] = v;
-        end
-    end
-    return copy;
-end
+};
 
 function ArenaAnalytics:SetCurrentCompData(newCompDataTable)
 	assert(newCompDataTable and newCompDataTable.Filter_Comp and newCompDataTable.Filter_EnemyComp);
-	currentCompData = ArenaAnalytics:DeepCopy(newCompDataTable);
+	currentCompData = Helpers:DeepCopy(newCompDataTable);
 end
 
 function ArenaAnalytics:GetCurrentCompData(compKey, comp)
@@ -86,6 +75,10 @@ MatchHistoryDB = MatchHistoryDB or { }
 ArenaAnalytics.unsavedArenaCount = 0;
 
 ArenaAnalytics.filteredMatchHistory = { };
+
+function ArenaAnalytics:GetMatch(index)
+	return index and MatchHistoryDB[index];
+end
 
 function ArenaAnalytics:GetFilteredMatch(index)
 	local realMatchIndex = ArenaAnalytics.filteredMatchHistory[index];

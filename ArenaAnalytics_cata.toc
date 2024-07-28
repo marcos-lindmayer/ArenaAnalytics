@@ -11,6 +11,7 @@
 Source/init.lua
 
 Source/ArenaAnalytics.lua
+Source/ArenaHelpers.lua
 Source/ArenaOptions.lua
 Source/ArenaEvents.lua
 Source/ArenaTracker.lua
@@ -21,7 +22,6 @@ Source/UI/HybridScroll.xml
 Source/UI/ArenaTable.lua
 Source/UI/ArenaMatchSelection.lua
 Source/UI/ArenaTooltips.lua
-Source/UI/ArenaScrollableDropdown.lua
 Source/UI/ArenaIcon.lua
 
 Source/Data/ArenaConstants.lua
@@ -38,16 +38,11 @@ Source/Filters/ArenaFilterTables.lua
 Source/Filters/ArenaFilterTable_Brackets.lua
 Source/Filters/ArenaFilterTable_Comps.lua
 Source/Filters/ArenaFilterTable_MoreFilters.lua
-Source/Filters/ArenaMoreFilters.lua
 
 Source/ImportExport/ArenaImportExport.lua
-
-Source/iconClass.lua
 
 Source/UI/Dropdowns/ArenaDropdown.lua
 Source/UI/Dropdowns/ArenaDropdownList.lua
 Source/UI/Dropdowns/ArenaDropdownEntry.lua
 Source/UI/Dropdowns/ArenaDropdownButton.lua
 Source/UI/Dropdowns/ArenaDropdownDisplay.lua
-
-Source/UI/Dropdowns/ArenaDropdownTest.lua

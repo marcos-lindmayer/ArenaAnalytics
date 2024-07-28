@@ -111,6 +111,9 @@ local specSpells = {
     [ 47585 ] = "Shadow", -- Dispersion
 
     [ 47540 ] = "Discipline", -- Penance
+    [ 47666 ] = "Discipline", -- Penance
+    [ 47750 ] = "Discipline", -- Penance
+    [ 54518 ] = "Discipline", -- Penance
     [ 10060 ] = "Discipline", -- Power Infusion
     [ 89485 ] = "Discipline", -- Inner Focus
     [ 33206 ] = "Discipline", -- Pain Suppression

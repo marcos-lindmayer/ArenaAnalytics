@@ -66,13 +66,7 @@ function EntryFrame:Create(parent, index, width, height, config)
             entryFrame.onClick(entryFrame, button);            
         end
 
-        -- Refresh all active dropdowns
-        Dropdown:RefreshAll();
-
-        local selectedFrame = self:GetSelectedFrame();
-        if(selectedFrame and selectedFrame.Refresh) then
-            selectedFrame:Refresh();
-        end
+        self.parent:Refresh();
     end);
 
     -- Hover Background
