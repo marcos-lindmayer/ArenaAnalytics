@@ -29,7 +29,7 @@ local wins, sessionGames, sessionWins = 0, 0, 0;
 function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
         ArenaAnalytics.Selection:ClearSelectedMatches();
-        Filters:RefreshFilters(function()
+        Filters:Refresh(function()
             AAtable:RefreshLayout();
         end);
 
@@ -209,8 +209,6 @@ end
 
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
-    ArenaAnalytics:UpdateCurrentCompData();
-
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
     
     ArenaAnalyticsScrollFrame.filterCompsDropdown = {}
@@ -381,13 +379,11 @@ function AAtable:OnLoad()
 
         -- Reset filters UI
         ArenaAnalyticsScrollFrame.searchBox:SetText("");
-        ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh("ClearFilters");
-        AAtable:ForceRefreshFilterDropdowns("OnLoad");
+        ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh();
+        AAtable:ForceRefreshFilterDropdowns();
 
         -- Refresh active dropdowns
-        Dropdown:RefreshAll("ClearFilters");
-        
-        Filters:RefreshFilters();
+        Dropdown:RefreshAll();
         CloseDropDownMenus();
     end);
     
@@ -397,9 +393,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetPoint("BOTTOM", ArenaAnalyticsScrollFrame.filterBtn_ClearFilters, "TOP", 0, 5);
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
 
-    Filters:RefreshFilters(function()
-        AAtable:UpdateSelected();
-    end);
+    Filters:Refresh(function() AAtable:UpdateSelected() end);
     
     hasLoaded = true;
 
@@ -767,53 +761,10 @@ function AAtable:createDropdownForFilterComps(isEnemyComp)
 end
 
 -- Forcefully clear and recreate the comp filters for new filters. Optionally staying visible.
-function AAtable:ForceRefreshFilterDropdowns(debugContext)
-    local useNew = true;
-    
-    if(useNew) then
-        ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh((debugContext or "") .. " -> ForceRefresh");
-        ArenaAnalyticsScrollFrame.filterCompsDropdown:Refresh((debugContext or "") .. " -> ForceRefresh");
-        ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Refresh((debugContext or "") .. " -> ForceRefresh");
-
-    else -- DEPRECATED
-
-        local wasCompFilterVisible, wasEnemyCompFilterVisible = false, false
-
-        -- Clear existing comp frame
-        if(ArenaAnalyticsScrollFrame.filterCompsDropdown and ArenaAnalyticsScrollFrame.filterCompsDropdown.list) then
-            wasCompFilterVisible = ArenaAnalyticsScrollFrame.filterCompsDropdown.list:IsShown();
-            ArenaAnalyticsScrollFrame.filterCompsDropdown:Hide();
-            ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
-        end
-        ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
-        
-        -- Clear existing enemy comp frame
-        if(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown ~= nil and ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list) then
-            wasEnemyCompFilterVisible = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown.list:IsShown();
-            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Hide();
-            ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = nil;
-        end
-        ArenaAnalyticsScrollFrame.filterCompsDropdown = nil;
-        
-        -- Create updated frames (Friendly first!)
-        AAtable:createDropdownForFilterComps(false); -- isEnemyComp == false
-        AAtable:createDropdownForFilterComps(true);
-
-        -- Update visibility to match previous visibility, if desired
-        if(keepVisibility == true) then
-            if (wasCompFilterVisible == true) then
-                ArenaAnalyticsScrollFrame.filterCompsDropdown:ShowDropdown();
-            end
-
-            if(wasEnemyCompFilterVisible == true) then
-                ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:ShowDropdown();
-            end
-        end
-
-        if(ArenaAnalyticsScrollFrame.moreFiltersDrodown ~= nil) then
-            ArenaAnalyticsScrollFrame.moreFiltersDrodown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame(), "RIGHT", 10, 0);
-        end
-    end
+function AAtable:ForceRefreshFilterDropdowns()
+    ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh();
+    ArenaAnalyticsScrollFrame.filterCompsDropdown:Refresh();
+    ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Refresh();
 end
 
 -- Searches for a match by its date (unix time)
@@ -860,8 +811,6 @@ function AAtable:handleArenaCountChanged(isLoadCall)
     ArenaAnalytics.Options:TriggerStateUpdates()
 
     if(not isLoadCall) then
-        ArenaAnalytics:UpdateCurrentCompData();
-        AAtable:ForceRefreshFilterDropdowns();
         AAtable:RefreshLayout();
     end
 

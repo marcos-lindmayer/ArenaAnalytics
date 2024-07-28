@@ -165,8 +165,8 @@ end
 
 local function HandleFiltersUpdated()
     Filters:ResetAll(false);
-    Filters:RefreshFilters(function()
-        AAtable:ForceRefreshFilterDropdowns("HandleFiltersUpdated");
+    Filters:Refresh(function()
+        AAtable:ForceRefreshFilterDropdowns();
     end);
 end
 

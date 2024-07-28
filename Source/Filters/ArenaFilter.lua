@@ -67,7 +67,7 @@ function Filters:Set(filter, value)
     ArenaAnalytics:Log("Setting filter:", filter, "to value:", (type(value) == "string" and value:gsub("|", "||") or "nil"));
     currentFilters[filter] = value;
     
-    Filters:RefreshFilters();
+    Filters:Refresh();
 end
 
 function Filters:Reset(filter, skipOverrides)
@@ -88,7 +88,7 @@ function Filters:ResetAll(forceDefaults)
     };
 
     ArenaAnalytics.Search:Reset();
-    Filters:RefreshFilters();
+    Filters:Refresh();
 end
 
 -- DEPRECATED
@@ -183,7 +183,7 @@ function Filters:SetFilter(filter, value, display)
     end
     
     ArenaAnalytics.Selection:ClearSelectedMatches();
-    Filters:RefreshFilters();
+    Filters:Refresh();
 end
 
 function Filters:SetDisplay(filter, display)
@@ -304,7 +304,7 @@ function Filters:doesMatchPassGameSettings(match)
 end
 
 -- check all filters
-function Filters:doesMatchPassAllFilters(match, excluded)
+function Filters:DoesMatchPassAllFilters(match, excluded)
     if(not Filters:doesMatchPassGameSettings(match)) then
         return false;
     end
@@ -325,12 +325,12 @@ function Filters:doesMatchPassAllFilters(match, excluded)
     end
 
     -- Comp
-    if(excluded ~= "comp" and not doesMatchPassFilter_Comp(match, false)) then
+    if(excluded ~= "comps" and excluded ~= "comp" and not doesMatchPassFilter_Comp(match, false)) then
         return false;
     end
 
     -- Enemy Comp
-    if(excluded ~= "enemyComp" and not doesMatchPassFilter_Comp(match, true)) then
+    if(excluded ~= "comps" and excluded ~= "enemyComp" and not doesMatchPassFilter_Comp(match, true)) then
         return false;
     end
 
@@ -347,50 +347,116 @@ function Filters:doesMatchPassAllFilters(match, excluded)
     return true;
 end
 
--- Returns matches applying current match filters
-function Filters:RefreshFilters_OLD()
-    ArenaAnalytics.filteredMatchHistory = {}
 
-    for i=1, #MatchHistoryDB do
-        local match = MatchHistoryDB[i];
-        if(match == nil) then
-            ArenaAnalytics:Log("Invalid match at index: ", i);
-        elseif(Filters:doesMatchPassAllFilters(match)) then
-            table.insert(ArenaAnalytics.filteredMatchHistory, i);
+-------------------------------------------------------------------------
+-- Refresh processing
+
+-- Add to ArenaHelpers.lua to help debugging cases?
+local function LogTableContents(tbl, indent)
+    if not indent then indent = 0 end
+    local formatting = string.rep("  ", indent)
+    
+    for key, value in pairs(tbl) do
+        if type(value) == "table" then
+            ArenaAnalytics:Log(formatting .. tostring(key) .. ":")
+            LogTableContents(value, indent + 1)
+        else
+            ArenaAnalytics:Log(formatting .. tostring(key) .. ": " .. tostring(value))
         end
     end
+end
 
-    -- Assign session to filtered matches
-    local session = 1
-    for i = #ArenaAnalytics.filteredMatchHistory, 1, -1 do
-        local current = ArenaAnalytics:GetFilteredMatch(i)
-        local prev = ArenaAnalytics:GetFilteredMatch(i - 1)
+local transientCompData = {}
 
-        current["filteredSession"] = session;
+local function ResetTransientCompData()
+    transientCompData = {
+        Filter_Comp = { ["All"] = {} },
+        Filter_EnemyComp = { ["All"] = {} },
+    }
+end
 
-        if ((not prev or prev["session"] ~= current["session"])) then
-            session = session + 1;
-        end
+local function SafeIncrement(table, key, delta)
+    table[key] = (table[key] or 0) + (delta or 1);
+end
+
+local function findOrAddCompValues(compsTable, comp, isWin, mmr)
+    assert(compsTable);
+    if comp == nil then return end
+
+    compsTable[comp] = compsTable[comp] or {};
+    
+    -- Played
+    SafeIncrement(compsTable[comp], "played");
+    
+    -- Win count
+    if isWin then
+        SafeIncrement(compsTable[comp], "wins");
     end
 
-    -- This will also call AAtable:ForceRefreshFilterDropdowns()
-    ArenaAnalytics.AAtable:handleArenaCountChanged();
+    -- MMR Data     (Used to convert mmr to average mmr later)
+    if tonumber(mmr) then
+        SafeIncrement(compsTable[comp], "mmr", tonumber(mmr));
+        SafeIncrement(compsTable[comp], "mmrCount");
+    end
+end
+
+local function AddToCompData(compKey, match)
+    assert(compKey and transientCompData[compKey] and match);
+
+    -- Add to "All" data
+    findOrAddCompValues(transientCompData[compKey], "All", match["won"], match["mmr"]);
+    
+    -- Add comp specific data
+    local matchCompKey = (compKey == "Filter_Comp") and "comp" or "enemyComp";
+    local comp = match[matchCompKey];
+    if(comp ~= nil) then
+        findOrAddCompValues(transientCompData[compKey], comp, match["won"], match["mmr"]);
+    end
+end
+
+local function FinalizeCompDataTables(compData)
+    local compKeys = { "Filter_Comp", "Filter_EnemyComp" }
+    for _,compKey in ipairs(compKeys) do
+        -- Compute winrates and average mmr
+        local compData = transientCompData[compKey];
+        if(compData) then
+            for _, compTable in pairs(compData) do
+                -- Calculate winrate
+                local played = tonumber(compTable.played) or 0;
+                local wins = tonumber(compTable.wins) or 0;
+                compTable.winrate = (played > 0) and math.floor(wins * 100 / played) or 0;
+
+                -- Calculate average MMR
+                local mmr = tonumber(compTable.mmr);
+                local mmrCount = tonumber(compTable.mmrCount);
+                if mmr and mmrCount and mmrCount > 0 then
+                    compTable.mmr = math.floor(mmr / mmrCount);
+                    compTable.mmrCount = nil;
+                else
+                    -- No MMR data
+                    compTable.mmr = nil;
+                    compTable.mmrCount = nil;
+                end
+            end
+        end
+    end
 end
 
 Filters.isRefreshing = nil;
 -- Returns matches applying current match filters
-function Filters:RefreshFilters(onCompleteFunc)
+function Filters:Refresh(onCompleteFunc)
     if(Filters.isRefreshing) then
         ArenaAnalytics:Log("Refreshing called while locked. Has onComplete: ", onCompleteFunc ~= nil);
         return;
     end
     Filters.isRefreshing = true;
     
-
+    -- Reset tables
     ArenaAnalytics.filteredMatchHistory = {}
+    ResetTransientCompData();
     
-    local currentIndex = 1
-    local RefreshBatchSize = 3000
+    local currentIndex = 1;
+    local RefreshBatchSize = 3000;
 
     local function Finalize()
         -- Assign session to filtered matches
@@ -405,6 +471,10 @@ function Filters:RefreshFilters(onCompleteFunc)
                 session = session + 1
             end
         end
+
+        FinalizeCompDataTables();
+        ArenaAnalytics:SetCurrentCompData(transientCompData);
+        ResetTransientCompData();
     
         ArenaAnalytics.AAtable:handleArenaCountChanged();
 
@@ -416,19 +486,34 @@ function Filters:RefreshFilters(onCompleteFunc)
     end
 
     local function ProcessBatch()
-        local endIndex = forceSingleFrameUpdate and #MatchHistoryDB or min(currentIndex + RefreshBatchSize - 1, #MatchHistoryDB)
-    
+        local endIndex = forceSingleFrameUpdate and #MatchHistoryDB or min(currentIndex + RefreshBatchSize - 1, #MatchHistoryDB);
+
         for i = currentIndex, endIndex do
-            local match = MatchHistoryDB[i]
+            local match = MatchHistoryDB[i];
             if match == nil then
                 ArenaAnalytics:Log("Invalid match at index: ", i)
-            elseif Filters:doesMatchPassAllFilters(match) then
-                table.insert(ArenaAnalytics.filteredMatchHistory, i)
+            elseif Filters:DoesMatchPassAllFilters(match, "comps") then
+                local doesPassComp = doesMatchPassFilter_Comp(match, false);
+                local doesPassEnemyComp = doesMatchPassFilter_Comp(match, true);
+
+                if(Filters:IsFilterActive("Filter_Bracket")) then
+                    if(doesPassComp) then
+                        AddToCompData("Filter_Comp", match);
+                    end
+                    
+                    if(doesPassEnemyComp) then
+                        AddToCompData("Filter_EnemyComp", match);
+                    end
+                end
+
+                if(doesPassComp and doesPassEnemyComp) then
+                    table.insert(ArenaAnalytics.filteredMatchHistory, i);
+                end
             end
+
+            currentIndex = endIndex + 1
         end
-
-        currentIndex = endIndex + 1
-
+        
         if currentIndex <= #MatchHistoryDB then
             C_Timer.After(0, ProcessBatch)
         else
@@ -438,4 +523,92 @@ function Filters:RefreshFilters(onCompleteFunc)
 
     -- Start processing batches
     ProcessBatch()
+end
+
+
+-----------------------------------------------------------------------------
+-- TODO: Refactor the following into Filters:Refresh()
+
+
+-- DEPRECATED
+local function findOrAddCompValues_DEPRECATED(compsTable, comp, isWin, mmr)
+	assert(compsTable ~= nil);	
+    if(comp == nil) then return end;
+
+	if(existingComp ~= nil) then
+		compsTable[comp].played = compsTable[comp].played + 1;
+
+		if(isWin) then
+			compsTable[comp].wins = compsTable[comp].wins + 1;
+		end
+
+		if(tonumber(mmr)) then
+			compsTable[comp].mmr = compsTable[comp].mmr + tonumber(mmr);
+			compsTable[comp].mmrCount = compsTable[comp].mmrCount + 1;
+		end
+	else -- Insert new
+		compsTable[comp] = {
+			played = 1,
+			wins = isWin and 1 or 0,
+			mmr = tonumber(mmr) or 0,
+			mmrCount = tonumber(mmr) and 1 or 0, -- Separated in case of missing mmr
+		};
+	end    
+end
+
+-- DEPRECAED
+-- Get all played comps with total played and total wins for matches that pass filters
+function ArenaAnalytics:GetPlayedCompsWithTotalAndWins(isEnemyComp)
+    local compKey = isEnemyComp and "enemyComp" or "comp";
+    local playedComps = { };
+	
+    local bracket = Filters:Get("Filter_Bracket");
+    if(bracket == "All") then
+		-- Always include an entry for "All"
+		playedComps["All"] = {};
+
+		return playedComps;
+	end
+
+	-- Make sure there's at least one entry
+	findOrAddCompValues(playedComps, "All");
+
+	-- Combine comp data
+	for i=1, #MatchHistoryDB do
+		local match = MatchHistoryDB[i];
+		if(match and Filters:DoesMatchPassAllFilters(match, compKey)) then
+            assert(match["bracket"] == bracket); -- This should be the case if it passes filters
+
+			-- Add to "All" data
+			findOrAddCompValues(playedComps, "All", match["won"], match["mmr"]);
+			
+			-- Add comp specific data
+			local comp = match[compKey];
+			if(comp ~= nil) then
+				findOrAddCompValues(playedComps, comp, match["won"], match["mmr"]);
+			end
+		end
+	end
+
+	-- Compute winrates and average mmr
+	for comp, compTable in pairs(playedComps) do
+		-- Calculate winrate
+		local played = tonumber(compTable.played) or 0;
+		local wins = tonumber(compTable.wins) or 0;
+		compTable.winrate = (played > 0) and math.floor(wins * 100 / played) or 0;
+
+		-- Calculate average MMR
+		local mmr = tonumber(compTable.mmr);
+		local mmrCount = tonumber(compTable.mmrCount);
+		if mmr and mmrCount and mmrCount > 0 then
+			compTable.mmr = math.floor(mmr / mmrCount);
+			compTable.mmrCount = nil;
+		else
+			-- No MMR data
+			compTable.mmr = nil;
+			compTable.mmrCount = nil;
+		end
+	end
+
+    return playedComps;
 end

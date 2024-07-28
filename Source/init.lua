@@ -154,7 +154,7 @@ ArenaAnalytics.commands = {
 				ArenaAnalytics:Log("Clearing MatchHistoryDB.");
 				MatchHistoryDB = {}
 				ArenaAnalytics.AAtable:tryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
-				ArenaAnalytics.Filters:RefreshFilters();
+				ArenaAnalytics.Filters:Refresh();
 				ArenaAnalytics.unsavedArenaCount = 0;
 			end
 		end

@@ -52,7 +52,7 @@ function FilterTables.ResetFilterValue(dropdownContext, btn)
 
     if(btn == "RightButton") then
         Filters:Reset(dropdownContext.key, true);
-        dropdownContext:Refresh("FilterTables.ResetFilterValue");
+        dropdownContext:Refresh();
     else
         dropdownContext.parent:Toggle();
     end

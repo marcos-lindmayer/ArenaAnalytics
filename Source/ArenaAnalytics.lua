@@ -13,20 +13,35 @@ local Options = ArenaAnalytics.Options;
 -------------------------------------------------------------------------
 -- Current filtered comp data
 
-local currentFilterCompData = { }
+local currentCompData = {
+	comp = { ["All"] = {} },
+	enemyComp = { ["All"] = {} },
+ }
 
-function ArenaAnalytics:ResetCurrentCompData()
-    currentFilterCompData = { ["Filter_Comp"] = {}, ["Filter_EnemyComp"] = {} }
+function ArenaAnalytics:DeepCopy(original)
+    local copy = {}
+    for k, v in pairs(original) do
+        if type(v) == "table" then
+            copy[k] = ArenaAnalytics:DeepCopy(v);
+        else
+            copy[k] = v;
+        end
+    end
+    return copy;
 end
-ArenaAnalytics:ResetCurrentCompData();
+
+function ArenaAnalytics:SetCurrentCompData(newCompDataTable)
+	assert(newCompDataTable and newCompDataTable.Filter_Comp and newCompDataTable.Filter_EnemyComp);
+	currentCompData = ArenaAnalytics:DeepCopy(newCompDataTable);
+end
 
 function ArenaAnalytics:GetCurrentCompData(compKey, comp)
     assert(compKey);
 
-    if(comp ~= nil and currentFilterCompData[compKey]) then
-        return currentFilterCompData[compKey][comp] or {};
+    if(comp ~= nil and currentCompData[compKey]) then
+        return currentCompData[compKey][comp] or {};
     else
-        return currentFilterCompData[compKey] or {};
+        return currentCompData[compKey] or {};
     end
 end
 
@@ -61,94 +76,6 @@ function ArenaAnalytics:GetCurrentCompDataSorted(compKey)
     end);
 
 	return sortableTable;
-end
-
-function ArenaAnalytics:UpdateCurrentCompData()
-	currentFilterCompData = {}
-	currentFilterCompData["Filter_Comp"] = ArenaAnalytics:GetPlayedCompsWithTotalAndWins(false);
-	currentFilterCompData["Filter_EnemyComp"] = ArenaAnalytics:GetPlayedCompsWithTotalAndWins(true);
-end
-
--- TODO: Decide what to do with nil win. Might be better to not include its stats at all (Though still wanna count as a played comp)?
-local function findOrAddCompValues(playedComps, comp, isWin, mmr)
-	assert(playedComps ~= nil);	
-    if(comp == nil) then return end;
-
-	local existingComp = playedComps[comp];
-	if(existingComp ~= nil) then
-		playedComps[comp].played = playedComps[comp].played + 1;
-
-		if(isWin) then
-			playedComps[comp].wins = playedComps[comp].wins + 1;
-		end
-
-		if(tonumber(mmr)) then
-			playedComps[comp].mmr = playedComps[comp].mmr + tonumber(mmr);
-			playedComps[comp].mmrCount = playedComps[comp].mmrCount + 1;
-		end
-	else -- Insert new
-		playedComps[comp] = {
-			played = 1,
-			wins = isWin and 1 or 0,
-			mmr = tonumber(mmr) or 0,
-			mmrCount = tonumber(mmr) and 1 or 0, -- Separated in case of missing mmr
-		};
-	end    
-end
-
--- TODO: Merge this and UpdateCurrentCompData into Filter:Refresh()
--- Get all played comps with total played and total wins for matches that pass filters
-function ArenaAnalytics:GetPlayedCompsWithTotalAndWins(isEnemyComp)
-    local compKey = isEnemyComp and "enemyComp" or "comp";
-    local playedComps = { };
-	
-    local bracket = Filters:Get("Filter_Bracket");
-    if(bracket == "All") then
-		-- Always include an entry for "All"
-		playedComps["All"] = {};
-
-		return playedComps;
-	end
-
-	-- Make sure there's at least one entry
-	findOrAddCompValues(playedComps, "All");
-
-	-- Combine comp data
-	for i=1, #MatchHistoryDB do
-		local match = MatchHistoryDB[i];
-		if(match and match["bracket"] == bracket and Filters:doesMatchPassAllFilters(match, compKey)) then
-			-- Add to "All" data
-			findOrAddCompValues(playedComps, "All", match["won"], match["mmr"]);
-			
-			-- Add comp specific data
-			local comp = match[compKey];
-			if(comp ~= nil) then
-				findOrAddCompValues(playedComps, comp, match["won"], match["mmr"]);
-			end
-		end
-	end
-
-	-- Compute winrates and average mmr
-	for comp, compTable in pairs(playedComps) do
-		-- Calculate winrate
-		local played = tonumber(compTable.played) or 0;
-		local wins = tonumber(compTable.wins) or 0;
-		compTable.winrate = (played > 0) and math.floor(wins * 100 / played) or 0;
-
-		-- Calculate average MMR
-		local mmr = tonumber(compTable.mmr);
-		local mmrCount = tonumber(compTable.mmrCount);
-		if mmr and mmrCount and mmrCount > 0 then
-			compTable.mmr = math.floor(mmr / mmrCount);
-			compTable.mmrCount = nil;
-		else
-			-- No MMR data
-			compTable.mmr = nil;
-			compTable.mmrCount = nil;
-		end
-	end
-
-    return playedComps;
 end
 
 -------------------------------------------------------------------------
@@ -590,7 +517,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	-- Refresh and reset current arena
 	ArenaTracker:ResetCurrentArenaValues();
 	
-	Filters:RefreshFilters();
+	Filters:Refresh();
 
 	AAtable:tryStartSessionDurationTimer();
 end

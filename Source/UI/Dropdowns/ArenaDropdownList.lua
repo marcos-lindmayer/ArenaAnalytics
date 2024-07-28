@@ -56,7 +56,7 @@ function List:Create(parent, level, listInfo)
     self.backdrop:SetScript("OnEnter", function() end);
     
     self.entryFrames = {}
-    self:Refresh("List:Create");
+    self:Refresh();
 
     self:Hide();
 
@@ -65,12 +65,9 @@ end
 
 function List:SetEntries(entries)
     
-
 end
 
-function List:Refresh(debugContext)
-    --ArenaAnalytics:Log("Refreshing ", self:GetName(), " for context: ", debugContext);
-
+function List:Refresh()
     -- Get most recent entries list, in case of a dynamic function
     local entries = Dropdown:RetrieveValue(self.entries, self);
     assert(entries, "Assert failed: Nil entries for type: " .. type(self.entries) .. " on dropdown list: " .. self:GetName());

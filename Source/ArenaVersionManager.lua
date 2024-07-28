@@ -247,7 +247,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     Import:tryHide();
 
     -- Refresh filters
-    Filters:RefreshFilters();
+    Filters:Refresh();
 
     -- Remove old storage
     ArenaAnalyticsDB = nil;

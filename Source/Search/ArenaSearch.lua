@@ -457,7 +457,7 @@ function Search:CommitSearch(input)
     end
 
     -- Force filter refresh
-    ArenaAnalytics.Filters:RefreshFilters();
+    ArenaAnalytics.Filters:Refresh();
 
     Search.isCommitting = nil;
 end

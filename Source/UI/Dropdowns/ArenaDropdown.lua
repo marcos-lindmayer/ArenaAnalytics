@@ -95,8 +95,7 @@ end
 
 function Dropdown:RefreshAll()
     for i = #Dropdown.dropdownLevelFrames, 1, -1 do
-        --ArenaAnalytics:Print("Refreshing all loop")
-        Dropdown.dropdownLevelFrames[i]:Refresh("Dropdown:RefreshAll");
+        Dropdown.dropdownLevelFrames[i]:Refresh();
     end
 end
 
@@ -144,12 +143,12 @@ function Dropdown:Create(parent, dropdownType, frameName, config, width, height)
     return self;
 end
 
-function Dropdown:Refresh(debugContext)
+function Dropdown:Refresh()
     if(self.selected) then
-        self.selected:Refresh((debugContext or "??") .. " -> Dropdown:Refresh");
+        self.selected:Refresh();
     end
     
-    Dropdown:RefreshAll("Dropdown:Refresh RefreshAll");
+    Dropdown:RefreshAll();
 end
 
 ---------------------------------
