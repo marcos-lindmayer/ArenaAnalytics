@@ -362,8 +362,8 @@ function ArenaAnalytics:init()
 	-- Initialize modules
 	---------------------------------
 
-	FilterTables:Init();
 	Options:Init();
+	FilterTables:Init();
 	Filters:Init();
 
 	ArenaAnalytics:UpdateLastSession();

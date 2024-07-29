@@ -15,7 +15,9 @@ local function AddFilter(filter, default)
     assert(filter ~= nil);
     assert(default ~= nil, "Nil values for filters are not supported. Using values as display texts.");
 
-    currentFilters[filter] = default;
+    local override = Filters:GetOverride(filter);
+
+    currentFilters[filter] = (override ~= nil) and override or default;
     defaults[filter] = default;
 end
 
@@ -26,6 +28,16 @@ function Filters:Init()
     AddFilter("Filter_Bracket", "All");
     AddFilter("Filter_Comp", "All");
     AddFilter("Filter_EnemyComp", "All");
+end
+
+function Filters:GetOverride(filter)
+    if(filter == "Filter_Date" and Options:Get("defaultCurrentSessionFilter")) then
+        return "Current Session";
+    end
+
+    if(filter == "Filter_Season" and Options:Get("defaultCurrentSeasonFilter")) then
+        return "Current Season";
+    end
 end
 
 function Filters:IsValidCompKey(compKey)
@@ -40,12 +52,9 @@ end
 function Filters:GetDefault(filter, skipOverrides)
     -- overrides
     if(not skipOverrides) then
-        if(filter == "Filter_Date" and Options:Get("defaultCurrentSessionFilter")) then
-            return "Current Session";
-        end
-
-        if(filter == "Filter_Season" and Options:Get("defaultCurrentSeasonFilter")) then
-            return "Current Season";
+        local override = Filters:GetOverride(filter);
+        if(override ~= nil) then
+            return override;
         end
     end
 

@@ -139,11 +139,11 @@ function Options:Set(setting, value)
             return;
         end
 
-        HandleSettingsChanged();
-
         local oldValue = ArenaAnalyticsSettings[setting];
         ArenaAnalyticsSettings[setting] = value;
         ArenaAnalytics:Log("Setting option: ", setting, "new:", value, "old:", oldValue);
+        
+        HandleSettingsChanged();
     end
 end
 
@@ -432,7 +432,7 @@ function SetupTab_Search()
     parent.tabHeader = CreateHeader("Search", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
-    parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team. Prefix player segment '|cff00ccff+|r' to force friendly team.", function()
+    parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
         if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchbox.title)) then
             ArenaAnalyticsScrollFrame.searchBox.title:SetText(Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search");
         end
