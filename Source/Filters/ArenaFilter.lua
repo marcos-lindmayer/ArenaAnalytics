@@ -3,6 +3,9 @@ local Filters = ArenaAnalytics.Filters;
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
+local Search = ArenaAnalytics.Search;
+local Selection = ArenaAnalytics.Selection;
+local AAtable = ArenaAnalytics.AAtable;
 
 -------------------------------------------------------------------------
 
@@ -98,7 +101,7 @@ function Filters:ResetAll(forceDefaults)
         ["Filter_EnemyComp"] = Filters:GetDefault("Filter_EnemyComp"),
     };
 
-    ArenaAnalytics.Search:Reset();
+    Search:Reset();
 
     Filters:Refresh();
 end
@@ -115,7 +118,7 @@ end
 
 function Filters:getActiveFilterCount()
     local count = 0;
-    if(not ArenaAnalytics.Search:IsEmpty()) then
+    if(not Search:IsEmpty()) then
         count = count + 1;
     end
     if(Filters:IsFilterActive("Filter_Date")) then
@@ -280,7 +283,7 @@ function Filters:DoesMatchPassAllFilters(match, excluded)
     end
 
     -- Search
-    if(not ArenaAnalytics.Search:DoesMatchPassSearch(match)) then
+    if(not Search:DoesMatchPassSearch(match)) then
         return false;
     end
 
@@ -429,7 +432,7 @@ function Filters:Refresh(onCompleteFunc)
     
     -- Reset tables
     ArenaAnalytics.filteredMatchHistory = {}
-    ArenaAnalytics.Selection:ClearSelectedMatches();
+    Selection:ClearSelectedMatches();
     ResetTransientCompData();
     
     local currentIndex = 1;
@@ -443,8 +446,8 @@ function Filters:Refresh(onCompleteFunc)
         ArenaAnalytics:SetCurrentCompData(transientCompData);
         ResetTransientCompData();
     
-        ArenaAnalytics.AAtable:ForceRefreshFilterDropdowns();
-        ArenaAnalytics.AAtable:HandleArenaCountChanged();
+        AAtable:ForceRefreshFilterDropdowns();
+        AAtable:HandleArenaCountChanged();
 
         if(onCompleteFunc) then
             onCompleteFunc();

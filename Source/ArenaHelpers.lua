@@ -29,3 +29,14 @@ function Helpers:GetPlayerName(skipRealm)
 	end
     return name;
 end
+
+-- Used to draw a solid box texture over a frame for testing
+function Helpers:DrawDebugBackground(frame, r, g, b, a)
+	if(Options:Get("debuggingEnabled")) then
+		-- TEMP testing
+		frame.background = frame:CreateTexture();
+		frame.background:SetPoint("CENTER")
+		frame.background:SetSize(frame:GetWidth(), frame:GetHeight());
+		frame.background:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
+	end
+end

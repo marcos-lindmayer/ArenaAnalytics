@@ -3,6 +3,7 @@ local Selection = ArenaAnalytics.Selection;
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
+local AAtable = ArenaAnalytics.AAtable;
 
 ------------------------------------------------------------------
 
@@ -165,8 +166,8 @@ function Selection:ClearSelectedMatches()
     resetLatestSelection(false, true);
 
     -- Update UI
-    ArenaAnalytics.AAtable:UpdateSelected();
-    ArenaAnalytics.AAtable:RefreshLayout();
+    AAtable:UpdateSelected();
+    AAtable:RefreshLayout();
 end
 
 local function commitLatestSelections()
@@ -251,6 +252,6 @@ function Selection:handleMatchEntryClicked(key, isDoubleClick, index)
     end
 
     -- Update UI
-    ArenaAnalytics.AAtable:UpdateSelected();
-    ArenaAnalytics.AAtable:RefreshLayout();
+    AAtable:UpdateSelected();
+    AAtable:RefreshLayout();
 end

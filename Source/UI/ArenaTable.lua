@@ -8,7 +8,10 @@ local Filters = ArenaAnalytics.Filters;
 local FilterTables = ArenaAnalytics.FilterTables;
 local Search = ArenaAnalytics.Search;
 local Dropdown = ArenaAnalytics.Dropdown;
+local Selection = ArenaAnalytics.Selection;
 local API = ArenaAnalytics.API;
+local Import = ArenaAnalytics.Import;
+local Tooltips = ArenaAnalytics.Tooltips;
 
 -------------------------------------------------------------------------
 
@@ -28,7 +31,7 @@ local wins, sessionGames, sessionWins = 0, 0, 0;
 -- Toggles addOn view/hide
 function ArenaAnalytics:Toggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then  
-        ArenaAnalytics.Selection:ClearSelectedMatches();
+        Selection:ClearSelectedMatches();
 
         Filters:Refresh(function()
             AAtable:RefreshLayout();
@@ -63,76 +66,6 @@ function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOff
     return btn;
 end
 
--- TODO: Prioritize spec too
--- Get a string representing the comp, 
-function AAtable:getCompIconString(comp, isPlayerPriority)
-    if(comp == nil or comp:find('|') == nil) then
-        return "";
-    end
-
-    local myClass, mySpec;
-    if(isPlayerPriority) then
-        myClass = UnitClass("player");
-        mySpec = ArenaAnalytics.API:GetMySpec();
-    end
-
-    local classTable = { }
-
-    comp:gsub("([^|]+)", function(specID)
-        local class, spec = ArenaAnalytics.Constants:GetClassAndSpec(specID);
-
-        if(specID and class and spec) then
-            tinsert(classTable, {specID, class, spec});
-        end
-    end);
-
-    table.sort(classTable, function(a, b)
-        local classA, classB = a[2], b[2];
-        local specA, specB = a[3], b[3];
-
-        if(isPlayerPriority) then
-            if(myClass) then
-                local priorityA = (classA == myClass) and 1 or 0;
-                local priorityB = (classB == myClass) and 1 or 0;
-
-                if(mySpec) then
-                    priorityA = priorityA + ((specA == mySpec) and 2 or 0);
-                    priorityB = priorityB + ((specB == mySpec) and 2 or 0);
-                end
-
-                return priorityA > priorityB;
-            end
-
-
-            if (myClass) then 
-                if(classA == myClass) then 
-                    return true;
-                elseif(classB == myClass) then
-                    return false;
-                end
-            end
-        end
-
-        local priorityValueA = ArenaAnalytics.Constants:getSpecPriorityValue(a[1]);
-        local priorityValueB = ArenaAnalytics.Constants:getSpecPriorityValue(b[1]);
-
-        return priorityValueA > priorityValueB;
-    end);
-
-    local output = "";
-
-    for _,entry in ipairs(classTable) do
-        local class, spec = entry[2], entry[3];
-        if(class and spec) then
-            -- Replace with game folder icons
-            local iconPath = "Interface\\AddOns\\ArenaAnalytics\\icon\\" .. class .. "\\" .. spec;
-            local singleClassSpecIcon = IconClass(iconPath, 0, 0, 0, 0, 0, 0, 25, 25);
-            output = output .. singleClassSpecIcon:GetIconString();
-        end
-    end
-    return output;
-end
-
 -- Returns string frame
 function ArenaAnalyticsCreateText(parent, anchor, relativeFrame, relPoint, xOff, yOff, text, fontSize)
     local fontString = parent:CreateFontString(nil, "OVERLAY");
@@ -151,8 +84,8 @@ function AAtable:UpdateSelected()
     local newSelectedText = ""
     local selectedGamesCount, selectedWins = 0, 0;
     
-    local deselectedCache = ArenaAnalytics.Selection.latestDeselect;
-    local selectedTables = { ArenaAnalytics.Selection.latestMultiSelect, ArenaAnalytics.Selection.selectedGames }
+    local deselectedCache = Selection.latestDeselect;
+    local selectedTables = { Selection.latestMultiSelect, Selection.selectedGames }
 
     -- Merge the selected tables to prevent duplicates, excluding deselected
     local uniqueSelected = {}
@@ -273,13 +206,13 @@ function AAtable:OnLoad()
 
     -- Filter Bracket Dropdown
     ArenaAnalyticsScrollFrame.filterBracketDropdown = nil;
-    ArenaAnalyticsScrollFrame.filterBracketDropdown = ArenaAnalytics.Dropdown:Create(ArenaAnalyticsScrollFrame, "Simple", "FilterBracket", FilterTables.brackets, 55, 25);
+    ArenaAnalyticsScrollFrame.filterBracketDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Simple", "FilterBracket", FilterTables.brackets, 55, 25);
     ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);
 
     CreateFilterTitle(ArenaAnalyticsScrollFrame.filterBracketDropdown, "Bracket");
 
-    AAtable:createDropdownForFilterComps(false); -- isEnemyComp == false
-    AAtable:createDropdownForFilterComps(true);
+    AAtable:CreateDropdownForFilterComps(false); -- isEnemyComp == false
+    AAtable:CreateDropdownForFilterComps(true);
 
     ArenaAnalyticsScrollFrame.settingsButton = CreateFrame("Button", nil, ArenaAnalyticsScrollFrame, "GameMenuButtonTemplate");
     ArenaAnalyticsScrollFrame.settingsButton:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPRIGHT", -46, -1);
@@ -290,7 +223,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.settingsButton:SetScript("OnClick", function()
         local enableOldSettings = false;
         if not enableOldSettings then
-            ArenaAnalytics.Options:Open();
+            Options:Open();
         else
             if (not ArenaAnalyticsScrollFrame.settingsFrame:IsShown()) then  
                 ArenaAnalyticsScrollFrame.settingsFrame:Show();
@@ -325,12 +258,12 @@ function AAtable:OnLoad()
     local selectedPrefixText = colorText("Selected: ", bottomStatsPrefixColor);
     ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 10, selectedPrefixText .. " (click matches to select)");
     
-    AAtable:tryStartSessionDurationTimer();
+    AAtable:TryStartSessionDurationTimer();
 
     ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 10, "Clear Selected", AAtable:GetDropdownTemplate());
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(110)
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
-    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function() ArenaAnalytics.Selection:ClearSelectedMatches() end);
+    ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function() Selection:ClearSelectedMatches() end);
     
     ArenaAnalyticsScrollFrame.unsavedWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -160, 13, unsavedWarningText);
     ArenaAnalyticsScrollFrame.unsavedWarning:Hide();
@@ -338,7 +271,7 @@ function AAtable:OnLoad()
 
     -- First time user import popup if no matches are stored
     if (not ArenaAnalytics:HasStoredMatches()) then
-        AAtable:tryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
+        AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
     end
 
     -- Add esc to close frame
@@ -384,12 +317,12 @@ function AAtable:OnLoad()
     Filters:Refresh();
 end
 
-function AAtable:tryShowimportDialogFrame(parent)
+function AAtable:TryShowimportDialogFrame(parent)
     if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then       
         ArenaAnalyticsScrollFrame.importDialogFrame = CreateFrame("Frame", "ArenaAnalyticsImportFrame", parent or UIParent, "BasicFrameTemplateWithInset")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetPoint("CENTER")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetSize(475, 145)
-        ArenaAnalyticsScrollFrame.importDialogFrame:SetFrameStrata("HIGH");
+        ArenaAnalyticsScrollFrame.importDialogFrame:SetFrameStrata("DIALOG");
         ArenaAnalyticsScrollFrame.importDialogFrame.title = ArenaAnalyticsScrollFrame.importDialogFrame:CreateFontString(nil, "OVERLAY");
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", -10, -5);
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
@@ -397,12 +330,12 @@ function AAtable:tryShowimportDialogFrame(parent)
         ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, "Paste the ArenaStats or ArenaAnalytics export on the text box below.");
         ArenaAnalyticsScrollFrame.importDialogFrame.Text2 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -65, "|cffCCCCCCNote:|r |cff888888Matches with missing specs detected won't show on comp filters.|r");
             
-        ArenaAnalyticsScrollFrame.importDialogFrame.button = ArenaAnalytics.AAtable:CreateButton("TOPRIGHT", ArenaAnalyticsScrollFrame.importDialogFrame, "TOPRIGHT", -70, -80, "Import");
+        ArenaAnalyticsScrollFrame.importDialogFrame.button = AAtable:CreateButton("TOPRIGHT", ArenaAnalyticsScrollFrame.importDialogFrame, "TOPRIGHT", -70, -80, "Import");
         ArenaAnalyticsScrollFrame.importDialogFrame.button:SetSize(115, 25);
         
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.importDialogFrame.button, "InputBoxTemplate")
+        ArenaAnalyticsScrollFrame.importDialogFrame.editbox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.importDialogFrame, "InputBoxTemplate")
         ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetPoint("RIGHT", ArenaAnalyticsScrollFrame.importDialogFrame.button, "LEFT", -10, 0);
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetFrameStrata("HIGH");
+        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetFrameStrata("DIALOG");
         ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetSize(213, 55);
         ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetAutoFocus(false);
         ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetMaxBytes(50);
@@ -444,7 +377,7 @@ function AAtable:tryShowimportDialogFrame(parent)
 
                     -- Update text: 1) Prevent OnChar for changing text
                     ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnChar", nil);
-                    ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText(ArenaAnalytics.Import:determineImportSource(ArenaImportPasteStringTable) .. " import detected...");
+                    ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText(Import:determineImportSource(ArenaImportPasteStringTable) .. " import detected...");
                     ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnChar", onCharAdded);
                 end);
             end
@@ -460,7 +393,7 @@ function AAtable:tryShowimportDialogFrame(parent)
 
         ArenaAnalyticsScrollFrame.importDialogFrame.button:SetScript("OnClick", function (i) 
             ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
-            ArenaAnalytics.Import:parseRawData(ArenaImportPasteStringTable);
+            Import:parseRawData(ArenaImportPasteStringTable);
             ArenaImportPasteStringTable = {};
         end);
 
@@ -478,6 +411,8 @@ function AAtable:tryShowimportDialogFrame(parent)
             collectgarbage("collect");
 		end);
     end
+
+    ArenaAnalyticsScrollFrame.importDialogFrame:SetParent(parent or UIParent);
 
     ArenaAnalyticsScrollFrame.importDialogFrame.button:Enable();
     ArenaAnalyticsScrollFrame.importDialogFrame:Show();
@@ -520,7 +455,7 @@ function AAtable:CreateExportDialogFrame()
 		ArenaAnalyticsScrollFrame.exportDialogFrame.totalText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMLEFT", -3, 0, "Total arenas: " .. #MatchHistoryDB);
 		ArenaAnalyticsScrollFrame.exportDialogFrame.lengthText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPRIGHT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMRIGHT", -3, 0, "Export length: 0");
 
-		ArenaAnalyticsScrollFrame.exportDialogFrame.selectBtn = ArenaAnalytics.AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.exportDialogFrame, "BOTTOM", 0, 17, "Select All");
+		ArenaAnalyticsScrollFrame.exportDialogFrame.selectBtn = AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.exportDialogFrame, "BOTTOM", 0, 17, "Select All");
 		ArenaAnalyticsScrollFrame.exportDialogFrame.selectBtn:SetScript("OnClick", function() ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:HighlightText() end);
 		
 		-- Escape to close
@@ -551,6 +486,7 @@ function AAtable:CreateExportDialogFrame()
     ArenaAnalyticsScrollFrame.exportDialogFrame:Show();
 end
 
+-- TODO: Consider using ArenaIcon to draw the class and spec icons.
 local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKey, scrollEntry)
     if(match == nil or match[teamKey] == nil) then
         return;
@@ -621,7 +557,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
             end
 
             playerFrame:SetScript("OnEnter", function ()
-                ArenaAnalytics.Tooltips:DrawPlayerTooltip(playerFrame);
+                Tooltips:DrawPlayerTooltip(playerFrame);
             end);
             playerFrame:SetScript("OnLeave", function ()
                 GameTooltip:Hide();
@@ -709,19 +645,13 @@ local function setColorForSession(button, session, index)
 end
 
 -- Create dropdowns for the Comp filters
-function AAtable:createDropdownForFilterComps(isEnemyComp)
+function AAtable:CreateDropdownForFilterComps(isEnemyComp)
     local config = isEnemyComp and FilterTables.enemyComps or FilterTables.comps;
     local frameName = isEnemyComp and "FitlerEnemyComp" or "FilterComp";
     local newDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", frameName, config, 235, 25);
     local relativeFrame = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
     newDropdown:SetPoint("LEFT", relativeFrame:GetFrame(), "RIGHT", 10, 0);
-    
-    if(isDisabled) then
-        -- Set tooltip when comp is disabled
-        newDropdown:Hide();
-    --  newDropdown.selected:Disable();
-    end
-    
+        
     local title = isEnemyComp and "Enemy Comp" or "Comp"
     local info = nil;
     if(Options:Get("showCompDropdownInfoText")) then
@@ -750,30 +680,7 @@ function AAtable:ForceRefreshFilterDropdowns()
     ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Refresh();
 end
 
--- Searches for a match by its date (unix time)
--- returns match as table and bracket as string
-function AAtable:getDBMatchByDate(date)
-    for i=1, #MatchHistoryDB do
-        local arena = MatchHistoryDB[i];
-        if(arena and arena["date"] == date) then
-            return arena, arena["bracket"];
-        end
-    end
-    return nil, nil
-end
-
--- Returns last match played
-function AAtable:getLastGame(skipSkirmish)
-    for i=#MatchHistoryDB, 1, -1 do
-        local match = MatchHistoryDB[i];
-        if(match ~= nil and (not skipSkirmish or match["isRated"])) then
-            return match;
-        end
-    end
-    return nil;
-end
-
-function AAtable:checkUnsavedWarningThreshold()
+function AAtable:CheckUnsavedWarningThreshold()
     if(ArenaAnalytics.unsavedArenaCount >= Options:Get("unsavedWarningThreshold")) then
         -- Show and update unsaved arena threshold
         local unsavedWarningText = "|cffff0000" .. ArenaAnalytics.unsavedArenaCount .." unsaved matches!\n |cff00cc66/reload|r |cffff0000to save!|r"
@@ -791,7 +698,7 @@ function AAtable:HandleArenaCountChanged()
         return;
     end
 
-    ArenaAnalytics.Options:TriggerStateUpdates()
+    Options:TriggerStateUpdates()
     AAtable:RefreshLayout();
 
     if(not ArenaAnalytics:HasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
@@ -836,7 +743,7 @@ function AAtable:HandleArenaCountChanged()
     ArenaAnalyticsScrollFrame.totalArenaNumber:SetText(text .. totalArenas .. " arena" .. (totalArenas ~= 1 and "s" or ""));
     ArenaAnalyticsScrollFrame.winrate:SetText(winsColoured .. " / " .. lossesColoured .. "   " .. winrate .. "% Winrate");
 
-    ArenaAnalytics.AAtable.checkUnsavedWarningThreshold();
+    AAtable.CheckUnsavedWarningThreshold();
 end
 
 local function ratingToText(rating, delta)
@@ -921,7 +828,7 @@ function AAtable:RefreshLayout()
             
             button:SetAttribute("won", match["won"]);
 
-            local isSelected = ArenaAnalytics.Selection:isMatchSelected(matchIndex);
+            local isSelected = Selection:isMatchSelected(matchIndex);
             button:SetAttribute("selected", isSelected);
             if(isSelected) then
                 button.Tooltip:Show();
@@ -943,12 +850,12 @@ function AAtable:RefreshLayout()
             button:RegisterForClicks("LeftButtonDown", "RightButtonDown", "LeftButtonUp", "RightButtonUp");
             button:SetScript("OnClick", function(args, key, down)
                 if down then
-                    ArenaAnalytics.Selection:handleMatchEntryClicked(key, false, matchIndex);
+                    Selection:handleMatchEntryClicked(key, false, matchIndex);
                 end
             end);
 
             button:SetScript("OnDoubleClick", function(args, key)
-                ArenaAnalytics.Selection:handleMatchEntryClicked(key, true, matchIndex);
+                Selection:handleMatchEntryClicked(key, true, matchIndex);
             end);
 
             AAtable:ToggleSpecsAndDeathOverlay(button);
@@ -978,6 +885,7 @@ end
 
 ----------------------------------------------------------------------------------------------------------------------------
 -- Session Duration
+
 local isSessionTimerActive = false;
 local function formatSessionDuration(duration)
     if(tonumber(duration) == nil) then
@@ -1020,7 +928,7 @@ local function handleSessionDurationTimer()
     end
 end
 
-function AAtable:tryStartSessionDurationTimer()
+function AAtable:TryStartSessionDurationTimer()
     local _,expired, startTime, endTime = ArenaAnalytics:GetLatestSessionStartAndEndTime();
     -- Update text
     setLatestSessionDurationText(expired, startTime, endTime);

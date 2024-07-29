@@ -5,6 +5,7 @@ local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local AAmatch = ArenaAnalytics.AAmatch;
 local Constants = ArenaAnalytics.Constants;
 local SpecSpells = ArenaAnalytics.SpecSpells;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -22,10 +23,10 @@ local currentArena = {
 	["hasRealStartTime"] = nil,
 	["endTime"] = 0, 
 	["partyRating"] = nil,
-	["partyRatingDelta"] = "",
+	["partyRatingDelta"] = nil,
 	["partyMMR"] = nil, 
 	["enemyRating"] = nil,
-	["enemyRatingDelta"] = "",
+	["enemyRatingDelta"] = nil,
 	["enemyMMR"] = nil,
 	["size"] = nil,
 	["isRated"] = nil,
@@ -54,10 +55,10 @@ function ArenaTracker:ResetCurrentArenaValues()
 	currentArena["hasRealStartTime"] = nil;
 	currentArena["endTime"] = 0;
 	currentArena["partyRating"] = nil;
-	currentArena["partyRatingDelta"] = "";
+	currentArena["partyRatingDelta"] = nil;
 	currentArena["partyMMR"] = nil;
 	currentArena["enemyRating"] = nil;
-	currentArena["enemyRatingDelta"] = "";
+	currentArena["enemyRatingDelta"] = nil;
 	currentArena["enemyMMR"] = nil;
 	currentArena["size"] = nil;
 	currentArena["isRated"] = nil;
@@ -126,10 +127,10 @@ function ArenaTracker:HandleArenaEnter(...)
 	currentArena["size"] = teamSize;
 	
 	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(teamSize);
-	if(isRated and ArenaAnalyticsCachedBracketRatings[bracketId] == nil) then
+	if(isRated and ArenaAnalytics.cachedBracketRatings[bracketId] == nil) then
 		local lastRating = ArenaAnalytics:GetLatestRating(teamSize);
 		ArenaAnalytics:Log("Fallback: Updating cached rating to rating of last rated entry.");
-		ArenaAnalyticsCachedBracketRatings[bracketId] = lastRating;
+		ArenaAnalytics.cachedBracketRatings[bracketId] = lastRating;
 	end
 
 	-- TODO (v0.4.0): Update to depend on whether local player has been added, in case data 
@@ -140,7 +141,7 @@ function ArenaTracker:HandleArenaEnter(...)
 		local race = UnitRace("player");
 		local GUID = UnitGUID("player");
 		local name = currentArena["playerName"];
-		local spec = AAmatch:getPlayerSpec();
+		local spec = API:GetMySpec();
 		local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
 		table.insert(currentArena["party"], player);
 	end
@@ -238,7 +239,7 @@ function ArenaTracker:HandleArenaEnd()
 	end
 
 	ArenaAnalytics:Log("My faction: ", myFaction, "(Winner:", winner,")")
-	if(winner ~= nil) then
+	if(winner ~= nil and winner ~= 255) then
 		currentArena["wonByPlayer"] = (myFaction == winner);
 	end
 
@@ -281,8 +282,8 @@ function ArenaTracker:HandleArenaExit()
 	
 	if(currentArena["isRated"] == true) then
 		local newRating = GetPersonalRatedInfo(bracketId);
-		local oldRating = ArenaAnalyticsCachedBracketRatings[bracketId];
-		ArenaAnalyticsDebugAssert(ArenaAnalyticsCachedBracketRatings[bracketId] ~= nil);
+		local oldRating = ArenaAnalytics.cachedBracketRatings[bracketId];
+		ArenaAnalyticsDebugAssert(ArenaAnalytics.cachedBracketRatings[bracketId] ~= nil);
 		
 		if(oldRating == nil or oldRating == "SKIRMISH") then
 			oldRating = ArenaAnalytics:GetLatestRating();
@@ -294,13 +295,13 @@ function ArenaTracker:HandleArenaExit()
 		currentArena["partyRatingDelta"] = deltaRating;
 	else
 		currentArena["partyRating"] = "SKIRMISH";
-		currentArena["partyRatingDelta"] = "";
+		currentArena["partyRatingDelta"] = nil;
 	end
 
 	-- Update all the cached bracket ratings
 	AAmatch:updateCachedBracketRatings();
 
-	ArenaAnalytics:insertArenaToMatchHistory(currentArena);
+	ArenaAnalytics:InsertArenaToMatchHistory(currentArena);
 end
 
 -- Returns bool for input group containing a character (by name) in it

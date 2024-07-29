@@ -3,6 +3,7 @@ local Search = ArenaAnalytics.Search;
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
+local Filters = ArenaAnalytics.Filters;
 local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
@@ -129,7 +130,7 @@ function Search:CommitSearch(input)
     LogSearchData();
 
     -- Force filter refresh
-    ArenaAnalytics.Filters:Refresh();
+    Filters:Refresh();
 
     Search.isCommitting = nil;
 end

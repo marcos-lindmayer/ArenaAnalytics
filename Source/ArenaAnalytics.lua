@@ -91,7 +91,6 @@ function ArenaAnalytics:UpdateLastSession()
 	ArenaAnalytics.lastSession = ArenaAnalytics:GetLatestSession();
 end
 
--- TODO: Confirm that all events are still used correctly, then delete after refactoring tracking & events
 local eventTracker = {
 	["UPDATE_BATTLEFIELD_STATUS"] = false, 
 	["ZONE_CHANGED_NEW_AREA"] = false, 
@@ -190,16 +189,7 @@ function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
     return true;
 end
 
--- Returns the session for a given match index
-function ArenaAnalytics:getMatchSessionByIndex(matchIndex)
-	local match = MatchHistoryDB[matchIndex];
-	if (match) then
-		return tonumber(match["session"]);
-	end
-	return nil;
-end
-
-function ArenaAnalytics:getLastMatch(ignoreInvalidDate)
+function ArenaAnalytics:GetLastMatch(ignoreInvalidDate)
 	if(not ignoreInvalidDate) then
 		for i=#MatchHistoryDB, 1, -1 do
 			local match = MatchHistoryDB[i];
@@ -250,7 +240,6 @@ function ArenaAnalytics:GetLatestSession()
 	return 1, false;
 end
 
--- TODO: Study to determine risk of no start time detected
 -- Returns the start and end times of the last session
 function ArenaAnalytics:GetLatestSessionStartAndEndTime()
 	local lastSession, expired, bestStartTime, endTime = nil,true;
@@ -365,7 +354,7 @@ function ArenaAnalytics:SortGroup(group, isPlayerPriority, playerFullName)
 end
 
 -- Cached last rating per bracket ID
-ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil and ArenaAnalyticsCachedBracketRatings or {
+ArenaAnalytics.cachedBracketRatings = ArenaAnalytics.cachedBracketRatings ~= nil and ArenaAnalytics.cachedBracketRatings or {
 	[1] = nil,
 	[2] = nil,
 	[3] = nil,
@@ -374,18 +363,18 @@ ArenaAnalyticsCachedBracketRatings = ArenaAnalyticsCachedBracketRatings ~= nil a
 -- Updates the cached bracket rating for each bracket
 function AAmatch:updateCachedBracketRatings()
 	if(IsActiveBattlefieldArena()) then
-		ArenaAnalyticsCachedBracketRatings[1] = ArenaAnalytics:GetLatestRating(2); -- 2v2
-		ArenaAnalyticsCachedBracketRatings[2] = ArenaAnalytics:GetLatestRating(3); -- 3v3
-		ArenaAnalyticsCachedBracketRatings[3] = ArenaAnalytics:GetLatestRating(4); -- 5v5
+		ArenaAnalytics.cachedBracketRatings[1] = ArenaAnalytics:GetLatestRating(2); -- 2v2
+		ArenaAnalytics.cachedBracketRatings[2] = ArenaAnalytics:GetLatestRating(3); -- 3v3
+		ArenaAnalytics.cachedBracketRatings[3] = ArenaAnalytics:GetLatestRating(4); -- 5v5
 	else
-		ArenaAnalyticsCachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
-		ArenaAnalyticsCachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
-		ArenaAnalyticsCachedBracketRatings[3] = GetPersonalRatedInfo(3); -- 5v5
+		ArenaAnalytics.cachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
+		ArenaAnalytics.cachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
+		ArenaAnalytics.cachedBracketRatings[3] = GetPersonalRatedInfo(3); -- 5v5
 	end
 end
 
 -- Returns a table with the selected arena's player comp
-function AAmatch:getArenaComp(teamTable, bracket)
+function AAmatch:GetArenaComp(teamTable, bracket)
 	local size = ArenaAnalytics:getTeamSizeFromBracket(bracket);
 	
 	if(teamTable == nil or size > #teamTable) then
@@ -423,7 +412,7 @@ end
 
 -- Calculates arena duration, turns arena data into friendly strings, adds it to MatchHistoryDB
 -- and triggers a layout refresh on ArenaAnalytics.AAtable
-function ArenaAnalytics:insertArenaToMatchHistory(newArena)
+function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	local hasStartTime = tonumber(newArena["startTime"]) and newArena["startTime"] > 0;
 	if(not hasStartTime) then
 		-- At least get an estimate for the time of the match this way.
@@ -458,8 +447,8 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 
 	-- Get arena comp for each team
 	local bracket = ArenaAnalytics:getBracketFromTeamSize(newArena["size"]);
-	newArena["comp"] = AAmatch:getArenaComp(newArena["party"], bracket);
-	newArena["enemyComp"] = AAmatch:getArenaComp(newArena["enemy"], bracket);
+	newArena["comp"] = AAmatch:GetArenaComp(newArena["party"], bracket);
+	newArena["enemyComp"] = AAmatch:GetArenaComp(newArena["enemy"], bracket);
 
 	local season = GetCurrentArenaSeason();
 	if (season == 0) then
@@ -492,7 +481,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 
 	-- Assign session
 	local session = ArenaAnalytics:GetLatestSession();
-	local lastMatch = ArenaAnalytics:getLastMatch(false);
+	local lastMatch = ArenaAnalytics:GetLastMatch(false);
 	if (not ArenaAnalytics:IsMatchesSameSession(lastMatch, arenaData)) then
 		session = session + 1;
 	end
@@ -511,46 +500,28 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	
 	Filters:Refresh();
 
-	AAtable:tryStartSessionDurationTimer();
+	AAtable:TryStartSessionDurationTimer();
 end
 
--- Returns the player's spec
-function AAmatch:getPlayerSpec()
-	local spec = API:GetMySpec();
-
-	-- TODO: Decide if we wanna keep this, make it a setting, or remove it.
-	if (spec == nil and false) then -- Workaround for when GetTalentTabInfo returns nil
-		if(#MatchHistoryDB > 0) then
-			-- Get the player from last match (Assumes sorting to index 1)
-			spec = MatchHistoryDB[#MatchHistoryDB]["team"][1]["spec"];
-		end
-	end
-	
-	return spec
-end
-
-local function isArenaPreparationStateActive()
+function ArenaAnalytics:IsArenaPreparationStateActive()
 	local auraIndex = 1;
-	local aura = UnitAura("player", auraIndex)
-	
-	if(aura ~= nil) then
-		repeat
-			local auraID = tonumber(select(10, UnitAura("player", auraIndex)));
-			ArenaAnalytics:Log("Aura: ", auraID);
-			if(auraID ~= nil and (auraID == 32728 or auraID == 32727)) then
-				ArenaAnalytics:Log("Arena Preparation active!");
-				return true;
-			end
+	local spellID = select(10, UnitAura("player", auraIndex));
 
-			auraIndex = auraIndex + 1;
-			aura = UnitAura("player", auraIndex);
-		until (aura == nil)
+	while(tonumber(spellID)) do
+		local auraID = tonumber(spellID);
+		if(auraID and (auraID == 32728 or auraID == 32727)) then
+			ArenaAnalytics:Log("Arena Preparation active!");
+			return true;
+		end
+
+		auraIndex = auraIndex + 1;
+		spellID = select(10, UnitAura("player", auraIndex));
 	end
 
 	return false;
 end
 
-function AAmatch:getArenaStatus()
+function ArenaAnalytics:GetArenaStatus()
 	if(not IsActiveBattlefieldArena()) then
 		return "None";
 	end
@@ -559,20 +530,9 @@ function AAmatch:getArenaStatus()
 		return "Ended";
 	end
 
-	if(isArenaPreparationStateActive()) then
+	if(ArenaAnalytics:IsArenaPreparationStateActive()) then
 		return "Preparation";
 	end
 
 	return "Active";
-end
-
--- Used to draw a solid box texture over a frame for testing
-function ArenaAnalytics:DrawDebugBackground(frame, r, g, b, a)
-	if(Options:Get("debuggingEnabled")) then
-		-- TEMP testing
-		frame.background = frame:CreateTexture();
-		frame.background:SetPoint("CENTER")
-		frame.background:SetSize(frame:GetWidth(), frame:GetHeight());
-		frame.background:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
-	end
 end

@@ -3,6 +3,7 @@ local Events = ArenaAnalytics.Events;
 
 -- Local module aliases
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
+local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
@@ -34,14 +35,14 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 				ArenaTracker:HandleArenaEnter(...);
 			end
 			
-			ArenaAnalytics.Events:RegisterArenaEvents();
+			Events:RegisterArenaEvents();
 		end
 	else -- Not in arena
 		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
 			ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
 		elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
 			if(ArenaTracker:IsTrackingArena()) then
-				ArenaAnalytics.Events:UnregisterArenaEvents();
+				Events:UnregisterArenaEvents();
 				ArenaTracker:HandleArenaExit();
 			end
 		end
@@ -50,14 +51,9 @@ end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
 local function ParseArenaTimerMessages(msg)
-	local locale = ArenaAnalytics.Constants.GetArenaTimer()
-	for k,v in pairs(locale) do
-		if string.find(msg, v) then
-			-- Time is zero according to the broadcast message, and 
-			if (k == 0) then
-				ArenaTracker:HandleArenaStart();
-			end
-		end
+	local localizedMessage = Constants.GetArenaTimer()
+	if(msg:find(localizedMessage)) then
+		ArenaTracker:HandleArenaStart();
 	end
 end
 

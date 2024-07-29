@@ -316,7 +316,7 @@ local function CreateInputBox(setting, parent, x, text, func)
         inputBox:SetCursorPosition(0);
 		inputBox:HighlightText(0,0);
         
-		AAtable:checkUnsavedWarningThreshold();
+		AAtable:CheckUnsavedWarningThreshold();
     end);
 
     SetupTooltip(inputBox, {inputBox, inputBox.text});
@@ -479,7 +479,7 @@ function SetupTab_ImportExport()
     CreateSpace();
 
     -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
-    parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() AAtable:tryShowimportDialogFrame() end);
+    parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() AAtable:TryShowimportDialogFrame(parent) end);
     parent.importButton.stateFunc = function()
         if(Options:Get("allowImportDataMerge") or not ArenaAnalytics:HasStoredMatches()) then
             exportOptionsFrame.importButton:Enable();
