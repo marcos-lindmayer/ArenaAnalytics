@@ -482,7 +482,6 @@ local function ProcessMatchIndex(index)
             table.insert(ArenaAnalytics.filteredMatchHistory, index);
         end
     end
-
 end
 
 Filters.isRefreshing = nil;
