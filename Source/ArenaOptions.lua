@@ -295,7 +295,7 @@ local function CreateInputBox(setting, parent, x, text, func)
     
     -- Text
     inputBox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    inputBox.text:SetPoint("LEFT", inputBox, "RIGHT", 50);
+    inputBox.text:SetPoint("LEFT", inputBox, "RIGHT", 5, 0);
     inputBox.text:SetTextHeight(TextSize);
     inputBox.text:SetText(text);
     
