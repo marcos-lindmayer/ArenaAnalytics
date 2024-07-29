@@ -207,6 +207,7 @@ local specSpells = {
     [ 49206 ] = "Unholy", -- Summon Gargoyle
 
     [ 49143 ] = "Frost", -- Frost Strike
+    [ 66196 ] = "Frost", -- Frost Strike Off-Hand
     [ 51271 ] = "Frost", -- Pillar of Frost
     [ 49203 ] = "Frost", -- Hungering Cold
     [ 49184 ] = "Frost", -- Howling Blast
