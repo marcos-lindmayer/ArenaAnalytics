@@ -245,13 +245,14 @@ function AAtable:OnLoad()
     local searchTitle = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
     CreateFilterTitle(ArenaAnalyticsScrollFrame.searchBox, searchTitle, nil, -5);
     
-    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEnterPressed", function()
-        ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus();
+        Search:CommitSearch(self:GetText());
     end);
 
-    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEscapePressed", function() 
-        ArenaAnalyticsScrollFrame.searchBox:SetText(Search:GetDisplay());
-        ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEscapePressed", function(self) 
+        self:SetText(Search:GetLastDisplay());
+        self:ClearFocus();
     end);
 
     local superOnTextChanged = ArenaAnalyticsScrollFrame.searchBox:GetScript("OnTextChanged");
@@ -268,11 +269,6 @@ function AAtable:OnLoad()
             Search:CommitSearch("");
             self:SetText("");
         end
-    end);
-        
-    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEnterPressed", function(self)
-        self:ClearFocus();
-        Search:CommitSearch(self:GetText());
     end);
 
     -- Filter Bracket Dropdown
@@ -359,10 +355,6 @@ function AAtable:OnLoad()
         Dropdown:CloseAll();
     end);
 
-    ArenaAnalyticsScrollFrame:SetScript("OnShow", function()
-        -- AAtable:tryShowimportDialogFrame();
-    end);
-
     ArenaAnalyticsScrollFrame.specFrames = {}
     ArenaAnalyticsScrollFrame.deathFrames = {}
 
@@ -387,12 +379,9 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
 
     hasLoaded = true;
-    
+
+    -- This will also update UI
     Filters:Refresh();
-
-    ArenaAnalytics.AAtable:handleArenaCountChanged(true);
-
-    AAtable:OnShow();
 end
 
 function AAtable:tryShowimportDialogFrame(parent)
@@ -560,10 +549,6 @@ function AAtable:CreateExportDialogFrame()
 	end
     
     ArenaAnalyticsScrollFrame.exportDialogFrame:Show();
-end
-
-function AAtable:OnShow()
-    AAtable:RefreshLayout();
 end
 
 local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKey, scrollEntry)
@@ -800,17 +785,14 @@ function AAtable:checkUnsavedWarningThreshold()
 end
 
 -- Updates the displayed data for a new match
-function AAtable:handleArenaCountChanged(isLoadCall)
+function AAtable:HandleArenaCountChanged()
     if(not hasLoaded) then
         -- Load will trigger call soon
         return;
     end
 
     ArenaAnalytics.Options:TriggerStateUpdates()
-
-    if(not isLoadCall) then
-        AAtable:RefreshLayout();
-    end
+    AAtable:RefreshLayout();
 
     if(not ArenaAnalytics:HasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
         ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();

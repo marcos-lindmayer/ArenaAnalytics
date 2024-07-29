@@ -21,3 +21,11 @@ function Helpers:DeepCopy(original)
     end
     return copy;
 end
+
+function Helpers:GetPlayerName(skipRealm)
+    local name, realm = UnitFullName("player");
+	if(name and realm and not skipRealm) then
+		return name .. "-" .. realm;
+	end
+    return name;
+end

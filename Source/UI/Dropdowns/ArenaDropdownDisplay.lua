@@ -184,7 +184,7 @@ function Display.SetComp(dropdownContext, display)
         containerFrame.text = CreateText(containerFrame, comp, fontSize, fontColor);
         containerFrame.text:SetPoint("LEFT", 0, 0);
         
-        local width = containerFrame.text:GetWidth() 
+        local width = containerFrame.text:GetWidth();
         totalWidth = totalWidth + width;
     else
         -- Get data

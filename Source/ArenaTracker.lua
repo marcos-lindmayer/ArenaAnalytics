@@ -508,15 +508,19 @@ function ArenaTracker:ProcessCombatLogEvent(eventType, ...)
 	end
 end
 
-function ArenaTracker:assignSpec(class, oldSpec, newSpec)
+function ArenaTracker:AssignSpec(unit, newSpec)
+	assert(unit and newSpec);
+
+	local class, oldSpec = unit["class"], unit["spec"];
+
 	if(oldSpec == newSpec) then 
-		return oldSpec 
+		return;
 	end
 
 	-- TODO: Fixup data for a standardized format of missing specs
 	if(oldSpec == nil or oldSpec == "" or oldSpec == "-" or oldSpec == "?" or oldSpec == "Preg") then
-		ArenaAnalytics:Log("Assigning spec: ", newSpec);
-		return newSpec;
+		ArenaAnalytics:Log("Assigning spec: ", newSpec, " for unit: ", unit["name"]);
+		unit["spec"] = newSpec;
 	end
 
 	return oldSpec;
@@ -537,7 +541,7 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 			local unit = currentArena["party"][i];
 			if (unit["GUID"] == sourceGUID) then
 				-- Adding spec to party member
-				unit["spec"] = ArenaTracker:assignSpec(unit["class"], unit["spec"], spec);
+				ArenaTracker:AssignSpec(unit, spec);
 				return;
 			end
 		end
@@ -546,7 +550,7 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 			local unit = currentArena["enemy"][i];
 			if (unit["GUID"] == sourceGUID) then
 				-- Adding spec to enemy member
-				unit["spec"] = ArenaTracker:assignSpec(unit["class"], unit["spec"], spec);
+				ArenaTracker:AssignSpec(unit, spec);
 				return;
 			end
 		end

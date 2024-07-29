@@ -69,7 +69,7 @@ local function GenerateSeasonData()
             value = season,
             key = "Filter_Season",
             onClick = FilterTables.SetFilterValue,
-            checked = function() return Filters:GetCurrent("Filter_Season") == season end,
+            checked = function() return Filters:Get("Filter_Season") == season end,
         });
     end
 

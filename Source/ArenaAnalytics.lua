@@ -303,24 +303,27 @@ function ArenaAnalytics:GetLatestRating(teamSize)
 	return 0;
 end
 
-function ArenaAnalytics:SortGroup(group, isPlayerPriority)
+function ArenaAnalytics:SortGroup(group, isPlayerPriority, playerFullName)
 	if(not group or #group == 0) then
 		return;
 	end
 	
-	local myName, myRealm = UnitFullName("player");
-	local myFullName = myName.."-"..myRealm;
-
+	-- Set playerName if missing
+	if(not playerFullName) then
+		playerFullName = Helpers:GetPlayerName();
+	end
+	local name = playerFullName:match("^[^-]+");
+	
     table.sort(group, function(playerA, playerB)
 		local classA, classB = playerA["class"], playerB["class"];
         local specA, specB = playerA["spec"], playerB["spec"];
 		local nameA, nameB = playerA["name"], playerB["name"];
 		
         if(isPlayerPriority) then
-			if(myName) then
-				if(nameA == myFullName or nameA == myName) then
+			if(playerFullName) then
+				if(nameA == name or nameA == playerFullName) then
 					return true;
-				elseif(nameB == myFullName or nameB == myName) then
+				elseif(nameB == name or nameB == playerFullName) then
 					return false;
 				end
 			end
@@ -442,25 +445,21 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 	if (newArena["isRated"] == false) then
 		newArena["partyRating"] = "SKIRMISH";
 		newArena["partyMMR"] = "-";
-		newArena["partyRatingDelta"] = "";
+		newArena["partyRatingDelta"] = nil;
 		newArena["enemyRating"] = "-";
-		newArena["enemyRatingDelta"] = "";
+		newArena["enemyRatingDelta"] = nil;
 		newArena["enemyMMR"] = "-";
 	end
 
-	ArenaAnalytics:SortGroup(newArena["party"], true);
-	ArenaAnalytics:SortGroup(newArena["enemy"], false);
+	local playerName = Helpers:GetPlayerName();
+
+	ArenaAnalytics:SortGroup(newArena["party"], true, playerName);
+	ArenaAnalytics:SortGroup(newArena["enemy"], false, playerName);
 
 	-- Get arena comp for each team
 	local bracket = ArenaAnalytics:getBracketFromTeamSize(newArena["size"]);
 	newArena["comp"] = AAmatch:getArenaComp(newArena["party"], bracket);
 	newArena["enemyComp"] = AAmatch:getArenaComp(newArena["enemy"], bracket);
-
-	local name, realm = UnitFullName("player");
-	if(name and realm) then
-		name = name .. "-" .. realm;
-	end
-	arenaData = name or nil;
 
 	local season = GetCurrentArenaSeason();
 	if (season == 0) then
@@ -469,7 +468,7 @@ function ArenaAnalytics:insertArenaToMatchHistory(newArena)
 
 	-- Setup table data to insert into MatchHistoryDB
 	local arenaData = {
-		["player"] = name,
+		["player"] = playerName,
 		["isRated"] = newArena["isRated"],
 		["date"] = tonumber(newArena["startTime"]) or time(),
 		["season"] = season,

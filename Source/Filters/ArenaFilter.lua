@@ -103,37 +103,6 @@ function Filters:ResetAll(forceDefaults)
     Filters:Refresh();
 end
 
--- DEPRECATED
--- Get the current value, defaulting to 
-function Filters:GetCurrent(filter, subcategory, fallback)
-    if(filter ~= nil) then
-        if(subcategory ~= nil) then
-            return currentFilters[filter] and currentFilters[filter][subcategory] or defaults[filter][subcategory] or fallback;
-        else
-            return currentFilters[filter] or defaults[filter] or fallback;
-        end
-    end
-end
-
--- DEPRECATED
-function Filters:GetCurrentDisplay(filter)
-    if(filter == nil) then
-        return "";
-    end
-
-    return currentFilters[filter]["display"] or currentFilters[filter]["data"] or currentFilters[filter] or "";
-end
-
--- DEPRECATED
-function Filters:GetCurrentData(filter)
-    if(filter == nil) then
-        return "";
-    end
-
-    return currentFilters[filter]["data"] or currentFilters[filter] or "";
-end
-
--- TODO: Simplify using Filters:Get(filter) and Filters:GetDefault(filter)
 function Filters:IsFilterActive(filterName)
     local filter = currentFilters[filterName];
     if (filter ~= nil) then
@@ -168,50 +137,6 @@ function Filters:getActiveFilterCount()
         count = count + 1; 
     end
     return count;
-end
-
--- TODO: Refactor when dropdown overhaul simplifies comp filters
-function Filters:SetFilter(filter, value, display)
-    if(filter == nil) then
-        ArenaAnalytics:Log("SetFilter failed due to nil filter");
-        return;
-    end
-
-    ArenaAnalytics:Log("Setting filter: ", filter, " -- ", value, " -- ", display)
-
-    -- Reset comp filters when bracket filter changes
-    if (filter == "Filter_Bracket") then
-        Filters:Reset("Filter_Comp");
-        Filters:Reset("Filter_EnemyComp");
-    end
-    
-    if (display ~= nil) then
-        currentFilters[filter] = {
-            ["data"] = value;
-            ["display"] = display;
-        }
-    else
-        currentFilters[filter] = value;
-    end
-    
-    Filters:Refresh();
-end
-
-function Filters:SetDisplay(filter, display)
-    assert(filter ~= nil);
-    assert(currentFilters[filter] ~= nil);
-    assert(currentFilters[filter]["display"] ~= nil); -- TODO: Decide if we wanna assert this
-
-    -- Update the display if 
-    if(currentFilters[filter]["display"]) then
-        currentFilters[filter]["display"] = display;
-    end
-end
-
-function Filters:ResetToDefault(filter, skipOverrides)
-    -- Update the filter for the new value
-    local defaultValue = Filters:GetDefault(filter, skipOverrides);
-    Filters:SetFilter(filter, defaultValue);
 end
 
 -- check map filter
@@ -519,7 +444,7 @@ function Filters:Refresh(onCompleteFunc)
         ResetTransientCompData();
     
         ArenaAnalytics.AAtable:ForceRefreshFilterDropdowns();
-        ArenaAnalytics.AAtable:handleArenaCountChanged();
+        ArenaAnalytics.AAtable:HandleArenaCountChanged();
 
         if(onCompleteFunc) then
             onCompleteFunc();
@@ -546,92 +471,4 @@ function Filters:Refresh(onCompleteFunc)
 
     -- Start processing batches
     ProcessBatch()
-end
-
-
------------------------------------------------------------------------------
--- DEPRECATED
-
-
--- DEPRECATED
-local function findOrAddCompValues_DEPRECATED(compsTable, comp, isWin, mmr)
-	assert(compsTable ~= nil);	
-    if(comp == nil) then return end;
-
-	if(existingComp ~= nil) then
-		compsTable[comp].played = compsTable[comp].played + 1;
-
-		if(isWin) then
-			compsTable[comp].wins = compsTable[comp].wins + 1;
-		end
-
-		if(tonumber(mmr)) then
-			compsTable[comp].mmr = compsTable[comp].mmr + tonumber(mmr);
-			compsTable[comp].mmrCount = compsTable[comp].mmrCount + 1;
-		end
-	else -- Insert new
-		compsTable[comp] = {
-			played = 1,
-			wins = isWin and 1 or 0,
-			mmr = tonumber(mmr) or 0,
-			mmrCount = tonumber(mmr) and 1 or 0, -- Separated in case of missing mmr
-		};
-	end    
-end
-
--- DEPRECAED
--- Get all played comps with total played and total wins for matches that pass filters
-function ArenaAnalytics:GetPlayedCompsWithTotalAndWins(isEnemyComp)
-    local compKey = isEnemyComp and "enemyComp" or "comp";
-    local playedComps = { };
-	
-    local bracket = Filters:Get("Filter_Bracket");
-    if(bracket == "All") then
-		-- Always include an entry for "All"
-		playedComps["All"] = {};
-
-		return playedComps;
-	end
-
-	-- Make sure there's at least one entry
-	findOrAddCompValues(playedComps, "All");
-
-	-- Combine comp data
-	for i=1, #MatchHistoryDB do
-		local match = MatchHistoryDB[i];
-		if(match and Filters:DoesMatchPassAllFilters(match, compKey)) then
-            assert(match["bracket"] == bracket); -- This should be the case if it passes filters
-
-			-- Add to "All" data
-			findOrAddCompValues(playedComps, "All", match["won"], match["mmr"]);
-			
-			-- Add comp specific data
-			local comp = match[compKey];
-			if(comp ~= nil) then
-				findOrAddCompValues(playedComps, comp, match["won"], match["mmr"]);
-			end
-		end
-	end
-
-	-- Compute winrates and average mmr
-	for comp, compTable in pairs(playedComps) do
-		-- Calculate winrate
-		local played = tonumber(compTable.played) or 0;
-		local wins = tonumber(compTable.wins) or 0;
-		compTable.winrate = (played > 0) and math.floor(wins * 100 / played) or 0;
-
-		-- Calculate average MMR
-		local mmr = tonumber(compTable.mmr);
-		local mmrCount = tonumber(compTable.mmrCount);
-		if mmr and mmrCount and mmrCount > 0 then
-			compTable.mmr = math.floor(mmr / mmrCount);
-			compTable.mmrCount = nil;
-		else
-			-- No MMR data
-			compTable.mmr = nil;
-			compTable.mmrCount = nil;
-		end
-	end
-
-    return playedComps;
 end

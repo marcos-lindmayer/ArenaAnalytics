@@ -6,6 +6,7 @@ local Export = ArenaAnalytics.Export;
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
 local Constants = ArenaAnalytics.Constants;
+local Helpers = ArenaAnalytics.Helpers;
 local AAtable = ArenaAnalytics.AAtable;
 local AAmatch = ArenaAnalytics.AAmatch;
 
@@ -114,7 +115,7 @@ local function checkDataSource_ArenaStats_Cata(data)
 end
 
 local function checkDataSource_ArenaAnalytics(data)
-    if(data[1]:sub(1, 18) == "ArenaAnalytics_v1:") then
+    if(data[1]:sub(1, 18) == "ArenaAnalytics_v2:") then
         return true;
     end
    return false;
@@ -237,10 +238,11 @@ function Import:parseRawData(data)
             end
         elseif(dataSource == "ArenaAnalytics") then
             -- Remove heading
-            local arenasRaw = string.sub(data[1], 1075)
+            local arenasRaw = string.sub(data[1], 1111)
             -- Split into arenas
             local _, numberOfArenas = arenasRaw:gsub(",","");
-            numberOfArenas = numberOfArenas/92;
+            numberOfArenas = numberOfArenas/95;
+            ArenaAnalytics:Log(numberOfArenas)
             if (numberOfArenas ~= math.floor(numberOfArenas)) then
                 dataIsCorrupt = true;
             elseif(numberOfArenas == 0) then
@@ -556,8 +558,8 @@ function Import:createGroupTable_ArenaStats(arena, groupType, size)
         end
     end
 
-    -- Place player first in the arena party group, sort rest 
-	ArenaAnalytics:SortGroup(group, (groupType == "team"));
+    -- Place player first in the arena party group, sort rest
+	ArenaAnalytics:SortGroup(group, (groupType == "team"), arena["player"]);
 
     return group;
 end
@@ -578,7 +580,7 @@ function Import:parseCachedValues_ArenaAnalytics(nextIndex)
     local finishedParsing = false;
 
     for i = nextIndex, #cachedValues do
-        if(i%92 ~= 0) then
+        if(i%95 ~= 0) then
             table.insert(arena, cachedValues[i])
         else
             if(CanImportMatchByRelativeTime(tonumber(arena[1]))) then
@@ -591,90 +593,93 @@ function Import:parseCachedValues_ArenaAnalytics(nextIndex)
                     ["won"] = GetBoolFromBinaryImport(arena[6]), -- Won, lost or nil
                     ["isRated"] = arena[7] == "1",
                     ["rating"] = tonumber(arena[8]),
-                    ["mmr"] = tonumber(arena[9]),
-                    ["enemyRating"] = tonumber(arena[10]),
-                    ["enemyMmr"] = tonumber(arena[11]),
-                    ["firstDeath"] = arena[12],
-                    ["party1Name"] = arena[13], -- Party names
-                    ["party2Name"] = arena[14],
-                    ["party3Name"] = arena[15],
-                    ["party4Name"] = arena[16],
-                    ["party5Name"] = arena[17],
-                    ["party1Race"] = arena[18], -- Party races
-                    ["party2Race"] = arena[19],
-                    ["party3Race"] = arena[20],
-                    ["party4Race"] = arena[21],
-                    ["party5Race"] = arena[22],
-                    ["party1Class"] = arena[23], -- Party classes
-                    ["party2Class"] = arena[24],
-                    ["party3Class"] = arena[25],
-                    ["party4Class"] = arena[26],
-                    ["party5Class"] = arena[27],
-                    ["party1Spec"] = arena[28], -- Party Specs
-                    ["party2Spec"] = arena[29],
-                    ["party3Spec"] = arena[30],
-                    ["party4Spec"] = arena[31],
-                    ["party5Spec"] = arena[32],
-                    ["party1Kills"] = tonumber(arena[33]), -- Party Kills stats
-                    ["party2Kills"] = tonumber(arena[34]),
-                    ["party3Kills"] = tonumber(arena[35]),
-                    ["party4Kills"] = tonumber(arena[36]),
-                    ["party5Kills"] = tonumber(arena[37]),
-                    ["party1Deaths"] = tonumber(arena[38]), -- Party Death stats
-                    ["party2Deaths"] = tonumber(arena[39]),
-                    ["party3Deaths"] = tonumber(arena[40]),
-                    ["party4Deaths"] = tonumber(arena[41]),
-                    ["party5Deaths"] = tonumber(arena[42]),
-                    ["party1Damage"] = tonumber(arena[43]), -- Party Damage stats
-                    ["party2Damage"] = tonumber(arena[44]),
-                    ["party3Damage"] = tonumber(arena[45]),
-                    ["party4Damage"] = tonumber(arena[46]),
-                    ["party5Damage"] = tonumber(arena[47]),
-                    ["party1Healing"] = tonumber(arena[48]), -- Party Healing stats
-                    ["party2Healing"] = tonumber(arena[49]),
-                    ["party3Healing"] = tonumber(arena[50]),
-                    ["party4Healing"] = tonumber(arena[51]),
-                    ["party5Healing"] = tonumber(arena[52]),
-                    ["enemy1Name"] = arena[53], -- Enemy names
-                    ["enemy2Name"] = arena[54],
-                    ["enemy3Name"] = arena[55],
-                    ["enemy4Name"] = arena[56],
-                    ["enemy5Name"] = arena[57],
-                    ["enemy1Race"] = arena[58], -- Enemy races
-                    ["enemy2Race"] = arena[59],
-                    ["enemy3Race"] = arena[60],
-                    ["enemy4Race"] = arena[61],
-                    ["enemy5Race"] = arena[62],
-                    ["enemy1Class"] = arena[63], -- Enemy classes
-                    ["enemy2Class"] = arena[64],
-                    ["enemy3Class"] = arena[65],
-                    ["enemy4Class"] = arena[66],
-                    ["enemy5Class"] = arena[67],
-                    ["enemy1Spec"] = arena[68], -- Enemy Specs
-                    ["enemy2Spec"] = arena[69],
-                    ["enemy3Spec"] = arena[70],
-                    ["enemy4Spec"] = arena[71],
-                    ["enemy5Spec"] = arena[72],
-                    ["enemy1Kills"] = tonumber(arena[73]), -- Enemy Kills stats
-                    ["enemy2Kills"] = tonumber(arena[74]),
-                    ["enemy3Kills"] = tonumber(arena[75]),
-                    ["enemy4Kills"] = tonumber(arena[76]),
-                    ["enemy5Kills"] = tonumber(arena[77]),
-                    ["enemy1Deaths"] = tonumber(arena[78]), -- Enemy Death stats
-                    ["enemy2Deaths"] = tonumber(arena[79]),
-                    ["enemy3Deaths"] = tonumber(arena[80]),
-                    ["enemy4Deaths"] = tonumber(arena[81]),
-                    ["enemy5Deaths"] = tonumber(arena[82]),
-                    ["enemy1Damage"] = tonumber(arena[83]), -- Enemy Damage stats
-                    ["enemy2Damage"] = tonumber(arena[84]),
-                    ["enemy3Damage"] = tonumber(arena[85]),
-                    ["enemy4Damage"] = tonumber(arena[86]),
-                    ["enemy5Damage"] = tonumber(arena[87]),
-                    ["enemy1Healing"] = tonumber(arena[88]), -- Enemy Healing stats
-                    ["enemy2Healing"] = tonumber(arena[89]),
-                    ["enemy3Healing"] = tonumber(arena[90]),
-                    ["enemy4Healing"] = tonumber(arena[91]),
-                    ["enemy5Healing"] = tonumber(arena[92]),
+                    ["ratingDelta"] = tonumber(arena[9]),
+                    ["mmr"] = tonumber(arena[10]),
+                    ["enemyRating"] = tonumber(arena[11]),
+                    ["enemyRatingDelta"] = tonumber(arena[12]),
+                    ["enemyMmr"] = tonumber(arena[13]),
+                    ["firstDeath"] = arena[14],
+                    ["player"] = arena[15],
+                    ["party1Name"] = arena[16], -- Party names
+                    ["party2Name"] = arena[17],
+                    ["party3Name"] = arena[18],
+                    ["party4Name"] = arena[19],
+                    ["party5Name"] = arena[20],
+                    ["party1Race"] = arena[21], -- Party races
+                    ["party2Race"] = arena[22],
+                    ["party3Race"] = arena[23],
+                    ["party4Race"] = arena[24],
+                    ["party5Race"] = arena[25],
+                    ["party1Class"] = arena[26], -- Party classes
+                    ["party2Class"] = arena[27],
+                    ["party3Class"] = arena[28],
+                    ["party4Class"] = arena[29],
+                    ["party5Class"] = arena[30],
+                    ["party1Spec"] = arena[31], -- Party Specs
+                    ["party2Spec"] = arena[32],
+                    ["party3Spec"] = arena[33],
+                    ["party4Spec"] = arena[34],
+                    ["party5Spec"] = arena[35],
+                    ["party1Kills"] = tonumber(arena[36]), -- Party Kills stats
+                    ["party2Kills"] = tonumber(arena[37]),
+                    ["party3Kills"] = tonumber(arena[38]),
+                    ["party4Kills"] = tonumber(arena[39]),
+                    ["party5Kills"] = tonumber(arena[40]),
+                    ["party1Deaths"] = tonumber(arena[41]), -- Party Death stats
+                    ["party2Deaths"] = tonumber(arena[42]),
+                    ["party3Deaths"] = tonumber(arena[43]),
+                    ["party4Deaths"] = tonumber(arena[44]),
+                    ["party5Deaths"] = tonumber(arena[45]),
+                    ["party1Damage"] = tonumber(arena[46]), -- Party Damage stats
+                    ["party2Damage"] = tonumber(arena[47]),
+                    ["party3Damage"] = tonumber(arena[48]),
+                    ["party4Damage"] = tonumber(arena[49]),
+                    ["party5Damage"] = tonumber(arena[50]),
+                    ["party1Healing"] = tonumber(arena[51]), -- Party Healing stats
+                    ["party2Healing"] = tonumber(arena[52]),
+                    ["party3Healing"] = tonumber(arena[53]),
+                    ["party4Healing"] = tonumber(arena[54]),
+                    ["party5Healing"] = tonumber(arena[55]),
+                    ["enemy1Name"] = arena[56], -- Enemy names
+                    ["enemy2Name"] = arena[57],
+                    ["enemy3Name"] = arena[58],
+                    ["enemy4Name"] = arena[59],
+                    ["enemy5Name"] = arena[60],
+                    ["enemy1Race"] = arena[61], -- Enemy races
+                    ["enemy2Race"] = arena[62],
+                    ["enemy3Race"] = arena[63],
+                    ["enemy4Race"] = arena[64],
+                    ["enemy5Race"] = arena[65],
+                    ["enemy1Class"] = arena[66], -- Enemy classes
+                    ["enemy2Class"] = arena[67],
+                    ["enemy3Class"] = arena[68],
+                    ["enemy4Class"] = arena[69],
+                    ["enemy5Class"] = arena[70],
+                    ["enemy1Spec"] = arena[71], -- Enemy Specs
+                    ["enemy2Spec"] = arena[72],
+                    ["enemy3Spec"] = arena[73],
+                    ["enemy4Spec"] = arena[74],
+                    ["enemy5Spec"] = arena[75],
+                    ["enemy1Kills"] = tonumber(arena[76]), -- Enemy Kills stats
+                    ["enemy2Kills"] = tonumber(arena[77]),
+                    ["enemy3Kills"] = tonumber(arena[78]),
+                    ["enemy4Kills"] = tonumber(arena[79]),
+                    ["enemy5Kills"] = tonumber(arena[80]),
+                    ["enemy1Deaths"] = tonumber(arena[81]), -- Enemy Death stats
+                    ["enemy2Deaths"] = tonumber(arena[82]),
+                    ["enemy3Deaths"] = tonumber(arena[83]),
+                    ["enemy4Deaths"] = tonumber(arena[84]),
+                    ["enemy5Deaths"] = tonumber(arena[85]),
+                    ["enemy1Damage"] = tonumber(arena[86]), -- Enemy Damage stats
+                    ["enemy2Damage"] = tonumber(arena[87]),
+                    ["enemy3Damage"] = tonumber(arena[88]),
+                    ["enemy4Damage"] = tonumber(arena[89]),
+                    ["enemy5Damage"] = tonumber(arena[90]),
+                    ["enemy1Healing"] = tonumber(arena[91]), -- Enemy Healing stats
+                    ["enemy2Healing"] = tonumber(arena[92]),
+                    ["enemy3Healing"] = tonumber(arena[93]),
+                    ["enemy4Healing"] = tonumber(arena[94]),
+                    ["enemy5Healing"] = tonumber(arena[95]),
                 }
 
                 table.insert(cachedArenas, arenaTable);
@@ -741,6 +746,7 @@ function Import:addCachedArenasToMatchHistory_ArenaAnalytics(nextIndex)
             ["enemyComp"] = AAmatch:getArenaComp(enemyTeam, cachedArena["bracket"]),
             ["won"] = cachedArena["won"],
             ["firstDeath"] = cachedArena["firstDeath"] ~= "" and cachedArena["firstDeath"] or nil,
+            ["player"] = cachedArena["player"],
             ["importInfo"] = {"ArenaAnalytics", (existingArenaCount > 0 and true or false)} -- Import Source, isMergeImport
         }
 
@@ -779,7 +785,6 @@ function Import:completeImport()
     ArenaAnalytics:Log("Import ignored", arenasSkippedByDate, "arenas due to their date.");
 end
 
--- TODO: Update for ArenaAnalytics!
 function Import:createGroupTable_ArenaAnalytics(arena, groupType, size)
     local group = {}
     for i = 1, size do
@@ -804,8 +809,8 @@ function Import:createGroupTable_ArenaAnalytics(arena, groupType, size)
         end
     end
 
-    -- Place player first in the arena party group, sort rest 
-	ArenaAnalytics:SortGroup(group, (groupType == "team"));
+    -- Place player first in the arena party group, sort rest
+	ArenaAnalytics:SortGroup(group, (groupType == "party"), arena["player"]);
 
     return group;
 end
@@ -826,10 +831,10 @@ function Export:combineExportCSV()
     end
 
     local exportTable = {}
-    local exportHeader = "ArenaAnalytics_v1:"..
+    local exportHeader = "ArenaAnalytics_v2:"..
 
     -- Match data
-    "date,season,bracket,map,duration,won,isRated,rating,mmr,enemyRating,enemyMMR,firstDeath,"..
+    "date,season,bracket,map,duration,won,isRated,rating,ratingDelta,mmr,enemyRating,enemyRatingDelta,enemyMMR,firstDeath,player,"..
 
     -- Team data
     "party1Name,party2Name,party3Name,party4Name,party5Name,"..
@@ -878,10 +883,13 @@ function Export:addMatchesToExport(exportTable, nextIndex)
         .. victory .. ","
         .. (match["isRated"] and "1" or "0") .. ","
         .. (match["rating"] or "").. ","
+        .. (match["ratingDelta"] or "").. ","
         .. (match["mmr"] or "") .. ","
         .. (match["enemyRating"] or "") .. ","
+        .. (match["enemyRatingDelta"] or "").. ","
         .. (match["enemyMmr"] or "") .. ","
         .. (match["firstDeath"] or "") .. ","
+        .. (match["player"] or "") .. ","
         
         -- Add team data 
         local teams = {"team", "enemyTeam"};

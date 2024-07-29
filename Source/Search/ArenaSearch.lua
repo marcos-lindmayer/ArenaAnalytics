@@ -52,10 +52,87 @@ end
 Search.current = {
     ["raw"] = "", -- The raw search string
     ["display"] = "", -- Search string sanitized and colored(?) for display
-    ["data"] = nil, -- Search data as a table for efficient comparisons
+    ["data"] = { segments = {}, nonInversedCount = 0 }, -- Search data as a table for efficient comparisons
 }
 
+local lastCommittedSearchDisplay = "";
 local activeSearchData = { segments = {}, nonInversedCount = 0 };
+
+
+---------------------------------
+-- Search API
+---------------------------------
+
+function Search:Get(key)
+    if key then
+        return key and Search.current[key];
+    else
+        return Search.current;
+    end
+end
+
+function Search:GetLastDisplay()
+    return lastCommittedSearchDisplay or "";
+end
+
+function Search:GetDisplay()
+    return Search.current["display"] or Search.current["raw"] or "";
+end
+
+function Search:IsEmpty()
+    return Search.current["raw"] == "" and Search.current["display"] == "" and #Search.current["data"].segments == 0 and #activeSearchData.segments == 0;
+end
+
+function Search:Reset()
+    if(Search:IsEmpty()) then
+        return;
+    end
+
+    Search:CommitSearch("");
+end
+
+function Search:Update(input)
+    local searchBox = ArenaAnalyticsScrollFrame.searchBox;
+
+    local oldCursorPosition = searchBox:GetCursorPosition();
+    local newSearchData, display, raw, newCursorPosition = Search:ProcessInput(input, oldCursorPosition);
+
+    Search.current["raw"] = raw;
+    Search.current["display"] = display;
+    Search.current["data"] = newSearchData;
+
+    -- Update the searchBox
+    searchBox:SetText(display);
+    searchBox:SetCursorPosition(newCursorPosition);
+end
+
+local function LogSearchData()
+    print(" ")
+    ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
+
+    for i,segment in ipairs(activeSearchData.segments) do
+        for j,token in ipairs(segment.Tokens) do
+            assert(token and token["value"]);
+            ArenaAnalytics:Log("  Token", j, "in segment",i, "  Values:", token["value"], (token["exact"] and " exact" or ""), (token["explicitType"] and (" Type:"..token["explicitType"]) or ""), (token["negated"] and " Negated" or ""), (segment.team and (" "..segment.team) or ""), (segment.inversed and "Inversed" or ""));
+        end
+    end
+end
+
+function Search:CommitSearch(input)
+    Search.isCommitting = true;
+
+    -- Update active search filter
+    Search:Update(input);
+    activeSearchData = Search.current["data"];
+    lastCommittedSearchDisplay = Search.current["display"];
+
+    LogSearchData();
+
+    -- Force filter refresh
+    ArenaAnalytics.Filters:Refresh();
+
+    Search.isCommitting = nil;
+end
 
 ---------------------------------
 -- Search matching logic
@@ -406,70 +483,4 @@ function Search:DoesMatchPassSearch(match)
     end
 
     return true;
-end
-
----------------------------------
--- Search API
----------------------------------
-
-function Search:Get(key)
-    if key then
-        return key and Search.current[key];
-    else
-        return Search.current;
-    end
-end
-
-function Search:GetDisplay()
-    return Search.current["display"] or Search.current["raw"] or "";
-end
-
-function Search:IsEmpty()
-    return Search.current["raw"] == "" and Search.current["display"] == "" and Search.current[data] == nil and #activeSearchData.segments == 0;
-end
-
-function Search:Reset()
-    if(Search:IsEmpty()) then
-        return;
-    end
-
-    Search:CommitSearch("");
-end
-
-function Search:CommitSearch(input)
-    Search.isCommitting = true;
-
-    -- Update active search filter
-    Search:Update(input);
-    activeSearchData = Search.current["data"];
-    
-    print(" ")
-    ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
-
-    for i,segment in ipairs(activeSearchData.segments) do
-        for j,token in ipairs(segment.Tokens) do
-            assert(token and token["value"]);
-            ArenaAnalytics:Log("  Token", j, "in segment",i, "  Values:", token["value"], (token["exact"] and " exact" or ""), (token["explicitType"] and (" Type:"..token["explicitType"]) or ""), (token["negated"] and " Negated" or ""), (segment.team and (" "..segment.team) or ""), (segment.inversed and "Inversed" or ""));
-        end
-    end
-
-    -- Force filter refresh
-    ArenaAnalytics.Filters:Refresh();
-
-    Search.isCommitting = nil;
-end
-
-function Search:Update(input)
-    local searchBox = ArenaAnalyticsScrollFrame.searchBox;
-
-    local oldCursorPosition = searchBox:GetCursorPosition();
-    local newSearchData, display, raw, newCursorPosition = Search:ProcessInput(input, oldCursorPosition);
-
-    Search.current["raw"] = raw;
-    Search.current["display"] = display;
-    Search.current["data"] = newSearchData;
-
-    -- Update the searchBox
-    searchBox:SetText(display);
-    searchBox:SetCursorPosition(newCursorPosition);
 end
