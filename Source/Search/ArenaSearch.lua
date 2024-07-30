@@ -41,6 +41,14 @@ local Constants = ArenaAnalytics.Constants;
 --  Decide what to do when exact search start and end among different players
 
 
+function Search:GetEmptySegment()
+    return { tokens = {} };
+end
+
+function Search:GetEmptyTokenizedData()
+    return { segments = {}, nonInversedCount = 0 }
+end
+
 -- Helper function 
 function Search:SafeToLower(value)
     if(value and type(value) == "string") then
@@ -53,12 +61,16 @@ end
 Search.current = {
     ["raw"] = "", -- The raw search string
     ["display"] = "", -- Search string sanitized and colored(?) for display
-    ["data"] = { segments = {}, nonInversedCount = 0 }, -- Search data as a table for efficient comparisons
+    ["data"] = Search:GetEmptyTokenizedData(), -- Search data as a table for efficient comparisons
 }
 
-local lastCommittedSearchDisplay = "";
-local activeSearchData = { segments = {}, nonInversedCount = 0 };
+function Search:GetCurrentSegments()
+    assert(Search.current and Search.current["data"]);
+    return Search.current["data"].segments or {};
+end
 
+local lastCommittedSearchDisplay = "";
+local activeSearchData = Search:GetEmptyTokenizedData();
 
 ---------------------------------
 -- Search API
@@ -112,11 +124,46 @@ local function LogSearchData()
     ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
 
     for i,segment in ipairs(activeSearchData.segments) do
-        for j,token in ipairs(segment.Tokens) do
+        for j,token in ipairs(segment.tokens) do
             assert(token and token["value"]);
             ArenaAnalytics:Log("  Token", j, "in segment",i, "  Values:", token["value"], (token["exact"] and " exact" or ""), (token["explicitType"] and (" Type:"..token["explicitType"]) or ""), (token["negated"] and " Negated" or ""), (segment.team and (" "..segment.team) or ""), (segment.inversed and "Inversed" or ""));
         end
     end
+end
+
+local function GetPersistentData()
+    local persistentData = Search:GetEmptyTokenizedData();
+
+    for i,segment in ipairs(Search:GetCurrentSegments()) do
+        assert(segment.tokens);
+        local persistentSegment = Search:GetEmptySegment();
+
+        for i,token in ipairs(segment.tokens) do
+            if(not token.transient) then
+                tinsert(persistentSegment.tokens, token);
+            else
+                if(token["explicitType"] == "logical") then
+                    if(token["value"] == "not") then
+                        persistentSegment.inversed = true;
+                    end
+                elseif(token["explicitType"] == "team") then
+                    if(token["value"] == "team") then
+                        persistentSegment.team = isTokenNegated and "enemyTeam" or "team";
+                    elseif(token["value"] == "enemyteam") then
+                        persistentSegment.team = isTokenNegated and "team" or "enemyTeam";
+                    end
+                end
+            end
+        end
+        
+        if(not persistentSegment.inversed) then
+            persistentData.nonInversedCount = persistentData.nonInversedCount + 1;
+        end
+
+        tinsert(persistentData.segments, persistentSegment);
+    end
+
+    return persistentData;
 end
 
 function Search:CommitSearch(input)
@@ -124,8 +171,10 @@ function Search:CommitSearch(input)
 
     -- Update active search filter
     Search:Update(input);
-    activeSearchData = Search.current["data"];
     lastCommittedSearchDisplay = Search.current["display"];
+    
+    -- Add all segments and non-transient tokens to the active data
+    activeSearchData = GetPersistentData();
 
     LogSearchData();
 
@@ -242,7 +291,7 @@ local function CheckSegmentForPlayer(segment, player)
     assert(segment ~= nil);
     assert(player ~= nil);
 
-    for i,token in ipairs(segment.Tokens) do
+    for i,token in ipairs(segment.tokens) do
         local successValue = not token["negated"];
         if(CheckTokenForPlayer(token, player) ~= successValue) then
             return false;

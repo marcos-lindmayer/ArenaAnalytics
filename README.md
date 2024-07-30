@@ -19,7 +19,7 @@ Player Search functionality:
 
  The search field takes in a comma separated list of players.
  A player segment consists of search tokens.
- Tokens are either names, a series of alts or a keyword such as Death Knight.
+ Tokens are either names, a series of alts or keyword such as Death Knight, Undead, etc.
  
  Explicit Type:
    Some cases may provide ambiguity, where the search will prefer a matched keyword over names by default.

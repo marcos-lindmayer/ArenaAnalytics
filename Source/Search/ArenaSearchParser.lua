@@ -8,6 +8,14 @@ local Constants = ArenaAnalytics.Constants;
 -------------------------------------------------------------------------
 -- Search Parsing Logic
 
+local function CreateSymbol(symbol, isValid)
+    assert(symbol)
+
+    local newSymbolToken = {}
+    newSymbolToken.symbol = symbol;
+    newSymbolToken.isValid = isValid;
+end
+
 local function CreateToken(text, isExact)
     local newToken = {}
     local tokenType, tokenValue, noSpace = Search:GetTokenPrefixKey(text);
@@ -16,6 +24,7 @@ local function CreateToken(text, isExact)
     newToken["value"] = tokenValue;
     newToken["exact"] = isExact or nil;
     newToken["noSpace"] = noSpace;
+    newToken["raw"] = text;
 
     if(newToken["explicitType"] == "alts") then
         -- Alt searches without a slash is just a simple name type
@@ -52,16 +61,25 @@ local function CreateToken(text, isExact)
         newToken["value"] = newToken["value"]:gsub("-", "%%-");
     end
 
+    function newToken:GetRaw()
+        return self.raw;
+    end
+
     return newToken;
 end
 
 function Search:SanitizeInput(input)
-    if(not input or input == "" or input == " ") then
+    if(not input or input == "") then
         return "";
     end
 
     local output = input:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "");
     output = output:gsub("%s%s+", " ");
+
+    if(input == " ") then
+        return "";
+    end
+
     return output;
 end
 
@@ -90,9 +108,9 @@ end
 
 -- Process the input string for symbols: Double quotation marks, commas, parenthesis, spaces
 function Search:ProcessInput(input, oldCursorPosition)
-    local tokenizedData = { segments = {}, nonInversedCount = 0 }
+    local tokenizedData = Search:GetEmptyTokenizedData()
 
-    local currentSegment = { Tokens = {}}
+    local currentSegment = Search:GetEmptySegment();
     local currentToken = nil;
     local currentWord = ""
 
@@ -114,7 +132,7 @@ function Search:ProcessInput(input, oldCursorPosition)
     -- internal functions
 
     local function CommitCurrentSegment()
-        if(currentSegment and #currentSegment.Tokens > 0) then
+        if(currentSegment and #currentSegment.tokens > 0) then
             if(not currentSegment.team and Options:Get("searchDefaultExplicitEnemy")) then
                 currentSegment.team = "enemyTeam";
             end
@@ -126,7 +144,7 @@ function Search:ProcessInput(input, oldCursorPosition)
             tinsert(tokenizedData.segments, currentSegment);
         end
 
-        currentSegment = { Tokens = {}, nonInversedCount = 0 }
+        currentSegment = Search:GetEmptySegment();
     end
 
     local function CommitCurrentToken()
@@ -142,7 +160,7 @@ function Search:ProcessInput(input, oldCursorPosition)
         if(currentToken["explicitType"] == "logical") then
             if(currentToken["value"] == "not") then
                 currentSegment.inversed = true;
-                skipInsert = true;
+                currentToken.transient = true;
             end
         elseif(currentToken["explicitType"] == "team") then
             if(currentToken["value"] == "team") then
@@ -150,15 +168,14 @@ function Search:ProcessInput(input, oldCursorPosition)
             elseif(currentToken["value"] == "enemyteam") then
                 currentSegment.team = isTokenNegated and "team" or "enemyTeam";
             end
-            skipInsert = true;
+            currentToken.transient = true;
         end
         
         -- Commit a real search token
-        if(not skipInsert) then
-            if(currentToken["value"] and currentToken["value"] ~= "") then
-                tinsert(currentSegment.Tokens, currentToken);
-            end
+        if(currentToken["value"] and currentToken["value"] ~= "") then
+            tinsert(currentSegment.tokens, currentToken);
         end
+
         currentToken = nil;
         isTokenNegated = false;
     end
@@ -202,7 +219,7 @@ function Search:ProcessInput(input, oldCursorPosition)
         local char = input:sub(index, index)
         
         if char == "+" then -- Disabled in favor of "team" keyword
-            if (false and (#currentSegment.Tokens == 0 and currentWord == "") and lastChar ~= '+' and lastChar ~= '-') then
+            if (false and (#currentSegment.tokens == 0 and currentWord == "") and lastChar ~= '+' and lastChar ~= '-') then
                 currentSegment.team = "team";
                 displayString = displayString .. Search:ColorizeSymbol(char);
             else

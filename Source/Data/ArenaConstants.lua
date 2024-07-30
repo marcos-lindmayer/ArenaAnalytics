@@ -249,7 +249,7 @@ local raceToFaction = {
 }
 
 function Constants:GetFactionByRace(race)
-    return raceToFaction[race];
+    return race and raceToFaction[race] or nil;
 end
 
 local arenaTimer = {
@@ -388,7 +388,9 @@ function Constants:GetMapKeyByID(id)
         return nil;
     end
 
-    assert(mapsList[id]);
+    if(not mapsList[id]) then
+        ArenaAnalytics:Log("Failed to find map for mapId:", id);
+    end
     return mapsList[id];
 end
 

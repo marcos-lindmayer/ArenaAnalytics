@@ -83,8 +83,17 @@ function Options:LoadSettings()
     AddSetting("searchDefaultExplicitEnemy", false);
     AddSetting("searchHideTooltipQuickSearch", false);
 
+    
+    -- Quick Search
     AddSetting("quickSearchExcludeAnyRealm", false);
     AddSetting("quickSearchExcludeMyRealm", false);
+
+    AddSetting("quickSearchShortcut_LMB", "Team");
+    AddSetting("quickSearchShortcut_RMB", "Enemy");
+    AddSetting("quickSearchShortcut_Nomod", "Name");
+    AddSetting("quickSearchShortcut_Shift", "New Segment");
+    AddSetting("quickSearchShortcut_Ctrl", "Spec");
+    AddSetting("quickSearchShortcut_Alt", "Inverse");
 
     -- Debugging
     AddSetting("debuggingEnabled", false);

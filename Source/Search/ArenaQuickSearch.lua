@@ -116,7 +116,150 @@ end
 -- Quick Search
 ---------------------------------
 
+local currentActions = {}
+local locked = nil;
+
+local function ResetQuickSearch()
+    currentActions = {};
+    locked = nil;
+end
+
+--AddSetting("quickSearchShortcut_LMB", "Team");
+--AddSetting("quickSearchShortcut_RMB", "Enemy");
+--AddSetting("quickSearchShortcut_Nomod", "Name");
+--AddSetting("quickSearchShortcut_Shift", "New Segment");
+--AddSetting("quickSearchShortcut_Ctrl", "Spec");
+--AddSetting("quickSearchShortcut_Alt", "Inverse");
+
+local function GetPlayerName(player)
+    name = player["name"] or "";
+    if(name:find('-')) then
+        -- TODO: Convert to options
+        if(Options:Get("quickSearchExcludeAnyRealm")) then
+            name = name:match("(.*)-") or name;
+        elseif(Options:Get("quickSearchExcludeMyRealm")) then
+            local _, realm = UnitFullName("player");
+            if(realm and name:find(realm)) then
+                name = name:match("(.*)-") or name;
+            end
+        end
+    end
+    
+    return name or "";
+end
+
+local function HasAction(action)
+    assert(action);
+    return currentActions[action] or false;
+end
+
+local function AddSettingAction(actions, setting)
+    assert(setting and actions);
+
+    local action = Options:Get(setting);
+    if(action and action ~= "None") then
+        ArenaAnalytics:Log("Adding action: ", action)
+        actions[action] = true;
+    end
+end
+
+local function GetQuickSearchActions(btn)
+    local actions = {};
+    
+    if(btn == "LeftButton") then
+        AddSettingAction(actions, "quickSearchShortcut_LMB");
+    elseif(btn == "RightButton") then
+        AddSettingAction(actions, "quickSearchShortcut_RMB");
+    end
+
+    if(IsShiftKeyDown()) then
+        AddSettingAction(actions, "quickSearchShortcut_Shift");
+    end
+
+    if(IsControlKeyDown()) then
+        AddSettingAction(actions, "quickSearchShortcut_Ctrl");
+    end
+    
+    if(IsAltKeyDown()) then
+        AddSettingAction(actions, "quickSearchShortcut_Alt");
+    end
+
+    return actions;
+end
+
+local function GetCurrentSegments()
+    if(HasAction("New Search")) then
+        return Search:GetEmptySegment();
+    end
+    
+    assert(Search.current and Search.current["data"]);
+    return Search.current["data"].segments or Search:GetEmptySegment();
+end 
+
 function Search:QuickSearch(mouseButton, player, team)
+    if(locked) then
+        return;
+    end
+    locked = true;
+
+    team = (team == "team") and "Team" or "Enemy";
+    currentActions = GetQuickSearchActions(mouseButton);
+    tokens = {}
+
+    -- Current Search Data
+    assert(Search.current and Search.current["data"]);
+    local segments = not HasAction("New Search") and Search.current["data"].segments or Search:GetEmptySegment();
+    if(#segments > 0 and #segments[1].tokens > 0 and HasAction("New Segment")) then
+        tinsert(segments, { tokens = {} });
+    end
+    local currentIndex = #segments;
+
+
+    if(HasAction("Inverse")) then
+        tinsert(tokens, "not");
+    end
+
+    if(HasAction("Friend")) then
+        tinsert(tokens, "Team");
+    elseif(HasAction("Enemy")) then
+        tinsert(tokens, "Enemy");
+    elseif(HasAction("Clicked Team")) then
+        tinsert(tokens, team);
+    end
+
+    if(HasAction("Name")) then
+        tinsert(tokens, GetPlayerName(player));
+    else
+        if(HasAction("Faction")) then
+            local faction = Constants:GetFactionByRace(player["race"]) or "";
+            tinsert(tokens, faction);
+        end
+
+        if(HasAction("Race")) then
+            local race = Search:GetShortQuickSearch("race", player["race"]);
+            tinsert(tokens, race);
+        end
+        
+        if(HasAction("Spec")) then
+            local token = Search:GetShortQuickSearchSpec(player["class"], player["spec"]);
+            tinsert(tokens, token);
+        end
+    end
+
+    Search:CommitQuickSearch(tokens);
+end
+
+function Search:CommitQuickSearch(tokens)
+
+
+
+    ResetQuickSearch()
+end
+
+
+
+
+function Search:QuickSearch_OLD(mouseButton, player, team)
     assert(player);
 
     local prefix, tokens = '', {};
@@ -133,22 +276,7 @@ function Search:QuickSearch(mouseButton, player, team)
     end
 
     if(not IsAltKeyDown() and not IsControlKeyDown()) then
-        name = player["name"] or "";
-        if(name:find('-')) then
-            -- TODO: Convert to options
-            if(Options:Get("quickSearchExcludeAnyRealm")) then
-                name = name:match("(.*)-") or name or "";
-            elseif(Options:Get("quickSearchExcludeMyRealm")) then
-                local _, realm = UnitFullName("player");
-                if(realm and name:find(realm)) then
-                    name = name:match("(.*)-") or name or "";
-                end
-            end
-        end
-
-        if(name == "") then
-            return;
-        end
+        name = GetPlayerName(player);
 
         -- Add name only
         tinsert(tokens, name);
@@ -181,7 +309,9 @@ function Search:QuickSearch(mouseButton, player, team)
         end
     end
 
-    Search:CommitQuickSearch(prefix, tokens, false);
+    currentActions = {}
+
+    Search:CommitQuickSearch_OLD(tokens, false);
 end
 
 local function SplitAtLastComma(input)
@@ -197,7 +327,7 @@ local function SplitAtLastComma(input)
     return before, after;
 end
 
-function Search:CommitQuickSearch(prefix, tokens, isNegated)
+function Search:CommitQuickSearch_OLD(tokens, isNegated)
     assert(tokens and #tokens > 0);
     
     local previousSearch = IsShiftKeyDown() and Search:SanitizeInput(Search.current["display"] or "") or "";
@@ -240,7 +370,7 @@ function Search:CommitQuickSearch(prefix, tokens, isNegated)
     
     -- No previous segment, or a previous segment that ends with comma and only exclamation marks or spaces after
     if(isNewSegment) then
-        currentSegment = prefix .. currentSegment;
+        currentSegment = currentSegment;
     end
     
     ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
