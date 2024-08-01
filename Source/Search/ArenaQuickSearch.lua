@@ -124,12 +124,41 @@ local function ResetQuickSearch()
     locked = nil;
 end
 
---AddSetting("quickSearchShortcut_LMB", "Team");
---AddSetting("quickSearchShortcut_RMB", "Enemy");
---AddSetting("quickSearchShortcut_Nomod", "Name");
---AddSetting("quickSearchShortcut_Shift", "New Segment");
---AddSetting("quickSearchShortcut_Ctrl", "Spec");
---AddSetting("quickSearchShortcut_Alt", "Inverse");
+local function CheckOptionModifier(value)
+    if(not value or value == "None") then
+        return false;
+    end
+
+    if(value == "Any") then
+        return true;
+    end
+
+    if(value == "Shift" and IsShiftKeyDown()) then
+        return true;
+    elseif(value == "Ctrl" and IsControlKeyDown()) then
+        return true;
+    elseif(value == "Alt" and IsAltKeyDown()) then
+        return true;
+    elseif(value == "Nomod") then
+        return true;
+    end
+
+    return false;
+end
+
+--AddSetting("quickSearchAction_NewSearch", "Nomod");
+--AddSetting("quickSearchAction_NewSegment", "None");
+--AddSetting("quickSearchAction_SameSegment", "Shift");
+--AddSetting("quickSearchAction_Inverse", "Alt");
+
+--AddSetting("quickSearchAction_Team", "LMB");
+--AddSetting("quickSearchAction_Enemy", "RMB");
+--AddSetting("quickSearchAction_ClickedTeam", "None");
+
+--AddSetting("quickSearchAction_Name", "Nomod");
+--AddSetting("quickSearchAction_Spec", "Ctrl");
+--AddSetting("quickSearchAction_Race", "None");
+--AddSetting("quickSearchAction_Faction", "None");
 
 local function GetPlayerName(player)
     name = player["name"] or "";

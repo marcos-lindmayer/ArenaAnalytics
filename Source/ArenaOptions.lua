@@ -5,6 +5,7 @@ local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
 local AAtable = ArenaAnalytics.AAtable;
 local Tooltips = ArenaAnalytics.Tooltips;
+local Dropdown = ArenaAnalytics.Dropdown;
 local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 
@@ -83,17 +84,29 @@ function Options:LoadSettings()
     AddSetting("searchDefaultExplicitEnemy", false);
     AddSetting("searchHideTooltipQuickSearch", false);
 
-    
     -- Quick Search
-    AddSetting("quickSearchExcludeAnyRealm", false);
-    AddSetting("quickSearchExcludeMyRealm", false);
+    AddSetting("quickSearchExcludeAnyRealm", false); -- Deprecated, in favor of quickSearchIncludeRealm
+    AddSetting("quickSearchExcludeMyRealm", false); -- Deprecated, in favor of quickSearchIncludeRealm
 
-    AddSetting("quickSearchShortcut_LMB", "Team");
-    AddSetting("quickSearchShortcut_RMB", "Enemy");
-    AddSetting("quickSearchShortcut_Nomod", "Name");
-    AddSetting("quickSearchShortcut_Shift", "New Segment");
-    AddSetting("quickSearchShortcut_Ctrl", "Spec");
-    AddSetting("quickSearchShortcut_Alt", "Inverse");
+    AddSetting("quickSearchEnabled", true);
+    AddSetting("quickSearchIncludeRealm", "All"); -- All, None, Other Realms, My Realm
+    AddSetting("quickSearchDefaultAppendRule", "New Search");
+    AddSetting("quickSearchDefaultValue", "Name");
+
+    AddSetting("quickSearchAppendRule_NewSearch", "None");
+    AddSetting("quickSearchAppendRule_NewSegment", "None");
+    AddSetting("quickSearchAppendRule_SameSegment", "Shift");
+
+    AddSetting("quickSearchAction_Inverse", "Alt");
+
+    AddSetting("quickSearchAction_Team", "LMB");
+    AddSetting("quickSearchAction_Enemy", "RMB");
+    AddSetting("quickSearchAction_ClickedTeam", "None");
+
+    AddSetting("quickSearchAction_Name", "Nomod");
+    AddSetting("quickSearchAction_Spec", "Ctrl");
+    AddSetting("quickSearchAction_Race", "None");
+    AddSetting("quickSearchAction_Faction", "None");
 
     -- Debugging
     AddSetting("debuggingEnabled", false);
@@ -128,32 +141,27 @@ function Options:Get(setting)
 end
 
 function Options:Set(setting, value)
-    assert(setting);
-
-    if(hasOptionsLoaded == false) then
-        ArenaAnalytics:Log("Force loaded settings to immediately set:", setting, " to value: ", value);
-        local successful = Options:LoadSettings();
-        if not successful then return end;
-    end
-
-    ArenaAnalyticsDebugAssert(ArenaAnalyticsSettings[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
+    assert(setting and hasOptionsLoaded);
+    assert(ArenaAnalyticsSettings[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
     
-    if(setting and ArenaAnalyticsSettings[setting] ~= nil) then
-        if(value == nil) then
-            value = defaults[setting];
-        end
-        assert(value ~= nil);
-
-        if(value == ArenaAnalyticsSettings[setting]) then
-            return;
-        end
-
-        local oldValue = ArenaAnalyticsSettings[setting];
-        ArenaAnalyticsSettings[setting] = value;
-        ArenaAnalytics:Log("Setting option: ", setting, "new:", value, "old:", oldValue);
-        
-        HandleSettingsChanged();
+    if(value == nil) then
+        value = defaults[setting];
     end
+    assert(value ~= nil);
+
+    if(value == ArenaAnalyticsSettings[setting]) then
+        return;
+    end
+
+    local oldValue = ArenaAnalyticsSettings[setting];
+    ArenaAnalyticsSettings[setting] = value;
+    ArenaAnalytics:Log("Setting option: ", setting, "new:", value, "old:", oldValue);
+    
+    HandleSettingsChanged();
+end
+
+function Options:Reset(setting)
+    Options:Set(setting, nil);
 end
 
 local exportOptionsFrame = nil;
@@ -339,6 +347,65 @@ local function CreateInputBox(setting, parent, x, text, func)
     return inputBox;
 end
 
+local function CreateDropdown(setting, parent, x, text, entries, func)
+    assert(setting and entries and #entries > 0);
+    offsetY = offsetY - 2;
+
+    local function SetSettingFromDropdown(dropdownContext, btn)
+        if(btn == "RightButton") then
+            Options:Reset(dropdownContext.key);
+        else
+            Options:Set(dropdownContext.key, (dropdownContext.value or dropdownContext.label));
+        end
+    end
+
+    local function IsSettingEntryChecked(dropdownContext)
+        assert(dropdownContext ~= nil, "Invalid contextFrame");
+    
+        return Options:Get(dropdownContext.key) == (dropdownContext.value or dropdownContext.label);
+    end
+
+    local function ResetSetting(dropdownContext, btn)
+        if(btn == "RightButton") then
+            Options:Reset(dropdownContext.key);
+        end
+    end
+
+    local function GenerateEntries()
+        local entryTable = {}
+        for _,entry in ipairs(entries) do 
+            tinsert(entryTable, {
+                label = entry,
+                alignment = "LEFT",
+                key = setting,
+                onClick = SetSettingFromDropdown,
+                checked = IsSettingEntryChecked,
+            });
+        end
+        return entryTable;
+    end
+
+    local config = {
+        mainButton = {
+            label = function(dropdownContext) return Options:Get(dropdownContext.key) end,
+            alignment = "CENTER",
+            key = setting,
+        },
+        entries = GenerateEntries;
+    }
+
+    local newDropdown = Dropdown:Create(parent, "Setting", setting.."Dropdown", config, 200, 25) -- parent, dropdownType, frameName, config, width, height
+    newDropdown:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
+
+    -- Text
+    newDropdown.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    newDropdown.text:SetPoint("LEFT", newDropdown:GetFrame(), "RIGHT", 5, 0);
+    newDropdown.text:SetTextHeight(TextSize);
+    newDropdown.text:SetText(text);
+
+    offsetY = offsetY - OptionsSpacing - newDropdown:GetHeight() + 7;
+end
+
 -------------------------------------------------------------------
 -- General Tab
 -------------------------------------------------------------------
@@ -469,6 +536,55 @@ function SetupTab_Search()
 end
 
 -------------------------------------------------------------------
+-- General Tab
+-------------------------------------------------------------------
+function SetupTab_QuickSearch()
+    local filterOptionsFrame = CreateFrame("frame");
+    filterOptionsFrame.name = "Quick Search";
+    filterOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
+    InterfaceOptions_AddCategory(filterOptionsFrame);
+
+    -- Title
+    InitializeTab(filterOptionsFrame);
+    local parent = filterOptionsFrame;
+    local offsetX = 20;    
+
+    parent.tabHeader = CreateHeader("Quick Search", TabHeaderSize, parent, nil, 15, -15);
+
+    -- Setup options
+    parent.quickSearchEnabled = CreateCheckbox("quickSearchEnabled", parent, offsetX, "Enable Quick Search");
+
+    CreateSpace();
+
+    local includeRealmOptions = { "All", "None", "Other Realms", "My Realm" };
+    parent.includeRealmDropdown = CreateDropdown("quickSearchIncludeRealm", parent, offsetX, "Include realms from Quick Search.", includeRealmOptions);
+
+    local appendRules = { "New Search", "New Segment", "Same Segment" };
+    parent.defaultAppendRuleDropdown = CreateDropdown("quickSearchDefaultAppendRule", parent, offsetX, "Default append rule, if not overridden by shortcuts.", appendRules);
+
+    local valueOptions = { "Name", "Spec", "Race", "Faction" };
+    parent.defaultValueDropdown = CreateDropdown("quickSearchDefaultValue", parent, offsetX, "Default value to add, if not overridden by shortcuts.", valueOptions);
+
+    CreateSpace();
+
+    local shortcuts = { "None", "LMB", "RMB", "Nomod", "Shift", "Ctrl", "Alt" };
+    parent.inverseValueDropdown = CreateDropdown("quickSearchAction_Inverse", parent, offsetX, "Inverse segment shortcut.", shortcuts);
+
+    CreateSpace();
+
+    parent.teamValueDropdown = CreateDropdown("quickSearchAction_Team", parent, offsetX, "Team shortcut.", shortcuts);
+    parent.enemyValueDropdown = CreateDropdown("quickSearchAction_Enemy", parent, offsetX, "Enemy shortcut.", shortcuts);
+    parent.clickedTeamValueDropdown = CreateDropdown("quickSearchAction_ClickedTeam", parent, offsetX, "Team of clicked player shortcut.", shortcuts);
+
+    CreateSpace();
+
+    parent.nameValueDropdown = CreateDropdown("quickSearchAction_Name", parent, offsetX, "Name shortcut.", shortcuts);
+    parent.specValueDropdown = CreateDropdown("quickSearchAction_Spec", parent, offsetX, "Spec shortcut.", shortcuts);
+    parent.raceValueDropdown = CreateDropdown("quickSearchAction_Race", parent, offsetX, "Race shortcut.", shortcuts);
+    parent.factionValueDropdown = CreateDropdown("quickSearchAction_Faction", parent, offsetX, "Faction shortcut.", shortcuts);
+end
+
+-------------------------------------------------------------------
 -- Import/Export Tab
 -------------------------------------------------------------------
 function SetupTab_ImportExport()
@@ -521,6 +637,7 @@ function Options:Init()
         SetupTab_General();
         SetupTab_Filters();
         SetupTab_Search();
+        SetupTab_QuickSearch();
         SetupTab_ImportExport();
     end
 end

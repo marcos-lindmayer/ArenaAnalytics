@@ -224,6 +224,10 @@ function Dropdown:GetWidth()
     return self.frame:GetWidth();
 end
 
+function Dropdown:GetHeight()
+    return self.frame:GetHeight();
+end
+
 ---------------------------------
 -- Visibility
 ---------------------------------
