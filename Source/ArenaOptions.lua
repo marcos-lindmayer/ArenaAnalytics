@@ -394,7 +394,7 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
         entries = GenerateEntries;
     }
 
-    local newDropdown = Dropdown:Create(parent, "Setting", setting.."Dropdown", config, 200, 25) -- parent, dropdownType, frameName, config, width, height
+    local newDropdown = Dropdown:Create(parent, "Setting", setting.."Dropdown", config, 150, 25) -- parent, dropdownType, frameName, config, width, height
     newDropdown:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
 
     -- Text

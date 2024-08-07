@@ -16,7 +16,7 @@ local function CreateSymbol(symbol, isValid)
     newSymbolToken.isValid = isValid;
 end
 
-local function CreateToken(text, isExact)
+function Search:CreateToken(text, isExact)
     local newToken = {}
     local tokenType, tokenValue, noSpace = Search:GetTokenPrefixKey(text);
     
@@ -108,7 +108,7 @@ end
 
 -- Process the input string for symbols: Double quotation marks, commas, parenthesis, spaces
 function Search:ProcessInput(input, oldCursorPosition)
-    local tokenizedData = Search:GetEmptyTokenizedData()
+    local tokenizedData = Search:GetEmptyData()
 
     local currentSegment = Search:GetEmptySegment();
     local currentToken = nil;
@@ -133,10 +133,6 @@ function Search:ProcessInput(input, oldCursorPosition)
 
     local function CommitCurrentSegment()
         if(currentSegment and #currentSegment.tokens > 0) then
-            if(not currentSegment.team and Options:Get("searchDefaultExplicitEnemy")) then
-                currentSegment.team = "enemyTeam";
-            end
-
             if(not currentSegment.inversed) then
                 tokenizedData.nonInversedCount = tokenizedData.nonInversedCount + 1;
             end
@@ -159,15 +155,9 @@ function Search:ProcessInput(input, oldCursorPosition)
 
         if(currentToken["explicitType"] == "logical") then
             if(currentToken["value"] == "not") then
-                currentSegment.inversed = true;
                 currentToken.transient = true;
             end
         elseif(currentToken["explicitType"] == "team") then
-            if(currentToken["value"] == "team") then
-                currentSegment.team = isTokenNegated and "enemyTeam" or "team";
-            elseif(currentToken["value"] == "enemyteam") then
-                currentSegment.team = isTokenNegated and "team" or "enemyTeam";
-            end
             currentToken.transient = true;
         end
         
@@ -187,7 +177,7 @@ function Search:ProcessInput(input, oldCursorPosition)
 
         if(currentToken) then
             local combinedValue = currentToken["value"] .. " " .. currentWord;
-            local newCombinedToken = CreateToken(combinedValue);
+            local newCombinedToken = Search:CreateToken(combinedValue);
             
             if(newCombinedToken) then
                 ArenaAnalytics:Log("Updating token for combined word: ", combinedValue);
@@ -200,7 +190,7 @@ function Search:ProcessInput(input, oldCursorPosition)
         
         -- Might have been added to token by now
         if(currentWord ~= "") then
-            currentToken = CreateToken(currentWord);
+            currentToken = Search:CreateToken(currentWord);
 
             -- Commit immediately if no space is allowed
             if(currentToken and currentToken["noSpace"]) then
@@ -257,7 +247,7 @@ function Search:ProcessInput(input, oldCursorPosition)
                 end
                 CommitCurrentToken();
 
-                currentToken = CreateToken(currentWord .. scope, true);
+                currentToken = Search:CreateToken(currentWord .. scope, true);
                 isTokenNegated = isNegated;
                 currentWord = "";
 
@@ -283,7 +273,7 @@ function Search:ProcessInput(input, oldCursorPosition)
                 end
                 CommitCurrentToken();
 
-                currentToken = CreateToken(currentWord .. scope);
+                currentToken = Search:CreateToken(currentWord .. scope);
                 isTokenNegated = isNegated;
                 currentWord = "";
 

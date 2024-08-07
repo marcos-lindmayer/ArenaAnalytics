@@ -45,7 +45,7 @@ function Search:GetEmptySegment()
     return { tokens = {} };
 end
 
-function Search:GetEmptyTokenizedData()
+function Search:GetEmptyData()
     return { segments = {}, nonInversedCount = 0 }
 end
 
@@ -59,18 +59,24 @@ end
 
 -- The current search data
 Search.current = {
-    ["raw"] = "", -- The raw search string
     ["display"] = "", -- Search string sanitized and colored(?) for display
-    ["data"] = Search:GetEmptyTokenizedData(), -- Search data as a table for efficient comparisons
+    ["data"] = Search:GetEmptyData(), -- Search data as a table for efficient comparisons
 }
 
 function Search:GetCurrentSegments()
     assert(Search.current and Search.current["data"]);
-    return Search.current["data"].segments or {};
+    if(Search.current and Search.current["data"].segments) then
+        return Search.current["data"].segments or {};
+    end
+    return {};
+end
+
+function Search:GetCurrentSegmentCount()
+    return #Search:GetCurrentSegments();
 end
 
 local lastCommittedSearchDisplay = "";
-local activeSearchData = Search:GetEmptyTokenizedData();
+local activeSearchData = Search:GetEmptyData();
 
 ---------------------------------
 -- Search API
@@ -89,11 +95,11 @@ function Search:GetLastDisplay()
 end
 
 function Search:GetDisplay()
-    return Search.current["display"] or Search.current["raw"] or "";
+    return Search.current["display"] or "";
 end
 
 function Search:IsEmpty()
-    return Search.current["raw"] == "" and Search.current["display"] == "" and #Search.current["data"].segments == 0 and #activeSearchData.segments == 0;
+    return Search.current["display"] == "" and #Search.current["data"].segments == 0 and #activeSearchData.segments == 0;
 end
 
 function Search:Reset()
@@ -110,13 +116,43 @@ function Search:Update(input)
     local oldCursorPosition = searchBox:GetCursorPosition();
     local newSearchData, display, raw, newCursorPosition = Search:ProcessInput(input, oldCursorPosition);
 
-    Search.current["raw"] = raw;
     Search.current["display"] = display;
-    Search.current["data"] = newSearchData;
+    Search:SetCurrentData(newSearchData);
 
     -- Update the searchBox
-    searchBox:SetText(display);
+    searchBox:SetText(Search.current["display"]);
     searchBox:SetCursorPosition(newCursorPosition);
+end
+
+function Search:SetCurrentData(newSearchData)
+    Search.current["data"] = newSearchData or Search:GetEmptyData();
+    Search:SetCurrentDisplay();
+end
+
+function Search:SetCurrentDisplay()
+    local currentData = Search.current["data"];
+    local newDisplay = "";
+    if(not currentData or not currentData.segments) then
+        Search.current["display"] = newDisplay;
+    end
+
+    -- Combine new display string from tokens
+    for _,segment in ipairs(currentData.segments) do
+        if(newDisplay ~= "") then
+            newDisplay = newDisplay..", ";
+        end
+
+        for _,token in ipairs(segment.tokens) do
+            newDisplay = newDisplay .. GetTokenDisplay(token);
+        end
+    end
+
+    Search.current["display"] = newDisplay;
+end
+
+function Search:GetTokenDisplay(token)
+    assert(token);
+    return token.raw;
 end
 
 local function LogSearchData()
@@ -132,7 +168,7 @@ local function LogSearchData()
 end
 
 local function GetPersistentData()
-    local persistentData = Search:GetEmptyTokenizedData();
+    local persistentData = Search:GetEmptyData();
 
     for i,segment in ipairs(Search:GetCurrentSegments()) do
         assert(segment.tokens);
@@ -156,12 +192,17 @@ local function GetPersistentData()
             end
         end
         
+        if(not persistentSegment.team and Options:Get("searchDefaultExplicitEnemy")) then
+            persistentSegment.team = "enemyTeam";
+        end
+        
         if(not persistentSegment.inversed) then
             persistentData.nonInversedCount = persistentData.nonInversedCount + 1;
         end
 
         tinsert(persistentData.segments, persistentSegment);
     end
+
 
     return persistentData;
 end

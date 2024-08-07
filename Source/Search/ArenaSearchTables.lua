@@ -23,16 +23,17 @@ end
 -- Prefix Data
 ---------------------------------
 
+-- Assume short form as first alias index!
 local PrefixTable = {
-    ["name"] = { NoSpaces = true, Aliases = {"name", "n"} },
-    ["class"] = { NoSpaces = false, Aliases = {"class", "c"} },
-    ["spec"] = { NoSpaces = false, Aliases = {"spec", "s"} },
-    ["subspec"] = { NoSpaces = false, Aliases = {"subspec", "ss"} },
-    ["role"] = {NoSpaces = true, Aliases = { "role" }},
-    ["race"] = { NoSpaces = false, Aliases = {"race", "r"} },
-    ["faction"] = { NoSpaces = true, Aliases = {"faction", "f"} },
-    ["alts"] = { NoSpaces = true, Aliases = {"alts", "a"} },
-    ["team"] = { NoSpaces = true, Aliases = {"team", "t"}}
+    ["name"] = { NoSpaces = true, Aliases = {"n", "name"} },
+    ["class"] = { NoSpaces = false, Aliases = {"c", "class"} },
+    ["spec"] = { NoSpaces = false, Aliases = {"s", "spec"} },
+    ["subspec"] = { NoSpaces = false, Aliases = {"ss", "subspec"} },
+    ["role"] = {NoSpaces = true, Aliases = {"role" }},
+    ["race"] = { NoSpaces = false, Aliases = {"r", "race"} },
+    ["faction"] = { NoSpaces = true, Aliases = {"f", "faction"} },
+    ["alts"] = { NoSpaces = true, Aliases = {"a", "alts"} },
+    ["team"] = { NoSpaces = true, Aliases = {"t", "team"}}
 }
 
 -- Find the prefix key from the given token
@@ -50,6 +51,19 @@ function Search:GetTokenPrefixKey(text)
         end
     end
     return nil, (value or text), true;
+end
+
+function Search:GetShortPrefix(prefix)
+    assert(prefix);
+    for key,data in pairs(PrefixTable) do
+        assert(data.Aliases and #data.Aliases > 0);
+        for _,alias in ipairs(data.Aliases) do
+            if(prefix == alias) then
+                return data.Aliases[1];
+            end
+        end
+    end
+    return prefix;
 end
 
 ---------------------------------
@@ -239,12 +253,12 @@ function Search:FindSearchValueDataForToken(token)
     end
 
     -- Look through the values for the explicit key
-    if token["type"] then
-        local valueTable = SearchTokenTypeTable[token["type"]];
+    if token["explicitType"] then
+        local valueTable = SearchTokenTypeTable[token["explicitType"]];
         if valueTable then
-            local valueKey, isExactMatch = FindTokenValueKey(valueTable, token["type"])
+            local valueKey, isExactMatch = FindTokenValueKey(valueTable, token["explicitType"])
             if isExactMatch then
-                return token["type"], valueKey, valueTable["noSpace"];
+                return token["explicitType"], valueKey, valueTable["noSpace"];
             end
         end
     else -- Look through all keys

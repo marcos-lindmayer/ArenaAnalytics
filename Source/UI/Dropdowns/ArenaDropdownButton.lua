@@ -195,25 +195,17 @@ end
 -- Visibility
 ---------------------------------
 
-function Button:Show()
-    self.btn:Show();
-end
-
-function Button:Hide()
-    self.btn:Hide();
-end
-
 function Button:IsShown()
     return self.btn:IsShown();
 end
 
-function Button:ShowList()
+function Button:Show()
     if(self.parent) then
         self.parent:Show();
     end
 end
 
-function Button:HideList()
+function Button:Hide()
     if(self:IsListShown()) then
         self.parent:Hide();
     end

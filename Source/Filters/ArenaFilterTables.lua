@@ -50,7 +50,7 @@ function FilterTables.ResetFilterValue(dropdownContext, btn)
 
     if(btn == "RightButton") then
         Filters:Reset(dropdownContext.key, true);
-        dropdownContext:HideList();
+        dropdownContext:Hide();
     else
         dropdownContext.parent:Toggle();
     end
