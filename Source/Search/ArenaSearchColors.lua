@@ -22,6 +22,8 @@ function Search:ColorizeToken(token)
         return "";
     end
 
-    local text = token["value"];
+    local type = token.explicitType;
+    local text = token:GetRaw();
+    
     return text and "|cffFFFFFF" .. text .. "|r" or "";
 end

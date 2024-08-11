@@ -425,7 +425,7 @@ function Search:QuickSearch(mouseButton, player, team)
         end
 
         if(newName) then
-            local matchedSegmentIndex, matchedTokenIndex = FindExistingNameMatch(currentsegments, newName);
+            local matchedSegmentIndex, matchedTokenIndex = FindExistingNameMatch(currentSegments, newName);
             if(matchedSegmentIndex and matchedTokenIndex) then
                 foundNameMatchingSegment = true;
                 segmentIndex = matchedSegmentIndex;
@@ -445,9 +445,9 @@ function Search:QuickSearch(mouseButton, player, team)
     -- If all tokens match, and this was an existing named match, then remove the entire segment
     if(foundNameMatchingSegment) then
         -- For each new token, check for an exact match
-        if(DoesAllTokensMatchExact(currentsegments[segmentIndex], tokens)) then
-            table.remove(currentsegments, segmentIndex);
-            Search:CommitQuickSearch(currentsegments);
+        if(DoesAllTokensMatchExact(currentSegments[segmentIndex], tokens)) then
+            table.remove(currentSegments, segmentIndex);
+            Search:CommitQuickSearch(currentSegments);
             return;
         end
     end
@@ -504,10 +504,8 @@ function Search:CommitQuickSearch(segments)
         end
     end
 
-
     ResetQuickSearch()
 end
-
 
 
 

@@ -282,7 +282,7 @@ function ArenaAnalytics:GetClassColor(className)
     end
     
     if(className == "Death Knight") then
-        return select(4, GetClassColor("DEATHKNIGHT"));
+        className = "DEATHKNIGHT";
     end
     
     return select(4, GetClassColor(className:upper()));

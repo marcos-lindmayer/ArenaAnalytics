@@ -72,8 +72,8 @@ end
 
 SearchTokenTypeTable = {
     ["class"] = {
-        ["noSpace"] = false,
-        ["values"] = {
+        noSpace = false,
+        values = {
             ["death knight"] = {"death knight", "deathknight", "dk"},
             ["demon hunter"] = {"demon hunter", "demonhunter", "dh"},
             ["druid"] = {"druid"},
@@ -89,8 +89,8 @@ SearchTokenTypeTable = {
         }
     },
     ["spec"] = {
-        ["noSpace"] = false,
-        ["values"] = {
+        noSpace = false,
+        values = {
             -- Ambiguous
             ["frost"] = {"frost"},
             ["restoration"] = {"restoration", "resto"},
@@ -151,8 +151,8 @@ SearchTokenTypeTable = {
         },
     },
     ["race"] = {
-        ["noSpace"] = false,
-        ["values"] = {
+        noSpace = false,
+        values = {
             ["blood elf"] = {"blood elf", "bloodelf", "belf"},
             ["draenei"] = {"draenei"},
             ["dwarf"] = {"dwarf"},
@@ -179,31 +179,31 @@ SearchTokenTypeTable = {
         }
     },
     ["faction"] = {
-        ["noSpace"] = true,
-        ["values"] = {
+        noSpace = true,
+        values = {
             ["alliance"] = {"alliance"},
             ["horde"] = {"horde"},
         }
     },
     ["role"] = {
-        ["noSpace"] = true,
-        ["values"] = {
+        noSpace = true,
+        values = {
             ["tank"] = {"tank"},
             ["healer"] = {"healer"},
             ["dps"] = {"damage dealer", "damage", "dps"},
         },
     },
     ["team"] = {
-        ["requireExact"] = true,
-        ["noSpace"] = true,
-        ["values"] = {
+        requireExact = true,
+        noSpace = true,
+        values = {
             ["team"] = {"friend", "team", "ally", "help", "partner"},
             ["enemyTeam"] = {"enemy", "foe", "harm"},
         }
     },
     ["logical"] = {
-        ["requireExact"] = true,
-        ["values"] = {
+        requireExact = true,
+        values = {
             ["not"] = { "not", "no", "inverse" },
         }
     }
@@ -213,11 +213,11 @@ SearchTokenTypeTable = {
 function Search:FindSearchValueDataForToken(token)
     assert(token);
 
-    if(token["value"] == nil or #token["value"] < 2) then
+    if(token.value == nil or #token.value < 2) then
         return;
     end
 
-    local lowerCaseValue = token["value"]:lower();
+    local lowerCaseValue = token.value:lower();
     
     -- Cached info about the best match
     local bestMatch = nil;
@@ -235,17 +235,17 @@ function Search:FindSearchValueDataForToken(token)
     end
 
     local function FindTokenValueKey(valueTable, searchType)
-        assert(valueTable and valueTable["values"]);
+        assert(valueTable and valueTable.values);
 
-        for valueKey, values in pairs(valueTable["values"]) do
+        for valueKey, values in pairs(valueTable.values) do
             for _, value in ipairs(values) do
                 assert(value);
                 if(lowerCaseValue == value) then
                     return valueKey, true, value;
-                elseif(not token["exact"] and not valueTable["requireExact"]) then
+                elseif(not token.exact and not valueTable.requireExact) then
                     local foundStartIndex = value:find(lowerCaseValue);
                     if(foundStartIndex ~= nil) then
-                        TryUpdateBestMatch(value, valueKey, searchType, valueTable["noSpace"], foundStartIndex);
+                        TryUpdateBestMatch(value, valueKey, searchType, valueTable.noSpace, foundStartIndex);
                     end
                 end
             end
@@ -253,25 +253,25 @@ function Search:FindSearchValueDataForToken(token)
     end
 
     -- Look through the values for the explicit key
-    if token["explicitType"] then
-        local valueTable = SearchTokenTypeTable[token["explicitType"]];
+    if token.explicitType then
+        local valueTable = SearchTokenTypeTable[token.explicitType];
         if valueTable then
-            local valueKey, isExactMatch = FindTokenValueKey(valueTable, token["explicitType"])
+            local valueKey, isExactMatch = FindTokenValueKey(valueTable, token.explicitType)
             if isExactMatch then
-                return token["explicitType"], valueKey, valueTable["noSpace"];
+                return token.explicitType, valueKey, valueTable.noSpace;
             end
         end
     else -- Look through all keys
         for typeKey, valueTable in pairs(SearchTokenTypeTable) do
             local valueKey, isExactMatch = FindTokenValueKey(valueTable, typeKey)
             if isExactMatch then
-                return typeKey, valueKey, valueTable["noSpace"];
+                return typeKey, valueKey, valueTable.noSpace;
             end
         end
     end
 
     -- Evaluate best match so far, if any.
     if(bestMatch) then
-        return bestMatch["typeKey"], bestMatch["valueKey"], bestMatch["noSpace"];
+        return bestMatch.typeKey, bestMatch.valueKey, bestMatch.noSpace;
     end
 end

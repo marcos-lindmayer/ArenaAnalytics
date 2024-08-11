@@ -315,6 +315,9 @@ function AAtable:OnLoad()
 
     -- This will also update UI
     Filters:Refresh();
+
+    -- Default to hidden
+    ArenaAnalyticsScrollFrame:Hide();
 end
 
 function AAtable:TryShowimportDialogFrame(parent)

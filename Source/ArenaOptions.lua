@@ -510,7 +510,8 @@ function SetupTab_Search()
     -- Setup options
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
         if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchbox.title)) then
-            ArenaAnalyticsScrollFrame.searchBox.title:SetText(Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search");
+            local explicitEnemyText = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
+            ArenaAnalyticsScrollFrame.searchBox.title:SetText(explicitEnemyText);
         end
     end);
 

@@ -59,16 +59,13 @@ end
 
 -- The current search data
 Search.current = {
-    ["display"] = "", -- Search string sanitized and colored(?) for display
-    ["data"] = Search:GetEmptyData(), -- Search data as a table for efficient comparisons
+    display = "", -- Search string sanitized and colored(?) for display
+    segments = {} -- Tokenized player segments
 }
 
 function Search:GetCurrentSegments()
-    assert(Search.current and Search.current["data"]);
-    if(Search.current and Search.current["data"].segments) then
-        return Search.current["data"].segments or {};
-    end
-    return {};
+    assert(Search.current);
+    return Search.current.segments or {};
 end
 
 function Search:GetCurrentSegmentCount()
@@ -99,7 +96,7 @@ function Search:GetDisplay()
 end
 
 function Search:IsEmpty()
-    return Search.current["display"] == "" and #Search.current["data"].segments == 0 and #activeSearchData.segments == 0;
+    return Search.current["display"] == "" and #Search.current.segments == 0 and #activeSearchData.segments == 0;
 end
 
 function Search:Reset()
@@ -114,45 +111,48 @@ function Search:Update(input)
     local searchBox = ArenaAnalyticsScrollFrame.searchBox;
 
     local oldCursorPosition = searchBox:GetCursorPosition();
-    local newSearchData, display, raw, newCursorPosition = Search:ProcessInput(input, oldCursorPosition);
+    local newSearchData = Search:ProcessInput(input, oldCursorPosition);
 
-    Search.current["display"] = display;
     Search:SetCurrentData(newSearchData);
-
-    -- Update the searchBox
-    searchBox:SetText(Search.current["display"]);
-    searchBox:SetCursorPosition(newCursorPosition);
 end
 
-function Search:SetCurrentData(newSearchData)
-    Search.current["data"] = newSearchData or Search:GetEmptyData();
+function Search:SetCurrentData(tokenizedSegments)
+    Search.current.segments = tokenizedSegments or {};
     Search:SetCurrentDisplay();
 end
 
 function Search:SetCurrentDisplay()
-    local currentData = Search.current["data"];
+    assert(Search.current);
+    local currentSegments = Search.current.segments or {};
+    
     local newDisplay = "";
-    if(not currentData or not currentData.segments) then
-        Search.current["display"] = newDisplay;
-    end
-
+    local newCursorPosition = nil;
+    
     -- Combine new display string from tokens
-    for _,segment in ipairs(currentData.segments) do
-        if(newDisplay ~= "") then
-            newDisplay = newDisplay..", ";
-        end
+    for segmentIndex,segment in ipairs(currentSegments) do
+        for tokenIndex,token in ipairs(segment.tokens) do
+            local tokenDisplay, relativeCaretIndex = Search:GetTokenDisplay(token);
 
-        for _,token in ipairs(segment.tokens) do
-            newDisplay = newDisplay .. GetTokenDisplay(token);
+            if(relativeCaretIndex) then
+                newCursorPosition = #newDisplay + relativeCaretIndex;
+            end
+
+            newDisplay = newDisplay .. tokenDisplay;
         end
     end
 
-    Search.current["display"] = newDisplay;
+    Search.current.display = newDisplay;
+
+    -- Update the searchBox
+    searchBox:SetText(newDisplay);
+    searchBox:SetCursorPosition(newCursorPosition or #newDisplay);
 end
 
 function Search:GetTokenDisplay(token)
     assert(token);
-    return token.raw;
+
+    ArenaAnalytics:Log("GetTokenDisplay: '" .. token.raw .. "'")
+    return token.raw, token.caret;
 end
 
 local function LogSearchData()
@@ -161,8 +161,8 @@ local function LogSearchData()
 
     for i,segment in ipairs(activeSearchData.segments) do
         for j,token in ipairs(segment.tokens) do
-            assert(token and token["value"]);
-            ArenaAnalytics:Log("  Token", j, "in segment",i, "  Values:", token["value"], (token["exact"] and " exact" or ""), (token["explicitType"] and (" Type:"..token["explicitType"]) or ""), (token["negated"] and " Negated" or ""), (segment.team and (" "..segment.team) or ""), (segment.inversed and "Inversed" or ""));
+            assert(token and token.value);
+            ArenaAnalytics:Log("  Token", j, "in segment",i, "  Values:", token.value, (token.exact and " exact" or ""), (token.explicitType or ""), (token.negated and " Negated" or ""), (segment.team and (" "..segment.team) or ""), (segment.inversed and "Inversed" or ""));
         end
     end
 end
@@ -175,20 +175,17 @@ local function GetPersistentData()
         local persistentSegment = Search:GetEmptySegment();
 
         for i,token in ipairs(segment.tokens) do
-            if(not token.transient) then
-                tinsert(persistentSegment.tokens, token);
-            else
-                if(token["explicitType"] == "logical") then
-                    if(token["value"] == "not") then
+            -- Process transient tokens for logic only
+            if(token.transient) then
+                if(token.explicitType == "logical") then
+                    if(token.value == "not") then
                         persistentSegment.inversed = true;
                     end
-                elseif(token["explicitType"] == "team") then
-                    if(token["value"] == "team") then
-                        persistentSegment.team = isTokenNegated and "enemyTeam" or "team";
-                    elseif(token["value"] == "enemyteam") then
-                        persistentSegment.team = isTokenNegated and "team" or "enemyTeam";
-                    end
+                elseif(token.explicitType == "team") then
+                    persistentSegment.team = token.value;
                 end
+            else -- Persistent tokens, kept for direct comparisons
+                tinsert(persistentSegment.tokens, token);
             end
         end
         
@@ -251,7 +248,7 @@ end
 -- NOTE: This is the main part to modify to handle actual token matching logic
 -- Returns true if a given type on a player matches the given value
 local function CheckTypeForPlayer(searchType, token, player)
-    assert(token and token["value"] and token["value"] ~= "");
+    assert(token and token.value and token.value ~= "");
     assert(player ~= nil);
     
     if(searchType == nil) then
@@ -260,16 +257,16 @@ local function CheckTypeForPlayer(searchType, token, player)
     end
     -- Alt search
     if (searchType == "alts") then
-        if(token["value"]:find('/') ~= nil) then
+        if(token.value:find('/') ~= nil) then
             local name = Search:SafeToLower(player["name"]);
             if(not name) then
                 return false;
             end
 
             -- Split value into table
-            for value in token["value"]:gmatch("([^/]+)") do
-                --local isAltMatch = not token["exact"] and playerName:find(value) or (value == playerName);
-                if(CheckPlayerName(name, value, token["exact"])) then
+            for value in token.value:gmatch("([^/]+)") do
+                --local isAltMatch = not token.exact and playerName:find(value) or (value == playerName);
+                if(CheckPlayerName(name, value, token.exact)) then
                     return true;
                 end
             end
@@ -282,7 +279,7 @@ local function CheckTypeForPlayer(searchType, token, player)
     elseif (searchType == "faction") then
         local playerFaction = Search:SafeToLower(player["faction"] or Constants:GetFactionByRace(player["race"]) or "");
         if(playerFaction ~= "" and playerFaction ~= "neutral") then
-            local isFactionMatch = not token["exact"] and playerFaction:find(token["value"]) or (token["value"] == playerFaction:lower());
+            local isFactionMatch = not token.exact and playerFaction:find(token.value) or (token.value == playerFaction:lower());
             return isFactionMatch;
         else
             return false;
@@ -290,11 +287,11 @@ local function CheckTypeForPlayer(searchType, token, player)
     elseif(searchType == "role") then
         local playerSpecID = Constants:getAddonSpecializationID(player["class"], player["spec"], false);
         local role = Constants:GetSpecRole(playerSpecID);
-        return role and role:lower() == token["value"];
+        return role and role:lower() == token.value;
     end
 
     if(searchType == "name") then
-        return CheckPlayerName(player["name"], token["value"], token["exact"]);
+        return CheckPlayerName(player["name"], token.value, token.exact);
     end
 
     local playerValue = Search:SafeToLower(player[searchType]);
@@ -303,16 +300,16 @@ local function CheckTypeForPlayer(searchType, token, player)
     end
     
     -- Class and Spec IDs may be numbers in the token
-    if(tonumber(token["value"])) then
+    if(tonumber(token.value)) then
         local playerSpecID = Constants:getAddonSpecializationID(player["class"], player["spec"], false);
-        return playerSpecID == token["value"];
+        return playerSpecID == token.value;
     else
-        return not token["exact"] and playerValue:find(token["value"]) or (token["value"] == playerValue);
+        return not token.exact and playerValue:find(token.value) or (token.value == playerValue);
     end
 end
 
 local function CheckTokenForPlayer(token, player)
-    local explicitType = token["explicitType"];
+    local explicitType = token.explicitType;
     if(explicitType) then
         if(CheckTypeForPlayer(explicitType, token, player)) then
             return true;
@@ -333,7 +330,7 @@ local function CheckSegmentForPlayer(segment, player)
     assert(player ~= nil);
 
     for i,token in ipairs(segment.tokens) do
-        local successValue = not token["negated"];
+        local successValue = not token.negated;
         if(CheckTokenForPlayer(token, player) ~= successValue) then
             return false;
         end
