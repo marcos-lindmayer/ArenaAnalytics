@@ -945,4 +945,5 @@ function Export:FinalizeExportCSV(exportTable)
 
     exportTable = nil;
     collectgarbage("collect");
+    ArenaAnalytics:Log("Garbage Collection forced by Export finalize.");
 end

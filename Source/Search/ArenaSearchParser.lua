@@ -102,7 +102,6 @@ function Search:CreateToken(raw, isExact)
         return self.raw;
     end
     
-    ArenaAnalytics:Log("New Token: '" .. newToken.raw .. "'", newToken.isValid);
     return newToken;
 end
 
@@ -159,7 +158,7 @@ function Search:ProcessInput(input, oldCursorPosition)
     local currentRaw = "";
 
     -- Whether a space has yet to be handled. Processed in CommitWord()
-    local hasUnhandledSpace = nil;
+    local unhandledSpaces = 0;
 
     -- Caret Position Data
     local sanitizedCaretIndex = SanitizeCursorPosition(input, oldCursorPosition);
@@ -168,8 +167,6 @@ function Search:ProcessInput(input, oldCursorPosition)
     local isTokenNegated = false;
 
     local index = 1;
-
-    local displayString = "";
 
     local newCursorPosition = 0;
     local sanitizedInput = Search:SanitizeInput(input);
@@ -181,6 +178,16 @@ function Search:ProcessInput(input, oldCursorPosition)
     ----------------------------------------
     -- internal functions
 
+    local function CommitUnhandledSpace()
+        if(unhandledSpaces > 0) then
+            -- Add space symbol token
+            unhandledSpaces = max(0, unhandledSpaces - 1);
+            local newSpaceToken = CreateSymbolToken(' ');
+            tinsert(currentSegment.tokens, newSpaceToken);
+            
+        end
+    end
+
     local function CommitCurrentSegment()
         if(currentSegment and #currentSegment.tokens > 0) then
             tinsert(tokenizedSegments, currentSegment);
@@ -190,41 +197,35 @@ function Search:ProcessInput(input, oldCursorPosition)
     end
 
     local function CommitCurrentToken()
-        if(currentToken) then
-            currentToken.value = Search:SafeToLower(currentToken.keyword or currentToken.value);
-            currentToken.negated = isTokenNegated or nil;
-            
-            if(currentToken.explicitType == "logical") then
-                if(currentToken.value == "not") then
-                    currentToken.transient = true;
-                end
-            elseif(currentToken.explicitType == "team") then
+        if(not currentToken) then
+            return;
+        end
+
+        currentToken.value = Search:SafeToLower(currentToken.keyword or currentToken.value);
+        currentToken.negated = isTokenNegated or nil;
+        
+        if(currentToken.explicitType == "logical") then
+            if(currentToken.value == "not") then
                 currentToken.transient = true;
             end
-            
-            -- Commit a real search token
-            if(currentToken.raw) then
-                tinsert(currentSegment.tokens, currentToken);
-            end
-            
-            currentToken = nil;
-            isTokenNegated = false;
+        elseif(currentToken.explicitType == "team") then
+            currentToken.transient = true;
         end
-            
-        -- Add unhandled space
-        if(hasUnhandledSpace and (#tokenizedSegments > 0 or #currentSegment.tokens > 0)) then
-            -- Add space symbol token
-            hasUnhandledSpace = nil;
-            local newSpaceToken = CreateSymbolToken(' ');
-            tinsert(currentSegment.tokens, newSpaceToken);
-            
-            ArenaAnalytics:Log("Added unhandled space.")
+        
+        -- Commit a real search token
+        if(currentToken.raw) then
+            tinsert(currentSegment.tokens, currentToken);
         end
+
+        CommitUnhandledSpace();
+        
+        currentToken = nil;
+        isTokenNegated = false;
     end
 
     local function CommitCurrentWord()
         currentWord = currentWord or "";
-        
+
         if(currentToken and currentWord ~= "") then
             local combinedValue = currentToken.value .. " " .. currentWord;
             local newCombinedToken = Search:CreateToken(combinedValue);
@@ -236,13 +237,14 @@ function Search:ProcessInput(input, oldCursorPosition)
                 end
 
                 currentToken = newCombinedToken;
-                hasUnhandledSpace = nil;
+                unhandledSpaces = max(0, unhandledSpaces - 1);
+                
                 currentWord = ""; -- Already added to the token
             else
                 CommitCurrentToken();
             end
         end
-        
+
         -- Might have been added to token by now
         if(not currentToken and currentWord ~= "") then
             currentToken = Search:CreateToken(currentWord, false);
@@ -270,8 +272,6 @@ function Search:ProcessInput(input, oldCursorPosition)
     while index <= #sanitizedInput do
         local char = sanitizedInput:sub(index, index);
         
-        ArenaAnalytics:Log("Tokenize Parse: '" .. char .. "'", "'" .. (lastChar or '') .. "'", hasUnhandledSpace);
-
         -- Store the sanitized relative caret position for the token in the making
         if(index == sanitizedCaretIndex) then
             ArenaAnalytics:Log("Caret index: ", index);
@@ -290,14 +290,12 @@ function Search:ProcessInput(input, oldCursorPosition)
             currentWord = currentWord .. char;
 
         elseif char == ' ' then
-            if(#tokenizedSegments > 0 and #currentSegment.tokens == 0) then
-                -- Add the space directly
-                currentToken = CreateSymbolToken(char);
-                CommitCurrentToken();
-            else
-                hasUnhandledSpace = true;
+            unhandledSpaces = unhandledSpaces + 1;
+
+            if(IsPlayerSegmentSeparatorChar(lastChar)) then
+                CommitUnhandledSpace();
             end
-                
+
             CommitCurrentWord();
 
         elseif IsPlayerSegmentSeparatorChar(char) then -- comma, period or semicolon
@@ -362,8 +360,6 @@ function Search:ProcessInput(input, oldCursorPosition)
                 CommitCurrentToken();
 
                 index = endIndex;
-                
-                displayString = displayString .. Search:ColorizeSymbol('(') .. display .. Search:ColorizeSymbol(')');
             else -- Invalid scope
                 currentWord = currentWord .. char;
             end

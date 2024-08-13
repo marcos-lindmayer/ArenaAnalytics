@@ -412,6 +412,7 @@ function AAtable:TryShowimportDialogFrame(parent)
 			-- Garbage collect
 			self:SetText("");
             collectgarbage("collect");
+            ArenaAnalytics:Log("Garbage Collection forced by import frame.");
 		end);
     end
 
@@ -483,6 +484,7 @@ function AAtable:CreateExportDialogFrame()
             ArenaAnalyticsScrollFrame.exportDialogFrame = nil;
             ArenaAnalytics:Log("Export Frame going away..")
             collectgarbage("collect");
+            ArenaAnalytics:Log("Garbage Collection forced by export frame.");
 		end);
 	end
     

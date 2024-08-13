@@ -151,7 +151,6 @@ end
 function Search:GetTokenDisplay(token)
     assert(token);
 
-    ArenaAnalytics:Log("GetTokenDisplay: '" .. token.raw .. "'")
     return token.raw, token.caret;
 end
 
