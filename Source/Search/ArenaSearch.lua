@@ -121,39 +121,6 @@ function Search:SetCurrentData(tokenizedSegments)
     Search:SetCurrentDisplay();
 end
 
-function Search:SetCurrentDisplay()
-    assert(Search.current);
-    local currentSegments = Search.current.segments or {};
-    
-    local newDisplay = "";
-    local newCursorPosition = nil;
-    
-    -- Combine new display string from tokens
-    for segmentIndex,segment in ipairs(currentSegments) do
-        for tokenIndex,token in ipairs(segment.tokens) do
-            local tokenDisplay, relativeCaretIndex = Search:GetTokenDisplay(token);
-
-            if(relativeCaretIndex) then
-                newCursorPosition = #newDisplay + relativeCaretIndex;
-            end
-
-            newDisplay = newDisplay .. tokenDisplay;
-        end
-    end
-
-    Search.current.display = newDisplay;
-
-    -- Update the searchBox
-    searchBox:SetText(newDisplay);
-    searchBox:SetCursorPosition(newCursorPosition or #newDisplay);
-end
-
-function Search:GetTokenDisplay(token)
-    assert(token);
-
-    return token.raw, token.caret;
-end
-
 local function LogSearchData()
     print(" ")
     ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
@@ -173,9 +140,11 @@ local function GetPersistentData()
         assert(segment.tokens);
         local persistentSegment = Search:GetEmptySegment();
 
-        for i,token in ipairs(segment.tokens) do
+        for j,token in ipairs(segment.tokens) do
             -- Process transient tokens for logic only
-            if(token.transient) then
+            if(not token.value or token.value == "") then
+                ArenaAnalytics:Log("GetPersistentData() skipping token ("..i..", "..j..") Due to missing value. Raw: ", token.raw);
+            elseif(token.transient) then
                 if(token.explicitType == "logical") then
                     if(token.value == "not") then
                         persistentSegment.inversed = true;
@@ -247,7 +216,7 @@ end
 -- NOTE: This is the main part to modify to handle actual token matching logic
 -- Returns true if a given type on a player matches the given value
 local function CheckTypeForPlayer(searchType, token, player)
-    assert(token and token.value and token.value ~= "");
+    assert(token and token.value and token.value ~= "", "Assertion failed! Token raw: " .. (token and token.raw or "nil"));
     assert(player ~= nil);
     
     if(searchType == nil) then

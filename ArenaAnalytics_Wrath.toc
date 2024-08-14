@@ -30,7 +30,7 @@ Source/Data/ArenaSpecSpells_Wrath.lua
 Source/Search/ArenaSearch.lua
 Source/Search/ArenaSearchParser.lua
 Source/Search/ArenaSearchTables.lua
-Source/Search/ArenaSearchColors.lua
+Source/Search/ArenaSearchDisplay.lua
 Source/Search/ArenaQuickSearch.lua
 
 Source/Filters/ArenaFilter.lua

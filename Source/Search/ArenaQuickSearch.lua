@@ -386,26 +386,6 @@ function Search:QuickSearch(mouseButton, player, team)
     local newSegment = {}
     local segmentIndex = 0;
 
-    -- If Append Rule is "New Search"
-        -- Clear existing search
-        -- Add all new tokens to segment
-        -- Commit new segment
-
-    -- If there is a name match in any segment
-        -- If all new tokens exist already
-            -- Remove the segment 
-            -- Commit the new search.
-        -- For each new token
-            -- Replace existing token of same type, or add the new token if unique
-        -- Commit search with segment removed or modified
-
-    -- Else (No name match)
-        -- Determine segment to modify (Last or new segment)
-        -- For each new token
-            -- If the token has a type and value match, remove the existing.
-            -- If the token has a type match of different value, replace existing.
-            -- If the token has no type matches in the segment, add new.
-    
     -- Current Search Data
     currentSegments = Search:GetCurrentSegments();
     
@@ -435,7 +415,13 @@ function Search:QuickSearch(mouseButton, player, team)
 
     -- 
     if(not foundNameMatchingSegment) then
-        if(#currentSegments == 0 or appendRule == "New Segment") then
+        if(#currentSegments == 0) then
+            tinsert(currentSegments, { tokens = {} });            
+        elseif(appendRule == "New Segment") then
+            ArenaAnalytics:Log("Adding new separator from quick search!")
+            local newSeparatorToken = Search:CreateSymbolToken(', ');
+            tinsert(currentSegments[#currentSegments].tokens, newSeparatorToken);
+
             tinsert(currentSegments, { tokens = {} });
         end
 
@@ -486,6 +472,12 @@ function Search:QuickSearch(mouseButton, player, team)
             
             -- If the token type is unique
             if(isUniqueToken) then
+                if(#currentSegments > 0 or #currentSegments[segmentIndex].tokens > 0) then
+                    ArenaAnalytics:Log("Adding space from quick search", i, #tokens)
+                    local newSpaceToken = Search:CreateSymbolToken(' ');
+                    tinsert(currentSegments[segmentIndex].tokens, newSpaceToken);
+                end
+
                 -- Add the new token
                 tinsert(currentSegments[segmentIndex].tokens, newToken);
             end
@@ -500,9 +492,11 @@ function Search:CommitQuickSearch(segments)
     ArenaAnalytics:Log("Committing Quick Search.", #segments, "segments.");
     for _,segment in ipairs(segments) do
         for _,token in ipairs(segment.tokens) do
-            ArenaAnalytics:Log("   ", token.raw);
+            ArenaAnalytics:Log("   Raw:", token.raw);
         end
     end
+
+    Search:SetCurrentData(segments);
 
     ResetQuickSearch()
 end

@@ -8,8 +8,7 @@ local Constants = ArenaAnalytics.Constants;
 -------------------------------------------------------------------------
 -- Search Parsing Logic
 
--- DEPRECATED: Symbols are getting added as raw within any token.
-local function CreateSymbolToken(symbol)
+function Search:CreateSymbolToken(symbol)
     assert(symbol)
 
     local newSpaceToken = {}
@@ -28,23 +27,12 @@ local function CreateSymbolToken(symbol)
     return newSpaceToken;
 end
 
-local function ParseTokenString(text)
-    local value = "";
-
-    if(text and text ~= "") then
-        local lastChar = '';
-        local excludedChars = '+"()!'
-
-        for i = 1, #text do
-            local char = text:sub(i,i);
-
-            if(char == '-' and lastChar ~= '' and lastChar ~= ':') then
-                value = value .. char;
-            elseif(not excludedChars:find(char)) then
-                value = value .. char;
-            end
-        end
-    end
+local function ParseTokenString(raw)
+    -- Remove all excluded characters using gsub  + " ( ) !
+    local value = raw and raw:gsub("[+\"()!]", "") or "";
+    
+    -- Remove '-', if it's neither the first symbol nor directly following a colon.
+    value = value:gsub("([^:])%-", "%1");
 
     return value;
 end
@@ -128,7 +116,7 @@ local function SanitizeCursorPosition(input, oldCursorPosition)
     end
 
     if(oldCursorPosition == #input) then
-        return -1;
+        return nil;
     end
 
     local stringBeforeCursor = input:sub(1, oldCursorPosition);
@@ -162,7 +150,8 @@ function Search:ProcessInput(input, oldCursorPosition)
 
     -- Caret Position Data
     local sanitizedCaretIndex = SanitizeCursorPosition(input, oldCursorPosition);
-    local currentWordCaretOffset = nil; -- Cursor relative to the word it's placed in
+    local committedTokenRawLength = 0;
+    local hasHandledCaret = nil;
 
     local isTokenNegated = false;
 
@@ -178,13 +167,41 @@ function Search:ProcessInput(input, oldCursorPosition)
     ----------------------------------------
     -- internal functions
 
+    local function HandleCaretPosition(token)
+        assert(token and token.raw);
+        
+        if(not sanitizedCaretIndex) then
+            return;
+        end
+        
+        if(hasHandledCaret) then
+            return;
+        end
+
+        if(sanitizedCaretIndex <= index and sanitizedCaretIndex >= committedTokenRawLength) then
+            local relativeCaretOffset = sanitizedCaretIndex - committedTokenRawLength;
+            ArenaAnalytics:Log("Caret Pos data: ", relativeCaretOffset, #token.raw)
+
+            if(relativeCaretOffset <= #token.raw) then
+                token.caret = relativeCaretOffset;
+                hasHandledCaret = true;
+                ArenaAnalytics:Log("Assigning Caret: ", token.caret, #currentSegment.tokens, token.raw);
+            end
+        else
+            ArenaAnalytics:Log("Skipping caret pos: ", index, sanitizedCaretIndex, committedTokenRawLength, token.raw)
+        end
+    end
+
     local function CommitUnhandledSpace()
         if(unhandledSpaces > 0) then
             -- Add space symbol token
             unhandledSpaces = max(0, unhandledSpaces - 1);
-            local newSpaceToken = CreateSymbolToken(' ');
-            tinsert(currentSegment.tokens, newSpaceToken);
+            local newSpaceToken = Search:CreateSymbolToken(' ');
             
+            HandleCaretPosition(newSpaceToken);
+
+            tinsert(currentSegment.tokens, newSpaceToken);
+            committedTokenRawLength = committedTokenRawLength + #newSpaceToken.raw;
         end
     end
 
@@ -197,28 +214,27 @@ function Search:ProcessInput(input, oldCursorPosition)
     end
 
     local function CommitCurrentToken()
-        if(not currentToken) then
-            return;
-        end
-
-        currentToken.value = Search:SafeToLower(currentToken.keyword or currentToken.value);
-        currentToken.negated = isTokenNegated or nil;
-        
-        if(currentToken.explicitType == "logical") then
-            if(currentToken.value == "not") then
+        if(currentToken and currentToken.raw and #currentToken.raw > 0) then
+            currentToken.value = Search:SafeToLower(currentToken.keyword or currentToken.value);
+            currentToken.negated = isTokenNegated or nil;
+            
+            if(currentToken.explicitType == "logical") then
+                if(currentToken.value == "not") then
+                    currentToken.transient = true;
+                end
+            elseif(currentToken.explicitType == "team") then
                 currentToken.transient = true;
             end
-        elseif(currentToken.explicitType == "team") then
-            currentToken.transient = true;
-        end
-        
-        -- Commit a real search token
-        if(currentToken.raw) then
+
+            HandleCaretPosition(currentToken);
+            
+            -- Commit a real search token
             tinsert(currentSegment.tokens, currentToken);
+            committedTokenRawLength = committedTokenRawLength + #currentToken.raw;
+            
+            CommitUnhandledSpace();
         end
 
-        CommitUnhandledSpace();
-        
         currentToken = nil;
         isTokenNegated = false;
     end
@@ -231,11 +247,6 @@ function Search:ProcessInput(input, oldCursorPosition)
             local newCombinedToken = Search:CreateToken(combinedValue);
             
             if(newCombinedToken and newCombinedToken.isValid) then
-                if(currentWordCaretOffset) then
-                    -- Old token length, including space, plus the offset
-                    newCombinedToken.caret = #currentToken.raw + 1 + currentWordCaretOffset;
-                end
-
                 currentToken = newCombinedToken;
                 unhandledSpaces = max(0, unhandledSpaces - 1);
                 
@@ -249,10 +260,6 @@ function Search:ProcessInput(input, oldCursorPosition)
         if(not currentToken and currentWord ~= "") then
             currentToken = Search:CreateToken(currentWord, false);
 
-            if(currentWordCaretOffset) then
-                currentToken.caret = currentWordCaretOffset;
-            end
-
             -- Commit immediately if no space is allowed
             if(currentToken and currentToken.noSpace) then
                 -- Commit new token immediately
@@ -261,26 +268,17 @@ function Search:ProcessInput(input, oldCursorPosition)
         end
 
         -- Reset current word
-        currentWordCaretOffset = nil;
         currentWord = "";
     end
 
     ----------------------------------------
     -- Parse the sanitizedInput characters
-
+    ArenaAnalytics:Print("Parsing with old caret position: ", sanitizedCaretIndex);
     local lastChar = nil;
     while index <= #sanitizedInput do
         local char = sanitizedInput:sub(index, index);
         
-        -- Store the sanitized relative caret position for the token in the making
-        if(index == sanitizedCaretIndex) then
-            ArenaAnalytics:Log("Caret index: ", index);
-            currentWordCaretOffset = #currentWord + 1;
-        end
-        
-        if char == "+" then -- Disabled in favor of "team" keyword
-            currentWord = currentWord .. char;
-        elseif char == '-'  and currentWord ~= "" and lastChar ~= ':' then -- Separator for name-realm
+        if char == '-'  and currentWord ~= "" and lastChar ~= ':' then -- Separator for name-realm
             currentWord = currentWord .. char;
         elseif char == '!' or char == '-' then -- Negated token
             if((currentWord == "" or lastChar == ':') and lastChar ~= '!' and lastChar ~= '-') then
@@ -304,7 +302,7 @@ function Search:ProcessInput(input, oldCursorPosition)
             
             if(#currentSegment.tokens > 0) then
                 -- Add the separator at the end of the segment
-                currentToken = CreateSymbolToken(char);
+                currentToken = Search:CreateSymbolToken(char);
                 CommitCurrentToken();
             end
 
@@ -315,51 +313,40 @@ function Search:ProcessInput(input, oldCursorPosition)
             currentWord = currentWord .. char;
 
         elseif char == '"' then
-            local endIndex, scope, isNegated, scopeCaretOffset = Search:ProcessScope(sanitizedInput, index, '"', sanitizedCaretIndex);
+            local endIndex, scope, isNegated = Search:ProcessScope(sanitizedInput, index, '"');
             if endIndex then
                 if(lastChar ~= ':' and lastChar ~= '!' and lastChar ~= '-') then
                     CommitCurrentWord();
                 end
                 CommitCurrentToken();
 
-                -- Check caret pos
-                if(scopeCaretOffset) then
-                    currentWordCaretOffset = scopeCaretOffset + #currentWord;
-                end
-
                 currentToken = Search:CreateToken(currentWord..scope, true);
                 isTokenNegated = isNegated;
                 currentWord = "";
+                index = endIndex;
 
                 -- Commit the new token immediately
                 CommitCurrentToken();
 
-                index = endIndex;
             else -- Invalid scope
                 currentWord = currentWord .. char;
             end
 
         elseif char == "(" then
-            local endIndex, scope, isNegated, scopeCaretOffset = Search:ProcessScope(sanitizedInput, index, ')', sanitizedCaretIndex);
+            local endIndex, scope, isNegated = Search:ProcessScope(sanitizedInput, index, ')');
             if endIndex then
                 if(lastChar ~= ':' and lastChar ~= '!' and lastChar ~= '-') then
                     CommitCurrentWord();
                 end
                 CommitCurrentToken();
 
-                -- Check caret pos
-                if(scopeCaretOffset) then
-                    currentWordCaretOffset = #currentWord + scopeCaretOffset;
-                end
-
                 currentToken = Search:CreateToken(currentWord..scope, false);
                 isTokenNegated = isNegated;
                 currentWord = "";
+                index = endIndex;
 
                 -- Commit the new token immediately
                 CommitCurrentToken();
-
-                index = endIndex;
             else -- Invalid scope
                 currentWord = currentWord .. char;
             end
@@ -389,21 +376,16 @@ function Search:ProcessInput(input, oldCursorPosition)
     return tokenizedSegments;
 end
 
-function Search:ProcessScope(input, startIndex, endSymbol, sanitizedCaretIndex)    
+function Search:ProcessScope(input, startIndex, endSymbol)    
     local endIndex, isNegated = nil, false;
 
     -- Add the scope opening char
     local scope = "";
-    local scopeCaretOffset = nil;
     
     -- Loop fron next index
     local index = startIndex;
     while index <= #input do
         local char = input:sub(index, index);
-
-        if(sanitizedCaretIndex and index == sanitizedCaretIndex) then
-            scopeCaretOffset = index;
-        end
 
         -- Add any char to the scope, except player segment separators
         if(not IsPlayerSegmentSeparatorChar(char)) then
@@ -425,5 +407,5 @@ function Search:ProcessScope(input, startIndex, endSymbol, sanitizedCaretIndex)
         index = index + 1;
     end
 
-    return endIndex, scope, isNegated, scopeCaretOffset;
+    return endIndex, scope, isNegated;
 end
