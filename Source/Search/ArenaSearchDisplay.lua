@@ -46,7 +46,6 @@ function Search:SetCurrentDisplay()
 
             if(relativeCaretOffset) then
                 newCaretPosition = #newDisplay + relativeCaretOffset;
-                ArenaAnalytics:Log("New Caret Index: ", newCaretPosition, #newDisplay, relativeCaretOffset, "   ", tokenIndex)
             end
 
             newDisplay = newDisplay .. tokenDisplay;
@@ -58,7 +57,6 @@ function Search:SetCurrentDisplay()
     -- Update the searchBox
     searchBox:SetText(newDisplay);
     searchBox:SetCursorPosition(newCaretPosition or #newDisplay);
-    ArenaAnalytics:Log("Updated caret position: ", newCaretPosition);
 end
 
 function Search:GetTokenDisplay(token)

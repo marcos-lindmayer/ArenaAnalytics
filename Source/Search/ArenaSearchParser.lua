@@ -180,15 +180,11 @@ function Search:ProcessInput(input, oldCursorPosition)
 
         if(sanitizedCaretIndex <= index and sanitizedCaretIndex >= committedTokenRawLength) then
             local relativeCaretOffset = sanitizedCaretIndex - committedTokenRawLength;
-            ArenaAnalytics:Log("Caret Pos data: ", relativeCaretOffset, #token.raw)
 
             if(relativeCaretOffset <= #token.raw) then
                 token.caret = relativeCaretOffset;
                 hasHandledCaret = true;
-                ArenaAnalytics:Log("Assigning Caret: ", token.caret, #currentSegment.tokens, token.raw);
             end
-        else
-            ArenaAnalytics:Log("Skipping caret pos: ", index, sanitizedCaretIndex, committedTokenRawLength, token.raw)
         end
     end
 
