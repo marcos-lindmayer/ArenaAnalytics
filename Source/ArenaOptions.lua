@@ -43,6 +43,12 @@ local function AddSetting(setting, default)
     defaults[setting] = default;
 end
 
+local function DeleteSetting(setting)
+    if(setting and ArenaAnalyticsSettings[setting]) then
+        ArenaAnalyticsSettings[setting] = nil;
+    end
+end
+
 -- Adds a setting that does not save across reloads. (Use with caution)
 local function AddTransientSetting(setting, default)
     ArenaAnalyticsSettings[setting] = default;
@@ -82,7 +88,6 @@ function Options:LoadSettings()
 
     -- Search
     AddSetting("searchDefaultExplicitEnemy", false);
-    AddSetting("searchHideTooltipQuickSearch", false);
 
     -- Quick Search
     AddSetting("quickSearchExcludeAnyRealm", false); -- Deprecated, in favor of quickSearchIncludeRealm
@@ -515,8 +520,6 @@ function SetupTab_Search()
         end
     end);
 
-    parent.searchDefaultExplicitEnemy = CreateCheckbox("searchHideTooltipQuickSearch", parent, offsetX, "Hide Quick Search shortcuts on player tooltips.");
-
     CreateSpace();
 
     -- Exclude any realm
@@ -555,7 +558,7 @@ function SetupTab_QuickSearch()
     -- Setup options
     parent.quickSearchEnabled = CreateCheckbox("quickSearchEnabled", parent, offsetX, "Enable Quick Search");
 
-    CreateSpace();
+    CreateSpace(20);
 
     local includeRealmOptions = { "All", "None", "Other Realms", "My Realm" };
     parent.includeRealmDropdown = CreateDropdown("quickSearchIncludeRealm", parent, offsetX, "Include realms from Quick Search.", includeRealmOptions);
@@ -566,18 +569,25 @@ function SetupTab_QuickSearch()
     local valueOptions = { "Name", "Spec", "Race", "Faction" };
     parent.defaultValueDropdown = CreateDropdown("quickSearchDefaultValue", parent, offsetX, "Default value to add, if not overridden by shortcuts.", valueOptions);
 
-    CreateSpace();
+    CreateSpace(20);
 
     local shortcuts = { "None", "LMB", "RMB", "Nomod", "Shift", "Ctrl", "Alt" };
+
+    parent.newSearchRuleDropdown = CreateDropdown("quickSearchAppendRule_NewSearch", parent, offsetX, "New Search append rule shortcut.", shortcuts);
+    parent.newSegmentRuleDropdown = CreateDropdown("quickSearchAppendRule_NewSegment", parent, offsetX, "New Segment append rule shortcut.", shortcuts);
+    parent.sameSegmentRuleDropdown = CreateDropdown("quickSearchAppendRule_SameSegment", parent, offsetX, "Same Segment append rule shortcut.", shortcuts);
+
+    CreateSpace(20);
+
     parent.inverseValueDropdown = CreateDropdown("quickSearchAction_Inverse", parent, offsetX, "Inverse segment shortcut.", shortcuts);
 
-    CreateSpace();
+    CreateSpace(20);
 
     parent.teamValueDropdown = CreateDropdown("quickSearchAction_Team", parent, offsetX, "Team shortcut.", shortcuts);
     parent.enemyValueDropdown = CreateDropdown("quickSearchAction_Enemy", parent, offsetX, "Enemy shortcut.", shortcuts);
     parent.clickedTeamValueDropdown = CreateDropdown("quickSearchAction_ClickedTeam", parent, offsetX, "Team of clicked player shortcut.", shortcuts);
 
-    CreateSpace();
+    CreateSpace(20);
 
     parent.nameValueDropdown = CreateDropdown("quickSearchAction_Name", parent, offsetX, "Name shortcut.", shortcuts);
     parent.specValueDropdown = CreateDropdown("quickSearchAction_Spec", parent, offsetX, "Spec shortcut.", shortcuts);

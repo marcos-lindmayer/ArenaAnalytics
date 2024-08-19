@@ -40,7 +40,78 @@ function Tooltips:DrawOptionTooltip(frame, tooltip)
     GameTooltip:Show();
 end
 
+local function TryAddQuickSearchShortcutTips()
+    if(Options:Get("searchHideTooltipQuickSearch")) then
+        return;
+    end
+        
+    if(not IsShiftKeyDown()) then
+        return;
+    end
+
+    local function ColorTips(key, text)
+        assert(key);
+
+        if(not text) then
+            return "";
+        end
+
+        return "|cff999999" .. key .. "|r|cffCCCCCC" .. text .. "|r";
+    end
+
+    GameTooltip:AddLine(" ");
+    GameTooltip:AddLine("Quick Search:");
+
+    local defaultAppendRule = Options:Get("quickSearchDefaultAppendRule") or "None";
+    local defaultValue = Options:Get("quickSearchDefaultValue") or "None";
+
+    local newSearchRuleShortcut = Options:Get("quickSearchAppendRule_NewSearch") or "None";
+    local newSegmentRuleShortcut = Options:Get("quickSearchAppendRule_NewSegment") or "None";
+    local sameSegmentRuleShortcut = Options:Get("quickSearchAppendRule_SameSegment") or "None";
+
+    local inverseShortcut = Options:Get("quickSearchAction_Inverse") or "None";
+    
+    local teamShortcut = Options:Get("quickSearchAction_Team") or "None";
+    local enemyShortcut = Options:Get("quickSearchAction_Enemy") or "None";
+
+    local nameShortcut = Options:Get("quickSearchAction_Name") or "None";
+    local specShortcut = Options:Get("quickSearchAction_Spec") or "None";
+    local raceShortcut = Options:Get("quickSearchAction_Race") or "None";
+    local factionShortcut = Options:Get("quickSearchAction_Faction") or "None";
+
+    -- Add the values
+    GameTooltip:AddDoubleLine(ColorTips("New Search: ", newSearchRuleShortcut), ColorTips("New Segment: ", newSegmentRuleShortcut));
+    GameTooltip:AddDoubleLine(ColorTips("Same Segment: ", sameSegmentRuleShortcut), ColorTips("Inversed: ", inverseShortcut));
+
+    GameTooltip:AddLine(" ");
+
+    GameTooltip:AddDoubleLine(ColorTips("Team: ", teamShortcut), ColorTips("Enemy: ", enemyShortcut));
+    GameTooltip:AddDoubleLine(ColorTips("Name: ", nameShortcut), ColorTips("Spec: ", specShortcut));
+    GameTooltip:AddDoubleLine(ColorTips("Race: ", raceShortcut), ColorTips("Faction: ", factionShortcut));
+end
+
+local lastPlayerFrame = nil;
+local function UnbindPlayerFrameModifierChanged()
+    if(lastPlayerFrame) then
+        lastPlayerFrame:UnregisterEvent("MODIFIER_STATE_CHANGED");
+    end
+end
+
+local function BindPlayerFrameModifierChanged(playerFrame)
+    --  Try unbind last player frame
+    UnbindPlayerFrameModifierChanged()
+
+    -- Bind new frame
+    playerFrame:RegisterEvent("MODIFIER_STATE_CHANGED", function(self)
+        Tooltips:DrawPlayerTooltip(self);
+    end);
+
+    lastPlayerFrame = playerFrame;
+end
+
 function Tooltips:DrawPlayerTooltip(playerFrame)
+    BindPlayerFrameModifierChanged(playerFrame);
+
     local matchIndex = playerFrame.matchIndex;
     local teamKey = playerFrame.team;
     local playerIndex = playerFrame.playerIndex;
@@ -102,23 +173,21 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
 
     -- Create the tooltip
     GameTooltip:SetOwner(playerFrame, "ANCHOR_RIGHT");
+    GameTooltip:ClearLines();
+
     GameTooltip:AddLine(player);    
     GameTooltip:AddDoubleLine(race, ArenaAnalytics:ApplyClassColor(spec .. " " .. class, class));
 
     GameTooltip:AddDoubleLine(ColorText("Damage: ") .. FormatValue(damage), ColorText("Healing: ") .. FormatValue(healing));
     GameTooltip:AddDoubleLine(ColorText("Kills: ") .. FormatValue(kills), ColorText("Deaths: ") .. FormatValue(deaths));
 
-    local function ColorTips(key, text)
-        return "|cff999999" .. key .. "|r|cffCCCCCC" .. text .. "|r";
-    end
-
-    if(not Options:Get("searchHideTooltipQuickSearch")) then
-        GameTooltip:AddLine(" ");
-        GameTooltip:AddLine("Quick Search:");
-        GameTooltip:AddDoubleLine(ColorTips("LMB:", " Add value"), ColorTips("RMB:", " Add inversed"));
-        GameTooltip:AddDoubleLine(ColorTips("Nomod:", " Player Name"), ColorTips("Shift:", " Append search"));
-        GameTooltip:AddDoubleLine(ColorTips("Ctrl:", " Class/Spec"), ColorTips("Alt:", " Race")); -- TODO: Swap alt and shift
-    end
+    -- Quick Search Shortcuts
+    TryAddQuickSearchShortcutTips();
 
     GameTooltip:Show();
+end
+
+function Tooltips:HidePlayerTooltip()    
+    UnbindPlayerFrameModifierChanged();
+    GameTooltip:Hide();
 end

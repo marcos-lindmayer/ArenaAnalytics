@@ -23,9 +23,8 @@ function Search:ColorizeToken(token)
     end
 
     local type = token.explicitType;
-    local text = token:GetRaw();
     
-    return text and "|cffFFFFFF" .. text .. "|r" or "";
+    return token.raw and "|cffFFFFFF" .. token.raw .. "|r" or "";
 end
 
 -------------------------------------------------------------------------
@@ -34,11 +33,10 @@ end
 function Search:SetCurrentDisplay()
     assert(Search.current);
     local currentSegments = Search.current.segments or {};
-    
+
     local newDisplay = "";
     local newCaretPosition = nil;
-    
-    print(" ")
+
     -- Combine new display string from tokens
     for segmentIndex,segment in ipairs(currentSegments) do
         for tokenIndex,token in ipairs(segment.tokens) do
@@ -63,7 +61,7 @@ function Search:GetTokenDisplay(token)
     assert(token and token.raw);
     
     local display = "";
-    local caretOffset = nil;
+    local caretOffset = (token.caret == 0) and 0 or nil;
 
     local isExactScope = false;
     local isPartialScope = false;

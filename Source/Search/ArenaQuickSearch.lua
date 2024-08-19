@@ -161,24 +161,9 @@ local function CheckShortcut(shortcut, btn)
     return false;
 end
 
---AddSetting("quickSearchAction_NewSearch", "Nomod");
---AddSetting("quickSearchAction_NewSegment", "None");
---AddSetting("quickSearchAction_SameSegment", "Shift");
---AddSetting("quickSearchAction_Inverse", "Alt");
-
---AddSetting("quickSearchAction_Team", "LMB");
---AddSetting("quickSearchAction_Enemy", "RMB");
---AddSetting("quickSearchAction_ClickedTeam", "None");
-
---AddSetting("quickSearchAction_Name", "Nomod");
---AddSetting("quickSearchAction_Spec", "Ctrl");
---AddSetting("quickSearchAction_Race", "None");
---AddSetting("quickSearchAction_Faction", "None");
-
 local function GetPlayerName(player)
     name = player["name"] or "";
     if(name:find('-')) then
-        -- TODO: Convert to options
         if(Options:Get("quickSearchExcludeAnyRealm")) then
             name = name:match("(.*)-") or name;
         elseif(Options:Get("quickSearchExcludeMyRealm")) then
@@ -202,7 +187,6 @@ local function AddSettingAction(actions, setting)
 
     local action = Options:Get(setting);
     if(action and action ~= "None") then
-        ArenaAnalytics:Log("Adding action: ", action)
         actions[action] = true;
     end
 end
@@ -223,44 +207,43 @@ local function GetAppendRule(btn)
     return Options:Get("quickSearchDefaultAppendRule");
 end
 
-local function AddValueByType(tokens, player, typeKey)
-    if(not typeKey) then
+local function AddValueByType(tokens, player, explicitType)
+    assert(player);
+    if(not explicitType) then
         return;
     end
 
-    if(typeKey == "name") then
-        assert(player["name"]);
-        tinsert(tokens, { typeKey = typeKey, value = player["name"] });
-    elseif(typeKey == "race") then
-        local race = Search:GetShortQuickSearch(typeKey, player["race"]);
-        if(race) then
-            tinsert(tokens, { typeKey = typeKey, value = race });
-        end
-    elseif(typeKey == "spec") then
+    local newToken = nil;
+    
+    if(explicitType == "name") then
+        newToken = Search:CreateToken(GetPlayerName(player));
+    elseif(explicitType == "race") then
+        local race = Search:GetShortQuickSearch(explicitType, player["race"]);
+        newToken = Search:CreateToken(race);
+    elseif(explicitType == "spec") then
         local class, spec = player["class"], player["spec"];
         local value = Search:GetShortQuickSearchSpec(class, spec);
-        if(value) then
-            local actualType = (spec and spec ~= "") and "spec" or "class";
-            tinsert(tokens, { typeKey = actualType, value = value});
-        end
-    elseif(typeKey == "class") then
-        local class = player["class"];
-        local value = Search:GetShortQuickSearchSpec(class, nil);
-        if(value) then
-            tinsert(tokens, { typeKey = typeKey, value = value });
-        end
-    elseif(typeKey == "faction") then
-        local faction = Constants:GetFactionByRace(player["race"]);
-        local value = Search:GetShortQuickSearch(typeKey, faction);
-        if(value) then
-            tinsert(tokens, { typeKey = typeKey, value = value })
-        end
+        local actualType = (spec and spec ~= "") and "spec" or "class";
+
+        newToken = Search:CreateToken(value);
+    elseif(explicitType == "class") then
+        local value = Search:GetShortQuickSearchSpec(player["class"], nil);
+        newToken = Search:CreateToken(value);
+    elseif(explicitType == "faction") then
+        local faction = Constants:GetFactionByRace(player["race"]); -- TODO: Change to store faction directly, to secure neutral races
+        local value = Search:GetShortQuickSearch(explicitType, faction);
+        newToken = Search:CreateToken(value);
+    end
+    
+    if(newToken) then
+        tinsert(tokens, newToken);
     end
 end
 
 local function GetQuickSearchTokens(player, team, btn)
     assert(player);
     local tokens = {};
+    local hasValue = false;
 
     -- Inverse
     local shortcut = Options:Get("quickSearchAction_Inverse");
@@ -269,41 +252,50 @@ local function GetQuickSearchTokens(player, team, btn)
     end
 
     -- Team
+    local newSimpleTeamToken = nil;
     if(CheckShortcut(Options:Get("quickSearchAction_ClickedTeam"), btn)) then
-        tinsert(tokens, { typeKey = "team", value = team});
+        newSimpleTeamToken = Search:CreateToken(Search:SafeToLower(team));
     elseif(CheckShortcut(Options:Get("quickSearchAction_Team"), btn)) then
-        tinsert(tokens, { typeKey = "team", value = "Team"});
+        newSimpleTeamToken = Search:CreateToken("team");
     elseif(CheckShortcut(Options:Get("quickSearchAction_Enemy"), btn)) then
-        tinsert(tokens, { typeKey = "team", value = "Enemy"});
+        newSimpleTeamToken = Search:CreateToken("enemy");
+    end
+
+    if(newSimpleTeamToken) then
+        tinsert(tokens, newSimpleTeamToken);
     end
 
     -- Name
     shortcut = Options:Get("quickSearchAction_Name");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, player, "name")
+        AddValueByType(tokens, player, "name");
+        hasValue = true;
     end
 
     -- Spec
     shortcut = Options:Get("quickSearchAction_Spec");
     if(CheckShortcut(shortcut, btn)) then
         AddValueByType(tokens, player, "spec");
+        hasValue = true;
     end
 
     -- Race
     shortcut = Options:Get("quickSearchAction_Race");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, player, "race")
+        AddValueByType(tokens, player, "race");
+        hasValue = true;
     end
     
     -- Faction
     shortcut = Options:Get("quickSearchAction_Faction");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, player, "faction")
+        AddValueByType(tokens, player, "faction");
+        hasValue = true;
     end
 
-    if(#tokens == 0) then
-        local typeKey = Options:Get("quickSearchDefaultValue");
-        AddValueByType(tokens, player, "name");
+    if(not hasValue) then
+        local explicitType = Options:Get("quickSearchDefaultValue");
+        AddValueByType(tokens, player, Search:SafeToLower(explicitType));
     end
 
     return tokens;
@@ -319,18 +311,20 @@ local function GetCurrentSegments()
 end
 
 local function DoesTokenMatchName(existingToken, newName)
-    assert(existingToken);
-    if(existingToken["explicitType"] ~= "name") then
+    assert(existingToken and newName);
+    if(existingToken.explicitType ~= "name") then
         return false;
     end
 
-    local existingName = existingToken["value"];
-    if(existingToken == newName) then
-        return true;
+    local existingName = Search:SafeToLower(existingToken.value);
+
+    if(existingToken.value == newName) then
+        return true, true;
     end
 
-    if(not existingToken["exact"]) then
-        return newName:find(existingName:gsub('-', "%-"));
+    if(not existingToken.exact) then
+        local isPartialMatch = newName:find(existingName) ~= nil;
+        return isPartialMatch, false;
     end
 
     return false;
@@ -339,36 +333,61 @@ end
 local function FindExistingNameMatch(segments, newName)
     assert(segments);
 
-    if(not newName or newName == "") then
+    if(not newName or newName == "" or type(newName) ~= "string") then
         return nil, nil;
     end
 
     for i,segment in ipairs(segments) do
-        for _,currentToken in ipairs(segment.tokens) do
+        for j,currentToken in ipairs(segment.tokens) do
             -- Compare name with current 
-            if(DoesTokenMatchName(currentToken, newName)) then
-                return i, j;
+            local isMatch, isExact = DoesTokenMatchName(currentToken, newName);
+            if(isMatch) then
+                return i, j, isExact;
             end
         end
     end
 end
 
-local function DoesAllTokensMatchExact(segments, tokens)
-    assert(segments);
+local function RemoveSeparatorFromTokens(tokens)
+    assert(tokens);
 
-    if(not token) then
+    for i=#tokens, 1, -1 do
+        local token = tokens[i];
+        
+        if(token and token.isSeparator) then
+            table.remove(tokens, i);
+        end
+    end
+end
+
+local function TokensContainExact(existingTokens, token)
+    assert(existingTokens and token);
+
+    for index,existingToken in ipairs(existingTokens) do
+        if(existingToken.explicitType == token.explicitType and existingToken.value == token.value) then
+            return true;
+        end
+    end
+    
+    return false;
+end
+
+local function DoesAllTokensMatchExact(segment, tokens, skipName)
+    assert(segment);
+
+    if(not tokens) then
         return false;
     end
 
-    for _,segment in ipairs(segments) do
-        for i,existingToken in ipairs(segment.tokens) do
-            if(existingToken.explicitType == token.type and existingToken.value == token.value) then
-                return true;
-            end
+    for _,token in ipairs(tokens) do
+        if(not skipName or token.explicitType ~= "name") then
+            if(not TokensContainExact(segment.tokens, token)) then
+                return false;
+            end    
         end
     end
 
-    return false;
+    return true;
 end
 
 function Search:QuickSearch(mouseButton, player, team)
@@ -381,105 +400,101 @@ function Search:QuickSearch(mouseButton, player, team)
     appendRule = GetAppendRule(mouseButton);
     tokens = GetQuickSearchTokens(player, team, mouseButton);
     
-    local currentSegments = Helpers:DeepCopy(Search:GetCurrentSegments());
+    if(appendRule == "New Search") then
+        Search:Update("");
+    end
+
+    -- Current Search Data
+    local currentSegments = Search:GetCurrentSegments();
 
     local newSegment = {}
     local segmentIndex = 0;
-
-    -- Current Search Data
-    currentSegments = Search:GetCurrentSegments();
-    
-    if(appendRule == "New Search") then
-        Search:Update("");
-        currentSegments = {}
-    end
     
     -- Check for name match
     local foundNameMatchingSegment = false;
-    if(#currentSegments > 0) then
-        local newName = nil;
-        for _,token in ipairs(tokens) do
-            if(token.type == "name") then
-                newName = token.value;
-            end
-        end
-
-        if(newName) then
-            local matchedSegmentIndex, matchedTokenIndex = FindExistingNameMatch(currentSegments, newName);
-            if(matchedSegmentIndex and matchedTokenIndex) then
-                foundNameMatchingSegment = true;
-                segmentIndex = matchedSegmentIndex;
-            end
+    local foundPartialNameMatch = false;
+    local newName = nil;
+    for _,token in ipairs(tokens) do
+        if(token.explicitType == "name") then
+            newName = token.value;
         end
     end
 
-    -- 
-    if(not foundNameMatchingSegment) then
-        if(#currentSegments == 0) then
-            tinsert(currentSegments, { tokens = {} });            
-        elseif(appendRule == "New Segment") then
-            ArenaAnalytics:Log("Adding new separator from quick search!")
-            local newSeparatorToken = Search:CreateSymbolToken(', ');
-            tinsert(currentSegments[#currentSegments].tokens, newSeparatorToken);
+    if(newName) then
+        local matchedSegmentIndex, matchedTokenIndex, isExactNameMatch = FindExistingNameMatch(currentSegments, newName);
+        if(matchedSegmentIndex and matchedTokenIndex) then
+            foundNameMatchingSegment = true;
 
-            tinsert(currentSegments, { tokens = {} });
+            if(isExactNameMatch) then
+                -- If all tokens match, and this was an existing named match, then remove the entire segment
+                local exactSegmentMatch = DoesAllTokensMatchExact(currentSegments[matchedSegmentIndex], tokens, matchedTokenIndex);
+                if(exactSegmentMatch) then
+                    table.remove(currentSegments, matchedSegmentIndex);
+
+                    if(matchedSegmentIndex > 1) then
+                        local previousSegment = currentSegments[matchedSegmentIndex - 1];
+                        if(previousSegment) then
+                            RemoveSeparatorFromTokens(previousSegment.tokens);
+                        end
+                    end
+
+                    Search:CommitQuickSearch(currentSegments);
+                    return;
+                end
+            else
+                foundPartialNameMatch = true;
+            end
         end
 
+        segmentIndex = matchedSegmentIndex;
+    end
+
+    local oldcounttemp = #currentSegments
+
+    if(not foundNameMatchingSegment) then
+        if(#currentSegments > 0 and appendRule == "New Segment") then
+            local newSeparatorToken = Search:CreateSymbolToken(', ', true);
+            tinsert(currentSegments[#currentSegments].tokens, newSeparatorToken);
+        end
+
+        tinsert(currentSegments, { tokens = {} });
         segmentIndex = #currentSegments;
     end
 
-    -- If all tokens match, and this was an existing named match, then remove the entire segment
-    if(foundNameMatchingSegment) then
-        -- For each new token, check for an exact match
-        if(DoesAllTokensMatchExact(currentSegments[segmentIndex], tokens)) then
-            table.remove(currentSegments, segmentIndex);
-            Search:CommitQuickSearch(currentSegments);
-            return;
-        end
-    end
-    
-    -- TODO: Implement per token Add/Replace/Remove logic
-    -- For each new token, look for a type match
+    -- For each new token, add, remove or replace based on type and value match
     for i,token in ipairs(tokens) do
-        ArenaAnalytics:Log("Processing quick search token: ", token.typeKey, ":", token.value);
-
-        if(token.typeKey and token.value) then
-            assert(token.typeKey and token.typeKey ~= "");
+        if(token.explicitType and token.raw) then
+            assert(token.explicitType and token.explicitType ~= "");
             assert(currentSegments[segmentIndex]);
-            
-            local newTokenText = Search:GetShortPrefix(token.typeKey) .. ":" .. token.value;
-            local newToken = Search:CreateToken(newTokenText);
 
-            newToken["value"] = Search:SafeToLower(newToken["keyword"] or newToken["value"]);
-            newToken["keyword"] = nil;
-            
             local isUniqueToken = true;
-            
-            for j,existingToken in ipairs(currentSegments[segmentIndex]) do
-                ArenaAnalytics:Log("Quick Search token types:", existingToken.explicitType, token.typeKey)
-                if(existingToken.explicitType == token.typeKey) then
-                    ArenaAnalytics:Log("Found existing type match in segment: ", segmentIndex, " of type: ", existingToken.explicitType);
+
+            local existingTokens = currentSegments[segmentIndex].tokens;
+            for tokenIndex = #existingTokens, 1, -1 do
+                local existingToken = existingTokens[tokenIndex];
+
+                if(existingToken.explicitType == token.explicitType) then
                     isUniqueToken = false;
                     
-                    -- If value is same, remove existing
-                    
-                    
-                    -- If value is different, replace with the new token
-                    
+                    -- Different values, replace with the new token
+                    if(existingToken.value ~= token.value) then
+                        existingTokens[tokenIndex] = token;
+                    elseif(token.explicitType ~= "name" and not foundPartialNameMatch) then
+                        table.remove(existingTokens, tokenIndex);
+                    end
                     break;
                 end
             end
-            
+
             -- If the token type is unique
             if(isUniqueToken) then
-                if(#currentSegments > 0 or #currentSegments[segmentIndex].tokens > 0) then
-                    ArenaAnalytics:Log("Adding space from quick search", i, #tokens)
+                if(#currentSegments[segmentIndex].tokens > 0) then
                     local newSpaceToken = Search:CreateSymbolToken(' ');
                     tinsert(currentSegments[segmentIndex].tokens, newSpaceToken);
                 end
 
                 -- Add the new token
-                tinsert(currentSegments[segmentIndex].tokens, newToken);
+                tinsert(currentSegments[segmentIndex].tokens, token);
             end
         end
     end
@@ -488,135 +503,6 @@ function Search:QuickSearch(mouseButton, player, team)
 end
 
 function Search:CommitQuickSearch(segments)
-    print(" ")
-    ArenaAnalytics:Log("Committing Quick Search.", #segments, "segments.");
-    for _,segment in ipairs(segments) do
-        for _,token in ipairs(segment.tokens) do
-            ArenaAnalytics:Log("   Raw:", token.raw);
-        end
-    end
-
     Search:SetCurrentData(segments);
-
-    ResetQuickSearch()
-end
-
-
-
-function Search:QuickSearch_OLD(mouseButton, player, team)
-    assert(player);
-
-    local prefix, tokens = '', {};
-    local isNegated = (mouseButton == "RightButton");
-
-    if(isNegated) then
-        tinsert(tokens, "not");
-    end
-
-    if(team == "team") then
-        tinsert(tokens, "team");
-    elseif(team == "enemyTeam") then
-        tinsert(tokens, "enemy");
-    end
-
-    if(not IsAltKeyDown() and not IsControlKeyDown()) then
-        name = GetPlayerName(player);
-
-        -- Add name only
-        tinsert(tokens, name);
-    else
-        if(IsAltKeyDown() and player["race"] ~= nil) then
-            -- Add race if available
-            local race =  player["race"];
-            local shortName = Search:GetShortQuickSearch("race", race);
-            tinsert(tokens, "r:"..(shortName or race));
-        end
-        
-        if(IsControlKeyDown() and player["class"] ~= nil) then
-            local class = player["class"];
-            local spec = player["spec"];
-
-            local shortName = Search:GetShortQuickSearchSpec(class, spec);
-            if(ArenaAnalyticsDebugAssert(shortName ~= nil, ("No shortname found for class: " .. (class or "nil") .. " spec: " .. (spec or "nil")))) then
-                local shortNamePrefix = (spec and spec ~= "") and "s:" or "c:";
-                tinsert(tokens, shortNamePrefix .. shortName);
-            else
-                local simpleToken = "";
-                -- Add spec
-                if(spec ~= nil and spec ~= "") then
-                    simpleToken = simpleToken .. negatedPrefix .. " ";
-                end
-
-                -- Add class
-                tinsert(tokens, simpleToken.."c:"..class);
-            end
-        end
-    end
-
-    currentActions = {}
-
-    Search:CommitQuickSearch_OLD(tokens, false);
-end
-
-local function SplitAtLastComma(input)
-    local before, after = input:match("^(.*),%s*(.*)$");
-    
-    if before then
-        before = before .. ", ";
-    else
-        before = "";
-        after = input;
-    end
-
-    return before, after;
-end
-
-function Search:CommitQuickSearch_OLD(tokens, isNegated)
-    assert(tokens and #tokens > 0);
-    
-    local previousSearch = IsShiftKeyDown() and Search:SanitizeInput(Search.current["display"] or "") or "";
-    
-    local isNewSegment = previousSearch == "" or previousSearch:match(",[%s!]*$");
-
-    -- TODO: Consider if we want an option for this
-    -- Forces new segment per quick search.
-    local forceNewSegment = true;
-    if(forceNewSegment and not isNewSegment) then
-        previousSearch = previousSearch .. ", ";
-        isNewSegment = true;
-    end
-
-    local previousSegments, currentSegment = SplitAtLastComma(previousSearch);
-    
-    local negatedSymbol = isNegated and '!' or '';
-    
-    -- Add, replace or skip each token
-    -- Split value into table
-    for _,token in ipairs(tokens) do
-        local escapedToken = token:gsub("-", "%-");
-
-        -- TODO: Look for existing token of same explicit type instead? (Avoids cases of requiring multiple of the same race. Possibly allowing multiple negated but only one non-negated?)
-        if(currentSegment:find(escapedToken)) then
-            if(isNegated) then
-                if(not currentSegment:find('!'..escapedToken)) then
-                    currentSegment = currentSegment:gsub(escapedToken, '!'..token);
-                end
-            else
-                currentSegment = currentSegment:gsub('!'..escapedToken, token);
-            end
-        else -- Unique token, add directly
-            if(currentSegment ~= "") then
-                currentSegment = currentSegment .. " ";
-            end
-            currentSegment =  currentSegment .. negatedSymbol .. token;
-        end
-    end
-    
-    -- No previous segment, or a previous segment that ends with comma and only exclamation marks or spaces after
-    if(isNewSegment) then
-        currentSegment = currentSegment;
-    end
-    
-    ArenaAnalyticsScrollFrame.searchBox:ClearFocus();
-    Search:CommitSearch(previousSegments .. currentSegment);
+    ResetQuickSearch();
 end

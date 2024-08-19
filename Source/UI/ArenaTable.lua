@@ -565,7 +565,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
                 Tooltips:DrawPlayerTooltip(playerFrame);
             end);
             playerFrame:SetScript("OnLeave", function ()
-                GameTooltip:Hide();
+                Tooltips:HidePlayerTooltip();
             end);
 
             -- Add death overlay            

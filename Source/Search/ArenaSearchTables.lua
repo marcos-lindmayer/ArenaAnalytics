@@ -217,13 +217,13 @@ function Search:FindSearchValueDataForToken(token)
         return;
     end
 
-    local lowerCaseValue = token.value:lower();
+    local lowerCaseValue = Search:SafeToLower(token.value);
     
     -- Cached info about the best match
     local bestMatch = nil;
     local function TryUpdateBestMatch(matchedValue, valueKey, typeKey, noSpace, startIndex)
-        local score = CalculateMatchScore(lowerCaseValue, matchedValue, startIndex);
-        if(not bestMatch or score > bestMatch["score"]) then
+        local score = CalculateMatchScore(token.value, matchedValue, startIndex);
+        if(not bestMatch or score > bestMatch.score) then
             bestMatch = {
                 ["score"] = score,
                 
@@ -240,10 +240,10 @@ function Search:FindSearchValueDataForToken(token)
         for valueKey, values in pairs(valueTable.values) do
             for _, value in ipairs(values) do
                 assert(value);
-                if(lowerCaseValue == value) then
+                if(token.value == value) then
                     return valueKey, true, value;
                 elseif(not token.exact and not valueTable.requireExact) then
-                    local foundStartIndex = value:find(lowerCaseValue);
+                    local foundStartIndex = value:find(token.value);
                     if(foundStartIndex ~= nil) then
                         TryUpdateBestMatch(value, valueKey, searchType, valueTable.noSpace, foundStartIndex);
                     end

@@ -8,33 +8,40 @@ local Constants = ArenaAnalytics.Constants;
 -------------------------------------------------------------------------
 -- Search Parsing Logic
 
-function Search:CreateSymbolToken(symbol)
+function Search:CreateSymbolToken(symbol, isSeparator)
     assert(symbol)
 
-    local newSpaceToken = {}
-    newSpaceToken.transient = true;
-    newSpaceToken.explicitType = "symbol";
-    newSpaceToken.raw = symbol;
+    local newSymbolToken = {}
+    newSymbolToken.transient = true;
+    newSymbolToken.explicitType = "symbol";
+    newSymbolToken.raw = symbol;
+    newSymbolToken.isSeparator = isSeparator;
     
-    function newSpaceToken:GetRaw()
-        return newSpaceToken.raw;
-    end
-
-    function newSpaceToken:GetDisplay()
-        return newSpaceToken.raw;
-    end
-
-    return newSpaceToken;
+    return newSymbolToken;
 end
 
 local function ParseTokenString(raw)
     -- Remove all excluded characters using gsub  + " ( ) !
-    local value = raw and raw:gsub("[+\"()!]", "") or "";
+    local raw = raw and raw:gsub("[+\"()!]", "") or "";
+    local value = "";
     
     -- Remove '-', if it's neither the first symbol nor directly following a colon.
-    value = value:gsub("([^:])%-", "%1");
+    local lastChar = nil;
+    for i=1, #raw do
+        local char = raw:sub(i,i);
 
-    return value;
+        if(char == '-') then
+            if(lastChar and lastChar ~= ':') then
+                value = value .. char;
+            end
+        else
+            value = value .. char;
+        end
+
+        lastChar = char;
+    end
+    
+    return Search:SafeToLower(value);
 end
 
 function Search:CreateToken(raw, isExact)
@@ -67,29 +74,26 @@ function Search:CreateToken(raw, isExact)
         if(typeKey and valueKey) then
             newToken.noSpace = noSpace;
             newToken.explicitType = typeKey;
-            newToken.keyword = valueKey;
+            newToken.value = valueKey;
         elseif(not newToken.explicitType and not newToken.value:find(' ')) then
             -- Tokens without spaces fall back to name type
             newToken.explicitType = "name";
             newToken.noSpace = true;
 
             if(Search.isCommitting) then
-                ArenaAnalytics:Log("Search: Forced fallback to name search type.")
+                ArenaAnalytics:Log("Search: Forced fallback to name search type.");
             end
         end
     end
     
     -- Valid if it has a keyword or no spaces
-    newToken.isValid = newToken.keyword or newToken.noSpace and not newToken.value:find(' ');
+    newToken.isValid = newToken.value and not newToken.noSpace or not newToken.value:find(' ');
 
     if(type(newToken.value) == "string") then
-        newToken.value = newToken.value:gsub("-", "%%-");
+        newToken.value = newToken.value:gsub("-", "%%-"):lower();
     end
-    
-    function newToken:GetRaw()
-        return self.raw;
-    end
-    
+
+    ArenaAnalytics:Log("Created Token: ", newToken.explicitType, newToken.value, newToken.raw)
     return newToken;
 end
 
@@ -178,13 +182,15 @@ function Search:ProcessInput(input, oldCursorPosition)
             return;
         end
 
-        if(sanitizedCaretIndex <= index and sanitizedCaretIndex >= committedTokenRawLength) then
-            local relativeCaretOffset = sanitizedCaretIndex - committedTokenRawLength;
+        -- Must be between the already total committed raw length and index
+        if(sanitizedCaretIndex > index or sanitizedCaretIndex < committedTokenRawLength) then
+            return;
+        end
 
-            if(relativeCaretOffset <= #token.raw) then
-                token.caret = relativeCaretOffset;
-                hasHandledCaret = true;
-            end
+        local relativeCaretOffset = sanitizedCaretIndex - committedTokenRawLength;
+        if(relativeCaretOffset <= #token.raw) then
+            token.caret = relativeCaretOffset;
+            hasHandledCaret = true;
         end
     end
 
@@ -211,7 +217,6 @@ function Search:ProcessInput(input, oldCursorPosition)
 
     local function CommitCurrentToken()
         if(currentToken and currentToken.raw and #currentToken.raw > 0) then
-            currentToken.value = Search:SafeToLower(currentToken.keyword or currentToken.value);
             currentToken.negated = isTokenNegated or nil;
             
             if(currentToken.explicitType == "logical") then
@@ -239,7 +244,7 @@ function Search:ProcessInput(input, oldCursorPosition)
         currentWord = currentWord or "";
 
         if(currentToken and currentWord ~= "") then
-            local combinedValue = currentToken.value .. " " .. currentWord;
+            local combinedValue = currentToken.raw .. " " .. currentWord;
             local newCombinedToken = Search:CreateToken(combinedValue);
             
             if(newCombinedToken and newCombinedToken.isValid) then
@@ -269,7 +274,6 @@ function Search:ProcessInput(input, oldCursorPosition)
 
     ----------------------------------------
     -- Parse the sanitizedInput characters
-    ArenaAnalytics:Print("Parsing with old caret position: ", sanitizedCaretIndex);
     local lastChar = nil;
     while index <= #sanitizedInput do
         local char = sanitizedInput:sub(index, index);
@@ -284,13 +288,15 @@ function Search:ProcessInput(input, oldCursorPosition)
             currentWord = currentWord .. char;
 
         elseif char == ' ' then
-            unhandledSpaces = unhandledSpaces + 1;
+            if(lastChar) then
+                unhandledSpaces = unhandledSpaces + 1;
 
-            if(IsPlayerSegmentSeparatorChar(lastChar)) then
-                CommitUnhandledSpace();
+                if(IsPlayerSegmentSeparatorChar(lastChar)) then
+                    CommitUnhandledSpace();
+                end
+
+                CommitCurrentWord();
             end
-
-            CommitCurrentWord();
 
         elseif IsPlayerSegmentSeparatorChar(char) then -- comma, period or semicolon
             CommitCurrentWord();
@@ -298,7 +304,7 @@ function Search:ProcessInput(input, oldCursorPosition)
             
             if(#currentSegment.tokens > 0) then
                 -- Add the separator at the end of the segment
-                currentToken = Search:CreateSymbolToken(char);
+                currentToken = Search:CreateSymbolToken(char, true);
                 CommitCurrentToken();
             end
 
