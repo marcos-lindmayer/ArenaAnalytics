@@ -94,7 +94,7 @@ function Options:LoadSettings()
     AddSetting("quickSearchExcludeMyRealm", false); -- Deprecated, in favor of quickSearchIncludeRealm
 
     AddSetting("quickSearchEnabled", true);
-    AddSetting("quickSearchIncludeRealm", "All"); -- All, None, Other Realms, My Realm
+    AddSetting("quickSearchIncludeRealm", "Other Realms"); -- All, None, Other Realms, My Realm
     AddSetting("quickSearchDefaultAppendRule", "New Search");
     AddSetting("quickSearchDefaultValue", "Name");
 
@@ -108,7 +108,7 @@ function Options:LoadSettings()
     AddSetting("quickSearchAction_Enemy", "RMB");
     AddSetting("quickSearchAction_ClickedTeam", "None");
 
-    AddSetting("quickSearchAction_Name", "Nomod");
+    AddSetting("quickSearchAction_Name", "None");
     AddSetting("quickSearchAction_Spec", "Ctrl");
     AddSetting("quickSearchAction_Race", "None");
     AddSetting("quickSearchAction_Faction", "None");
@@ -409,6 +409,7 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
     newDropdown.text:SetText(text or "");
 
     offsetY = offsetY - OptionsSpacing - newDropdown:GetHeight() + 7;
+    return newDropdown;
 end
 
 -------------------------------------------------------------------

@@ -62,11 +62,16 @@ function EntryFrame:Create(parent, index, width, height, config)
 
     self.btn:RegisterForClicks("LeftButtonDown", "RightButtonDown");
     self.btn:SetScript("OnClick", function(frame, button)
-        if(entryFrame.onClick) then
-            entryFrame.onClick(entryFrame, button);            
+        if(self.onClick) then
+            self.onClick(self, button);            
         end
 
         self.parent:Refresh();
+
+        local selectedFrame = self:GetSelectedFrame();
+        if(selectedFrame and selectedFrame.Refresh) then
+            selectedFrame:Refresh();
+        end
     end);
 
     -- Hover Background
