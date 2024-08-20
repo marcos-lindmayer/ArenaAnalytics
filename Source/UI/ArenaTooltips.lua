@@ -20,7 +20,7 @@ function Tooltips:DrawOptionTooltip(frame, tooltip)
     local name, description = tooltip[1], tooltip[2];
 
     -- Set the owner of the tooltip to the frame and anchor it at the cursor
-    GameTooltip:SetOwner(ArenaAnalyticsScrollFrame, "ANCHOR_CURSOR");
+    GameTooltip:SetOwner(frame, "ANCHOR_RIGHT");
     
     -- Clear previous tooltip content
     GameTooltip:ClearLines();
