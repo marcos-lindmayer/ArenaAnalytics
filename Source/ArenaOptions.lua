@@ -90,12 +90,9 @@ function Options:LoadSettings()
     AddSetting("searchDefaultExplicitEnemy", false);
 
     -- Quick Search
-    AddSetting("quickSearchExcludeAnyRealm", false); -- Deprecated, in favor of quickSearchIncludeRealm
-    AddSetting("quickSearchExcludeMyRealm", false); -- Deprecated, in favor of quickSearchIncludeRealm
-
     AddSetting("quickSearchEnabled", true);
-    AddSetting("quickSearchIncludeRealm", "Other Realms"); -- All, None, Other Realms, My Realm
-    AddSetting("quickSearchDefaultAppendRule", "New Search");
+    AddSetting("quickSearchIncludeRealm", "Other Realms"); -- None, All, Other Realms, My Realm
+    AddSetting("quickSearchDefaultAppendRule", "New Search"); -- New Search, New Segment, Same Segment
     AddSetting("quickSearchDefaultValue", "Name");
 
     AddSetting("quickSearchAppendRule_NewSearch", "None");
@@ -522,30 +519,13 @@ function SetupTab_Search()
     parent.tabHeader = CreateHeader("Search", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
+    -- TODO: Convert to explicit team dropdown (Any, Team, Enemy)
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
         if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchbox.title)) then
             local explicitEnemyText = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
             ArenaAnalyticsScrollFrame.searchBox.title:SetText(explicitEnemyText or "");
         end
     end);
-
-    CreateSpace();
-
-    -- Exclude any realm
-    parent.quickSearchExcludeAnyRealm = CreateCheckbox("quickSearchExcludeAnyRealm", parent, offsetX, "Quick Search excludes realms.", function()
-        filterOptionsFrame.quickSearchExcludeMyRealm:stateFunc();
-    end);
-
-    -- Exclude my realm
-    parent.quickSearchExcludeMyRealm = CreateCheckbox("quickSearchExcludeMyRealm", parent, offsetX, "Quick Search excludes my realm.");
-    parent.quickSearchExcludeMyRealm.stateFunc = function()
-        if(not Options:Get("quickSearchExcludeAnyRealm")) then
-            filterOptionsFrame.quickSearchExcludeMyRealm:Enable();
-        else
-            filterOptionsFrame.quickSearchExcludeMyRealm:Disable();
-        end
-    end
-    parent.quickSearchExcludeMyRealm:stateFunc();
 end
 
 -------------------------------------------------------------------
@@ -569,7 +549,7 @@ function SetupTab_QuickSearch()
 
     CreateSpace(20);
 
-    local includeRealmOptions = { "All", "None", "Other Realms", "My Realm" };
+    local includeRealmOptions = { "None", "All", "Other Realms", "My Realm" };
     parent.includeRealmDropdown = CreateDropdown("quickSearchIncludeRealm", parent, offsetX, "Include realms from Quick Search.", includeRealmOptions);
 
     local appendRules = { "New Search", "New Segment", "Same Segment" };
