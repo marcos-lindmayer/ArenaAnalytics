@@ -215,6 +215,14 @@ function ArenaAnalytics:Print(...)
 end
 
 -- Debug logging version of print
+function ArenaAnalytics:LogSpacer()
+	if not ArenaAnalyticsSettings["debuggingEnabled"] then
+		return;
+	end
+
+	print(" ");
+end
+
 function ArenaAnalytics:Log(...)
 	if not ArenaAnalyticsSettings["debuggingEnabled"] then
 		return;

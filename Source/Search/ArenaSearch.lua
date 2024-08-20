@@ -121,7 +121,7 @@ function Search:SetCurrentData(tokenizedSegments)
 end
 
 local function LogSearchData()
-    print(" ")
+    ArenaAnalytics:LogSpacer();
     ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
 
     for i,segment in ipairs(activeSearchData.segments) do
