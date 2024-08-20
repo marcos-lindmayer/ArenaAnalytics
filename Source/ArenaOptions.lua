@@ -43,12 +43,6 @@ local function AddSetting(setting, default)
     defaults[setting] = default;
 end
 
-local function DeleteSetting(setting)
-    if(setting and ArenaAnalyticsSettings[setting]) then
-        ArenaAnalyticsSettings[setting] = nil;
-    end
-end
-
 -- Adds a setting that does not save across reloads. (Use with caution)
 local function AddTransientSetting(setting, default)
     ArenaAnalyticsSettings[setting] = default;
@@ -96,8 +90,8 @@ function Options:LoadSettings()
     AddSetting("quickSearchDefaultValue", "Name");
 
     AddSetting("quickSearchAppendRule_NewSearch", "None");
-    AddSetting("quickSearchAppendRule_NewSegment", "None");
-    AddSetting("quickSearchAppendRule_SameSegment", "Shift");
+    AddSetting("quickSearchAppendRule_NewSegment", "Shift");
+    AddSetting("quickSearchAppendRule_SameSegment", "None");
 
     AddSetting("quickSearchAction_Inverse", "Alt");
 
@@ -124,6 +118,12 @@ end
 
 function Options:IsValid(setting)
     return setting and ArenaAnalyticsSettings[setting] ~= nil;
+end
+
+function Options:IsDefault(setting)
+    assert(Options:IsValid(setting));
+
+    return ArenaAnalyticsSettings[setting] == defaults[setting];
 end
 
 -- Gets a setting, regardless of location between 
@@ -365,6 +365,10 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
         else
             Options:Set(dropdownContext.key, (dropdownContext.value or dropdownContext.label));
         end
+
+        if(func) then
+            func(dropdownContext, btn, parent);
+        end
     end
 
     local function IsSettingEntryChecked(dropdownContext)
@@ -376,6 +380,13 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
     local function ResetSetting(dropdownContext, btn)
         if(btn == "RightButton") then
             Options:Reset(dropdownContext.key);
+            dropdownContext:Refresh();
+
+            if(func) then
+                func(dropdownContext, btn, parent);
+            end
+        else
+            dropdownContext.parent:Toggle();
         end
     end
 
@@ -395,11 +406,20 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
         return entryTable;
     end
 
+    local function GetSelectedLabel(dropdownContext)
+        local selected = Options:Get(dropdownContext.key) or "";
+        if(selected == "None") then
+            return "|cff555555" .. selected .. "|r";
+        end
+        return selected;
+    end
+
     local config = {
         mainButton = {
-            label = function(dropdownContext) return Options:Get(dropdownContext.key) end,
+            label = GetSelectedLabel,
             alignment = "CENTER",
             key = setting,
+            onClick = ResetSetting
         },
         entries = GenerateEntries;
     }
@@ -529,8 +549,34 @@ function SetupTab_Search()
 end
 
 -------------------------------------------------------------------
--- General Tab
+-- Quick Search Tab
 -------------------------------------------------------------------
+
+local function ForceUniqueAppendRuleShortcut(dropdownContext, _, parent)
+    local setting = dropdownContext and dropdownContext.key or nil;
+    
+    if(Options:IsValid(setting)) then
+        local value = Options:Get(setting);
+
+        local appendRuleFrames = { "quickSearchAppendRule_NewSearch", "quickSearchAppendRule_NewSegment", "quickSearchAppendRule_SameSegment" }
+        for _,appendRule in ipairs(appendRuleFrames) do
+            if(appendRule ~= setting) then
+                local appendRuleValue = Options:Get(appendRule);
+                
+                -- Clear the existing append rule shortcut, if it's being reused now.
+                if(appendRuleValue == value) then
+                    Options:Set(appendRule, "None");
+                    
+                    local otherDropdown = parent and parent[appendRule];
+                    if(otherDropdown and otherDropdown.Refresh) then
+                        otherDropdown:Refresh();
+                    end
+                end
+            end
+        end
+    end
+end
+
 function SetupTab_QuickSearch()
     local filterOptionsFrame = CreateFrame("frame");
     filterOptionsFrame.name = "Quick Search";
@@ -562,9 +608,9 @@ function SetupTab_QuickSearch()
 
     local shortcuts = { "None", "LMB", "RMB", "Nomod", "Shift", "Ctrl", "Alt" };
 
-    parent.newSearchRuleDropdown = CreateDropdown("quickSearchAppendRule_NewSearch", parent, offsetX, "New Search append rule shortcut.", shortcuts);
-    parent.newSegmentRuleDropdown = CreateDropdown("quickSearchAppendRule_NewSegment", parent, offsetX, "New Segment append rule shortcut.", shortcuts);
-    parent.sameSegmentRuleDropdown = CreateDropdown("quickSearchAppendRule_SameSegment", parent, offsetX, "Same Segment append rule shortcut.", shortcuts);
+    parent.quickSearchAppendRule_NewSearch = CreateDropdown("quickSearchAppendRule_NewSearch", parent, offsetX, "New Search append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
+    parent.quickSearchAppendRule_NewSegment = CreateDropdown("quickSearchAppendRule_NewSegment", parent, offsetX, "New Segment append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
+    parent.quickSearchAppendRule_SameSegment = CreateDropdown("quickSearchAppendRule_SameSegment", parent, offsetX, "Same Segment append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
 
     CreateSpace(20);
 

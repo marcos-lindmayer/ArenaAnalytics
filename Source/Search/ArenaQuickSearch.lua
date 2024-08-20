@@ -365,9 +365,7 @@ local function TokensContainExact(existingTokens, token)
 end
 
 local function DoesAllTokensMatchExact(segment, tokens, skipName)
-    assert(segment);
-
-    if(not tokens) then
+    if(not segment or not tokens) then
         return false;
     end
 
@@ -396,20 +394,22 @@ function Search:QuickSearch(mouseButton, player, team)
     if(not tokens or #tokens == 0) then
         return;
     end
-    
-    if(appendRule == "New Search") then
-        Search:Update("");
-    end
 
     -- Current Search Data
     local currentSegments = Search:GetCurrentSegments();
+    
+    if(appendRule == "New Search") then
+        -- Reset the search unless it's an exact match to the new quick search
+        if(#currentSegments ~= 1 or not DoesAllTokensMatchExact(currentSegments[1], tokens)) then     
+            currentSegments = {};
+        end    
+    end
 
     local newSegment = {}
     local segmentIndex = 0;
     
     -- Check for name match
-    local foundNameMatchingSegment = false;
-    local foundPartialNameMatch = false;
+    local nameMatch = nil;
     local newName = nil;
     for _,token in ipairs(tokens) do
         if(token.explicitType == "name") then
@@ -420,12 +420,9 @@ function Search:QuickSearch(mouseButton, player, team)
     if(newName) then
         local matchedSegmentIndex, matchedTokenIndex, isExactNameMatch = FindExistingNameMatch(currentSegments, newName);
         if(matchedSegmentIndex and matchedTokenIndex) then
-            foundNameMatchingSegment = true;
-
             if(isExactNameMatch) then
                 -- If all tokens match, and this was an existing named match, then remove the entire segment
-                local exactSegmentMatch = DoesAllTokensMatchExact(currentSegments[matchedSegmentIndex], tokens, matchedTokenIndex);
-                if(exactSegmentMatch) then
+                if(DoesAllTokensMatchExact(currentSegments[matchedSegmentIndex], tokens, true)) then
                     -- Remove separator from new last segment, if we are about to remove last segment
                     if(matchedSegmentIndex > 1 and matchedSegmentIndex == #currentSegments) then
                         local previousSegment = currentSegments[matchedSegmentIndex - 1];
@@ -439,32 +436,33 @@ function Search:QuickSearch(mouseButton, player, team)
                     Search:CommitQuickSearch(currentSegments);
                     return;
                 end
+
+                nameMatch = "exact";
             else
-                foundPartialNameMatch = true;
+                nameMatch = "partial";
             end
         end
 
         segmentIndex = matchedSegmentIndex;
     end
 
-    local oldcounttemp = #currentSegments
-
-    if(not foundNameMatchingSegment) then
+    if(not nameMatch) then
         if(#currentSegments > 0 and appendRule == "New Segment") then
             local newSeparatorToken = Search:CreateSymbolToken(', ', true);
             tinsert(currentSegments[#currentSegments].tokens, newSeparatorToken);
         end
 
-        tinsert(currentSegments, { tokens = {} });
+        if(#currentSegments == 0 or appendRule ~= "Same Segment") then
+            tinsert(currentSegments, { tokens = {} });
+        end
+
         segmentIndex = #currentSegments;
     end
 
-    Search:CommitQuickSearch(currentSegments, segmentIndex, tokens);
+    Search:CommitQuickSearch(currentSegments, segmentIndex, tokens, appendRule, nameMatch);
 end
 
-function Search:CommitQuickSearch(currentSegments, segmentIndex, newTokens)
-    ArenaAnalytics:Log(currentSegments, segmentIndex, newTokens)
-
+function Search:CommitQuickSearch(currentSegments, segmentIndex, newTokens, appendRule, nameMatch)
     if(segmentIndex and newTokens) then
         -- For each new token, add, remove or replace based on type and value match
         for i,token in ipairs(newTokens) do
@@ -484,7 +482,7 @@ function Search:CommitQuickSearch(currentSegments, segmentIndex, newTokens)
                         -- Different values, replace with the new token
                         if(existingToken.value ~= token.value) then
                             existingTokens[tokenIndex] = token;
-                        elseif(token.explicitType ~= "name" and not foundPartialNameMatch) then
+                        elseif(nameMatch ~= "partial" and token.explicitType ~= "name" and not (nameMatch or appendRule == "Same Segment")) then
                             table.remove(existingTokens, tokenIndex);
                         end
                         break;
@@ -493,13 +491,14 @@ function Search:CommitQuickSearch(currentSegments, segmentIndex, newTokens)
 
                 -- If the token type is unique
                 if(isUniqueToken) then
-                    if(#currentSegments[segmentIndex].tokens > 0) then
+                    ArenaAnalytics:Log("Adding unique token: ", #existingTokens, #currentSegments)
+                    if(#existingTokens > 0) then
                         local newSpaceToken = Search:CreateSymbolToken(' ');
-                        tinsert(currentSegments[segmentIndex].tokens, newSpaceToken);
+                        tinsert(existingTokens, newSpaceToken);
                     end
 
                     -- Add the new token
-                    tinsert(currentSegments[segmentIndex].tokens, token);
+                    tinsert(existingTokens, token);
                 end
             end
         end

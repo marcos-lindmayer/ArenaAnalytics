@@ -62,7 +62,6 @@ function Button:Create(parent, width, height, config)
         else
             parent:Toggle();
         end
-
     end);
 
     self:Refresh();
