@@ -125,6 +125,10 @@ function Options:HasLoaded()
     return hasOptionsLoaded;
 end
 
+function Options:IsValid(setting)
+    return setting and ArenaAnalyticsSettings[setting] ~= nil;
+end
+
 -- Gets a setting, regardless of location between 
 function Options:Get(setting)
     assert(setting);
@@ -354,6 +358,8 @@ end
 
 local function CreateDropdown(setting, parent, x, text, entries, func)
     assert(setting and entries and #entries > 0);
+    assert(Options:IsValid(setting));
+
     offsetY = offsetY - 2;
 
     local function SetSettingFromDropdown(dropdownContext, btn)
@@ -379,13 +385,15 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
     local function GenerateEntries()
         local entryTable = {}
         for _,entry in ipairs(entries) do 
-            tinsert(entryTable, {
-                label = entry,
-                alignment = "LEFT",
-                key = setting,
-                onClick = SetSettingFromDropdown,
-                checked = IsSettingEntryChecked,
-            });
+            if(entry) then
+                tinsert(entryTable, {
+                    label = entry,
+                    alignment = "LEFT",
+                    key = setting,
+                    onClick = SetSettingFromDropdown,
+                    checked = IsSettingEntryChecked,
+                });
+            end
         end
         return entryTable;
     end
@@ -640,6 +648,8 @@ end
 -------------------------------------------------------------------
 
 function Options:Init()
+    Options:LoadSettings();
+
     if not ArenaAnalyticsOptionsFrame then
         ArenaAnalyticsOptionsFrame = CreateFrame("Frame");
         ArenaAnalyticsOptionsFrame.name = "Arena|cff00ccffAnalytics|r";

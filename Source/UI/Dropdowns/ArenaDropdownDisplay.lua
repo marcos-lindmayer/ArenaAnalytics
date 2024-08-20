@@ -111,6 +111,7 @@ end
 local function CreateText(parent, text, size, color)
     color = color or "ffffff";
     size = size or 12;
+    text = text or "";
 
     local fontString = parent:CreateFontString(nil, "OVERLAY");
     fontString:SetFont("Fonts\\FRIZQT__.TTF", size, "");

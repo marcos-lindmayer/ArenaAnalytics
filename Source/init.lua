@@ -370,8 +370,6 @@ function ArenaAnalytics:init()
 
 	ArenaAnalytics:UpdateLastSession();
 
-	Options:LoadSettings();
-
 	-- Update cached rating as soon as possible
 	ArenaAnalytics.Events:CreateEventListenerForRequest("PVP_RATED_STATS_UPDATE", function() 
 		ArenaAnalytics.AAmatch:updateCachedBracketRatings();
