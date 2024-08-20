@@ -85,6 +85,17 @@ function Search:CreateToken(raw, isExact)
             end
         end
     end
+
+    -- Update transient state
+    if(newToken.explicitType == "logical") then
+        if(newToken.value == "not") then
+            newToken.transient = true;
+        end
+    elseif(newToken.explicitType == "team") then
+        newToken.transient = true;
+    elseif(newToken.explicitType == "symbol") then
+        newToken.transient = true;
+    end
     
     -- Valid if it has a keyword or no spaces
     newToken.isValid = newToken.value and not newToken.noSpace or not newToken.value:find(' ');
@@ -93,7 +104,7 @@ function Search:CreateToken(raw, isExact)
         newToken.value = newToken.value:gsub("-", "%%-"):lower();
     end
 
-    ArenaAnalytics:Log("Created Token: ", newToken.explicitType, newToken.value, newToken.raw)
+    --ArenaAnalytics:Log("Created Token: ", newToken.explicitType, newToken.value, newToken.raw)
     return newToken;
 end
 
@@ -219,14 +230,6 @@ function Search:ProcessInput(input, oldCursorPosition)
         if(currentToken and currentToken.raw and #currentToken.raw > 0) then
             currentToken.negated = isTokenNegated or nil;
             
-            if(currentToken.explicitType == "logical") then
-                if(currentToken.value == "not") then
-                    currentToken.transient = true;
-                end
-            elseif(currentToken.explicitType == "team") then
-                currentToken.transient = true;
-            end
-
             HandleCaretPosition(currentToken);
             
             -- Commit a real search token

@@ -109,10 +109,9 @@ end
 
 function Search:Update(input)
     local searchBox = ArenaAnalyticsScrollFrame.searchBox;
-
     local oldCursorPosition = searchBox:GetCursorPosition();
-    local newSearchData = Search:ProcessInput(input, oldCursorPosition);
 
+    local newSearchData = Search:ProcessInput(input, oldCursorPosition);
     Search:SetCurrentData(newSearchData);
 end
 
@@ -128,7 +127,7 @@ local function LogSearchData()
     for i,segment in ipairs(activeSearchData.segments) do
         for j,token in ipairs(segment.tokens) do
             assert(token and token.value);
-            ArenaAnalytics:Log("  Token", j, "in segment",i, "  Values:", token.value, (token.exact and " exact" or ""), (token.explicitType or ""), (token.negated and " Negated" or ""), (segment.team and (" "..segment.team) or ""), (segment.inversed and "Inversed" or ""));
+            ArenaAnalytics:Log("  Token:", j, "Segment:",i..":", token.value, (token.explicitType or ""), (token.exact and " exact" or ""), (token.negated and " Negated" or ""), (segment.team and (" "..segment.team) or ""), (segment.inversed and "Inversed" or ""));
         end
     end
 end
@@ -150,9 +149,15 @@ local function GetPersistentData()
                         persistentSegment.inversed = true;
                     end
                 elseif(token.explicitType == "team") then
-                    persistentSegment.team = token.value;
+                    local team = token.value:lower();
+                    if(team == "enemy" or team == "enemyteam") then
+                        persistentSegment.team = "enemyTeam";
+                    else
+                        persistentSegment.team = "team";
+                    end
                 end
             else -- Persistent tokens, kept for direct comparisons
+                ArenaAnalytics:Log("   Persistent token:", token.explicitType, token.value, token.raw, token.transient)
                 tinsert(persistentSegment.tokens, token);
             end
         end
@@ -176,8 +181,11 @@ function Search:CommitSearch(input)
     Search.isCommitting = true;
 
     -- Update active search filter
-    Search:Update(input);
-    lastCommittedSearchDisplay = Search.current["display"];
+    if(input) then
+        Search:Update(input);
+    end
+
+    lastCommittedSearchDisplay = Search.current.display;
     
     -- Add all segments and non-transient tokens to the active data
     activeSearchData = GetPersistentData();

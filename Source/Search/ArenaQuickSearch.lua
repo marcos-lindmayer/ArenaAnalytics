@@ -248,7 +248,10 @@ local function GetQuickSearchTokens(player, team, btn)
     -- Inverse
     local shortcut = Options:Get("quickSearchAction_Inverse");
     if(CheckShortcut(shortcut, btn)) then
-        tokens["inverse"] = "not";
+        local newToken = Search:CreateToken("not");
+        if(newToken) then
+            tinsert(tokens, newToken);
+        end
     end
 
     -- Team
@@ -504,5 +507,6 @@ end
 
 function Search:CommitQuickSearch(segments)
     Search:SetCurrentData(segments);
+    Search:CommitSearch();
     ResetQuickSearch();
 end
