@@ -53,8 +53,10 @@ local function TryAddQuickSearchShortcutTips()
         assert(key);
 
         if(not text) then
-            return "";
+            return " ";
         end
+
+        text = (text ~= "None") and text or "-";
 
         return "|cff999999" .. key .. "|r|cffCCCCCC" .. text .. "|r";
     end
@@ -79,11 +81,29 @@ local function TryAddQuickSearchShortcutTips()
     local raceShortcut = Options:Get("quickSearchAction_Race") or "None";
     local factionShortcut = Options:Get("quickSearchAction_Faction") or "None";
 
-    -- Add the values
-    GameTooltip:AddDoubleLine(ColorTips("New Search: ", newSearchRuleShortcut), ColorTips("New Segment: ", newSegmentRuleShortcut));
-    GameTooltip:AddDoubleLine(ColorTips("Same Segment: ", sameSegmentRuleShortcut), ColorTips("Inversed: ", inverseShortcut));
+    local specialValues = {}
 
-    GameTooltip:AddLine(" ");
+    local function TryInsertShortcut(shortcut)
+        if(shortcut ~= "None") then
+            tinsert(specialValues, ColorTips("New Search: ", shortcut));
+        end
+    end
+
+    TryInsertShortcut(newSearchRuleShortcut);
+    TryInsertShortcut(newSegmentRuleShortcut);
+    TryInsertShortcut(sameSegmentRuleShortcut);
+    TryInsertShortcut(inverseShortcut);
+
+    -- Add the values
+    if(#specialValues > 0) then
+        GameTooltip:AddDoubleLine(specialValues[1] or " ", specialValues[2] or " ");
+
+        if(#specialValues > 2) then
+            GameTooltip:AddDoubleLine(specialValues[3] or " ", specialValues[4] or " ");
+        end
+
+        GameTooltip:AddLine(" ");
+    end
 
     GameTooltip:AddDoubleLine(ColorTips("Team: ", teamShortcut), ColorTips("Enemy: ", enemyShortcut));
     GameTooltip:AddDoubleLine(ColorTips("Name: ", nameShortcut), ColorTips("Spec: ", specShortcut));
@@ -94,7 +114,9 @@ local lastPlayerFrame = nil;
 local function UnbindPlayerFrameModifierChanged()
     if(lastPlayerFrame) then
         lastPlayerFrame:UnregisterEvent("MODIFIER_STATE_CHANGED");
+        lastPlayerFrame:SetScript("OnEvent", nil);
     end
+    lastPlayerFrame = nil;
 end
 
 local function BindPlayerFrameModifierChanged(playerFrame)
@@ -102,7 +124,8 @@ local function BindPlayerFrameModifierChanged(playerFrame)
     UnbindPlayerFrameModifierChanged()
 
     -- Bind new frame
-    playerFrame:RegisterEvent("MODIFIER_STATE_CHANGED", function(self)
+    playerFrame:RegisterEvent("MODIFIER_STATE_CHANGED");    
+    playerFrame:SetScript("OnEvent", function(self)
         Tooltips:DrawPlayerTooltip(self);
     end);
 
@@ -110,7 +133,13 @@ local function BindPlayerFrameModifierChanged(playerFrame)
 end
 
 function Tooltips:DrawPlayerTooltip(playerFrame)
-    BindPlayerFrameModifierChanged(playerFrame);
+    if(not playerFrame) then
+        return;
+    end
+    
+    if(playerFrame ~= lastPlayerFrame) then
+        BindPlayerFrameModifierChanged(playerFrame);
+    end
 
     local matchIndex = playerFrame.matchIndex;
     local teamKey = playerFrame.team;
@@ -172,7 +201,8 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     -- Create the tooltip
-    GameTooltip:SetOwner(playerFrame, "ANCHOR_RIGHT");
+    GameTooltip:SetOwner(playerFrame, "ANCHOR_NONE");
+    GameTooltip:SetPoint("TOPRIGHT", playerFrame, "TOPLEFT");
     GameTooltip:ClearLines();
 
     GameTooltip:AddLine(player);    

@@ -142,7 +142,6 @@ local function GetPersistentData()
         for j,token in ipairs(segment.tokens) do
             -- Process transient tokens for logic only
             if(not token.value or token.value == "") then
-                ArenaAnalytics:Log("GetPersistentData() skipping token ("..i..", "..j..") Due to missing value. Raw: ", token.raw);
             elseif(token.transient) then
                 if(token.explicitType == "logical") then
                     if(token.value == "not") then
@@ -157,7 +156,6 @@ local function GetPersistentData()
                     end
                 end
             else -- Persistent tokens, kept for direct comparisons
-                ArenaAnalytics:Log("   Persistent token:", token.explicitType, token.value, token.raw, token.transient)
                 tinsert(persistentSegment.tokens, token);
             end
         end

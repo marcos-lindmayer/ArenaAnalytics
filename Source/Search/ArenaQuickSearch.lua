@@ -491,7 +491,6 @@ function Search:CommitQuickSearch(currentSegments, segmentIndex, newTokens, appe
 
                 -- If the token type is unique
                 if(isUniqueToken) then
-                    ArenaAnalytics:Log("Adding unique token: ", #existingTokens, #currentSegments)
                     if(#existingTokens > 0) then
                         local newSpaceToken = Search:CreateSymbolToken(' ');
                         tinsert(existingTokens, newSpaceToken);
