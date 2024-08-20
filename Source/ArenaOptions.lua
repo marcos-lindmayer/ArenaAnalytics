@@ -239,7 +239,7 @@ local function CreateHeader(text, size, parent, relative, x, y, icon)
     local frame = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     frame:SetPoint("TOPLEFT", relative or parent, "TOPLEFT", x, y)
     frame:SetTextHeight(size);
-    frame:SetText(text);
+    frame:SetText(text or "");
 
     offsetY = offsetY - OptionsSpacing - frame:GetHeight() + y;
 
@@ -257,7 +257,7 @@ local function CreateButton(setting, parent, x, width, text, func)
     
     -- Set the button's size and text
     button:SetSize(width or 120, 30)
-    button:SetText(text)
+    button:SetText(text or "")
     
     -- Add a script for the button's click action
     button:SetScript("OnClick", function()
@@ -282,7 +282,7 @@ local function CreateCheckbox(setting, parent, x, text, func)
     checkbox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     checkbox.text:SetPoint("LEFT", checkbox, "RIGHT", 5);
     checkbox.text:SetTextHeight(TextSize);
-    checkbox.text:SetText(text);
+    checkbox.text:SetText(text or "");
 
     checkbox:SetChecked(Options:Get(setting));
 
@@ -311,7 +311,7 @@ local function CreateInputBox(setting, parent, x, text, func)
     inputBox:SetNumeric();
     inputBox:SetAutoFocus(false);
     inputBox:SetMaxLetters(5);
-    inputBox:SetText(tonumber(Options:Get(setting)));
+    inputBox:SetText(tonumber(Options:Get(setting)) or "");
     inputBox:SetCursorPosition(0);
     inputBox:HighlightText(0,0);    
     
@@ -319,7 +319,7 @@ local function CreateInputBox(setting, parent, x, text, func)
     inputBox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     inputBox.text:SetPoint("LEFT", inputBox, "RIGHT", 5, 0);
     inputBox.text:SetTextHeight(TextSize);
-    inputBox.text:SetText(text);
+    inputBox.text:SetText(text or "");
     
     inputBox:SetScript("OnEnterPressed", function(self)
         self:ClearFocus();
@@ -334,7 +334,7 @@ local function CreateInputBox(setting, parent, x, text, func)
 		local oldValue = tonumber(Options:Get(setting));
 		local newValue = tonumber(inputBox:GetText());
         Options:Set(setting, newValue or oldValue)
-		inputBox:SetText(tonumber(Options:Get(setting)));
+		inputBox:SetText(tonumber(Options:Get(setting)) or "");
         inputBox:SetCursorPosition(0);
 		inputBox:HighlightText(0,0);
         
@@ -406,7 +406,7 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
     newDropdown.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     newDropdown.text:SetPoint("LEFT", newDropdown:GetFrame(), "RIGHT", 5, 0);
     newDropdown.text:SetTextHeight(TextSize);
-    newDropdown.text:SetText(text);
+    newDropdown.text:SetText(text or "");
 
     offsetY = offsetY - OptionsSpacing - newDropdown:GetHeight() + 7;
 end
@@ -483,12 +483,12 @@ function SetupTab_Filters()
         
         local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
         if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
-            dropdownFrame.title.info:SetText(info);
+            dropdownFrame.title.info:SetText(info or "");
         end
         
         dropdownFrame = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown;
         if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
-            dropdownFrame.title.info:SetText(info);
+            dropdownFrame.title.info:SetText(info or "");
         end
     end);
 
@@ -516,7 +516,7 @@ function SetupTab_Search()
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
         if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchbox.title)) then
             local explicitEnemyText = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
-            ArenaAnalyticsScrollFrame.searchBox.title:SetText(explicitEnemyText);
+            ArenaAnalyticsScrollFrame.searchBox.title:SetText(explicitEnemyText or "");
         end
     end);
 
