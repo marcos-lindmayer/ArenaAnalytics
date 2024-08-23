@@ -5,18 +5,19 @@
 ## Version: 0.4.0
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSettings
-## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsCharacterSettings
+## SavedVariablesPerCharacter: ArenaAnalyticsMatchHistoryDB, ArenaAnalyticsCharacterSettings
 
 
 Source/init.lua
 
 Source/ArenaAnalytics.lua
-Source/ArenaHelpers.lua
 Source/ArenaOptions.lua
 Source/ArenaEvents.lua
 Source/ArenaTracker.lua
 Source/ArenaVersionManager.lua
-Source/ArenaAPI_Wrath.lua
+
+Source/API/ArenaHelpers.lua
+Source/API/ArenaAPI_Wrath.lua
 
 Source/UI/HybridScroll.xml
 Source/UI/ArenaTable.lua

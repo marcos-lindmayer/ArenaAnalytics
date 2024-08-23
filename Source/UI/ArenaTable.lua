@@ -456,7 +456,7 @@ function AAtable:CreateExportDialogFrame()
 		ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
 		
 		ArenaAnalyticsScrollFrame.exportDialogFrame.WarningText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"BOTTOM", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "TOP", 13, 0, "|cffff0000Warning:|r Pasting long string here will crash WoW!");
-		ArenaAnalyticsScrollFrame.exportDialogFrame.totalText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMLEFT", -3, 0, "Total arenas: " .. #MatchHistoryDB);
+		ArenaAnalyticsScrollFrame.exportDialogFrame.totalText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMLEFT", -3, 0, "Total arenas: " .. #ArenaAnalyticsMatchHistoryDB);
 		ArenaAnalyticsScrollFrame.exportDialogFrame.lengthText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPRIGHT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMRIGHT", -3, 0, "Export length: 0");
 
 		ArenaAnalyticsScrollFrame.exportDialogFrame.selectBtn = AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.exportDialogFrame, "BOTTOM", 0, 17, "Select All");
@@ -498,9 +498,11 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
     end
 
     for i = 1, #teamPlayerFrames do
-        local player = match[teamKey][i];
         local playerFrame = teamPlayerFrames[i];
-        if (player and playerFrame) then
+        assert(playerFrame);
+
+        local player = match[teamKey][i];
+        if (player) then
             playerFrame.team = teamKey;
             playerFrame.playerIndex = i;
             playerFrame.matchIndex = matchIndex;
@@ -713,13 +715,13 @@ function AAtable:HandleArenaCountChanged()
     wins, sessionGames, sessionWins = 0,0,0;
     -- Update arena count & winrate
     for i=#ArenaAnalytics.filteredMatchHistory, 1, -1 do
-        local match = ArenaAnalytics:GetFilteredMatch(i);
+        local match, filteredSession = ArenaAnalytics:GetFilteredMatch(i);
         if(match) then 
             if(match["won"]) then 
                 wins = wins + 1; 
             end
             
-            if (match["filteredSession"] == 1) then
+            if (filteredSession == 1) then
                 sessionGames = sessionGames + 1;
                 if (match["won"]) then
                     sessionWins = sessionWins + 1;
@@ -796,9 +798,9 @@ function AAtable:RefreshLayout()
         local button = buttons[buttonIndex];
         local matchIndex = #ArenaAnalytics.filteredMatchHistory - (buttonIndex + offset - 1);
 
-        local match = ArenaAnalytics:GetFilteredMatch(matchIndex);
+        local match, filteredSession = ArenaAnalytics:GetFilteredMatch(matchIndex);
         if (match ~= nil) then
-            setColorForSession(button, match["filteredSession"], matchIndex);
+            setColorForSession(button, filteredSession, matchIndex);
             button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
             button.Map:SetText(match["map"] or "");
             button.Duration:SetText(SecondsToTime(match["duration"]) or "");

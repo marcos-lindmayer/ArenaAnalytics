@@ -255,7 +255,7 @@ local function GetQuickSearchTokens(player, team, btn)
     -- Team
     local newSimpleTeamToken = nil;
     if(CheckShortcut(Options:Get("quickSearchAction_ClickedTeam"), btn)) then
-        newSimpleTeamToken = Search:CreateToken(Search:SafeToLower(team));
+        newSimpleTeamToken = Search:CreateToken(Helpers:ToSafeLower(team));
     elseif(CheckShortcut(Options:Get("quickSearchAction_Team"), btn)) then
         newSimpleTeamToken = Search:CreateToken("team");
     elseif(CheckShortcut(Options:Get("quickSearchAction_Enemy"), btn)) then
@@ -296,7 +296,7 @@ local function GetQuickSearchTokens(player, team, btn)
 
     if(not hasValue) then
         local explicitType = Options:Get("quickSearchDefaultValue");
-        AddValueByType(tokens, player, Search:SafeToLower(explicitType));
+        AddValueByType(tokens, player, Helpers:ToSafeLower(explicitType));
     end
 
     return tokens;
@@ -308,7 +308,7 @@ local function DoesTokenMatchName(existingToken, newName)
         return false;
     end
 
-    local existingName = Search:SafeToLower(existingToken.value);
+    local existingName = Helpers:ToSafeLower(existingToken.value);
 
     if(existingToken.value == newName) then
         return true, true;

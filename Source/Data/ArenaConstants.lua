@@ -383,6 +383,16 @@ local mapsList = {
     [617] = "DA", -- Dalaran Arena
 }
 
+function Constants:GetMapIdByKey(mapKey)
+    mapKey = Helpers:ToSafeLower(mapKey);    
+    for mapId,key in pairs(mapsList) do
+        if(mapKey == key:lower()) then
+            return mapId;
+        end
+    end
+    return nil;
+end
+
 function Constants:GetMapKeyByID(id)
     if(id == nil) then
         return nil;

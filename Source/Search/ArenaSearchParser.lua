@@ -4,6 +4,7 @@ local Search = ArenaAnalytics.Search;
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 -- Search Parsing Logic
@@ -41,7 +42,7 @@ local function ParseTokenString(raw)
         lastChar = char;
     end
     
-    return Search:SafeToLower(value);
+    return Helpers:ToSafeLower(value);
 end
 
 function Search:CreateToken(raw, isExact)

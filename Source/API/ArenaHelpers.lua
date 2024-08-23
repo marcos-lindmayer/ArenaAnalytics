@@ -9,6 +9,14 @@ local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
+-- General Helpers
+
+function Helpers:ToSafeLower(value)
+    if(value and type(value) == "string") then
+        return value:lower();
+    end
+    return value;
+end
 
 function Helpers:DeepCopy(original)
     local copy = {}
@@ -40,3 +48,12 @@ function Helpers:DrawDebugBackground(frame, r, g, b, a)
 		frame.background:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
 	end
 end
+
+-------------------------------------------------------------------------
+-- Data Helpers
+
+function Helpers:GetFactionFromRaceID(raceID)
+
+end
+
+

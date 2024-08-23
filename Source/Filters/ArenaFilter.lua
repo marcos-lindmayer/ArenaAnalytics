@@ -391,7 +391,7 @@ local function UpdateFilteredSessions()
         local current = ArenaAnalytics:GetFilteredMatch(i);
         local prev = ArenaAnalytics:GetFilteredMatch(i - 1);
 
-        current["filteredSession"] = session;
+        ArenaAnalytics.filteredMatchHistory["filteredSession"] = session;
 
         if not prev or prev["session"] ~= current["session"] then
             session = session + 1;
@@ -459,7 +459,7 @@ function Filters:Refresh(onCompleteFunc)
     local function ProcessBatch()
         local batchEndTime = GetTime() + batchDurationLimit;
 
-        while currentIndex <= #MatchHistoryDB do
+        while currentIndex <= #ArenaAnalyticsMatchHistoryDB do
             ProcessMatchIndex(currentIndex);
             currentIndex = currentIndex + 1;
 

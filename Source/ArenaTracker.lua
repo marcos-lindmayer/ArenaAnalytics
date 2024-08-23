@@ -30,7 +30,6 @@ local currentArena = {
 	["enemyMMR"] = nil,
 	["size"] = nil,
 	["isRated"] = nil,
-	["playerTeam"] = nil,
 	["comp"] = {},
 	["enemyComp"] = {},
 	["party"] = {},
@@ -62,7 +61,6 @@ function ArenaTracker:ResetCurrentArenaValues()
 	currentArena["enemyMMR"] = nil;
 	currentArena["size"] = nil;
 	currentArena["isRated"] = nil;
-	currentArena["playerTeam"] = nil;
 	currentArena["comp"] = {};
 	currentArena["enemyComp"] = {};
 	currentArena["party"] = {};
@@ -121,8 +119,7 @@ function ArenaTracker:HandleArenaEnter(...)
 		return false
 	end
 
-	local name,realm = UnitFullName("player");
-	currentArena["playerName"] = name.."-"..realm;
+	currentArena["playerName"] = Helpers:GetPlayerName();
 	currentArena["isRated"] = isRated;
 	currentArena["size"] = teamSize;
 	
@@ -137,12 +134,12 @@ function ArenaTracker:HandleArenaEnter(...)
 	if (#currentArena["party"] == 0) then
 		-- Add player
 		local kills, faction, damage, healing, spec;
-		local class = UnitClass("player");
-		local race = UnitRace("player");
+		local _,_,classIndex = UnitClass("player");
+		local _,_,raceID = UnitRace("player");
 		local GUID = UnitGUID("player");
 		local name = currentArena["playerName"];
 		local spec = API:GetMySpec();
-		local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
+		local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, raceID, classIndex, damage, healing, spec);
 		table.insert(currentArena["party"], player);
 	end
 
@@ -187,34 +184,15 @@ function ArenaTracker:HandleArenaEnd()
 	currentArena["ended"] = true;
 	local winner = GetBattlefieldWinner();
 
-	local team1 = {};
-	local team0 = {};
-	-- Process ranked information
-	local team1Name, oldTeam1Rating, newTeam1Rating, team1Rating, team1RatingDif;
-	local team0Name, oldTeam0Rating, newTeam0Rating, team0Rating, team0RatingDif;
-	if (currentArena["isRated"]) then
-		team0Name, oldTeam0Rating, newTeam0Rating, team0Rating = GetBattlefieldTeamInfo(0);
-		team1Name, oldTeam1Rating, newTeam1Rating, team1Rating = GetBattlefieldTeamInfo(1);
-		
-		if ((newTeam1Rating - oldTeam1Rating) > 0) then
-			team1RatingDif = (newTeam1Rating - oldTeam1Rating ~= 0) and (newTeam1Rating - oldTeam1Rating) or "";
-		else
-			team1RatingDif = (oldTeam1Rating - newTeam1Rating ~= 0) and (oldTeam1Rating - newTeam1Rating) or "";
-		end
-		if ((newTeam0Rating - oldTeam0Rating) > 0) then
-			team0RatingDif = (newTeam0Rating - oldTeam0Rating ~= 0) and (newTeam0Rating - oldTeam0Rating) or "";
-		else
-			team0RatingDif = (oldTeam0Rating - newTeam0Rating ~= 0) and (oldTeam0Rating - newTeam0Rating) or "";
-		end
-	end
-	
+	local team0, team1 = {}, {};
+
 	-- Figure out how to default to nil, without failing to count losses.
-	--currentArena["wonByPlayer"] = false;
-	local myFaction = nil;
+	local myTeamIndex = nil;
 	
 	local numScores = GetNumBattlefieldScores();
 	for i=1, numScores do
-		local name, kills, honorKills, deaths, honorGained, faction, rank, race, class, _, damage, healing = GetBattlefieldScore(i);
+		-- TODO: Find a way to convert race to raceID securely for any localization!
+		local name, kills, honorKills, deaths, honorGained, teamIndex, rank, race, _, classToken, damage, healing = GetBattlefieldScore(i);
 		if(not name:find("-")) then
 			_,realm = UnitFullName("player"); -- Local player's realm
 			name = name.."-"..realm;
@@ -225,42 +203,45 @@ function ArenaTracker:HandleArenaEnd()
 		local GUID = ArenaTracker:GetCollectedValue("GUID", name);
 
 		-- Create complete player tables
-		local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
+		local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, teamIndex, raceID, classToken, damage, healing, spec);
 
 		if (player["name"] == currentArena["playerName"]) then
-			myFaction = faction;
-			currentArena["playerTeam"] = faction;
+			myTeamIndex = teamIndex;
 		end
-		if (faction == 1) then
+
+		if (teamIndex == 1) then
 			table.insert(team1, player);
 		else
 			table.insert(team0, player);
 		end
 	end
 
-	ArenaAnalytics:Log("My faction: ", myFaction, "(Winner:", winner,")")
+	ArenaAnalytics:Log("My faction: ", myTeamIndex, "(Winner:", winner,")")
 	if(winner ~= nil and winner ~= 255) then
-		currentArena["wonByPlayer"] = (myFaction == winner);
+		currentArena["wonByPlayer"] = (myTeamIndex == winner);
 	end
 
-	if (currentArena["playerTeam"] == 1) then
-		currentArena["party"] = team1;
-		currentArena["enemy"] = team0;
-		if (currentArena["isRated"]) then
-			currentArena["partyMMR"] = team1Rating;
-			currentArena["enemyMMR"] = team0Rating;
-			currentArena["enemyRating"] = newTeam0Rating;
-			currentArena["enemyRatingDelta"] = team0RatingDif;
-		end
-	else
-		currentArena["party"] = team0;
-		currentArena["enemy"] = team1;
-		if (currentArena["isRated"]) then
-			currentArena["partyMMR"] = team0Rating;
-			currentArena["enemyMMR"] = team1Rating;
-			currentArena["enemyRating"] = newTeam1Rating;
-			currentArena["enemyRatingDelta"] = team1RatingDif;
-		end
+	currentArena["party"] = (myTeamIndex == 0) and team0 or team1;
+	currentArena["enemy"] = (myTeamIndex == 1) and team0 or team1;
+
+	-- Process ranked information
+	if (currentArena["isRated"] and myTeamIndex) then
+		local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
+
+		local _, oldPartyRating, newPartyRating, partyMMR = GetBattlefieldTeamInfo(myTeamIndex);
+		local _, oldEnemyRating, newEnemyRating, enemyMMR = GetBattlefieldTeamInfo(otherTeamIndex);
+
+		-- Store only non-zero deltas
+		local partyRatingDelta = (newPartyRating ~= oldPartyRating) and abs(round(newPartyRating - oldPartyRating)) or nil;
+		local enemyRatingDelta = (newEnemyRating ~= oldEnemyRating) and abs(round(newEnemyRating - oldEnemyRating)) or nil;
+
+		currentArena["partyRating"] = tonumber(newPartyRating);
+		currentArena["partyMMR"] = tonumber(partyMMR);
+		currentArena["partyRatingDelta"] = tonumber(partyRatingDelta);
+		
+		currentArena["enemyRating"] = tonumber(newEnemyRating);
+		currentArena["enemyMMR"] = tonumber(enemyMMR);
+		currentArena["enemyRatingDelta"] = tonumber(enemyRatingDelta);
 	end
 
 	ArenaAnalytics:Log("Match ended!");
@@ -280,7 +261,7 @@ function ArenaTracker:HandleArenaExit()
 
 	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(currentArena["size"]);
 	
-	if(currentArena["isRated"] == true) then
+	if(currentArena["isRated"] and not currentArena["partyRating"]) then
 		local newRating = GetPersonalRatedInfo(bracketId);
 		local oldRating = ArenaAnalytics.cachedBracketRatings[bracketId];
 		ArenaAnalyticsDebugAssert(ArenaAnalytics.cachedBracketRatings[bracketId] ~= nil);
@@ -293,9 +274,6 @@ function ArenaTracker:HandleArenaExit()
 		
 		currentArena["partyRating"] = newRating;
 		currentArena["partyRatingDelta"] = deltaRating;
-	else
-		currentArena["partyRating"] = "SKIRMISH";
-		currentArena["partyRatingDelta"] = nil;
 	end
 
 	-- Update all the cached bracket ratings
@@ -340,11 +318,11 @@ function ArenaTracker:FillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
 			local currentGroup = (unitGroup == "party") and currentArena["party"] or currentArena["enemy"];
 			if (not ArenaTracker:DoesGroupContainMemberByName(currentGroup, name)) then
 				local kills, deaths, faction, damage, healing;
-				local class = UnitClass(unitGroup .. i);
-				local race = UnitRace(unitGroup .. i);
+				local _,_,classIndex = UnitClass(unitGroup .. i);
+				local _,_,raceID = UnitRace(unitGroup .. i);
 				local GUID = UnitGUID(unitGroup .. i);
 				local spec = GUID == unitGuid and unitSpec or nil;
-				local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec);
+				local player = ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, raceID, classIndex, damage, healing, spec);
 				table.insert(currentGroup, player);
 			end
 		end
@@ -352,16 +330,14 @@ function ArenaTracker:FillGroupsByUnitReference(unitGroup, unitGuid, unitSpec)
 end
 
 -- Returns a table with unit information to be placed inside either arena["party"] or arena["enemy"]
-function ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, race, class, damage, healing, spec)
-	local classIcon = ArenaAnalyticsGetClassIcon(class)
+function ArenaTracker:CreatePlayerTable(GUID, name, kills, deaths, faction, raceID, classIndex, damage, healing, spec)
 	local playerTable = {
 		["GUID"] = GUID,
 		["name"] = name,
 		["kills"] = kills,
 		["deaths"] = deaths,
-		["race"] = race,
-		["faction"] = Constants:GetFactionByRace(race),
-		["class"] = class,
+		["race"] = raceID,
+		["class"] = classIndex,
 		["damage"] = damage,
 		["healing"] = healing,
 		["spec"] = spec or nil

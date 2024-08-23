@@ -5,6 +5,7 @@ local Search = ArenaAnalytics.Search;
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
 local Constants = ArenaAnalytics.Constants;
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 
@@ -47,14 +48,6 @@ end
 
 function Search:GetEmptyData()
     return { segments = {}, nonInversedCount = 0 }
-end
-
--- Helper function 
-function Search:SafeToLower(value)
-    if(value and type(value) == "string") then
-        return value:lower();
-    end
-    return value;
 end
 
 -- The current search data
@@ -232,7 +225,7 @@ local function CheckTypeForPlayer(searchType, token, player)
     -- Alt search
     if (searchType == "alts") then
         if(token.value:find('/') ~= nil) then
-            local name = Search:SafeToLower(player["name"]);
+            local name = Helpers:ToSafeLower(player["name"]);
             if(not name) then
                 return false;
             end
@@ -251,7 +244,7 @@ local function CheckTypeForPlayer(searchType, token, player)
             searchType = "name";
         end
     elseif (searchType == "faction") then
-        local playerFaction = Search:SafeToLower(player["faction"] or Constants:GetFactionByRace(player["race"]) or "");
+        local playerFaction = Helpers:ToSafeLower(player["faction"] or Constants:GetFactionByRace(player["race"]) or "");
         if(playerFaction ~= "" and playerFaction ~= "neutral") then
             local isFactionMatch = not token.exact and playerFaction:find(token.value) or (token.value == playerFaction:lower());
             return isFactionMatch;
@@ -268,7 +261,7 @@ local function CheckTypeForPlayer(searchType, token, player)
         return CheckPlayerName(player["name"], token.value, token.exact);
     end
 
-    local playerValue = Search:SafeToLower(player[searchType]);
+    local playerValue = Helpers:ToSafeLower(player[searchType]);
     if(not playerValue) then
         return false;
     end
@@ -318,7 +311,7 @@ end
 ---------------------------------
 
 local function CheckSegmentForMatch(segment, match, alreadyMatchedPlayers)
-    local teams = segment.team and {segment.team} or {"team", "enemyTeam"};
+    local teams = segment.team and {segment.team} or {"team", "enemy"};
     local foundConflictMatch = false;
 
     for _,team in ipairs(teams) do

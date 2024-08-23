@@ -6,226 +6,262 @@ local SpecSpells = ArenaAnalytics.SpecSpells;
 local specSpells = {
     --------------------------------------------------------
     -- DRUID
-    [ 18562 ] = "Restoration", -- Swiftmend
-    [ 17116 ] = "Restoration", -- Nature's Swiftness
-    [ 48438 ] = "Restoration", -- Wild Growth
-    [ 33891 ] = "Restoration", -- Tree of Life
 
-    [ 33878 ] = "Feral", -- Mangle (Bear Form)
-    [ 33876 ] = "Feral", -- Mangle (Cat Form)
-    [ 16979 ] = "Feral", -- Feral Charge (Bear Form)
-    [ 49376 ] = "Feral", -- Feral Charge (Cat Form)
-    [ 61336 ] = "Feral", -- Survival Instincts
-    [ 80313 ] = "Feral", -- Pulverize
-    [ 33983 ] = "Feral", -- Berserk
-    [ 17007 ] = "Feral", -- Leader of the Pack
+    -- Restoration
+    [ 18562 ] = 1, -- Swiftmend
+    [ 17116 ] = 1, -- Nature's Swiftness
+    [ 48438 ] = 1, -- Wild Growth
+    [ 33891 ] = 1, -- Tree of Life
+
+    -- Feral
+    [ 33878 ] = 2, -- Mangle (Bear Form)
+    [ 33876 ] = 2, -- Mangle (Cat Form)
+    [ 16979 ] = 2, -- Feral Charge (Bear Form)
+    [ 49376 ] = 2, -- Feral Charge (Cat Form)
+    [ 61336 ] = 2, -- Survival Instincts
+    [ 80313 ] = 2, -- Pulverize
+    [ 33983 ] = 2, -- Berserk
+    [ 17007 ] = 2, -- Leader of the Pack
     
-    [ 78674 ] = "Balance", -- Starsurge
-    [ 24858 ] = "Balance", -- Moonkin Form
-    [ 50516 ] = "Balance", -- Typhoon
-    [ 78675 ] = "Balance", -- Solar Beam
-    [ 33831 ] = "Balance", -- Force of Nature
-    [ 48505 ] = "Balance", -- Starfall
-
-    --------------------------------------------------------
-    -- HUNTER
-
-    [ 19434 ] = "Marksmanship", -- Aimed Shot
-    [ 34490 ] = "Marksmanship", -- Silencing Shot
-    [ 23989 ] = "Marksmanship", -- Readiness
-    [ 53209 ] = "Marksmanship",  -- Chimera Shot
-
-    [ 53301 ] = "Survival", -- Explosive Shot
-    [ 19306 ] = "Survival", -- Counterattack
-    [ 19386 ] = "Survival", -- Wyvern Sting
-    [ 3674 ] = "Survival", -- Black Arrow
-
-    [ 19577 ] = "Beast Mastery", -- Intimidation
-    [ 82726 ] = "Beast Mastery", -- Fervor
-    [ 82692 ] = "Beast Mastery", -- Focus Fire
-    [ 19574 ] = "Beast Mastery", -- Bestial Wrath
-
-    --------------------------------------------------------
-    -- MAGE
-
-    [ 44425 ] = "Arcane", -- Arcane Barrage
-    [ 12043 ] = "Arcane", -- Presence of Mind
-    [ 31589 ] = "Arcane", -- Slow
-    [ 54646 ] = "Arcane", -- Focus Magic
-    [ 12042 ] = "Arcane", -- Arcane Power
-
-    [ 31687 ] = "Frost", -- Summon Water Elemental
-    [ 12472 ] = "Frost", -- Icy Veins
-    [ 11958 ] = "Frost", -- Cold Snap
-    [ 11426 ] = "Frost", -- Ice Barrier
-    [ 44572 ] = "Frost", -- Deep Freeze
-   
-    [ 11366 ] = "Fire", -- Pyroblast
-    [ 11113 ] = "Fire", -- Blast Wave
-    [ 11129 ] = "Fire", -- Combustion
-    [ 31661 ] = "Fire", -- Dragon's Breath
-    [ 44457 ] = "Fire", -- Living Bomb
-    [ 44461 ] = "Fire", -- Living Bomb (Explosion)
-    [ 31642 ] = "Fire", -- Blazing Speed
-    [ 44445 ] = "Fire", -- Hot Streak
+    -- Balance
+    [ 78674 ] = 3, -- Starsurge
+    [ 24858 ] = 3, -- Moonkin Form
+    [ 50516 ] = 3, -- Typhoon
+    [ 78675 ] = 3, -- Solar Beam
+    [ 33831 ] = 3, -- Force of Nature
+    [ 48505 ] = 3, -- Starfall
 
     --------------------------------------------------------
     -- PALADIN
 
-    [ 20473 ] = "Holy", -- Holy Shock
-    [ 31842 ] = "Holy", -- Divine Favor
-    [ 53563 ] = "Holy", -- Beacon of Light
-    [ 31821 ] = "Holy", -- Aura Mastery
-    [ 85222 ] = "Holy", -- Light of Dawn
+    -- Holy
+    [ 20473 ] = 11, -- Holy Shock
+    [ 31842 ] = 11, -- Divine Favor
+    [ 53563 ] = 11, -- Beacon of Light
+    [ 31821 ] = 11, -- Aura Mastery
+    [ 85222 ] = 11, -- Light of Dawn
 
-    [ 85256 ] = "Retribution", -- Templar's Verdict
-    [ 53385 ] = "Retribution", -- Divine Storm
-    [ 85285 ] = "Retribution", -- Sacred Shield (Passive Trigger)
-    [ 20066 ] = "Retribution", -- Repentance
-    [ 85696 ] = "Retribution", -- Zealoty
+    -- Protection
+    [ 31935 ] = 12, -- Avenger's Shield
+    [ 53595 ] = 12, -- Hammer of the Righteous
+    [ 31935 ] = 12, -- Shield of the Righteous
+    [ 20925 ] = 12, -- Holy Shield
+    [ 20927 ] = 12, -- Divine Guardian
+    [ 20928 ] = 12, -- Ardent Defender
     
-    [ 31935 ] = "Protection", -- Avenger's Shield
-    [ 53595 ] = "Protection", -- Hammer of the Righteous
-    [ 31935 ] = "Protection", -- Shield of the Righteous
-    [ 20925 ] = "Protection", -- Holy Shield
-    [ 20927 ] = "Protection", -- Divine Guardian
-    [ 20928 ] = "Protection", -- Ardent Defender
-
-    --------------------------------------------------------
-    -- PRIEST
-
-    [ 88625 ] = "Holy", -- Holy Word: Chastice
-    [ 88684 ] = "Holy", -- Holy Word: Serenity
-    [ 88685 ] = "Holy", -- Holy Word: Sanctuary
-    [ 724 ] = "Holy", -- Lightwell
-    [ 14751 ] = "Holy", -- Chakra
-    [ 34861 ] = "Holy", -- Circle of Healing
-    [ 47788 ] = "Holy", -- Guardian Spirit
-
-    [ 15407 ] = "Shadow", -- Mind Flay
-    [ 15473 ] = "Shadow", -- Shadowform
-    [ 15487 ] = "Shadow", -- Silence
-    [ 15286 ] = "Shadow", -- Vampiric Embrace
-    [ 34914 ] = "Shadow", -- Vampiric Touch
-    [ 64044 ] = "Shadow", -- Psychic Horror
-    [ 47585 ] = "Shadow", -- Dispersion
-
-    [ 47540 ] = "Discipline", -- Penance
-    [ 47666 ] = "Discipline", -- Penance
-    [ 47750 ] = "Discipline", -- Penance
-    [ 54518 ] = "Discipline", -- Penance
-    [ 10060 ] = "Discipline", -- Power Infusion
-    [ 89485 ] = "Discipline", -- Inner Focus
-    [ 33206 ] = "Discipline", -- Pain Suppression
-    [ 62618 ] = "Discipline", -- Power Word: Barrier
-
-    --------------------------------------------------------
-    -- ROGUE
-
-    [ 13877 ] = "Combat", -- Blade Fury
-    [ 84617 ] = "Combat", -- Revealing Strike
-    [ 13750 ] = "Combat", -- Adrenaline Rush
-    [ 51690 ] = "Combat", -- Killing Spree
-
-    [ 36554 ] = "Subtlety", -- Shadowstep
-    [ 16511 ] = "Subtlety", -- Hemorrhage
-    [ 14183 ] = "Subtlety", -- Premeditation
-    [ 14185 ] = "Subtlety", -- Preparation
-    [ 51713 ] = "Subtlety", -- Shadow Dance
-    [ 31223 ] = "Subtlety", -- Master of Subtlety
-
-    [ 1329 ] = "Assassination", -- Mutilate
-    [ 14177 ] = "Assassination", -- Cold Blood
-    [ 79140 ] = "Assassination", -- Vendetta
+    -- Retribution
+    [ 85256 ] = 14, -- Templar's Verdict
+    [ 53385 ] = 14, -- Divine Storm
+    [ 85285 ] = 14, -- Sacred Shield (Passive Trigger)
+    [ 20066 ] = 14, -- Repentance
+    [ 85696 ] = 14, -- Zealoty
 
     --------------------------------------------------------
     -- SHAMAN
     
-    [ 974 ] = "Restoration", -- Earth Shield
-    [ 16188 ] = "Restoration", -- Nature's Swiftness
-    [ 16190 ] = "Restoration", -- Mana Tide Totem
-    [ 61295 ] = "Restoration", -- Riptide
+    -- Restoration
+    [ 974 ] = 21, -- Earth Shield
+    [ 16188 ] = 21, -- Nature's Swiftness
+    [ 16190 ] = 21, -- Mana Tide Totem
+    [ 61295 ] = 21, -- Riptide
 
-    [ 60103 ] = "Enhancement", -- Lava Lash
-    [ 17364 ] = "Enhancement", -- Stormstrike
-    [ 30823 ] = "Enhancement", -- Shamanistic Rage
-    [ 51533 ] = "Enhancement", -- Feral Spirit
-
-    [ 51490 ] = "Elemental", -- Thunderstorm
-    [ 16166 ] = "Elemental", -- Elemental Mastery
-    [ 61882 ] = "Elemental", -- Earthquake
+    -- Elemental
+    [ 51490 ] = 22, -- Thunderstorm
+    [ 16166 ] = 22, -- Elemental Mastery
+    [ 61882 ] = 22, -- Earthquake
     
-    --------------------------------------------------------
-    -- WARLOCK
-
-    [ 17962 ] = "Destruction", -- Conflagrate
-    [ 17877 ] = "Destruction", -- Shadowburn
-    [ 30283 ] = "Destruction", -- Shadowfury
-    [ 80240 ] = "Destruction", -- Bane of Havoc
-    [ 50796 ] = "Destruction", -- Chaos Bolt
-
-    [ 30146 ] = "Demonology", -- Summon Felguard
-    [ 47193 ] = "Demonology", -- Demonic Empowerment
-    [ 71521 ] = "Demonology", -- Hand of Gul'dan
-    [ 59672 ] = "Demonology", -- Metamorphosis?
-    [ 47241 ] = "Demonology", -- Metamorphosis?
-    [ 59673 ] = "Demonology", -- Metamorphosis?
-    
-    [ 30108 ] = "Affliction", -- Unstable Affliction
-    [ 18223 ] = "Affliction", -- Curse of Exhaustion
-    [ 86121 ] = "Affliction", -- Soul Swap
-    [ 48181 ] = "Affliction", -- Haunt
-
-    --------------------------------------------------------
-    -- WARRIOR
-
-    [ 12294 ] = "Arms", -- Mortal Strike
-    [ 12328 ] = "Arms", -- Sweeping Strikes
-    [ 85730 ] = "Arms", -- Deadly Calm
-    [ 85388 ] = "Arms", -- Throwdown
-    [ 46924 ] = "Arms", -- Bladestorm
-
-    [ 23881 ] = "Fury", -- Bloodthirst
-    [ 12292 ] = "Fury", -- Death Wish
-    [ 85288 ] = "Fury", -- Raging Blow
-    [ 60970 ] = "Fury", -- Heroic Fury
-    
-    [ 23922 ] = "Protection", -- Shield Slam
-    [ 12975 ] = "Protection", -- Last Stand
-    [ 12809 ] = "Protection", -- Concussion Blow
-    [ 20243 ] = "Protection", -- Devastate
-    [ 50720 ] = "Protection", -- Vigilance
-    [ 46968 ] = "Protection", -- Shockwave
+    -- Enhancement
+    [ 60103 ] = 23, -- Lava Lash
+    [ 17364 ] = 23, -- Stormstrike
+    [ 30823 ] = 23, -- Shamanistic Rage
+    [ 51533 ] = 23, -- Feral Spirit
 
     --------------------------------------------------------
     -- DEATHKNIGHT
 
-    [ 55090 ] = "Unholy", -- Scourge Strike
-    [ 49016 ] = "Unholy", -- Unholy Frenzy
-    [ 51052 ] = "Unholy", -- Anti-magic Zone
-    [ 63560 ] = "Unholy", -- Dark Transformation
-    [ 49206 ] = "Unholy", -- Summon Gargoyle
+    -- Unholy
+    [ 55090 ] = 31, -- Scourge Strike
+    [ 49016 ] = 31, -- Unholy Frenzy
+    [ 51052 ] = 31, -- Anti-magic Zone
+    [ 63560 ] = 31, -- Dark Transformation
+    [ 49206 ] = 31, -- Summon Gargoyle
 
-    [ 49143 ] = "Frost", -- Frost Strike
-    [ 66196 ] = "Frost", -- Frost Strike Off-Hand
-    [ 51271 ] = "Frost", -- Pillar of Frost
-    [ 49203 ] = "Frost", -- Hungering Cold
-    [ 49184 ] = "Frost", -- Howling Blast
+    -- Frost
+    [ 49143 ] = 32, -- Frost Strike
+    [ 66196 ] = 32, -- Frost Strike Off-Hand
+    [ 51271 ] = 32, -- Pillar of Frost
+    [ 49203 ] = 32, -- Hungering Cold
+    [ 49184 ] = 32, -- Howling Blast
 
-    [ 55050 ] = "Blood", -- Heart Strike
-    [ 50034 ] = "Blood", -- Blood Rites
-    [ 49222 ] = "Blood", -- Bone Shield
-    [ 48982 ] = "Blood", -- Rune Tap
-    [ 55233 ] = "Blood", -- Vampiric Blood
-    [ 49028 ] = "Blood", -- Dancing Rune Weapon
+    -- Blood
+    [ 55050 ] = 33, -- Heart Strike
+    [ 50034 ] = 33, -- Blood Rites
+    [ 49222 ] = 33, -- Bone Shield
+    [ 48982 ] = 33, -- Rune Tap
+    [ 55233 ] = 33, -- Vampiric Blood
+    [ 49028 ] = 33, -- Dancing Rune Weapon
+
+    --------------------------------------------------------
+    -- HUNTER
+
+    -- Beast Mastery
+    [ 19577 ] = 41, -- Intimidation
+    [ 82726 ] = 41, -- Fervor
+    [ 82692 ] = 41, -- Focus Fire
+    [ 19574 ] = 41, -- Bestial Wrath
+
+    -- Marksmanship
+    [ 19434 ] = 42, -- Aimed Shot
+    [ 34490 ] = 42, -- Silencing Shot
+    [ 23989 ] = 42, -- Readiness
+    [ 53209 ] = 42,  -- Chimera Shot
+
+    -- Survival
+    [ 53301 ] = 43, -- Explosive Shot
+    [ 19306 ] = 43, -- Counterattack
+    [ 19386 ] = 43, -- Wyvern Sting
+    [ 3674 ] = 43, -- Black Arrow
+
+    --------------------------------------------------------
+    -- MAGE
+
+    -- Frost
+    [ 31687 ] = 51, -- Summon Water Elemental
+    [ 12472 ] = 51, -- Icy Veins
+    [ 11958 ] = 51, -- Cold Snap
+    [ 11426 ] = 51, -- Ice Barrier
+    [ 44572 ] = 51, -- Deep Freeze
+   
+    -- Fire
+    [ 11366 ] = 52, -- Pyroblast
+    [ 11113 ] = 52, -- Blast Wave
+    [ 11129 ] = 52, -- Combustion
+    [ 31661 ] = 52, -- Dragon's Breath
+    [ 44457 ] = 52, -- Living Bomb
+    [ 44461 ] = 52, -- Living Bomb (Explosion)
+    [ 31642 ] = 52, -- Blazing Speed
+    [ 44445 ] = 52, -- Hot Streak
+
+    -- Arcane
+    [ 44425 ] = 53, -- Arcane Barrage
+    [ 12043 ] = 53, -- Presence of Mind
+    [ 31589 ] = 53, -- Slow
+    [ 54646 ] = 53, -- Focus Magic
+    [ 12042 ] = 53, -- Arcane Power
+
+    --------------------------------------------------------
+    -- ROGUE
+
+    -- Subtlety
+    [ 36554 ] = 61, -- Shadowstep
+    [ 16511 ] = 61, -- Hemorrhage
+    [ 14183 ] = 61, -- Premeditation
+    [ 14185 ] = 61, -- Preparation
+    [ 51713 ] = 61, -- Shadow Dance
+    [ 31223 ] = 61, -- Master of Subtlety
+
+    -- Assassination
+    [ 1329 ] = 62, -- Mutilate
+    [ 14177 ] = 62, -- Cold Blood
+    [ 79140 ] = 62, -- Vendetta
+
+    -- Combat
+    [ 13877 ] = 63, -- Blade Fury
+    [ 84617 ] = 63, -- Revealing Strike
+    [ 13750 ] = 63, -- Adrenaline Rush
+    [ 51690 ] = 63, -- Killing Spree
+
+    --------------------------------------------------------
+    -- WARLOCK
+
+    -- Affliction
+    [ 30108 ] = 71, -- Unstable Affliction
+    [ 18223 ] = 71, -- Curse of Exhaustion
+    [ 86121 ] = 71, -- Soul Swap
+    [ 48181 ] = 71, -- Haunt
+
+    -- Destruction
+    [ 17962 ] = 72, -- Conflagrate
+    [ 17877 ] = 72, -- Shadowburn
+    [ 30283 ] = 72, -- Shadowfury
+    [ 80240 ] = 72, -- Bane of Havoc
+    [ 50796 ] = 72, -- Chaos Bolt
+
+    -- Demonology
+    [ 30146 ] = 73, -- Summon Felguard
+    [ 47193 ] = 73, -- Demonic Empowerment
+    [ 71521 ] = 73, -- Hand of Gul'dan
+    [ 59672 ] = 73, -- Metamorphosis?
+    [ 47241 ] = 73, -- Metamorphosis?
+    [ 59673 ] = 73, -- Metamorphosis?
+
+    --------------------------------------------------------
+    -- WARRIOR
+
+    -- Protection
+    [ 23922 ] = 81, -- Shield Slam
+    [ 12975 ] = 81, -- Last Stand
+    [ 12809 ] = 81, -- Concussion Blow
+    [ 20243 ] = 81, -- Devastate
+    [ 50720 ] = 81, -- Vigilance
+    [ 46968 ] = 81, -- Shockwave
+
+    -- Arms
+    [ 12294 ] = 82, -- Mortal Strike
+    [ 12328 ] = 82, -- Sweeping Strikes
+    [ 85730 ] = 82, -- Deadly Calm
+    [ 85388 ] = 82, -- Throwdown
+    [ 46924 ] = 82, -- Bladestorm
+
+    -- Fury
+    [ 23881 ] = 83, -- Bloodthirst
+    [ 12292 ] = 83, -- Death Wish
+    [ 85288 ] = 83, -- Raging Blow
+    [ 60970 ] = 83, -- Heroic Fury
+    
+    --------------------------------------------------------
+    -- PRIEST
+
+    -- Discipline
+    [ 47540 ] = 91, -- Penance
+    [ 47666 ] = 91, -- Penance
+    [ 47750 ] = 91, -- Penance
+    [ 54518 ] = 91, -- Penance
+    [ 10060 ] = 91, -- Power Infusion
+    [ 89485 ] = 91, -- Inner Focus
+    [ 33206 ] = 91, -- Pain Suppression
+    [ 62618 ] = 91, -- Power Word: Barrier
+
+    -- Holy
+    [ 88625 ] = 92, -- Holy Word: Chastice
+    [ 88684 ] = 92, -- Holy Word: Serenity
+    [ 88685 ] = 92, -- Holy Word: Sanctuary
+    [ 724 ] = 92, -- Lightwell
+    [ 14751 ] = 92, -- Chakra
+    [ 34861 ] = 92, -- Circle of Healing
+    [ 47788 ] = 92, -- Guardian Spirit
+
+    -- Shadow
+    [ 15407 ] = 93, -- Mind Flay
+    [ 15473 ] = 93, -- Shadowform
+    [ 15487 ] = 93, -- Silence
+    [ 15286 ] = 93, -- Vampiric Embrace
+    [ 34914 ] = 93, -- Vampiric Touch
+    [ 64044 ] = 93, -- Psychic Horror
+    [ 47585 ] = 93, -- Dispersion
 }
 
 local debugSpells = {
-    [ 17007 ] = "Feral", -- Leader of the Pack
-    [ 51698 ] = "Subtlety", -- Honor Among Thieves
-    [ 59672 ] = "Demonology", -- Metamorphosis?
-    [ 47241 ] = "Demonology", -- Metamorphosis?
-    [ 59673 ] = "Demonology", -- Metamorphosis?
+    -- Feral
+    [ 17007 ] = 2, -- Leader of the Pack
+    
+    -- Subtlety
+    [ 51698 ] = 61, -- Honor Among Thieves
+
+    -- Demonology
+    [ 59672 ] = 73, -- Metamorphosis?
+    [ 47241 ] = 73, -- Metamorphosis?
+    [ 59673 ] = 73, -- Metamorphosis?
 }
 
 function SpecSpells:GetSpec(spellID)

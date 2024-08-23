@@ -9,6 +9,10 @@ local Import = ArenaAnalytics.Import;
 
 -------------------------------------------------------------------------
 
+-- Old databases (Set to nil after conversion attempts)
+ArenaAnalyticsDB = ArenaAnalyticsDB or {}
+MatchHistoryDB = MatchHistoryDB or {}
+
 -- True if data sync was detected with a later version.
 VersionManager.newDetectedVersion = false;
 
@@ -43,7 +47,7 @@ function VersionManager:compareVersions(version, otherVersion)
         local v1table = versionToTable(version);
         local v2table = versionToTable(otherVersion);
         
-        local length = #v1table > #v2table and #v1table or #v2table;
+        local length = max(#v1table, #v2table);
         for i=1, length do
             local v1 = tonumber(v1table[i]) or 0;
             local v2 = tonumber(v2table[i]) or 0;
@@ -181,16 +185,13 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     MatchHistoryDB = MatchHistoryDB or { }
 
     if(not ArenaAnalyticsDB or #ArenaAnalyticsDB == 0) then
-        return;
-    end
-
-    if(#MatchHistoryDB > 0) then
-        ArenaAnalytics:Log("Non-empty MatchHistoryDB.");
         ArenaAnalyticsDB = nil;
         return;
     end
 
-    if(ArenaAnalyticsDB == nil) then
+    if(MatchHistoryDB and #MatchHistoryDB > 0) then
+        ArenaAnalytics:Log("Non-empty MatchHistoryDB.");
+        ArenaAnalyticsDB = nil;
         return;
     end
     
@@ -241,14 +242,6 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         end
     end);
 
-	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
-    ArenaAnalytics:RecomputeSessionsForMatchHistoryDB();
-	ArenaAnalytics:UpdateLastSession();
-    Import:tryHide();
-
-    -- Refresh filters
-    Filters:Refresh();
-
     -- Remove old storage
     ArenaAnalyticsDB = nil;
 end
@@ -278,4 +271,83 @@ function VersionManager:renameMatchHistoryDBKeys()
             end    
         end
 	end
+end
+
+function VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB()
+    if(true) then
+        return; -- Function is not ready yet!
+    end
+
+    ArenaAnalyticsMatchHistoryDB = ArenaAnalyticsMatchHistoryDB or {};
+
+    if(not MatchHistoryDB or #MatchHistoryDB == 0) then
+        ArenaAnalytics:Log("Clearing supposedly empty MatchHistoryDB.");
+        MatchHistoryDB = nil;
+        return;
+    end
+
+    if(ArenaAnalyticsMatchHistoryDB and #ArenaAnalyticsMatchHistoryDB > 0) then
+        ArenaAnalytics:Log("Version Control: Non-empty ArenaAnalyticsMatchHistoryDB.");
+        MatchHistoryDB = nil;
+        return;
+    end
+
+    local function ConvertNumber(number, allowZero, allowNegative)
+        number = tonumber(number);
+        if not number or (not allowZero and number == 0) or (not allowNegative and number < 0) then
+            return nil;
+        end
+        return number;
+    end
+
+    -- Convert old arenas
+    for i=1, #MatchHistoryDB do
+        local oldArena = MatchHistoryDB[i];
+        if(oldArena) then 
+            local convertedArena = { }
+
+            -- Set values
+            ArenaMatch:SetDate(convertedArena, oldArena["date"]);
+            ArenaMatch:SetDuration(convertedArena, oldArena["duration"]);
+            ArenaMatch:SetMap(convertedArena, oldArena["map"]);
+            ArenaMatch:SetBracket(convertedArena, oldArena["bracket"]);
+            ArenaMatch:SetMatchType(convertedArena, oldArena["isRated"] and "rated" or "skirmish");
+            
+            ArenaMatch:SetPartyRating(match, oldArena["rating"]);
+            ArenaMatch:SetPartyMMR(match, oldArena["mmr"]);
+            ArenaMatch:SetPartyRatingDelta(match, oldArena["ratingDelta"]);
+            
+            ArenaMatch:SetEnemyRating(match, oldArena["enemyRating"]);
+            ArenaMatch:SetEnemyMMR(match, oldArena["enemyMmr"]);
+            ArenaMatch:SetEnemyRatingDelta(match, oldArena["enemyRatingDelta"]);
+            
+            ArenaMatch:SetSeason(match, oldArena["season"]);
+            ArenaMatch:SetSession(match, oldArena["session"]);
+
+            
+            ArenaMatch:SetVictory(match, oldArena["won"]);
+            ArenaMatch:SetSelf(match, oldArena["player"]);
+            ArenaMatch:SetFirstDeath(match, oldArena["firstDeath"]);
+
+            -- Add team
+
+            -- Add enemy team
+
+            -- Update comp
+
+            -- Update enemy comp
+
+        end
+    end
+end
+
+function VersionManager:FinalizeConversionAttempts()
+	ArenaAnalytics.unsavedArenaCount = #MatchHistoryDB;
+    
+	ArenaAnalytics:ResortGroupsInMatchHistory();
+	ArenaAnalytics:RecomputeSessionsForMatchHistory();
+    
+    Import:tryHide();
+    Filters:Refresh();
+    ArenaAnalyticsScrollFrame:Hide();
 end

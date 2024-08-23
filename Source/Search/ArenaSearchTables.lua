@@ -4,6 +4,7 @@ local Search = ArenaAnalytics.Search;
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 -- Search Lookup Tables
@@ -187,10 +188,13 @@ SearchTokenTypeTable = {
     },
     ["role"] = {
         noSpace = true,
-        values = {
-            ["tank"] = {"tank"},
-            ["healer"] = {"healer"},
-            ["dps"] = {"damage dealer", "damage", "dps"},
+        values = { -- Bitmap values
+            [1] = {"tank"},
+            [2] = {"healer"},
+            [4] = {"damage dealer", "damage", "dps"},
+            [8] = { "melee" },
+            [16] = { "ranged" },
+            [32] = { "caster" },
         },
     },
     ["team"] = {
@@ -198,7 +202,7 @@ SearchTokenTypeTable = {
         noSpace = true,
         values = {
             ["team"] = {"friend", "team", "ally", "help", "partner"},
-            ["enemyTeam"] = {"enemy", "foe", "harm"},
+            ["enemy"] = {"enemy", "foe", "harm"},
         }
     },
     ["logical"] = {
@@ -217,7 +221,7 @@ function Search:FindSearchValueDataForToken(token)
         return;
     end
 
-    local lowerCaseValue = Search:SafeToLower(token.value);
+    local lowerCaseValue = Helpers:ToSafeLower(token.value);
     
     -- Cached info about the best match
     local bestMatch = nil;
