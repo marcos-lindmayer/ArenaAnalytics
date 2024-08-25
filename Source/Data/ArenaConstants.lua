@@ -1,6 +1,9 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
 local Constants = ArenaAnalytics.Constants;
 
+-- Local module aliases
+local Helpers = ArenaAnalytics.Helpers;
+
 -------------------------------------------------------------------------
 
 Constants.currentSeasonStartInt = 1687219201;
@@ -197,7 +200,6 @@ end
 function Constants:GetClassAndSpec(specID)
     local data = classAndSpecByID[tonumber(specID)];
     if (not data) then 
-        ArenaAnalytics:Log("Failed to find spec for ID: ", specID)
         return nil, nil;
     end
 
@@ -393,7 +395,7 @@ function Constants:GetMapIdByKey(mapKey)
     return nil;
 end
 
-function Constants:GetMapKeyByID(id)
+function Constants:GetShortMapName(id)
     if(id == nil) then
         return nil;
     end
@@ -420,6 +422,19 @@ function ArenaAnalytics:getBracketIdFromTeamSize(teamSize)
         return 2;
     end
     return 3;
+end
+
+function ArenaAnalytics:getTeamSizeFromBracketIndex(bracketIndex)
+    if(not bracketIndex) then
+        if(bracketIndex == 1) then
+            return 2;
+        elseif(bracketIndex == 2) then
+            return 3;
+        elseif(bracketIndex == 3) then
+            return 5;
+        end
+    end
+    return 0;
 end
 
 function ArenaAnalytics:getTeamSizeFromBracketId(bracketId)

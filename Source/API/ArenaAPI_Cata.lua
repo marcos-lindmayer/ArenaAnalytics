@@ -37,8 +37,26 @@ function API:GetMySpec()
 	return addonSpecID;
 end
 
+API.maxRaceID = 70;
+
+API.classMappingTable = {
+    [1] = 80,
+    [2] = 10,
+    [3] = 40,
+    [4] = 60,
+    [5] = 90,
+    [6] = 30,
+    [7] = 20,
+    [8] = 50,
+    [9] = 70,
+    [10] = 100,
+    [11] = 0,
+    [12] = 110,
+    [13] = 120,
+}
+
 -- Internal Addon Spec ID to expansion spec IDs
-local internalSpecIdMap = {
+API.specMappingTable = {
     [1] = 748, -- Restoration Druid
     [2] = 750, -- Feral Druid
     [3] = 752, -- Balance Druid
@@ -93,8 +111,15 @@ local internalSpecIdMap = {
     [123] = nil, -- Devastation Evoker
 }
 
-function API:GetMappedSpecID(spec_id)
-	return spec_id and internalSpecIdMap[spec_id];
+function API:GetSpecInfo(spec_id)
+	local expansionSpecID = spec_id and internalSpecIdMap[spec_id];
+    if(not expansionSpecID) then
+        return nil;
+    end
+    
+    local _,spec,_,icon,_,_,class = GetSpecializationInfoByID(spec_id);
+    return class,spec,icon;
+
 end
 
 function API:GetMappedAddonSpecID(spec_id)

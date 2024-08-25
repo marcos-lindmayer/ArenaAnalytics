@@ -6,6 +6,10 @@ local VersionManager = ArenaAnalytics.VersionManager;
 local Constants = ArenaAnalytics.Constants;
 local Filters = ArenaAnalytics.Filters;
 local Import = ArenaAnalytics.Import;
+local API = ArenaAnalytics.API;
+local Helpers = ArenaAnalytics.Helpers;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
@@ -274,7 +278,7 @@ function VersionManager:renameMatchHistoryDBKeys()
 end
 
 function VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB()
-    if(true) then
+    if(false) then
         return; -- Function is not ready yet!
     end
 
@@ -299,6 +303,63 @@ function VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB()
         end
         return number;
     end
+    
+    -- Fill race lookup table
+    local localizedRaceLookupTable = {}
+    for raceID = 1, API.maxRaceID do
+        local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)        
+        if raceInfo and raceInfo.raceName and raceInfo.clientFileString then
+            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString) or (1000 + raceID)
+            if addonRaceID then
+                localizedRaceLookupTable[raceInfo.raceName] = {
+                    raceID = raceID,
+                    raceToken = raceInfo.clientFileString,
+                    addonRaceID = addonRaceID,
+                }
+            else
+                ArenaAnalytics:Log("Error: No Addon Race ID found for:", raceID, raceInfo.raceName, raceInfo.clientFileString);
+            end
+        end
+    end
+    
+    -- Fill class lookup table
+    local localizedClassLookupTable = {}
+    for classIndex, addonClassID in pairs(API.classMappingTable) do
+        -- Get the localized name and token for the class
+        local localizedName, classToken = GetClassInfo(classIndex);
+        if(localizedName and classToken) then
+            localizedClassLookupTable[localizedName] = {
+                classIndex = classIndex,
+                classToken = classToken,
+                addonSpecID = addonClassID,
+            };
+        end
+    end
+
+    local function ConvertValues(race, class, spec)
+        local raceInfo = race and localizedRaceLookupTable[race];
+        if(raceInfo and raceInfo.addonRaceID < 1000) then
+            race = raceInfo.addonRaceID;
+        else
+            ArenaAnalytics:Log("Failed to find raceInfo when converting race:", race, raceInfo and raceInfo.addonRaceID, raceInfo and raceInfo.raceToken);
+        end
+
+        local classInfo = class and localizedClassLookupTable[class];
+        if(classInfo) then
+            class = classInfo.addonSpecID;
+        else
+            ArenaAnalytics:Log("Failed to find classInfo when converting class:", class);
+        end
+
+        local spec_id = Internal:GetSpecFromSpecString(class, spec);
+        if(spec_id) then
+            spec = spec_id;
+        else
+            ArenaAnalytics:Log("Failed to find spec_id when converting class:", class, "spec:", spec);
+        end
+
+        return race, class, spec;
+    end
 
     -- Convert old arenas
     for i=1, #MatchHistoryDB do
@@ -312,31 +373,46 @@ function VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB()
             ArenaMatch:SetMap(convertedArena, oldArena["map"]);
             ArenaMatch:SetBracket(convertedArena, oldArena["bracket"]);
             ArenaMatch:SetMatchType(convertedArena, oldArena["isRated"] and "rated" or "skirmish");
-            
-            ArenaMatch:SetPartyRating(match, oldArena["rating"]);
-            ArenaMatch:SetPartyMMR(match, oldArena["mmr"]);
-            ArenaMatch:SetPartyRatingDelta(match, oldArena["ratingDelta"]);
-            
-            ArenaMatch:SetEnemyRating(match, oldArena["enemyRating"]);
-            ArenaMatch:SetEnemyMMR(match, oldArena["enemyMmr"]);
-            ArenaMatch:SetEnemyRatingDelta(match, oldArena["enemyRatingDelta"]);
-            
-            ArenaMatch:SetSeason(match, oldArena["season"]);
-            ArenaMatch:SetSession(match, oldArena["session"]);
 
-            
-            ArenaMatch:SetVictory(match, oldArena["won"]);
-            ArenaMatch:SetSelf(match, oldArena["player"]);
-            ArenaMatch:SetFirstDeath(match, oldArena["firstDeath"]);
+            ArenaMatch:SetPartyRating(convertedArena, oldArena["rating"]);
+            ArenaMatch:SetPartyMMR(convertedArena, oldArena["mmr"]);
+            ArenaMatch:SetPartyRatingDelta(convertedArena, oldArena["ratingDelta"]);
+
+            ArenaMatch:SetEnemyRating(convertedArena, oldArena["enemyRating"]);
+            ArenaMatch:SetEnemyMMR(convertedArena, oldArena["enemyMmr"]);
+            ArenaMatch:SetEnemyRatingDelta(convertedArena, oldArena["enemyRatingDelta"]);
+
+            ArenaMatch:SetSeason(convertedArena, oldArena["season"]);
+            ArenaMatch:SetSession(convertedArena, oldArena["session"]);
+
+            ArenaMatch:SetVictory(convertedArena, oldArena["won"]);
+            ArenaMatch:SetSelf(convertedArena, oldArena["player"]);
+            ArenaMatch:SetFirstDeath(convertedArena, oldArena["firstDeath"]);
+
+            --ArenaMatch:PrepareTeams(match);
 
             -- Add team
+            for _,player in ipairs(oldArena["team"]) do
+                local name = player.name;
+                local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
+                local race, class, spec = ConvertValues(player.race, player.class, player.spec);
+                
+                ArenaMatch:AddPlayer(convertedArena, false, name, race, class, spec, kills, deaths, damage, healing);
+            end
 
             -- Add enemy team
+            for _,player in ipairs(oldArena["enemyTeam"]) do
+                local name = player.name;
+                local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
+                local race, class, spec = ConvertValues(player.race, player.class, player.spec);
 
-            -- Update comp
+                ArenaMatch:AddPlayer(convertedArena, true, name, race, class, spec, kills, deaths, damage, healing);
+            end
 
-            -- Update enemy comp
+            -- Comps
+            ArenaMatch:UpdateComps(convertedArena);
 
+            tinsert(ArenaAnalyticsMatchHistoryDB, convertedArena);
         end
     end
 end

@@ -63,7 +63,8 @@ function Options:LoadSettings()
     AddSetting("defaultCurrentSeasonFilter", false);
     AddSetting("defaultCurrentSessionFilter", false);
     
-    AddSetting("showSkirmish", false);
+    AddSetting("showSkirmish", true);
+    AddSetting("showWarGames", true);
 
     AddSetting("showCompDropdownInfoText", true);
 
@@ -471,6 +472,7 @@ function SetupTab_Filters()
     parent.tabHeader = CreateHeader("Filters", TabHeaderSize, parent, nil, 15, -15);
     
     parent.showSkirmish = CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
+    parent.showSkirmish = CreateCheckbox("showWarGames", parent, offsetX, "Show War Games in match history.");
     
     CreateSpace();
     

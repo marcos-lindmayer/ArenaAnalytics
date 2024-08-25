@@ -12,6 +12,7 @@ local Selection = ArenaAnalytics.Selection;
 local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
 local Tooltips = ArenaAnalytics.Tooltips;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 
@@ -101,7 +102,7 @@ function AAtable:UpdateSelected()
         local match = ArenaAnalytics:GetFilteredMatch(index);
         if(match) then
             selectedGamesCount = selectedGamesCount + 1;
-            if (match["won"]) then
+            if (ArenaMatch:IsVictory(match)) then
                 selectedWins = selectedWins + 1;
             end
         else
@@ -492,8 +493,8 @@ function AAtable:CreateExportDialogFrame()
 end
 
 -- TODO: Consider using ArenaIcon to draw the class and spec icons.
-local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKey, scrollEntry)
-    if(match == nil or match[teamKey] == nil) then
+local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnemyTeam, scrollEntry)
+    if(not match) then
         return;
     end
 
@@ -501,14 +502,13 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
         local playerFrame = teamPlayerFrames[i];
         assert(playerFrame);
 
-        local player = match[teamKey][i];
+        local player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
         if (player) then
             playerFrame.team = teamKey;
             playerFrame.playerIndex = i;
             playerFrame.matchIndex = matchIndex;
             
-            local class = player["class"];
-            local spec = player["spec"];
+            local playerInfo = ArenaMatch:GetPlayerInfo(match, player, isEnemyTeam);
 
             if (playerFrame.texture == nil) then
                 -- No textures? Set them
@@ -518,10 +518,10 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
             end
             
             -- Set texture
-            playerFrame.texture:SetTexture(ArenaAnalyticsGetClassIcon(class));
-            playerFrame.tooltip = ""
+            playerFrame.texture:SetTexture(ArenaAnalyticsGetClassIcon(playerInfo.class));
+            playerFrame.tooltip = "";
 
-            local playerName = player["name"] or ""
+            local playerName = playerInfo.name or "";
 
             local _, realm = UnitFullName("player");
             if(realm and playerName:find(realm)) then
@@ -537,7 +537,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
             end);
 
             -- Add spec info
-            if(class) then
+            if(playerInfo.class) then
                 if (playerFrame.specOverlay == nil) then
                     playerFrame.specOverlay = CreateFrame("Frame", nil, playerFrame);
                     playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")
@@ -550,7 +550,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, teamKe
                     playerFrame.specOverlay.texture:SetTexture(nil);
                 end
 
-                local specIcon = spec and ArenaAnalyticsGetSpecIcon(class, spec) or nil;
+                local specIcon = playerInfo.spec and ArenaAnalyticsGetSpecIcon(playerInfo.class, playerInfo.spec) or nil;
                 playerFrame.specOverlay.texture:SetTexture(specIcon);
 
                 if (not Options:Get("alwaysShowSpecOverlay")) then
@@ -801,39 +801,48 @@ function AAtable:RefreshLayout()
         local match, filteredSession = ArenaAnalytics:GetFilteredMatch(matchIndex);
         if (match ~= nil) then
             setColorForSession(button, filteredSession, matchIndex);
-            button.Date:SetText(date("%d/%m/%y %H:%M:%S", match["date"]) or "");
-            button.Map:SetText(match["map"] or "");
-            button.Duration:SetText(SecondsToTime(match["duration"]) or "");
+
+            local matchDate = ArenaMatch:GetDate(match);
+            local map = ArenaMatch:GetMap(match);
+            local duration = ArenaMatch:GetDuration(match);
+
+            button.Date:SetText(matchDate and date("%d/%m/%y %H:%M:%S", matchDate) or "");
+            button.Map:SetText(map or "");
+            button.Duration:SetText(duration and SecondsToTime(duration) or "");
 
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
             
             -- Setup player class frames
-            setupTeamPlayerFrames(teamIconsFrames, match, matchIndex, "team", button);
-            setupTeamPlayerFrames(enemyTeamIconsFrames, match, matchIndex, "enemyTeam", button);
+            setupTeamPlayerFrames(teamIconsFrames, match, matchIndex, false, button);
+            setupTeamPlayerFrames(enemyTeamIconsFrames, match, matchIndex, true, button);
 
-            local enemyDelta
             -- Paint winner green, loser red
-            local hex
-            if(match["won"] == nil) then
+            local won = ArenaMatch:IsVictory(match);            
+            local hex = nil;
+            if(won == nil) then
                 hex = "ff999999";
             else
-                hex = match["won"] and "ff00cc66" or "ffff0000"
+                hex = won and "ff00cc66" or "ffff0000";
             end
-            local ratingText = ratingToText(match["rating"], match["ratingDelta"]) or "SKIRMISH";
+
+            -- Party Rating & Delta
+            local rating, ratingDelta = ArenaMatch:GetPartyRating(match), ArenaMatch:GetPartyRatingDelta(match);
+            local ratingText = ratingToText(rating, ratingDelta) or "SKIRMISH";
             button.Rating:SetText("|c" .. hex .. ratingText .."|r");
             
-            -- Team MMR
-            button.MMR:SetText(tonumber(match["mmr"]) or "-");
+            -- Party MMR
+            button.MMR:SetText(ArenaMatch:GetPartyMMR(match) or "-");
 
             -- Enemy Rating & Delta
-            local enemyRatingText = ratingToText(match["enemyRating"], match["enemyRatingDelta"]) or "-";
+            local enemyRating, enemyRatingDelta = ArenaMatch:GetEnemyRating(match), ArenaMatch:GetEnemyRatingDelta(match);
+            local enemyRatingText = ratingToText(enemyRating, enemyRatingDelta) or "-";
             button.EnemyRating:SetText(enemyRatingText);
 
             -- Enemy team MMR
-            button.EnemyMMR:SetText(tonumber(match["enemyMmr"]) or "-");
-            
-            button:SetAttribute("won", match["won"]);
+            button.EnemyMMR:SetText(ArenaMatch:GetEnemyMMR(match) or "-");
+
+            button:SetAttribute("won", ArenaMatch:IsVictory(match));
 
             local isSelected = Selection:isMatchSelected(matchIndex);
             button:SetAttribute("selected", isSelected);

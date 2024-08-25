@@ -52,8 +52,19 @@ end
 -------------------------------------------------------------------------
 -- Data Helpers
 
-function Helpers:GetFactionFromRaceID(raceID)
-
+-- Get Addon Race ID from unit
+function Helpers:GetUnitClass(unit)
+    local _,token = UnitClass(unit);
+    return InternalIDs:GetRaceIDByToken(token);
 end
 
+-- Get Addon Class ID from unit
+function Helpers:GetUnitClass(unit)
+    local _,token = UnitClass(unit);
+    return InternalIDs:GetAddonClassIDByToken(token);
+end
 
+function Helpers:GetClassIcon(spec_id)
+    local specInfo = InternalIDs:GetSpecInfo(spec_id);
+    return InternalIDs:GetClassIcon(specInfo and specInfo.classIndex);
+end

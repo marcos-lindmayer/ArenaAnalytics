@@ -97,7 +97,7 @@ function Selection:isMatchesSameSession(index, otherIndex)
         return false;
     end
 
-    return match["session"] == otherMatch["session"];
+    return ArenaMatch:GetSession(match) == ArenaMatch:GetSession(otherMatch);
 end
 
 function Selection:isMatchSelected(matchIndex)
@@ -117,13 +117,13 @@ local function selectRange(startIndex, endIndex, includeStartSession, includeEnd
         return;
     end
 
-    local startSession = ArenaAnalytics:GetFilteredMatch(startIndex)["session"]
-    local endSession = ArenaAnalytics:GetFilteredMatch(endIndex)["session"]
+    local startSession = ArenaMatch:GetSession(ArenaAnalytics:GetFilteredMatch(startIndex));
+    local endSession = ArenaMatch:GetSession(ArenaAnalytics:GetFilteredMatch(endIndex));
     
     for i = minIndex, maxIndex do
         -- Skip matches that belong to the same session as the start and end index,
         -- unless includeStartSession or includeEndSession is true
-        local session = ArenaAnalytics:GetFilteredMatch(i)["session"];
+        local session = ArenaMatch:GetSession(ArenaAnalytics:GetFilteredMatch(i));
         local isStartSession = session == startSession;
         local isEndSession = session == endSession;
         if ((includeStartSession and (isStartSession or not isEndSession)) or (includeEndSession and isEndSession)) then
@@ -139,7 +139,10 @@ local function selectSessionByIndex(index, autoCommit, isDeselect)
         return;
     end
 
-    local session = ArenaAnalytics:GetFilteredMatch(index)["session"]
+    local session = ArenaMatch:GetSession(ArenaAnalytics:GetFilteredMatch(index));
+    if(not session) then
+        return;
+    end
 
     -- Select or deselect the match at the given index using selectMatchByIndex
     selectMatchByIndex(index, autoCommit, isDeselect);
@@ -151,7 +154,7 @@ local function selectSessionByIndex(index, autoCommit, isDeselect)
     for _, delta in ipairs(deltas) do
         local i = index + delta
         local potentialMatch = ArenaAnalytics:GetFilteredMatch(i)
-        while potentialMatch and potentialMatch["session"] == session do
+        while session == ArenaMatch:GetSession(potentialMatch) do
             selectMatchByIndex(i, autoCommit, isDeselect);
             i = i + delta;
             potentialMatch = ArenaAnalytics:GetFilteredMatch(i);

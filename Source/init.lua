@@ -4,7 +4,7 @@ local _, ArenaAnalytics = ...; -- Namespace
 ArenaAnalytics.Constants = {};
 ArenaAnalytics.SpecSpells = {};
 ArenaAnalytics.ArenaMatch = {};
-ArenaAnalytics.SpecIDs = {};
+ArenaAnalytics.Internal = {};
 
 ArenaAnalytics.Helpers = {};
 ArenaAnalytics.API = {};
@@ -79,7 +79,7 @@ ArenaAnalytics.commands = {
 			if(duration > 0) then
 				totalDurationInArenas = totalDurationInArenas + duration;
 
-				if(match["season"] == GetCurrentArenaSeason()) then
+				if(ArenaMatch:GetSeason(match) == GetCurrentArenaSeason()) then
 					currentSeasonTotalPlayed = currentSeasonTotalPlayed + duration;
 				end
 			end
@@ -124,14 +124,17 @@ ArenaAnalytics.commands = {
 
 		for i=1, #ArenaAnalyticsMatchHistoryDB do
 			local match = ArenaAnalyticsMatchHistoryDB[i];
-			local season = match and match["season"] or nil;
-			if(season == nil or season == 0) then
-				season = ArenaAnalytics:computeSeasonFromMatchDate(match["date"]);
+			local season = ArenaMatch:GetSeason(match);
+			local matchDate = ArenaMatch:GetDate(match);
+
+			if(not season or season == 0) then
+				season = ArenaAnalytics:computeSeasonFromMatchDate(matchDate);
 				if(season) then
 					ArenaAnalytics:Log("Updated season at index: ", i, " to season: ", season);
-					ArenaAnalyticsMatchHistoryDB[i]["season"] = season;
+					ArenaMatch:SetSeason(match, season);
 				else
-					ArenaAnalytics:Log("Updating seasons got nil season for date: ", date("%d/%m/%y %H:%M:%S", match["date"]), " (", match["date"], ")");
+					local formattedDate = tonumber(matchDate) and date("%d/%m/%y %H:%M:%S", matchDate);
+					ArenaAnalytics:Log("Updating seasons got nil season for date: ", formattedDate, " (", matchDate, ")");
 				end
 			end
 		end

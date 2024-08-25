@@ -502,7 +502,7 @@ function Import:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
             ["isRated"] = arena["isRated"],
             ["date"] = unixDate,
             ["season"] = ArenaAnalytics:computeSeasonFromMatchDate(unixDate),
-            ["map"] = Constants:GetMapKeyByID(tonumber(arena["zoneId"])), 
+            ["map"] = Constants:GetShortMapName(tonumber(arena["zoneId"])), 
             ["bracket"] = bracket,
             ["duration"] = tonumber(arena["duration"]) or 0,
             ["team"] = group,

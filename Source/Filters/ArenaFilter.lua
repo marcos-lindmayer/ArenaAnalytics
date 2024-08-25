@@ -6,6 +6,7 @@ local Options = ArenaAnalytics.Options;
 local Search = ArenaAnalytics.Search;
 local Selection = ArenaAnalytics.Selection;
 local AAtable = ArenaAnalytics.AAtable;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 
@@ -157,7 +158,7 @@ local function doesMatchPassFilter_Map(match)
         currentFilters["Filter_Map"] = filterMap;
     end
 
-    return match["map"] == filterMap;
+    return ArenaMatch:GetMapID(match) == filterMap;
 end
 
 -- check bracket filter
@@ -168,7 +169,7 @@ local function doesMatchPassFilter_Bracket(match)
         return true;
     end
     
-    return match["bracket"] == currentFilters["Filter_Bracket"];
+    return ArenaMatch:GetBracketIndex(match) == currentFilters["Filter_Bracket"];
 end
 
 -- check season filter
@@ -181,7 +182,7 @@ local function doesMatchPassFilter_Date(match)
     if(value == "all time" or value == "") then
         return true;
     elseif(value == "current session") then        
-        return match["session"] == ArenaAnalytics:GetLatestSession();
+        return ArenaMatch:GetSession(match) == ArenaAnalytics:GetLatestSession();
     elseif(value == "last day") then
         seconds = 86400;
     elseif(value == "last week") then
@@ -196,7 +197,7 @@ local function doesMatchPassFilter_Date(match)
         seconds = 31536000;
     end
 
-    return match["date"] > (time() - seconds);
+    return (ArenaMatch:GetDate(match) or 0) > (time() - seconds);
 end
 
 -- check season filter
@@ -210,10 +211,10 @@ local function doesMatchPassFilter_Season(match)
     end
     
     if(season == "Current Season") then
-        return match["season"] == GetCurrentArenaSeason();
+        return ArenaMatch:GetSeason(match) == GetCurrentArenaSeason();
     end
     
-    return match["season"] == tonumber(season);
+    return ArenaMatch:GetSeason(match) == tonumber(season);
 end
 
 -- check comp filters (comp / enemy comp)
@@ -230,12 +231,16 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
         return true;
     end
     
-    local compKey = isEnemyComp and "enemyComp" or "comp";
-    return match[compKey] == currentFilters[compFilterKey];
+    return ArenaMatch:GetComp(match, isEnemyComp) == currentFilters[compFilterKey];
 end
 
 function Filters:doesMatchPassGameSettings(match)
-    if (not Options:Get("showSkirmish") and not match["isRated"]) then
+    local matchType = ArenaMatch:GetMatchType(match);
+    if (not Options:Get("showSkirmish") and matchType == "skirmish") then
+        return false;
+    end
+
+    if (not Options:Get("showWarGames") and matchType == "wargame") then
         return false;
     end
 
@@ -343,17 +348,21 @@ local function findOrAddCompValues(compsTable, comp, isWin, mmr)
     end
 end
 
-local function AddToCompData(compKey, match)
-    assert(compKey and transientCompData[compKey] and match);
-
+local function AddToCompData(match, isEnemyTeam)
+    assert(match);
+    local compKey = isEnemyTeam and "Filter_EnemyComp" or "Filter_Comp";
+    assert(transientCompData[compKey]);
+    
+    local isWin = ArenaMatch:IsVictory(match);
+    local mmr = ArenaMatch:GetPartyMMR(match);
+    
     -- Add to "All" data
-    findOrAddCompValues(transientCompData[compKey], "All", match["won"], match["mmr"]);
+    findOrAddCompValues(transientCompData[compKey], "All", isWin, mmr);
     
     -- Add comp specific data
-    local matchCompKey = (compKey == "Filter_Comp") and "comp" or "enemyComp";
-    local comp = match[matchCompKey];
+    local comp = ArenaMatch:GetComp(match, isEnemyTeam);
     if(comp ~= nil) then
-        findOrAddCompValues(transientCompData[compKey], comp, match["won"], match["mmr"]);
+        findOrAddCompValues(transientCompData[compKey], comp, isWin, mmr);
     end
 end
 
@@ -393,7 +402,7 @@ local function UpdateFilteredSessions()
 
         ArenaAnalytics.filteredMatchHistory["filteredSession"] = session;
 
-        if not prev or prev["session"] ~= current["session"] then
+        if not prev or ArenaMatch:GetSession(prev) ~= ArenaMatch:GetSession(current) then
             session = session + 1;
         end
     end

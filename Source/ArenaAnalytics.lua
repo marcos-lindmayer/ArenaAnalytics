@@ -10,6 +10,7 @@ local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
 local Options = ArenaAnalytics.Options;
 local Helpers = ArenaAnalytics.Helpers;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 -- Character SavedVariables match history
@@ -104,12 +105,14 @@ function ArenaAnalytics:RecomputeSessionsForMatchHistory()
 	for i = 1, #ArenaAnalyticsMatchHistoryDB do
 		local current = ArenaAnalytics:GetMatch(i);
 		local prev = ArenaAnalytics:GetMatch(i - 1);
+		
+		if(prev and current) then
+			if(not ArenaAnalytics:IsMatchesSameSession(prev, current)) then
+				session = session + 1;
+			end
 
-		if(prev and not ArenaAnalytics:IsMatchesSameSession(prev, current)) then
-			session = session + 1;
+			ArenaMatch:SetSession(current, session);
 		end
-
-		current["session"] = session;
 	end
 
 	ArenaAnalytics:UpdateLastSession();
@@ -119,8 +122,7 @@ function ArenaAnalytics:ResortGroupsInMatchHistory()
 	for i=1, #ArenaAnalyticsMatchHistoryDB do
 		local match = ArenaAnalytics:GetMatch(i);
 		if(match) then
-			ArenaAnalytics:SortGroup(match["team"], true, match["player"]);
-			ArenaAnalytics:SortGroup(match["enemyTeam"], false, match["player"]);
+			ArenaMatch:SortGroups(match);
 		end
 	end
 end
@@ -160,7 +162,10 @@ function ArenaAnalytics:IsMatchesSameSession(arena1, arena2)
 		return false;
 	end
 
-	if(arena2["date"] - arena1["date"] > 3600) then
+	local date1 = ArenaMatch:GetDate(arena1) or 0;
+	local date2 = ArenaMatch:GetDate(arena2) or 0;
+
+	if(date2 - date1 > 3600) then
 		return false;
 	end
 	
@@ -183,21 +188,27 @@ end
 
 -- Checks if 2 arenas have the same party members
 function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
-    if(arena1["bracket"] ~= arena2["bracket"]) then
+    if(not arena1 or not arena2) then
         return false;
     end
 
-    if(not arena1 or not arena2 or not arena1["team"] or not arena2["team"]) then
-        return false;
-    end
+	local team1, team2 = ArenaMatch:GetTeam(arena1), ArenaMatch:GetTeam(arena2);
+	if(not team1 or not team2) then
+		return false;
+	end
+	
+	local bracket1, bracket2 = ArenaMatch:GetBracketIndex(arena1), ArenaMatch:GetBracketIndex(arena2);
+	if(not bracket1 or bracket1 ~= bracket2) then
+		return false;
+	end
 
 	-- In case one team is smaller, make sure we loop through that one.
-	local teamOneIsSmaller = (#arena1["team"] < #arena2["team"]);
-	local smallerTeam = teamOneIsSmaller and arena1["team"] or arena2["team"];
-	local largerTeam = teamOneIsSmaller and arena2["team"] or arena1["team"];
+	local teamOneIsSmaller = (#team1 < #team2);
+	local smallerTeam = teamOneIsSmaller and team1 or team2;
+	local largerTeam = teamOneIsSmaller and team2 or team1;
 
 	for _,player in ipairs(smallerTeam) do
-		local playerName = player["name"];
+		local playerName = ArenaMatch:GetPlayerName(smallerTeam, player);
 		if (playerName) then
 			if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, playerName)) then
 				return false;
@@ -216,7 +227,8 @@ function ArenaAnalytics:GetLastMatch(ignoreInvalidDate)
 	if(not ignoreInvalidDate) then
 		for i=#ArenaAnalyticsMatchHistoryDB, 1, -1 do
 			local match = ArenaAnalytics:GetMatch(i);
-			if(match and tonumber(match["date"]) and match["date"] > 0) then
+			local date = ArenaMatch:GetDate(match);
+			if(date and date > 0) then
 				return match;
 			end
 		end
@@ -227,23 +239,25 @@ function ArenaAnalytics:GetLastMatch(ignoreInvalidDate)
 end
 
 function ArenaAnalytics:ShouldSkipMatchForSessions(match)
-	-- Invalid match
+	-- Invalid match Check
 	if(match == nil) then
 		return true;
 	end
 
-	-- Invalid session
+	-- Invalid session Check
 	if(tonumber(session) == nil) then
 		return true;
 	end
 
-	-- Invalid date
-	if(tonumber(match["date"]) and tonumber(match["date"]) > 0) then
+	-- Invalid date Check
+	local date = ArenaMatch:GetDate(match);
+	if(date and date > 0) then
 		return true;
 	end
 
-	-- Invalid comp, missing players
-	if(not match["party"] or #match["party"] < ArenaAnalytics:getTeamSizeFromBracket(match["bracket"])) then
+	-- Invalid comp check (Missing players)
+	local team = ArenaMatch:GetTeam(match);
+	if(not team or #team < ArenaMatch:GetTeamSize(match)) then
 		return true;
 	end
 
@@ -256,8 +270,8 @@ function ArenaAnalytics:GetLatestSession()
 	for i=#ArenaAnalyticsMatchHistoryDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
 		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
-			local session = match["session"];
-			local expired = (time() - match["date"]) > 3600;
+			local session = ArenaMatch:GetSession(match);
+			local expired = (time() - ArenaMatch:GetDate(match)) > 3600;
 			return session, expired;
 		end
 	end
@@ -272,15 +286,21 @@ function ArenaAnalytics:GetLatestSessionStartAndEndTime()
 		local match = ArenaAnalytics:GetMatch(i);
 
 		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
+			local date = ArenaMatch:GetDate(match);
+			local session = ArenaMatch:GetSession(match);
+
 			if(lastSession == nil) then
-				lastSession = tonumber(match["session"]);
-				local testEndTime = match["date"] + match["duration"];
-				expired = (time() - testEndTime) > 3600;
+				lastSession = session;
+
+				local duration = ArenaMatch:GetDuration(match);
+				local testEndTime = duration and date + duration or date;
+
+				expired = testEndTime and (time() - testEndTime) > 3600 or true;
 				endTime = expired and testEndTime or time();
 			end
 
-			if(lastSession == tonumber(match["session"])) then
-				bestStartTime = match["date"];
+			if(lastSession == session) then
+				bestStartTime = date;
 			else
 				break;
 			end
@@ -294,8 +314,9 @@ end
 function ArenaAnalytics:GetLatestSeason()
 	for i = #ArenaAnalyticsMatchHistoryDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
-		if(match ~= nil and match["season"] and match["season"] ~= 0) then
-			return tonumber(match["season"]);
+		local season = ArenaMatch:GetSeason(match);
+		if(season and season > 0) then
+			return season;
 		end
 	end
 
@@ -304,18 +325,23 @@ end
 
 -- Returns last saved rating on selected bracket (teamSize)
 function ArenaAnalytics:GetLatestRating(teamSize)
-	local bracket = ArenaAnalytics:getBracketFromTeamSize(teamSize);
-
-	for i = #ArenaAnalyticsMatchHistoryDB, 1, -1 do
-		local match = ArenaAnalytics:GetMatch(i);
-		if(match ~= nil and match["bracket"] == bracket and match["rating"] ~= "SKIRMISH") then
-			return tonumber(match["rating"]);
+	local targetBracket = ArenaAnalytics:getBracketFromTeamSize(teamSize);
+	if(targetBracket ~= nil) then
+		for i = #ArenaAnalyticsMatchHistoryDB, 1, -1 do
+			local match = ArenaAnalytics:GetMatch(i);
+			local rating = ArenaMatch:GetPartyRating(match);
+			local bracket = ArenaMatch:GetBracket(match);
+			if(rating and bracket == targetBracket) then
+				return rating;
+			end
 		end
 	end
 
 	return 0;
 end
 
+-- TODO: Replace with ArenaMatch:SortGroup(match)
+-- TODO: Look into use cases, determine if new data structure affects this
 function ArenaAnalytics:SortGroup(group, isPlayerPriority, playerFullName)
 	if(not group or #group == 0) then
 		return;
@@ -435,78 +461,71 @@ end
 -- Calculates arena duration, turns arena data into friendly strings, adds it to ArenaAnalyticsMatchHistoryDB
 -- and triggers a layout refresh on ArenaAnalytics.AAtable
 function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
-	local hasStartTime = tonumber(newArena["startTime"]) and newArena["startTime"] > 0;
+	local hasStartTime = tonumber(newArena.startTime) and newArena.startTime > 0;
 	if(not hasStartTime) then
 		-- At least get an estimate for the time of the match this way.
-		newArena["startTime"] = time();
-		ArenaAnalytics:Log("Force fixed start time at match end.");
 	end
-
+	
 	-- Calculate arena duration
 	if (not hasStartTime) then
-		newArena["duration"] = 0;
+		ArenaAnalytics:Log("Force fixed start time at match end.");
+		newArena.startTime = time();
+		newArena.duration = 0;
 	else
-		newArena["endTime"] = time();
-		local duration = (newArena["endTime"] - newArena["startTime"]);
+		newArena.endTime = time();
+		local duration = (newArena.endTime - newArena.startTime);
 		duration = duration < 0 and 0 or duration;
-		newArena["duration"] = duration;
+		newArena.duration = duration;
 	end
 
-	-- Set data for skirmish
-	if (newArena["isRated"] == false) then
-		newArena["partyRating"] = "SKIRMISH";
-		newArena["partyMMR"] = "-";
-		newArena["partyRatingDelta"] = nil;
-		newArena["enemyRating"] = "-";
-		newArena["enemyRatingDelta"] = nil;
-		newArena["enemyMMR"] = "-";
+	local matchType = nil;
+	if(newArena.isRated) then
+		matchType = "rated";
+	elseif(newArena.isWargame) then
+		matchType = "wargame";
+	else
+		matchType = "skirmish";
 	end
 
-	local playerName = Helpers:GetPlayerName();
-
-	ArenaAnalytics:SortGroup(newArena["party"], true, playerName);
-	ArenaAnalytics:SortGroup(newArena["enemy"], false, playerName);
-
-	-- Get arena comp for each team
-	newArena["comp"] = AAmatch:GetArenaComp(newArena["party"], newArena["size"]);
-	newArena["enemyComp"] = AAmatch:GetArenaComp(newArena["enemy"], newArena["size"]);
-	
 	local season = GetCurrentArenaSeason();
 	if (season == 0) then
 		ArenaAnalytics:Log("Failed to get valid season for new match.");
 	end
 
 	-- Setup table data to insert into ArenaAnalyticsMatchHistoryDB
-	local arenaData = {
-		["player"] = newArena["playerName"],
-		["isRated"] = newArena["isRated"],
-		["date"] = tonumber(newArena["startTime"]) or time(),
-		["season"] = season,
-		["session"] = nil,
-		["map"] = Constants:GetMapKeyByID(newArena["mapId"]), 
-		["bracket"] = ArenaAnalytics:getBracketFromTeamSize(newArena["size"]),
-		["duration"] = newArena["duration"],
-		["team"] = newArena["party"],
-		["rating"] = tonumber(newArena["partyRating"]), 
-		["ratingDelta"] = tonumber(newArena["partyRatingDelta"]),
-		["mmr"] = tonumber(newArena["partyMMR"]), 
-		["enemyTeam"] = newArena["enemy"], 
-		["enemyRating"] = tonumber(newArena["enemyRating"]), 
-		["enemyRatingDelta"] = tonumber(newArena["enemyRatingDelta"]),
-		["enemyMmr"] = tonumber(newArena["enemyMMR"]),
-		["comp"] = newArena["comp"],
-		["enemyComp"] = newArena["enemyComp"],
-		["won"] = newArena["wonByPlayer"],
-		["firstDeath"] = ArenaTracker:GetFirstDeathFromCurrentArena();
-	}
+	local arenaData = { }
+	ArenaMatch:SetDate(arenaData, newArena.startTime);
+	ArenaMatch:SetDuration(arenaData, newArena.duration);
+	ArenaMatch:SetMap(arenaData, newArena.mapId);
+	ArenaMatch:SetBracket(arenaData, newArena.bracket);
+	ArenaMatch:SetMatchType(arenaData, matchType);
 
+	if (newArena.isRated) then
+		ArenaMatch:SetPartyRating(arenaData, newArena.rating);
+		ArenaMatch:SetPartyRatingDelta(arenaData, newArena.partyRatingDelta);
+		ArenaMatch:SetPartyMMR(arenaData, newArena.partyMMR);
+
+		ArenaMatch:SetEnemyRating(arenaData, newArena.enemyRating);
+		ArenaMatch:SetEnemyRatingDelta(arenaData, newArena.enemyRatingDelta);
+		ArenaMatch:SetEnemyMMR(arenaData, newArena.enemyMMR);
+	end
+
+	ArenaMatch:SetSeason(arenaData, oldArena.season);
+	
+	ArenaMatch:SetVictory(arenaData, newArena.won);
+	ArenaMatch:SetSelf(arenaData, newArena.player);
+	ArenaMatch:SetFirstDeath(arenaData, newArena.firstDeath);
+
+	-- Add players from both teams sorted, and assign comps.
+	ArenaMatch:AddPlayers(match, newArena.players);
+	
 	-- Assign session
 	local session = ArenaAnalytics:GetLatestSession();
 	local lastMatch = ArenaAnalytics:GetLastMatch(false);
 	if (not ArenaAnalytics:IsMatchesSameSession(lastMatch, arenaData)) then
 		session = session + 1;
 	end
-	arenaData["session"] = session;
+	ArenaMatch:SetSession(arenaData, oldArena.session);
 	ArenaAnalytics.lastSession = session;
 
 	-- Insert arena data as a new ArenaAnalyticsMatchHistoryDB entry

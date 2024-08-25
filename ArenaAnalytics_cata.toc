@@ -25,6 +25,8 @@ Source/UI/ArenaMatchSelection.lua
 Source/UI/ArenaTooltips.lua
 Source/UI/ArenaIcon.lua
 
+Source/Data/ArenaInternalIDs.lua
+Source/Data/ArenaMatch.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaSpecSpells_Cata.lua
 
