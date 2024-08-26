@@ -386,10 +386,6 @@ function VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB()
             ArenaMatch:SetSession(convertedArena, oldArena["session"]);
 
             ArenaMatch:SetVictory(convertedArena, oldArena["won"]);
-            ArenaMatch:SetSelf(convertedArena, oldArena["player"]);
-            ArenaMatch:SetFirstDeath(convertedArena, oldArena["firstDeath"]);
-
-            --ArenaMatch:PrepareTeams(match);
 
             -- Add team
             for _,player in ipairs(oldArena["team"]) do
@@ -399,15 +395,18 @@ function VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB()
                 
                 ArenaMatch:AddPlayer(convertedArena, false, name, race, class, spec, kills, deaths, damage, healing);
             end
-
+            
             -- Add enemy team
             for _,player in ipairs(oldArena["enemyTeam"]) do
                 local name = player.name;
                 local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
                 local race, class, spec = ConvertValues(player.race, player.class, player.spec);
-
+                
                 ArenaMatch:AddPlayer(convertedArena, true, name, race, class, spec, kills, deaths, damage, healing);
             end
+
+            ArenaMatch:SetSelf(convertedArena, oldArena["player"]);
+            ArenaMatch:SetFirstDeath(convertedArena, oldArena["firstDeath"]);
 
             -- Comps
             ArenaMatch:UpdateComps(convertedArena);
@@ -415,6 +414,8 @@ function VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB()
             tinsert(ArenaAnalyticsMatchHistoryDB, convertedArena);
         end
     end
+
+    MatchHistoryDB = nil;
 end
 
 function VersionManager:FinalizeConversionAttempts()

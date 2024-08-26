@@ -4,6 +4,7 @@ local Selection = ArenaAnalytics.Selection;
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
 local AAtable = ArenaAnalytics.AAtable;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 ------------------------------------------------------------------
 
@@ -139,7 +140,8 @@ local function selectSessionByIndex(index, autoCommit, isDeselect)
         return;
     end
 
-    local session = ArenaMatch:GetSession(ArenaAnalytics:GetFilteredMatch(index));
+    local clickedMatch = ArenaAnalytics:GetFilteredMatch(index);
+    local session = ArenaMatch:GetSession(clickedMatch);
     if(not session) then
         return;
     end

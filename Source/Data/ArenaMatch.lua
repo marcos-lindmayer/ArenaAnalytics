@@ -11,37 +11,38 @@ local matchTypes = { "rated", "skirmish", "wargame" }
 local brackets = { "2v2", "3v3", "5v5", "shuffle" }
 
 local matchKeys = {
-    ["date"] = 1,
-    ["duration"] = 2,
-    ["map"] = 3,
-    ["bracket"] = 4,
-    ["match_type"] = 5,
-    ["rating"] = 6,
-    ["rating_delta"] = 7,
-    ["mmr"] = 8,
-    ["enemy_rating"] = 9,
-    ["enemy_rating_delta"] = 10,
-    ["enemy_mmr"] = 11,
-    ["season"] = 12,
-    ["session"] = 13,
-    ["won"] = 14,
-    ["self"] = 15,
-    ["first_death"] = 16,
-    ["team"] = 17,
-    ["enemy"] = 18,
-    ["comp"] = 19,
-    ["enemy_comp"] = 20,
+    date = 0,
+    duration = -1,
+    map = -2,
+    bracket = -3,
+    match_type = -4,
+    rating = -5,
+    rating_delta = -6,
+    mmr = -7,
+    enemy_rating = -8,
+    enemy_rating_delta = -9,
+    enemy_mmr = -10,
+    season = -11,
+    session = -12,
+    won = -13,
+    team = -14,
+    enemy_team = -15,
+    comp = -16,
+    enemy_comp = -17,
 }
 
 local playerKeys = {
-    ["name"] = 1,
-    ["race"] = 2,
-    ["spec_id"] = 3,
-    ["deaths"] = 4,
-    ["kills"] = 5,
-    ["healing"] = 6,
-    ["damage"] = 7,
-    ["wins"] = 8,
+    name = 0,
+    realm = -1,
+    is_self = -2,
+    is_first_death = -3,
+    race = -4,
+    spec_id = -5,
+    deaths = -6,
+    kills = -7,
+    healing = -8,
+    damage = -9,
+    wins = -10,
 }
 
 -------------------------------------------------------------------------
@@ -50,21 +51,24 @@ local playerKeys = {
 local function ToPositiveNumber(value, allowZero)
     value = tonumber(value);
     if(not value) then
-        return nil;
+        return;
     end
 
     value = Round(value);
 
     if(value == 0) then
-        return allowZero and 0 or nil;
+        if(not allowZero) then
+            return;
+        end
+        return 0;
     end
 
-    return value > 0 and value;
+    return (value > 0) and value;
 end
 
 local function ToNumericalBool(value)
     if(value == nil) then
-        return nil;
+        return;
     end
     return (value and value ~= 0) and 1 or 0;
 end
@@ -77,14 +81,14 @@ function ArenaMatch:GetDate(match)
         return nil 
     end;
     
-    local key = matchKeys["date"];
+    local key = matchKeys.date;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetDate(match, value)
     assert(match);
 
-    local key = matchKeys["date"];
+    local key = matchKeys.date;
     match[key] = ToPositiveNumber(value);
 end
 
@@ -96,14 +100,14 @@ function ArenaMatch:GetDuration(match)
         return nil 
     end;
     
-    local key = matchKeys["duration"];
+    local key = matchKeys.duration;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetDuration(match, value)
     assert(match);
 
-    local key = matchKeys["duration"];
+    local key = matchKeys.duration;
     match[key] = ToPositiveNumber(value, true);
 end
 
@@ -115,7 +119,7 @@ function ArenaMatch:GetMapID(match)
         return nil 
     end;
     
-    local key = matchKeys["map"];
+    local key = matchKeys.map;
     return match and tonumber(match[key]);
 end
 
@@ -131,14 +135,14 @@ function ArenaMatch:SetMapID(match, value)
         value = Constants:GetMapIdByKey(mapKey);
     end
 
-    local key = matchKeys["map"];
+    local key = matchKeys.map;
     match[key] = tonumber(value);
 end
 
 function ArenaMatch:SetMap(match, value)
     assert(match);
 
-    local key = matchKeys["map"];
+    local key = matchKeys.map;
     mapId = tonumber(value) or Constants:GetMapIdByKey(value);
     match[key] = tonumber(mapId);
 end
@@ -151,7 +155,7 @@ function ArenaMatch:GetBracketIndex(match)
         return nil 
     end;
     
-    local key = matchKeys["bracket"];
+    local key = matchKeys.bracket;
     return match and tonumber(match[key]);
 end
 
@@ -167,13 +171,13 @@ end
 function ArenaMatch:SetBracketIndex(match, value)
     assert(match);
 
-    local key = matchKeys["bracket"];
+    local key = matchKeys.bracket;
     match[key] = tonumber(value);
 end
 
 function ArenaMatch:SetBracket(match, value)
     assert(match);
-    local key = matchKeys["bracket"];
+    local key = matchKeys.bracket;
 
     value = Helpers:ToSafeLower(value);
     for index,bracket in ipairs(brackets) do
@@ -196,14 +200,14 @@ function ArenaMatch:GetMatchType(match)
         return nil 
     end;
     
-    local key = matchKeys["match_type"];
+    local key = matchKeys.match_type;
     local typeKey = match and tonumber(match[key]);
     return typeKey and matchTypes[typeKey];
 end
 
 function ArenaMatch:SetMatchType(match, value)
     assert(match);
-    local key = matchKeys["match_type"];
+    local key = matchKeys.match_type;
     
     value = Helpers:ToSafeLower(value);
     for index,matchType in ipairs(matchTypes) do
@@ -225,14 +229,14 @@ function ArenaMatch:GetPartyRating(match)
         return nil 
     end;
     
-    local key = matchKeys["rating"];
+    local key = matchKeys.rating;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetPartyRating(match, value)
     assert(match);
 
-    local key = matchKeys["rating"];
+    local key = matchKeys.rating;
     match[key] = ToPositiveNumber(value, true);
 end
 
@@ -244,14 +248,14 @@ function ArenaMatch:GetPartyRatingDelta(match)
         return nil 
     end;
     
-    local key = matchKeys["rating_delta"];
+    local key = matchKeys.rating_delta;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetPartyRatingDelta(match, value)
     assert(match);
 
-    local key = matchKeys["rating_delta"];
+    local key = matchKeys.rating_delta;
     match[key] = ToPositiveNumber(value, false);
 end
 
@@ -263,14 +267,14 @@ function ArenaMatch:GetPartyMMR(match)
         return nil 
     end;
     
-    local key = matchKeys["mmr"];
+    local key = matchKeys.mmr;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetPartyMMR(match, value)
     assert(match);
 
-    local key = matchKeys["mmr"];
+    local key = matchKeys.mmr;
     match[key] = ToPositiveNumber(value, true);
 end
 
@@ -282,14 +286,14 @@ function ArenaMatch:GetEnemyRating(match)
         return nil 
     end;
     
-    local key = matchKeys["enemy_rating"];
+    local key = matchKeys.enemy_rating;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetEnemyRating(match, value)
     assert(match);
 
-    local key = matchKeys["enemy_rating"];
+    local key = matchKeys.enemy_rating;
     match[key] = ToPositiveNumber(value, true);
 end
 
@@ -301,14 +305,14 @@ function ArenaMatch:GetEnemyRatingDelta(match)
         return nil 
     end;
     
-    local key = matchKeys["enemy_rating_delta"];
+    local key = matchKeys.enemy_rating_delta;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetEnemyRatingDelta(match, value)
     assert(match);
 
-    local key = matchKeys["enemy_rating_delta"];
+    local key = matchKeys.enemy_rating_delta;
     match[key] = ToPositiveNumber(value, false);
 end
 
@@ -320,14 +324,14 @@ function ArenaMatch:GetEnemyMMR(match)
         return nil 
     end;
     
-    local key = matchKeys["enemy_mmr"];
+    local key = matchKeys.enemy_mmr;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetEnemyMMR(match, value)
     assert(match);
 
-    local key = matchKeys["enemy_mmr"];
+    local key = matchKeys.enemy_mmr;
     match[key] = ToPositiveNumber(value, true);
 end
 
@@ -339,14 +343,13 @@ function ArenaMatch:GetSeason(match)
         return nil 
     end;
     
-    local key = matchKeys["season"];
-    return match and tonumber(match[key]);
+    return tonumber(match[matchKeys.season]);
 end
 
 function ArenaMatch:SetSeason(match, value)
     assert(match);
 
-    local key = matchKeys["season"];
+    local key = matchKeys.season;
     match[key] = ToPositiveNumber(value, true);
 end
 
@@ -358,23 +361,19 @@ function ArenaMatch:GetSession(match)
         return nil 
     end;
     
-    local key = matchKeys["session"];
-    return match and tonumber(match[key]);
+    return tonumber(match[matchKeys.session]);
 end
 
 function ArenaMatch:SetSession(match, value)
     assert(match);
-
-    local key = matchKeys["session"];
-    match[key] = ToPositiveNumber(value, true);
+    match[matchKeys.session] = ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
 -- Victory (14)
 
 function ArenaMatch:IsVictory(match)
-    local key = matchKeys["won"];
-    local isWin = match and tonumber(match[key]);
+    local isWin = match and tonumber(match[matchKeys.won]);
     if(isWin == nil) then
         return nil;
     end
@@ -385,68 +384,26 @@ end
 function ArenaMatch:SetVictory(match, value)
     assert(match);
 
-    local key = matchKeys["won"];
-    match[key] = ToNumericalBool(value);
-end
-
--------------------------------------------------------------------------
--- Self (15)
-
-function ArenaMatch:GetSelf(match)
-    if(not match) then 
-        return nil 
-    end;
-    
-    local key = matchKeys["self"];
-    return match and match[key];
-end
-
-function ArenaMatch:SetSelf(match, value)
-    assert(match);
-
-    local key = matchKeys["self"];
-    match[key] = value;
-end
-
--------------------------------------------------------------------------
--- First Death (16)
-
-function ArenaMatch:GetFirstDeath(match)
-    if(not match) then 
-        return nil 
-    end;
-    
-    local key = matchKeys["first_death"];
-    return match[key];
-end
-
-function ArenaMatch:SetFirstDeath(match, value)
-    assert(match);
-
-    local player = ArenaMatch:GetSelf(match);
-    if(value == player) then
-        value = player;
-    end
-    
-    local key = matchKeys["first_death"];
-    match[key] = value;
+    match[matchKeys.won] = ToNumericalBool(value);
 end
 
 -------------------------------------------------------------------------
 -- Team (17)
 
-function ArenaMatch:PrepareTeams(match)
-    assert(match);
+local function SetPlayerValue(match, player, key, value)
+    assert(match and player);
 
-    local teamKey, enemyTeamKey = matchKeys["enemy_team"], matchKeys["team"];
-    match[teamKey] = match[teamKey] or {};
-    match[enemyTeamKey] = match[enemyTeamKey] or {};
+    -- Convert the key
+    key = key and playerKeys[key];
+    assert(key);
+
+    if(value ~= nil) then
+        player[key] = value;
+    end
 end
 
 function ArenaMatch:AddPlayers(match, players)
     assert(match and players);
-    
-    --ArenaMatch:PrepareTeams(match);
 
     for _,player in ipairs(players) do
         ArenaMatch:AddPlayer(match, player.isEnemy, player.name, player.race, player.class, player.spec, player.kills, player.deaths, player.damage, player.healing);
@@ -456,43 +413,68 @@ function ArenaMatch:AddPlayers(match, players)
     ArenaMatch:UpdateComps(match);
 end
 
-function ArenaMatch:AddPlayer(match, isEnemyTeam, name, raceID, classID, spec_id, kills, deaths, damage, healing)
+function ArenaMatch:AddPlayer(match, isEnemyTeam, fullName, raceID, classID, spec_id, kills, deaths, damage, healing)
     assert(match);
-    ArenaAnalytics:Log("Adding player:", isEnemyTeam, name, raceID, classID, spec_id, kills, deaths, damage, healing)
 
-    if(name ~= nil) then
-        local selfKey = matchKeys["self"];
-        local myName = selfKey and match[selfKey];
-        if(myName) then
-            if(name == myName) then
-                name = 0;
-            else
-                local realm = myName:match("%-.+");
-                if(realm and realm ~= "" and name:find(realm)) then
-                    name = (name:match("^[^-]+") or name) .. '-' .. realm;
-                end
-            end
-        end
-    else
+    if(fullName == nil) then
         ArenaAnalytics:Log("Warning: Adding player to stored match without name!");
     end
-
+    
+    local name, realm = ArenaAnalytics:GetNameAndRealm(fullName, true);
+    
     local newPlayer = {}
-    newPlayer[playerKeys["name"]] = name;
-    newPlayer[playerKeys["race"]] = tonumber(raceID);
-    newPlayer[playerKeys["spec_id"]] = tonumber(spec_id) or tonumber(classID);
-    newPlayer[playerKeys["kills"]] = tonumber(kills);
-    newPlayer[playerKeys["deaths"]] = tonumber(deaths);
-    newPlayer[playerKeys["damage"]] = tonumber(damage);
-    newPlayer[playerKeys["healing"]] = tonumber(healing);
-    newPlayer[playerKeys["wins"]] = tonumber(wins);
+    SetPlayerValue(match, newPlayer, "name", name);
+    SetPlayerValue(match, newPlayer, "realm", realm);
+    SetPlayerValue(match, newPlayer, "race", tonumber(raceID));
+    SetPlayerValue(match, newPlayer, "spec_id", (tonumber(spec_id) or tonumber(classID)));
+    SetPlayerValue(match, newPlayer, "kills", tonumber(kills));
+    SetPlayerValue(match, newPlayer, "deaths", tonumber(deaths));
+    SetPlayerValue(match, newPlayer, "damage", tonumber(damage));
+    SetPlayerValue(match, newPlayer, "healing", tonumber(healing));
+    SetPlayerValue(match, newPlayer, "wins", tonumber(wins));
     
-    
-    local teamKey = isEnemyTeam and matchKeys["enemy_team"] or matchKeys["team"];
+    local teamKey = isEnemyTeam and matchKeys.enemy_team or matchKeys.team;
     assert(teamKey);
 
     match[teamKey] = match[teamKey] or {}
     tinsert(match[teamKey], newPlayer);
+end
+
+-- Returns true if a value is set
+function ArenaMatch:SetTeamMemberValue(match, isEnemyTeam, playerName, key, value)
+    assert(match and playerName);
+    if(value == nil) then
+        return;
+    end
+
+    local team = ArenaMatch:GetTeam(match, isEnemyTeam);
+    if(not team) then
+        return;
+    end
+
+    key = key and playerKeys[key];
+    assert(key);
+
+    local name, realm = ArenaAnalytics:GetNameAndRealm(playerName, true);
+    if(not name) then
+        ArenaAnalytics:Log("Attempting to set team member value: ", key, value, " for invalid player name.");
+    end
+
+    for i,player in ipairs(team) do
+        local playerName, playerRealm = player[playerKeys.name], player[playerKeys.realm];
+        if(ArenaMatch:IsSamePlayer(player, name, realm)) then
+            player[key] = value;
+            return true;
+        end
+    end
+end
+
+function ArenaMatch:IsSamePlayer(player, otherName, otherRealm)
+    assert(player and otherName);
+
+    local playerName, playerRealm = player[playerKeys.name], player[playerKeys.realm];
+
+    return (playerName and playerName == otherName and playerRealm == otherRealm);
 end
 
 function ArenaMatch:GetTeam(match, isEnemyTeam)
@@ -500,7 +482,7 @@ function ArenaMatch:GetTeam(match, isEnemyTeam)
         return nil 
     end;
 
-    local key = isEnemyTeam and matchKeys["enemy_team"] or matchKeys["team"];
+    local key = isEnemyTeam and matchKeys.enemy_team or matchKeys.team;
     return key and match[key];
 end
 
@@ -538,11 +520,18 @@ function ArenaMatch:GetPlayerInfo(match, player, isEnemyTeam)
         return {};
     end
 
-    local spec_id = ArenaMatch:GetPlayerValue(match, player, "spec_id");
+    local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
     local class, spec = Constants:GetClassAndSpec(spec_id);
-    
+
+    local name = ArenaMatch:GetPlayerName(player);
+    local realm = ArenaMatch:GetPlayerName(player);
+
     local playerInfo = {
-        name = ArenaMatch:GetPlayerName(match, player),
+        is_self = ArenaMatch:GetPlayerValue(player, "is_self") == 1,
+        is_first_death = ArenaMatch:GetPlayerValue(player, "is_first_death") == 1,
+        name = name,
+        realm = realm,
+        fullName = ArenaAnalytics:CombineNameAndRealm(name, realm),
         race = ArenaMatch:GetPlayerValue(player, "race"),
         class = class,
         spec = spec,
@@ -557,55 +546,37 @@ function ArenaMatch:GetPlayerInfo(match, player, isEnemyTeam)
     return playerInfo;
 end
 
-function ArenaMatch:GetPlayerValue(match, player, key)
-    if(not match or not player) then 
-        return nil;
-    end
-    
-    if(key == nil) then
+function ArenaMatch:GetPlayerValue(player, key)
+    if(not player or not key) then 
         return nil;
     end
 
     if(key == "name") then
-        return ArenaMatch:GetPlayerName(match, player);
+        return ArenaMatch:GetPlayerName(player);
     end
 
     local playerKey = playerKeys[key];
     return playerKey and player[playerKey];
 end
 
-function ArenaMatch:GetComparisonValues(match, playerA, playerB, key)
-    assert(match and key);
-    local valueA = ArenaMatch:GetPlayerValue(match, playerA, key);
-    local valueB = ArenaMatch:GetPlayerValue(match, playerB, key);
+function ArenaMatch:GetComparisonValues(playerA, playerB, key)
+    assert(key);
+    local valueA = ArenaMatch:GetPlayerValue(playerA, key);
+    local valueB = ArenaMatch:GetPlayerValue(playerB, key);
     return valueA, valueB;
 end
 
-function ArenaMatch:GetPlayerName(match, player)
-    if(not match) then 
-        return nil 
-    end;
-
+function ArenaMatch:GetPlayerName(player)
     if(not player) then
         return "";
     end
 
-    local key = playerKeys["name"];
-    local name = key and player[key];
+    local name = player[playerKeys.name];
+    
+    local realm = ArenaAnalytics:GetRealm(player[playerKeys.realm]);
+    realm = realm and ("-" .. realm) or "";
 
-    if(not name) then
-        return "";
-    elseif(name == 0) then
-        local key = matchKeys["self"];
-        name = key and match[key] or "";
-    elseif(not name:find('-')) then
-        local key = matchKeys["self"];
-        local selfName = key and match[key] or "";
-        local realm = string.match(selfName, "%-.+") or "";
-        name = name .. realm;
-    end
-
-    return name;
+    return name .. realm;
 end
 
 local function GetTeamSpecs(team, size)
@@ -639,7 +610,7 @@ end
 function ArenaMatch:GetComp(match, isEnemyComp)
     assert(match);
 
-    local key = isEnemyComp and matchKeys["comp"] or matchKeys["enemyComp"];
+    local key = isEnemyComp and matchKeys.comp or matchKeys["enemyComp"];
     return key and match[key];
 end
 
@@ -691,9 +662,9 @@ function ArenaMatch:SortGroup(match, isEnemyTeam)
 	local name = playerFullName:match("^[^-]+");
 
     table.sort(group, function(playerA, playerB)
-        local classA, classB = ArenaMatch:GetComparisonValues(match, playerA, playerB, "class");
-        local specA, specB = ArenaMatch:GetComparisonValues(match, playerA, playerB, "spec");
-		local nameA, nameB = ArenaMatch:GetComparisonValues(match, playerA, playerB, "name");
+        local classA, classB = ArenaMatch:GetComparisonValues(playerA, playerB, "class");
+        local specA, specB = ArenaMatch:GetComparisonValues(playerA, playerB, "spec");
+		local nameA, nameB = ArenaMatch:GetComparisonValues(playerA, playerB, "name");
 		
         if(not isEnemyTeam) then
 			if(playerFullName) then
@@ -738,4 +709,73 @@ function ArenaMatch:SortGroup(match, isEnemyTeam)
 
         return priorityValueA < priorityValueB;
     end);
+end
+
+-------------------------------------------------------------------------
+-- Self
+
+function ArenaMatch:GetSelf(match)
+    if(not match) then 
+        return nil 
+    end;
+    
+    local team = ArenaMatch:GetTeam(match, false);
+    if(team) then
+        for i,player in ipairs(team) do
+            if(ArenaMatch:GetPlayerValue(match, player, "is_self") == 1) then
+                return ArenaMatch:GetPlayerInfo(match, player, false);
+            end
+        end
+    end
+end
+
+function ArenaMatch:SetSelf(match, fullName)
+    assert(match);
+
+    if(not fullName) then
+        return;
+    end
+
+    ArenaMatch:SetTeamMemberValue(match, false, fullName, "is_self", 1);
+end
+
+-------------------------------------------------------------------------
+-- First Death
+
+function ArenaMatch:GetFirstDeath(match)
+    if(not match) then 
+        return nil 
+    end;
+
+    local team = ArenaMatch:GetTeam(match, false);
+    if(team) then
+        for i,player in ipairs(team) do
+            if(ArenaMatch:GetPlayerValue(match, player, "is_first_death") == 1) then
+                return ArenaMatch:GetPlayerInfo(match, player, false);
+            end
+        end
+    end
+    
+    local enemyTeam = ArenaMatch:GetTeam(match, false);
+    if(enemyTeam) then
+        for i,player in ipairs(enemyTeam) do
+            if(ArenaMatch:GetPlayerValue(match, player, "is_first_death") == 1) then
+                return ArenaMatch:GetPlayerInfo(match, player, true);
+            end
+        end
+    end
+end
+
+function ArenaMatch:SetFirstDeath(match, fullName)
+    assert(match);
+
+    if(not fullName) then
+        return;
+    end
+
+    local success = ArenaMatch:SetTeamMemberValue(match, false, fullName, "is_first_death", 1);
+    
+    if(not success) then
+        ArenaMatch:SetTeamMemberValue(match, true, fullName, "is_first_death", 1);
+    end
 end

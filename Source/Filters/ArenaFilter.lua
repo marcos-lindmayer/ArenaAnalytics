@@ -394,18 +394,18 @@ local function FinalizeCompDataTables(compData)
     end
 end
 
-local function UpdateFilteredSessions()
-    local session = 1
-    for i = #ArenaAnalytics.filteredMatchHistory, 1, -1 do
-        local current = ArenaAnalytics:GetFilteredMatch(i);
-        local prev = ArenaAnalytics:GetFilteredMatch(i - 1);
-
-        ArenaAnalytics.filteredMatchHistory["filteredSession"] = session;
-
-        if not prev or ArenaMatch:GetSession(prev) ~= ArenaMatch:GetSession(current) then
-            session = session + 1;
-        end
+local function GetFilteredSession(index)
+    if(not index or index == 1) then
+        return 1;
     end
+
+    local current = ArenaAnalytics:GetMatch(index);
+    local prev, prevSession = ArenaAnalytics:GetFilteredMatch(index - 1);
+
+    if not prev or ArenaMatch:GetSession(prev) ~= ArenaMatch:GetSession(current) then
+        return prevSession + 1;
+    end
+    return prevSession;
 end
 
 local function ProcessMatchIndex(index)
@@ -425,7 +425,9 @@ local function ProcessMatchIndex(index)
         end
 
         if(doesPassComp and doesPassEnemyComp) then
-            table.insert(ArenaAnalytics.filteredMatchHistory, index);
+            local filteredSession = GetFilteredSession(index);
+
+            table.insert(ArenaAnalytics.filteredMatchHistory, { index = index, filteredSession = filteredSession });
         end
     end
 end
@@ -449,8 +451,6 @@ function Filters:Refresh(onCompleteFunc)
 
     local function Finalize()
         -- Assign session to filtered matches
-        UpdateFilteredSessions();
-
         FinalizeCompDataTables();
         ArenaAnalytics:SetCurrentCompData(transientCompData);
         ResetTransientCompData();

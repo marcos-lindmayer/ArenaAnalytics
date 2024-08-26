@@ -15,12 +15,102 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 -------------------------------------------------------------------------
 -- Character SavedVariables match history
 ArenaAnalyticsMatchHistoryDB = ArenaAnalyticsMatchHistoryDB or { }
+ArenaAnalyticsRealmsDB = ArenaAnalyticsRealmsDB or { }
+
+-------------------------------------------------------------------------
+-- Realms logic
+
+local function GetRealmIndex(realm)
+	assert(realm);
+
+	for i=1, #ArenaAnalyticsRealmsDB do
+		local existingRealm = ArenaAnalyticsRealmsDB[i];
+		if(existingRealm and realm == existingRealm) then
+			return i;
+		end
+	end
+
+	tinsert(ArenaAnalyticsRealmsDB, realm);
+	ArenaAnalytics:Log("Cached new realm:", realm, "at index:", #ArenaAnalyticsRealmsDB);
+	return #ArenaAnalyticsRealmsDB;
+end
+
+function ArenaAnalytics:GetRealm(realmIndex, errorIfMissing)
+	if(not tonumber(realmIndex)) then
+		return nil;
+	end
+
+	local realm = ArenaAnalyticsRealmsDB[realmIndex];
+	
+	if(errorIfMissing and not realm) then
+		error("Realm index: " .. realmIndex .. " found no realms.")
+	end
+
+	return realm;
+end
+
+function ArenaAnalytics:GetNameAndRealm(fullName, doCompressRealm)
+	if(not fullName) then
+		return nil,nil;
+	end
+
+	-- Split name and realm
+	local name,realm = fullName:match("^(.-)%-(.+)$");
+	name = name or fullName;
+
+	-- Attempt name compression
+	if(doCompressRealm and realm and not tonumber(realm)) then
+		local realmIndex = GetRealmIndex(realm);
+		if(realmIndex and ArenaAnalyticsRealmsDB[realmIndex] == realm) then
+			realm = realmIndex;
+		end
+	end
+
+	return name, realm;
+end
+
+function ArenaAnalytics:CombineNameAndRealm(name, realm)
+	if(name == nil) then
+		return nil;
+	end
+
+	if(tonumber(realm)) then
+		realm = ArenaAnalyticsRealmsDB[i];
+		assert(realm);
+	end
+
+	realm = realm and ("-" .. realm) or "";
+	return name .. realm;
+end
+
+ArenaAnalytics.localRealmIndex = nil;
+
+function ArenaAnalytics:GetLocalRealmIndex()
+	if(tonumber(ArenaAnalytics.localRealmIndex)) then
+		return ArenaAnalytics.localRealmIndex;
+	end
+
+	local _, realm = UnitFullName("player");
+	assert(realm);
+	return GetRealmIndex(realm);
+end
+
+function ArenaAnalytics:IsLocalRealm(realm)
+	if(realm == nil) then
+		return;
+	end
+
+	if(tonumber(realm)) then
+		return tonumber(realm) == ArenaAnalytics:GetLocalRealmIndex();
+	end
+	
+	local _, localRealm = UnitFullName("player");
+	return realm == localRealm;
+end
 
 -------------------------------------------------------------------------
 
 -- Current filtered comp data
-
-
 local currentCompData = {
 	comp = { ["All"] = {} },
 	enemyComp = { ["All"] = {} },
@@ -85,10 +175,14 @@ function ArenaAnalytics:GetMatch(index)
 end
 
 function ArenaAnalytics:GetFilteredMatch(index)
-	local realMatchIndex = ArenaAnalytics.filteredMatchHistory[index];
-	local filteredMatch =  ArenaAnalytics:GetMatch(realMatchIndex);
+	local filteredMatchInfo = index and ArenaAnalytics.filteredMatchHistory[index];
+	if(not filteredMatchInfo) then
+		return nil;
+	end
+
+	local filteredMatch = filteredMatchInfo.index and ArenaAnalytics:GetMatch(filteredMatchInfo.index);
 	if(filteredMatch) then
-		return filteredMatch, filteredMatch["filteredSession"];
+		return filteredMatch, filteredMatchInfo.filteredSession;
 	end
 	return nil;	
 end
@@ -176,11 +270,14 @@ function ArenaAnalytics:IsMatchesSameSession(arena1, arena2)
 	return true;
 end
 
-function ArenaAnalytics:TeamContainsPlayer(team, playerName)
-	if(team and playerName) then
-		for _,player in ipairs(team) do
-			if (player["name"] == playerName) then
-				return true;
+function ArenaAnalytics:TeamContainsPlayer(team, playerName)	
+	if(team) then
+		local name, realm = ArenaAnalytics:GetNameAndRealm(playerName, true);
+		if(name) then
+			for _,player in ipairs(team) do
+				if (ArenaMatch:IsSamePlayer(player, name, realm)) then
+					return true;
+				end
 			end
 		end
 	end
@@ -208,7 +305,7 @@ function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
 	local largerTeam = teamOneIsSmaller and team2 or team1;
 
 	for _,player in ipairs(smallerTeam) do
-		local playerName = ArenaMatch:GetPlayerName(smallerTeam, player);
+		local playerName = ArenaMatch:GetPlayerName(player); -- TODO: Decide if we want to get name and realm separately
 		if (playerName) then
 			if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, playerName)) then
 				return false;
@@ -511,13 +608,14 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	end
 
 	ArenaMatch:SetSeason(arenaData, oldArena.season);
-	
+
 	ArenaMatch:SetVictory(arenaData, newArena.won);
-	ArenaMatch:SetSelf(arenaData, newArena.player);
-	ArenaMatch:SetFirstDeath(arenaData, newArena.firstDeath);
 
 	-- Add players from both teams sorted, and assign comps.
 	ArenaMatch:AddPlayers(match, newArena.players);
+
+	ArenaMatch:SetSelf(arenaData, newArena.player);
+	ArenaMatch:SetFirstDeath(arenaData, newArena.firstDeath);
 	
 	-- Assign session
 	local session = ArenaAnalytics:GetLatestSession();

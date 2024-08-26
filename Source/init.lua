@@ -107,8 +107,8 @@ ArenaAnalytics.commands = {
 			ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB(); -- 0.3.0
 			ArenaAnalytics.VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
 			ArenaAnalytics.VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB(); -- 0.7.0
+			ArenaAnalytics.VersionManager:FinalizeConversionAttempts();
 		end
-		ArenaAnalytics.VersionManager:FinalizeConversionAttempts();
         ArenaAnalyticsScrollFrame:Hide();
 	end,
 
@@ -166,9 +166,22 @@ ArenaAnalytics.commands = {
 	end,
 
 	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
+	["dumprealms"] = function()
+		print(" ");
+		ArenaAnalytics:Print(" ================================================  ");
+		ArenaAnalytics:Print("  Known Realms:     (Current realm: " .. (ArenaAnalytics:GetLocalRealmIndex() or "").. ")");
+
+		for i,realm in ipairs(ArenaAnalyticsRealmsDB) do
+			ArenaAnalytics:Print("     ", i, "   ", realm);
+		end
+		ArenaAnalytics:Print("  ================================================  ");
+		print(" ");
+	end,
+
+	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function()
 		print(" ");
-		ArenaAnalytics:Print("  ================================================  ");
+		ArenaAnalytics:Print(" ================================================  ");
 		ArenaAnalytics.API:GetMySpec();
 
 		if(false) then
@@ -229,7 +242,7 @@ end
 
 -- Debug logging version of print
 function ArenaAnalytics:LogSpacer()
-	if not ArenaAnalyticsSettings["debuggingEnabled"] then
+	if not ArenaAnalyticsSettingsDB["debuggingEnabled"] then
 		return;
 	end
 
@@ -237,7 +250,7 @@ function ArenaAnalytics:LogSpacer()
 end
 
 function ArenaAnalytics:Log(...)
-	if not ArenaAnalyticsSettings["debuggingEnabled"] then
+	if not ArenaAnalyticsSettingsDB["debuggingEnabled"] then
 		return;
 	end
 

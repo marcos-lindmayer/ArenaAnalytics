@@ -177,7 +177,7 @@ function Import:parseRawData(data)
     
     if(isImporting) then
         ArenaAnalytics:Print("Another import already in progress!");
-    elseif(not ArenaAnalyticsSettings["allowImportDataMerge"] and ArenaAnalytics:HasStoredMatches()) then
+    elseif(not ArenaAnalyticsSettingsDB["allowImportDataMerge"] and ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalytics:Print("Import failed due to existing stored matches!");
         Import:reset();
     elseif(dataSource == "Invalid") then
@@ -242,7 +242,7 @@ function Import:parseRawData(data)
             -- Split into arenas
             local _, numberOfArenas = arenasRaw:gsub(",","");
             numberOfArenas = numberOfArenas/95;
-            ArenaAnalytics:Log(numberOfArenas)
+            ArenaAnalytics:Log("Import arena count:", numberOfArenas)
             if (numberOfArenas ~= math.floor(numberOfArenas)) then
                 dataIsCorrupt = true;
             elseif(numberOfArenas == 0) then

@@ -521,13 +521,8 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             playerFrame.texture:SetTexture(ArenaAnalyticsGetClassIcon(playerInfo.class));
             playerFrame.tooltip = "";
 
-            local playerName = playerInfo.name or "";
-
-            local _, realm = UnitFullName("player");
-            if(realm and playerName:find(realm)) then
-                playerName = playerName:match("(.*)-") or "";
-            end
-
+            local isLocalRealm = ArenaAnalytics:IsLocalRealm(playerInfo.realm);
+            local playerName = isLocalRealm and playerInfo.name or playerInfo.fullName or "";
             playerFrame:SetAttribute("name", playerName);
 
             -- Quick Search
@@ -550,7 +545,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
                     playerFrame.specOverlay.texture:SetTexture(nil);
                 end
 
-                local specIcon = playerInfo.spec and ArenaAnalyticsGetSpecIcon(playerInfo.class, playerInfo.spec) or nil;
+                local specIcon = ArenaAnalytics:GetSpecIcon(playerInfo.spec_id);
                 playerFrame.specOverlay.texture:SetTexture(specIcon);
 
                 if (not Options:Get("alwaysShowSpecOverlay")) then
@@ -571,8 +566,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             end);
 
             -- Add death overlay            
-            local firstDeath = match["firstDeath"] and match["firstDeath"]:gsub("-", "%%-") or nil;
-            if (firstDeath and string.find(player["name"], firstDeath)) then
+            if (playerInfo.is_first_death) then
                 if (playerFrame.deathOverlay == nil) then
                     playerFrame.deathOverlay = CreateFrame("Frame", nil, playerFrame);
                     playerFrame.deathOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")

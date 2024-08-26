@@ -22,10 +22,10 @@ end
 
 -- TODO: Consider making some settings character specific (For cases like one char having lots of games desiring different comp filter limits)
 -- User settings
-ArenaAnalyticsSettings = ArenaAnalyticsSettings or {};
+ArenaAnalyticsSettingsDB = ArenaAnalyticsSettingsDB or {};
 
 -- Unused.
-ArenaAnalyticsCharacterSettings = ArenaAnalyticsCharacterSettings or {}
+ArenaAnalyticsCharacterSettingsDB = ArenaAnalyticsCharacterSettingsDB or {}
 
 local defaults = {};
 
@@ -34,10 +34,10 @@ local function AddSetting(setting, default)
     assert(setting ~= nil);
     assert(default ~= nil, "Nil values for settings are not supported.");
 
-    if(ArenaAnalyticsSettings[setting] == nil) then
-        ArenaAnalyticsSettings[setting] = default;
+    if(ArenaAnalyticsSettingsDB[setting] == nil) then
+        ArenaAnalyticsSettingsDB[setting] = default;
     end
-    assert(ArenaAnalyticsSettings[setting] ~= nil);
+    assert(ArenaAnalyticsSettingsDB[setting] ~= nil);
 
     -- Cache latest defaults
     defaults[setting] = default;
@@ -45,7 +45,7 @@ end
 
 -- Adds a setting that does not save across reloads. (Use with caution)
 local function AddTransientSetting(setting, default)
-    ArenaAnalyticsSettings[setting] = default;
+    ArenaAnalyticsSettingsDB[setting] = default;
 end
 
 local hasOptionsLoaded = nil;
@@ -118,13 +118,13 @@ function Options:HasLoaded()
 end
 
 function Options:IsValid(setting)
-    return setting and ArenaAnalyticsSettings[setting] ~= nil;
+    return setting and ArenaAnalyticsSettingsDB[setting] ~= nil;
 end
 
 function Options:IsDefault(setting)
     assert(Options:IsValid(setting));
 
-    return ArenaAnalyticsSettings[setting] == defaults[setting];
+    return ArenaAnalyticsSettingsDB[setting] == defaults[setting];
 end
 
 -- Gets a setting, regardless of location between 
@@ -137,7 +137,7 @@ function Options:Get(setting)
         if not successful then return end;
     end
     
-    local value = ArenaAnalyticsSettings[setting];
+    local value = ArenaAnalyticsSettingsDB[setting];
 
     if(value == nil) then
         ArenaAnalytics:Log("Setting not found: ", setting, value)
@@ -149,19 +149,19 @@ end
 
 function Options:Set(setting, value)
     assert(setting and hasOptionsLoaded);
-    assert(ArenaAnalyticsSettings[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
+    assert(ArenaAnalyticsSettingsDB[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
     
     if(value == nil) then
         value = defaults[setting];
     end
     assert(value ~= nil);
 
-    if(value == ArenaAnalyticsSettings[setting]) then
+    if(value == ArenaAnalyticsSettingsDB[setting]) then
         return;
     end
 
-    local oldValue = ArenaAnalyticsSettings[setting];
-    ArenaAnalyticsSettings[setting] = value;
+    local oldValue = ArenaAnalyticsSettingsDB[setting];
+    ArenaAnalyticsSettingsDB[setting] = value;
     ArenaAnalytics:Log("Setting option: ", setting, "new:", value, "old:", oldValue);
     
     HandleSettingsChanged();

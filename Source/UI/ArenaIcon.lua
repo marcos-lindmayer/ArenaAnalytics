@@ -7,7 +7,7 @@ local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
-function ArenaIcon:Create(parent, class, spec, size, hideSpec)
+function ArenaIcon:Create(parent, classIndex, spec_id, size, hideSpec)
     local name = "ArenaIcon_"..(class or "?").."_"..(spec or "");
     local newFrame = CreateFrame("Frame", name, parent);
     newFrame:SetSize(size, size);
@@ -17,7 +17,7 @@ function ArenaIcon:Create(parent, class, spec, size, hideSpec)
         newFrame.classTexture:SetPoint("CENTER", newFrame, 0, 0);
         newFrame.classTexture:SetSize(size,size);
 
-        local classIconTexture = ArenaAnalyticsGetClassIcon(class);
+        local classIconTexture = Internal:GetClassIcon(classIndex);
         newFrame.classTexture:SetTexture(classIconTexture);
 
         if(spec) then
@@ -31,7 +31,7 @@ function ArenaIcon:Create(parent, class, spec, size, hideSpec)
             newFrame.specOverlay.texture:SetPoint("CENTER");
             newFrame.specOverlay.texture:SetSize(halfSize, halfSize);
             
-            local specIconTexture = ArenaAnalyticsGetSpecIcon(class, spec);
+            local specIconTexture = ArenaAnalytics:GetSpecIcon(spec);
             newFrame.specOverlay.texture:SetTexture(specIconTexture);
 
             if(hideSpec) then
