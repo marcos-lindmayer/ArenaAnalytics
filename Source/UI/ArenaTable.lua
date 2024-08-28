@@ -457,7 +457,7 @@ function AAtable:CreateExportDialogFrame()
 		ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
 		
 		ArenaAnalyticsScrollFrame.exportDialogFrame.WarningText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"BOTTOM", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "TOP", 13, 0, "|cffff0000Warning:|r Pasting long string here will crash WoW!");
-		ArenaAnalyticsScrollFrame.exportDialogFrame.totalText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMLEFT", -3, 0, "Total arenas: " .. #ArenaAnalyticsMatchHistoryDB);
+		ArenaAnalyticsScrollFrame.exportDialogFrame.totalText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMLEFT", -3, 0, "Total arenas: " .. #ArenaAnalyticsDB);
 		ArenaAnalyticsScrollFrame.exportDialogFrame.lengthText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPRIGHT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMRIGHT", -3, 0, "Export length: 0");
 
 		ArenaAnalyticsScrollFrame.exportDialogFrame.selectBtn = AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.exportDialogFrame, "BOTTOM", 0, 17, "Select All");
@@ -504,32 +504,22 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
 
         local player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
         if (player) then
-            playerFrame.team = teamKey;
+            playerFrame.isEnemyTeam = isEnemyTeam;
             playerFrame.playerIndex = i;
             playerFrame.matchIndex = matchIndex;
             
-            local playerInfo = ArenaMatch:GetPlayerInfo(match, player, isEnemyTeam);
+            local playerInfo = ArenaMatch:GetPlayerInfo(player, isEnemyTeam);
 
             if (playerFrame.texture == nil) then
                 -- No textures? Set them
                 playerFrame.texture = playerFrame:CreateTexture();
                 playerFrame.texture:SetPoint("LEFT", playerFrame ,"RIGHT", -26, 0);
-                playerFrame.texture:SetSize(26,26)
+                playerFrame.texture:SetSize(26,26);
             end
             
             -- Set texture
             playerFrame.texture:SetTexture(ArenaAnalyticsGetClassIcon(playerInfo.class));
             playerFrame.tooltip = "";
-
-            local isLocalRealm = ArenaAnalytics:IsLocalRealm(playerInfo.realm);
-            local playerName = isLocalRealm and playerInfo.name or playerInfo.fullName or "";
-            playerFrame:SetAttribute("name", playerName);
-
-            -- Quick Search
-            playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
-            playerFrame:SetScript("OnClick", function(frame, btn)
-                Search:QuickSearch(btn, player, teamKey);
-            end);
 
             -- Add spec info
             if(playerInfo.class) then
@@ -552,18 +542,11 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
                     playerFrame.specOverlay:Hide();
                 end
             else
-                if (playerFrame.specOverlay) then
+                if (playerFrame.specOverlay and playerFrame.specOverlay.SetTexture) then
                     playerFrame.specOverlay:SetTexture(nil);
                     playerFrame.specOverlay:Hide();
                 end
             end
-
-            playerFrame:SetScript("OnEnter", function ()
-                Tooltips:DrawPlayerTooltip(playerFrame);
-            end);
-            playerFrame:SetScript("OnLeave", function ()
-                Tooltips:HidePlayerTooltip();
-            end);
 
             -- Add death overlay            
             if (playerInfo.is_first_death) then
@@ -585,6 +568,20 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
                 playerFrame.deathOverlay.texture:SetTexture(nil);
                 playerFrame.deathOverlay = nil;
             end
+
+            playerFrame.playerInfo = playerInfo;
+            playerFrame:SetScript("OnEnter", function ()
+                Tooltips:DrawPlayerTooltip(playerFrame);
+            end);
+            playerFrame:SetScript("OnLeave", function ()
+                Tooltips:HidePlayerTooltip();
+            end);
+            
+            -- Quick Search
+            playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+            playerFrame:SetScript("OnClick", function(frame, btn)
+                Search:QuickSearch(btn, playerInfo, isEnemyTeam);
+            end);
 
             playerFrame:Show()
         else

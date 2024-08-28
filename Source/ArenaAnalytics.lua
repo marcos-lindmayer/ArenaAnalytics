@@ -12,9 +12,14 @@ local Options = ArenaAnalytics.Options;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
+
+function ArenaAnalytics:GetVersion()
+    return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
+end
+
 -------------------------------------------------------------------------
 -- Character SavedVariables match history
-ArenaAnalyticsMatchHistoryDB = ArenaAnalyticsMatchHistoryDB or { }
+ArenaAnalyticsDB = ArenaAnalyticsDB or { }
 ArenaAnalyticsRealmsDB = ArenaAnalyticsRealmsDB or { }
 
 -------------------------------------------------------------------------
@@ -171,7 +176,7 @@ ArenaAnalytics.unsavedArenaCount = 0;
 ArenaAnalytics.filteredMatchHistory = { };
 
 function ArenaAnalytics:GetMatch(index)
-	return index and ArenaAnalyticsMatchHistoryDB and ArenaAnalyticsMatchHistoryDB[index];
+	return index and ArenaAnalyticsDB and ArenaAnalyticsDB[index];
 end
 
 function ArenaAnalytics:GetFilteredMatch(index)
@@ -180,11 +185,8 @@ function ArenaAnalytics:GetFilteredMatch(index)
 		return nil;
 	end
 
-	local filteredMatch = filteredMatchInfo.index and ArenaAnalytics:GetMatch(filteredMatchInfo.index);
-	if(filteredMatch) then
-		return filteredMatch, filteredMatchInfo.filteredSession;
-	end
-	return nil;	
+	local filteredMatch = ArenaAnalytics:GetMatch(filteredMatchInfo.index);
+	return filteredMatch, filteredMatchInfo.filteredSession;
 end
 
 ArenaAnalytics.lastSession = 1;
@@ -196,7 +198,7 @@ end
 function ArenaAnalytics:RecomputeSessionsForMatchHistory()
 	-- Assign session to filtered matches
 	local session = 1
-	for i = 1, #ArenaAnalyticsMatchHistoryDB do
+	for i = 1, #ArenaAnalyticsDB do
 		local current = ArenaAnalytics:GetMatch(i);
 		local prev = ArenaAnalytics:GetMatch(i - 1);
 		
@@ -213,7 +215,7 @@ function ArenaAnalytics:RecomputeSessionsForMatchHistory()
 end
 
 function ArenaAnalytics:ResortGroupsInMatchHistory()
-	for i=1, #ArenaAnalyticsMatchHistoryDB do
+	for i=1, #ArenaAnalyticsDB do
 		local match = ArenaAnalytics:GetMatch(i);
 		if(match) then
 			ArenaMatch:SortGroups(match);
@@ -247,7 +249,7 @@ function ArenaAnalytics:GetActiveBattlefieldID()
 end
 
 function ArenaAnalytics:HasStoredMatches()
-	return (ArenaAnalyticsMatchHistoryDB ~= nil and #ArenaAnalyticsMatchHistoryDB > 0);
+	return (ArenaAnalyticsDB ~= nil and #ArenaAnalyticsDB > 0);
 end
 
 -- Check if 2 arenas are in the same session
@@ -270,15 +272,14 @@ function ArenaAnalytics:IsMatchesSameSession(arena1, arena2)
 	return true;
 end
 
-function ArenaAnalytics:TeamContainsPlayer(team, playerName)	
-	if(team) then
-		local name, realm = ArenaAnalytics:GetNameAndRealm(playerName, true);
-		if(name) then
-			for _,player in ipairs(team) do
-				if (ArenaMatch:IsSamePlayer(player, name, realm)) then
-					return true;
-				end
-			end
+function ArenaAnalytics:TeamContainsPlayer(team, name, realm)
+	if(not team or not name) then
+		return nil;
+	end
+
+	for _,player in ipairs(team) do
+		if (ArenaMatch:IsSamePlayer(player, name, realm)) then
+			return true;
 		end
 	end
 end
@@ -305,11 +306,9 @@ function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
 	local largerTeam = teamOneIsSmaller and team2 or team1;
 
 	for _,player in ipairs(smallerTeam) do
-		local playerName = ArenaMatch:GetPlayerName(player); -- TODO: Decide if we want to get name and realm separately
-		if (playerName) then
-			if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, playerName)) then
-				return false;
-			end
+		local name, realm = ArenaMatch:GetPlayerNameAndRealm(player, true);
+		if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, name, realm)) then
+			return false;
 		end
 	end   
 
@@ -322,7 +321,7 @@ function ArenaAnalytics:GetLastMatch(ignoreInvalidDate)
 	end
 
 	if(not ignoreInvalidDate) then
-		for i=#ArenaAnalyticsMatchHistoryDB, 1, -1 do
+		for i=#ArenaAnalyticsDB, 1, -1 do
 			local match = ArenaAnalytics:GetMatch(i);
 			local date = ArenaMatch:GetDate(match);
 			if(date and date > 0) then
@@ -332,7 +331,7 @@ function ArenaAnalytics:GetLastMatch(ignoreInvalidDate)
 	end
 
 	-- Get the last match
-	return ArenaAnalytics:GetMatch(#ArenaAnalyticsMatchHistoryDB);
+	return ArenaAnalytics:GetMatch(#ArenaAnalyticsDB);
 end
 
 function ArenaAnalytics:ShouldSkipMatchForSessions(match)
@@ -364,11 +363,13 @@ end
 
 -- Returns the whether last session and whether it has expired by time
 function ArenaAnalytics:GetLatestSession()
-	for i=#ArenaAnalyticsMatchHistoryDB, 1, -1 do
+	for i=#ArenaAnalyticsDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
 		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
 			local session = ArenaMatch:GetSession(match);
-			local expired = (time() - ArenaMatch:GetDate(match)) > 3600;
+
+			local matchDate = ArenaMatch:GetDate(match);
+			local expired = matchDate and (time() - matchDate) > 3600 or true;
 			return session, expired;
 		end
 	end
@@ -379,7 +380,7 @@ end
 function ArenaAnalytics:GetLatestSessionStartAndEndTime()
 	local lastSession, expired, bestStartTime, endTime = nil,true;
 
-	for i=#ArenaAnalyticsMatchHistoryDB, 1, -1 do
+	for i=#ArenaAnalyticsDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
 
 		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
@@ -409,7 +410,7 @@ end
 
 -- Returns last saved rating on selected bracket (teamSize)
 function ArenaAnalytics:GetLatestSeason()
-	for i = #ArenaAnalyticsMatchHistoryDB, 1, -1 do
+	for i = #ArenaAnalyticsDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
 		local season = ArenaMatch:GetSeason(match);
 		if(season and season > 0) then
@@ -424,7 +425,7 @@ end
 function ArenaAnalytics:GetLatestRating(teamSize)
 	local targetBracket = ArenaAnalytics:getBracketFromTeamSize(teamSize);
 	if(targetBracket ~= nil) then
-		for i = #ArenaAnalyticsMatchHistoryDB, 1, -1 do
+		for i = #ArenaAnalyticsDB, 1, -1 do
 			local match = ArenaAnalytics:GetMatch(i);
 			local rating = ArenaMatch:GetPartyRating(match);
 			local bracket = ArenaMatch:GetBracket(match);
@@ -555,7 +556,7 @@ function AAmatch:GetArenaComp(teamTable, teamSize)
 	return table.concat(newComp, '|');
 end
 
--- Calculates arena duration, turns arena data into friendly strings, adds it to ArenaAnalyticsMatchHistoryDB
+-- Calculates arena duration, turns arena data into friendly strings, adds it to ArenaAnalyticsDB
 -- and triggers a layout refresh on ArenaAnalytics.AAtable
 function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	local hasStartTime = tonumber(newArena.startTime) and newArena.startTime > 0;
@@ -589,7 +590,7 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 		ArenaAnalytics:Log("Failed to get valid season for new match.");
 	end
 
-	-- Setup table data to insert into ArenaAnalyticsMatchHistoryDB
+	-- Setup table data to insert into ArenaAnalyticsDB
 	local arenaData = { }
 	ArenaMatch:SetDate(arenaData, newArena.startTime);
 	ArenaMatch:SetDuration(arenaData, newArena.duration);
@@ -615,7 +616,9 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	ArenaMatch:AddPlayers(match, newArena.players);
 
 	ArenaMatch:SetSelf(arenaData, newArena.player);
-	ArenaMatch:SetFirstDeath(arenaData, newArena.firstDeath);
+
+	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
+	ArenaMatch:SetFirstDeath(arenaData, firstDeath);
 	
 	-- Assign session
 	local session = ArenaAnalytics:GetLatestSession();
@@ -626,8 +629,8 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	ArenaMatch:SetSession(arenaData, oldArena.session);
 	ArenaAnalytics.lastSession = session;
 
-	-- Insert arena data as a new ArenaAnalyticsMatchHistoryDB entry
-	table.insert(ArenaAnalyticsMatchHistoryDB, arenaData);
+	-- Insert arena data as a new ArenaAnalyticsDB entry
+	table.insert(ArenaAnalyticsDB, arenaData);
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
 	Import:tryHide();
 

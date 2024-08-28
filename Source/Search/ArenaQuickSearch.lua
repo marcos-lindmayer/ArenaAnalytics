@@ -153,12 +153,12 @@ local function CheckShortcut(shortcut, btn)
     return false;
 end
 
-local function GetPlayerName(player)
-    name = player["name"] or "";
+local function GetPlayerName(playerInfo)
+    name = playerInfo.fullName or "";
     if(name:find('-')) then
         local includeRealmSetting = Options:Get("quickSearchIncludeRealm");
         local includeRealm = true;
-
+        
         local _, realm = UnitFullName("player");
         local isMyRealm = realm and name:find(realm);
 
@@ -177,7 +177,7 @@ local function GetPlayerName(player)
         end
     end
     
-    return name or "";
+    return name;
 end
 
 local function AddSettingAction(actions, setting)
@@ -205,8 +205,8 @@ local function GetAppendRule(btn)
     return Options:Get("quickSearchDefaultAppendRule");
 end
 
-local function AddValueByType(tokens, player, explicitType)
-    assert(player);
+local function AddValueByType(tokens, playerInfo, explicitType)
+    assert(playerInfo);
     if(not explicitType) then
         return;
     end
@@ -214,22 +214,18 @@ local function AddValueByType(tokens, player, explicitType)
     local newToken = nil;
     
     if(explicitType == "name") then
-        newToken = Search:CreateToken(GetPlayerName(player));
+        newToken = Search:CreateToken(GetPlayerName(playerInfo));
     elseif(explicitType == "race") then
-        local race = Search:GetShortQuickSearch(explicitType, player["race"]);
+        local race = Search:GetShortQuickSearch(explicitType, playerInfo.race);
         newToken = Search:CreateToken(race);
-    elseif(explicitType == "spec") then
-        local class, spec = player["class"], player["spec"];
-        local value = Search:GetShortQuickSearchSpec(class, spec);
-        local actualType = (spec and spec ~= "") and "spec" or "class";
-
+    elseif(explicitType == "spec" and playerInfo.spec) then
+        local value = Search:GetShortQuickSearchSpec(playerInfo.class, playerInfo.spec);
         newToken = Search:CreateToken(value);
     elseif(explicitType == "class") then
-        local value = Search:GetShortQuickSearchSpec(player["class"], nil);
+        local value = Search:GetShortQuickSearchSpec(playerInfo.class, nil);
         newToken = Search:CreateToken(value);
     elseif(explicitType == "faction") then
-        local faction = Constants:GetFactionByRace(player["race"]); -- TODO: Change to store faction directly, to secure neutral races
-        local value = Search:GetShortQuickSearch(explicitType, faction);
+        local value = Search:GetShortQuickSearch(explicitType, playerInfo.faction);
         newToken = Search:CreateToken(value);
     end
     
@@ -238,8 +234,8 @@ local function AddValueByType(tokens, player, explicitType)
     end
 end
 
-local function GetQuickSearchTokens(player, team, btn)
-    assert(player);
+local function GetQuickSearchTokens(playerInfo, team, btn)
+    assert(playerInfo);
     local tokens = {};
     local hasValue = false;
 
@@ -269,34 +265,34 @@ local function GetQuickSearchTokens(player, team, btn)
     -- Name
     shortcut = Options:Get("quickSearchAction_Name");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, player, "name");
+        AddValueByType(tokens, playerInfo, "name");
         hasValue = true;
     end
 
     -- Spec
     shortcut = Options:Get("quickSearchAction_Spec");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, player, "spec");
+        AddValueByType(tokens, playerInfo, "spec");
         hasValue = true;
     end
 
     -- Race
     shortcut = Options:Get("quickSearchAction_Race");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, player, "race");
+        AddValueByType(tokens, playerInfo, "race");
         hasValue = true;
     end
     
     -- Faction
     shortcut = Options:Get("quickSearchAction_Faction");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, player, "faction");
+        AddValueByType(tokens, playerInfo, "faction");
         hasValue = true;
     end
 
     if(not hasValue) then
         local explicitType = Options:Get("quickSearchDefaultValue");
-        AddValueByType(tokens, player, Helpers:ToSafeLower(explicitType));
+        AddValueByType(tokens, playerInfo, Helpers:ToSafeLower(explicitType));
     end
 
     return tokens;
@@ -381,15 +377,19 @@ local function DoesAllTokensMatchExact(segment, tokens, skipName)
 end
 
 local locked = nil;
-function Search:QuickSearch(mouseButton, player, team)
+function Search:QuickSearch(mouseButton, playerInfo, isEnemyTeam)
+    if(not Options:Get("quickSearchEnabled")) then
+        return;
+    end
+
     if(locked) then
         return;
     end
     locked = true;
 
-    team = (team == "team") and "team" or "enemy";
+    team = isEnemyTeam and "enemy" or "team";
     local appendRule = GetAppendRule(mouseButton);
-    local tokens = GetQuickSearchTokens(player, team, mouseButton);
+    local tokens = GetQuickSearchTokens(playerInfo, team, mouseButton);
 
     if(not tokens or #tokens == 0) then
         return;
@@ -397,12 +397,15 @@ function Search:QuickSearch(mouseButton, player, team)
 
     -- Current Search Data
     local currentSegments = Search:GetCurrentSegments();
-    
+
     if(appendRule == "New Search") then
-        -- Reset the search unless it's an exact match to the new quick search
-        if(#currentSegments ~= 1 or not DoesAllTokensMatchExact(currentSegments[1], tokens)) then     
-            currentSegments = {};
-        end    
+        if(#currentSegments == 1 and DoesAllTokensMatchExact(currentSegments[1], tokens)) then
+            Search:CommitEmptySearch();
+            locked = false;
+            return;
+        end
+
+        currentSegments = {};
     end
 
     local newSegment = {}

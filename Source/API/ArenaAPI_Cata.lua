@@ -7,9 +7,9 @@ local API = ArenaAnalytics.API;
 API.defaultButtonTemplate = "UIServiceButtonTemplate";
 
 API.availableBrackets = {
-	{ name = "2v2", key = "2v2"},
-	{ name = "3v3", key = "3v3"},
-	{ name = "5v5", key = "5v5"},
+	{ name = "2v2", key = 1},
+	{ name = "3v3", key = 2},
+	{ name = "5v5", key = 3},
 }
 
 API.availableMaps = {

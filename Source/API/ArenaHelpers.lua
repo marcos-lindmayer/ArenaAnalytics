@@ -15,6 +15,7 @@ function Helpers:ToSafeLower(value)
     if(value and type(value) == "string") then
         return value:lower();
     end
+
     return value;
 end
 
@@ -67,4 +68,14 @@ end
 function Helpers:GetClassIcon(spec_id)
     local specInfo = InternalIDs:GetSpecInfo(spec_id);
     return InternalIDs:GetClassIcon(specInfo and specInfo.classIndex);
+end
+
+-- Gets the name, and realm if not local realm from player info
+function Helpers:GetNameFromPlayerInfo(playerInfo)
+    if(not playerInfo) then
+        return "";
+    end
+
+    local isLocalRealm = ArenaAnalytics:IsLocalRealm(playerInfo.realm);
+    return isLocalRealm and playerInfo.name or playerInfo.fullName or "";
 end

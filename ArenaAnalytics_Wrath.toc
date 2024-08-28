@@ -4,8 +4,8 @@
 ## Author: Lingo, Zeetrax
 ## Version: 0.4.0
 ## DefaultState: enabled
-## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSettingsDB
-## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsCharacterSettingsDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsMatchHistoryDB
+## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSharedSettingsDB
+## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB
 
 
 Source/init.lua

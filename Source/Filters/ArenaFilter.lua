@@ -399,13 +399,15 @@ local function GetFilteredSession(index)
         return 1;
     end
 
-    local current = ArenaAnalytics:GetMatch(index);
-    local prev, prevSession = ArenaAnalytics:GetFilteredMatch(index - 1);
-
-    if not prev or ArenaMatch:GetSession(prev) ~= ArenaMatch:GetSession(current) then
-        return prevSession + 1;
+    local currentArena = ArenaAnalytics:GetMatch(index);
+    local previousArena, prevFilteredSession = ArenaAnalytics:GetFilteredMatch(index - 1);
+    
+    if not previousArena or prevFilteredSession ~= ArenaMatch:GetSession(currentArena) then
+        prevFilteredSession = prevFilteredSession or 0;
+        return prevFilteredSession and prevFilteredSession + 1 or 1;
     end
-    return prevSession;
+    
+    return prevFilteredSession;
 end
 
 local function ProcessMatchIndex(index)
@@ -468,7 +470,7 @@ function Filters:Refresh(onCompleteFunc)
     local function ProcessBatch()
         local batchEndTime = GetTime() + batchDurationLimit;
 
-        while currentIndex <= #ArenaAnalyticsMatchHistoryDB do
+        while currentIndex <= #ArenaAnalyticsDB do
             ProcessMatchIndex(currentIndex);
             currentIndex = currentIndex + 1;
 

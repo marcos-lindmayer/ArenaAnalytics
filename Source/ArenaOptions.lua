@@ -19,13 +19,8 @@ end
 
 -------------------------------------------------------------------------
 
-
--- TODO: Consider making some settings character specific (For cases like one char having lots of games desiring different comp filter limits)
 -- User settings
-ArenaAnalyticsSettingsDB = ArenaAnalyticsSettingsDB or {};
-
--- Unused.
-ArenaAnalyticsCharacterSettingsDB = ArenaAnalyticsCharacterSettingsDB or {}
+ArenaAnalyticsSharedSettingsDB = ArenaAnalyticsSharedSettingsDB or {};
 
 local defaults = {};
 
@@ -34,10 +29,10 @@ local function AddSetting(setting, default)
     assert(setting ~= nil);
     assert(default ~= nil, "Nil values for settings are not supported.");
 
-    if(ArenaAnalyticsSettingsDB[setting] == nil) then
-        ArenaAnalyticsSettingsDB[setting] = default;
+    if(ArenaAnalyticsSharedSettingsDB[setting] == nil) then
+        ArenaAnalyticsSharedSettingsDB[setting] = default;
     end
-    assert(ArenaAnalyticsSettingsDB[setting] ~= nil);
+    assert(ArenaAnalyticsSharedSettingsDB[setting] ~= nil);
 
     -- Cache latest defaults
     defaults[setting] = default;
@@ -45,7 +40,7 @@ end
 
 -- Adds a setting that does not save across reloads. (Use with caution)
 local function AddTransientSetting(setting, default)
-    ArenaAnalyticsSettingsDB[setting] = default;
+    ArenaAnalyticsSharedSettingsDB[setting] = default;
 end
 
 local hasOptionsLoaded = nil;
@@ -86,6 +81,8 @@ function Options:LoadSettings()
 
     -- Quick Search
     AddSetting("quickSearchEnabled", true);
+    AddSetting("searchShowTooltipQuickSearch", true);
+
     AddSetting("quickSearchIncludeRealm", "Other Realms"); -- None, All, Other Realms, My Realm
     AddSetting("quickSearchDefaultAppendRule", "New Search"); -- New Search, New Segment, Same Segment
     AddSetting("quickSearchDefaultValue", "Name");
@@ -118,13 +115,13 @@ function Options:HasLoaded()
 end
 
 function Options:IsValid(setting)
-    return setting and ArenaAnalyticsSettingsDB[setting] ~= nil;
+    return setting and ArenaAnalyticsSharedSettingsDB[setting] ~= nil;
 end
 
 function Options:IsDefault(setting)
     assert(Options:IsValid(setting));
 
-    return ArenaAnalyticsSettingsDB[setting] == defaults[setting];
+    return ArenaAnalyticsSharedSettingsDB[setting] == defaults[setting];
 end
 
 -- Gets a setting, regardless of location between 
@@ -137,7 +134,7 @@ function Options:Get(setting)
         if not successful then return end;
     end
     
-    local value = ArenaAnalyticsSettingsDB[setting];
+    local value = ArenaAnalyticsSharedSettingsDB[setting];
 
     if(value == nil) then
         ArenaAnalytics:Log("Setting not found: ", setting, value)
@@ -149,19 +146,19 @@ end
 
 function Options:Set(setting, value)
     assert(setting and hasOptionsLoaded);
-    assert(ArenaAnalyticsSettingsDB[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
+    assert(ArenaAnalyticsSharedSettingsDB[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
     
     if(value == nil) then
         value = defaults[setting];
     end
     assert(value ~= nil);
 
-    if(value == ArenaAnalyticsSettingsDB[setting]) then
+    if(value == ArenaAnalyticsSharedSettingsDB[setting]) then
         return;
     end
 
-    local oldValue = ArenaAnalyticsSettingsDB[setting];
-    ArenaAnalyticsSettingsDB[setting] = value;
+    local oldValue = ArenaAnalyticsSharedSettingsDB[setting];
+    ArenaAnalyticsSharedSettingsDB[setting] = value;
     ArenaAnalytics:Log("Setting option: ", setting, "new:", value, "old:", oldValue);
     
     HandleSettingsChanged();
@@ -227,14 +224,14 @@ local function InitializeTab(parent)
     local addonNameText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     addonNameText:SetPoint("TOPLEFT", parent, "TOPLEFT", -5, 32)
     addonNameText:SetTextHeight(TabTitleSize);
-    addonNameText:SetText("Arena|cff00ccffAnalytics|r   |cff666666v" .. ArenaAnalytics:getVersion() .. "|r");
+    addonNameText:SetText("Arena|cff00ccffAnalytics|r   |cff666666v" .. ArenaAnalytics:GetVersion() .. "|r");
     
     -- Reset Y offset
     offsetY = 0;
 end
 
 local function CreateSpace(explicit)
-    offsetY = offsetY - max(0, explicit or 25)
+    offsetY = offsetY - max(0, explicit or 20)
 end
 
 local function CreateHeader(text, size, parent, relative, x, y, icon)
@@ -594,8 +591,9 @@ function SetupTab_QuickSearch()
 
     -- Setup options
     parent.quickSearchEnabled = CreateCheckbox("quickSearchEnabled", parent, offsetX, "Enable Quick Search");
+    parent.searchShowTooltipQuickSearch = CreateCheckbox("searchShowTooltipQuickSearch", parent, offsetX, "Show Quick Search shortcuts in Player Tooltips");
 
-    CreateSpace(20);
+    CreateSpace(15);
 
     local includeRealmOptions = { "None", "All", "Other Realms", "My Realm" };
     parent.includeRealmDropdown = CreateDropdown("quickSearchIncludeRealm", parent, offsetX, "Include realms from Quick Search.", includeRealmOptions);
@@ -606,7 +604,7 @@ function SetupTab_QuickSearch()
     local valueOptions = { "Name", "Spec", "Race", "Faction" };
     parent.defaultValueDropdown = CreateDropdown("quickSearchDefaultValue", parent, offsetX, "Default value to add, if not overridden by shortcuts.", valueOptions);
 
-    CreateSpace(20);
+    CreateSpace(15);
 
     local shortcuts = { "None", "LMB", "RMB", "Nomod", "Shift", "Ctrl", "Alt" };
 
@@ -614,17 +612,17 @@ function SetupTab_QuickSearch()
     parent.quickSearchAppendRule_NewSegment = CreateDropdown("quickSearchAppendRule_NewSegment", parent, offsetX, "New Segment append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
     parent.quickSearchAppendRule_SameSegment = CreateDropdown("quickSearchAppendRule_SameSegment", parent, offsetX, "Same Segment append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
 
-    CreateSpace(20);
+    CreateSpace(15);
 
     parent.inverseValueDropdown = CreateDropdown("quickSearchAction_Inverse", parent, offsetX, "Inverse segment shortcut.", shortcuts);
 
-    CreateSpace(20);
+    CreateSpace(15);
 
     parent.teamValueDropdown = CreateDropdown("quickSearchAction_Team", parent, offsetX, "Team shortcut.", shortcuts);
     parent.enemyValueDropdown = CreateDropdown("quickSearchAction_Enemy", parent, offsetX, "Enemy shortcut.", shortcuts);
     parent.clickedTeamValueDropdown = CreateDropdown("quickSearchAction_ClickedTeam", parent, offsetX, "Team of clicked player shortcut.", shortcuts);
 
-    CreateSpace(20);
+    CreateSpace(15);
 
     parent.nameValueDropdown = CreateDropdown("quickSearchAction_Name", parent, offsetX, "Name shortcut.", shortcuts);
     parent.specValueDropdown = CreateDropdown("quickSearchAction_Spec", parent, offsetX, "Spec shortcut.", shortcuts);

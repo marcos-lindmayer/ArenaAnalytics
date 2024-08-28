@@ -3,12 +3,15 @@ local Tooltips = ArenaAnalytics.Tooltips;
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
+local Helpers = ArenaAnalytics.Helpers;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
 function Tooltips:DrawMinimapTooltip()
     GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
-    GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. ArenaAnalytics:getVersion() .. "|r");
+    GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. ArenaAnalytics:GetVersion() .. "|r");
     GameTooltip:AddLine("|cffBBBBBB" .. "Left Click|r" .. " to toggle ArenaAnalytics");
     GameTooltip:AddLine("|cffBBBBBB" .. "Right Click|r".. " to open Options");
     GameTooltip:Show();
@@ -41,7 +44,11 @@ function Tooltips:DrawOptionTooltip(frame, tooltip)
 end
 
 local function TryAddQuickSearchShortcutTips()
-    if(Options:Get("searchHideTooltipQuickSearch")) then
+    if(not Options:Get("quickSearchEnabled")) then
+        return;
+    end
+
+    if(not Options:Get("searchShowTooltipQuickSearch")) then
         return;
     end
         
@@ -72,7 +79,7 @@ local function TryAddQuickSearchShortcutTips()
     local sameSegmentRuleShortcut = Options:Get("quickSearchAppendRule_SameSegment") or "None";
 
     local inverseShortcut = Options:Get("quickSearchAction_Inverse") or "None";
-    
+
     local teamShortcut = Options:Get("quickSearchAction_Team") or "None";
     local enemyShortcut = Options:Get("quickSearchAction_Enemy") or "None";
 
@@ -83,16 +90,19 @@ local function TryAddQuickSearchShortcutTips()
 
     local specialValues = {}
 
-    local function TryInsertShortcut(shortcut)
+    local function TryInsertShortcut(descriptor, shortcut)
         if(shortcut ~= "None") then
-            tinsert(specialValues, ColorTips("New Search: ", shortcut));
+            tinsert(specialValues, ColorTips(descriptor, shortcut));
         end
     end
 
-    TryInsertShortcut(newSearchRuleShortcut);
-    TryInsertShortcut(newSegmentRuleShortcut);
-    TryInsertShortcut(sameSegmentRuleShortcut);
-    TryInsertShortcut(inverseShortcut);
+    TryInsertShortcut("Default Rule: ", defaultAppendRule);
+    TryInsertShortcut("Default Value: ", defaultValue);
+
+    TryInsertShortcut("New Search: ", newSearchRuleShortcut);
+    TryInsertShortcut("New Segment: ", newSegmentRuleShortcut);
+    TryInsertShortcut("Same Segment: ", sameSegmentRuleShortcut);
+    TryInsertShortcut("Inversed: ", inverseShortcut);
 
     -- Add the values
     if(#specialValues > 0) then
@@ -100,6 +110,10 @@ local function TryAddQuickSearchShortcutTips()
 
         if(#specialValues > 2) then
             GameTooltip:AddDoubleLine(specialValues[3] or " ", specialValues[4] or " ");
+        end
+        
+        if(#specialValues > 4) then
+            GameTooltip:AddDoubleLine(specialValues[5] or " ", specialValues[6] or " ");
         end
 
         GameTooltip:AddLine(" ");
@@ -142,43 +156,33 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     local matchIndex = playerFrame.matchIndex;
-    local teamKey = playerFrame.team;
+    local isEnemyTeam = playerFrame.isEnemyTeam;
     local playerIndex = playerFrame.playerIndex;
-
-    if(not matchIndex or not teamKey or not playerIndex) then
+    
+    if(not matchIndex or not playerIndex or isEnemyTeam == nil) then
         return;
     end
-
+    
     local match = ArenaAnalytics:GetFilteredMatch(matchIndex);
-    local playerTable = match and match[teamKey] and match[teamKey][playerIndex] or nil;
+    local player = match and ArenaMatch:GetPlayer(match, isEnemyTeam, playerIndex);
+    local playerInfo = ArenaMatch:GetPlayerInfo(player);
 
-    if(not playerTable) then
+    if(not playerInfo) then
         return;
     end
-
-    local playerName = playerTable["name"] or ""
-
-    local _, realm = UnitFullName("player");
-    if(realm and playerName:find(realm)) then
-        playerName = playerName:match("(.*)-") or "";
-    end
-
-    local player = playerName or "???";
-    local faction = playerTable["faction"] or "???";
-    local race = playerTable["race"] or "???";
-    local class = playerTable["class"] or "";
-    local spec = playerTable["spec"] or "";
-    local damage = playerTable["damage"] or "-";
-    local healing = playerTable["healing"] or "-";
-    local kills = playerTable["kills"] or "-";
-    local deaths = playerTable["deaths"] or "-";
 
     local function ColorText(text)
         return "|cff999999" .. text or "" .. "|r";
     end
 
-    local function ColorValue(text)
-        return text or "" .. "|r";
+    local function ColorClass(text, spec_id)
+        local classIndex = Internal:GetClassIndex(playerInfo.spec_id);
+        return ArenaAnalytics:ApplyClassColor(text, classIndex);
+    end
+
+    local function ColorFaction(text, race_id)
+        local color = Internal:GetRaceFactionColor(race_id) or "ffffffff";
+        return text and ("|c" .. color .. text .. "|r") or " ";
     end
 
     local function FormatValue(value)
@@ -192,7 +196,7 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
             while true do  
                 value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2')
                 if (k==0) then
-                    break
+                    break;
                 end
             end
         end
@@ -200,16 +204,26 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         return "|cffffffff" .. value .. "|r";
     end
 
+    local playerName = Helpers:GetNameFromPlayerInfo(playerInfo);
+    local race = playerInfo.race or " ";
+    
+    local specialization = nil;
+    if(playerInfo.class and playerInfo.spec) then
+        specialization = playerInfo.spec .. " " .. playerInfo.class;
+    else
+        specialization = playerInfo.spec or playerInfo.class or " ";
+    end
+
     -- Create the tooltip
     GameTooltip:SetOwner(playerFrame, "ANCHOR_NONE");
     GameTooltip:SetPoint("TOPRIGHT", playerFrame, "TOPLEFT");
     GameTooltip:ClearLines();
 
-    GameTooltip:AddLine(player);    
-    GameTooltip:AddDoubleLine(race, ArenaAnalytics:ApplyClassColor(spec .. " " .. class, class));
+    GameTooltip:AddLine(playerName);
+    GameTooltip:AddDoubleLine(ColorFaction(playerInfo.race, playerInfo.race_id), ColorClass(specialization, playerInfo.spec_id));
 
-    GameTooltip:AddDoubleLine(ColorText("Damage: ") .. FormatValue(damage), ColorText("Healing: ") .. FormatValue(healing));
-    GameTooltip:AddDoubleLine(ColorText("Kills: ") .. FormatValue(kills), ColorText("Deaths: ") .. FormatValue(deaths));
+    GameTooltip:AddDoubleLine(ColorText("Damage: ") .. FormatValue(playerInfo.damage), ColorText("Healing: ") .. FormatValue(playerInfo.healing));
+    GameTooltip:AddDoubleLine(ColorText("Kills: ") .. FormatValue(playerInfo.kills), ColorText("Deaths: ") .. FormatValue(playerInfo.deaths));
 
     -- Quick Search Shortcuts
     TryAddQuickSearchShortcutTips();

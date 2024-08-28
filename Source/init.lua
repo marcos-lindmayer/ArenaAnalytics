@@ -63,18 +63,18 @@ ArenaAnalytics.commands = {
 	end,
 	
 	["version"] = function()
-		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (ArenaAnalytics:getVersion() or "Invalid Version") .. " (Early Access)|r");
+		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (ArenaAnalytics:GetVersion() or "Invalid Version") .. " (Early Access)|r");
 	end,
 	
 	["total"] = function()
-		ArenaAnalytics:Print("Total arenas stored: ", #ArenaAnalyticsMatchHistoryDB);
+		ArenaAnalytics:Print("Total arenas stored: ", #ArenaAnalyticsDB);
 	end,
 	
 	["played"] = function()
 		local totalDurationInArenas = 0;
 		local currentSeasonTotalPlayed = 0;
-		for i=1, #ArenaAnalyticsMatchHistoryDB do
-			local match = ArenaAnalyticsMatchHistoryDB[i];
+		for i=1, #ArenaAnalyticsDB do
+			local match = ArenaAnalyticsDB[i];
 			local duration = tonumber(match["duration"]) or 0;
 			if(duration > 0) then
 				totalDurationInArenas = totalDurationInArenas + duration;
@@ -87,7 +87,7 @@ ArenaAnalytics.commands = {
 		-- TODO: Update coloring?
 		ArenaAnalytics:Print("Total arena time played: ", SecondsToTime(totalDurationInArenas));
 		ArenaAnalytics:Print("Time played this season: ", SecondsToTime(currentSeasonTotalPlayed));
-		ArenaAnalytics:Print("Average arena duration: ", SecondsToTime(math.floor(totalDurationInArenas / #ArenaAnalyticsMatchHistoryDB)));
+		ArenaAnalytics:Print("Average arena duration: ", SecondsToTime(math.floor(totalDurationInArenas / #ArenaAnalyticsDB)));
 	end,
 
 	-- Debug command to 
@@ -103,27 +103,27 @@ ArenaAnalytics.commands = {
 
 	["convert"] = function()
 		ArenaAnalytics:Print("Forcing data version conversion..");
-		if(not ArenaAnalyticsMatchHistoryDB or #ArenaAnalyticsMatchHistoryDB == 0) then
+		if(not ArenaAnalyticsDB or #ArenaAnalyticsDB == 0) then
 			ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB(); -- 0.3.0
 			ArenaAnalytics.VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
-			ArenaAnalytics.VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB(); -- 0.7.0
+			ArenaAnalytics.VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(); -- 0.7.0
 			ArenaAnalytics.VersionManager:FinalizeConversionAttempts();
 		end
         ArenaAnalyticsScrollFrame:Hide();
 	end,
 
 	["updatesessions"] = function()
-		ArenaAnalytics:Print("Updating sessions in ArenaAnalyticsMatchHistoryDB.");
+		ArenaAnalytics:Print("Updating sessions in ArenaAnalyticsDB.");
 		ArenaAnalytics:RecomputeSessionsForMatchHistory();
 
         ArenaAnalyticsScrollFrame:Hide();
 	end,
 
 	["updateseasons"] = function()
-		ArenaAnalytics:Print("Updating seasons in ArenaAnalyticsMatchHistoryDB.");
+		ArenaAnalytics:Print("Updating seasons in ArenaAnalyticsDB.");
 
-		for i=1, #ArenaAnalyticsMatchHistoryDB do
-			local match = ArenaAnalyticsMatchHistoryDB[i];
+		for i=1, #ArenaAnalyticsDB do
+			local match = ArenaAnalyticsDB[i];
 			local season = ArenaMatch:GetSeason(match);
 			local matchDate = ArenaMatch:GetDate(match);
 
@@ -143,7 +143,7 @@ ArenaAnalytics.commands = {
 	end,
 
 	["updategroupsort"] = function()
-		ArenaAnalytics:Print("Updating group sorting in ArenaAnalyticsMatchHistoryDB.");
+		ArenaAnalytics:Print("Updating group sorting in ArenaAnalyticsDB.");
 
 		ArenaAnalytics:ResortGroupsInMatchHistory();
 		
@@ -152,11 +152,11 @@ ArenaAnalytics.commands = {
 
 	["debugcleardb"] = function()
 		if(not Options:Get("debuggingEnabled")) then
-			ArenaAnalytics:Print("Clearing ArenaAnalyticsMatchHistoryDB requires enabling |cffBBBBBB/aa debug|r. Not intended for users!");
+			ArenaAnalytics:Print("Clearing ArenaAnalyticsDB requires enabling |cffBBBBBB/aa debug|r. Not intended for users!");
 		else -- Debug mode is enabled, allow debug clearing the DB
 			if (ArenaAnalytics:HasStoredMatches()) then
-				ArenaAnalytics:Log("Clearing ArenaAnalyticsMatchHistoryDB.");
-				ArenaAnalyticsMatchHistoryDB = {}
+				ArenaAnalytics:Log("Clearing ArenaAnalyticsDB.");
+				ArenaAnalyticsDB = {}
 				ArenaAnalytics.AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
 				
 				ArenaAnalytics.Filters:Refresh();
@@ -182,7 +182,6 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-		ArenaAnalytics.API:GetMySpec();
 
 		if(false) then
 			for i=1, 13 do
@@ -242,7 +241,7 @@ end
 
 -- Debug logging version of print
 function ArenaAnalytics:LogSpacer()
-	if not ArenaAnalyticsSettingsDB["debuggingEnabled"] then
+	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
 		return;
 	end
 
@@ -250,7 +249,7 @@ function ArenaAnalytics:LogSpacer()
 end
 
 function ArenaAnalytics:Log(...)
-	if not ArenaAnalyticsSettingsDB["debuggingEnabled"] then
+	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
 		return;
 	end
 
@@ -373,7 +372,7 @@ function ArenaAnalytics:init()
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
 	end
 
-	local version = ArenaAnalytics:getVersion();
+	local version = ArenaAnalytics:GetVersion();
 	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffAAAAAA" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
@@ -398,12 +397,7 @@ function ArenaAnalytics:init()
 	-- Version Control
 	---------------------------------
 
-	ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB(); -- 0.3.0
-	ArenaAnalytics.VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
-	ArenaAnalytics.VersionManager:ConvertMatchHistoryDBToArenaAnalyticsMatchHistoryDB(); -- 0.7.0
-	
-	ArenaAnalytics:ResortGroupsInMatchHistory();
-	ArenaAnalytics:RecomputeSessionsForMatchHistory();
+	ArenaAnalytics.VersionManager:OnInit();
 
 	---------------------------------
 	-- Initialize modules

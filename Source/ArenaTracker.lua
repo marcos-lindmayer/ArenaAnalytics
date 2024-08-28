@@ -41,7 +41,6 @@ function ArenaTracker:ResetCurrentArenaValues()
 	currentArena.ended = false;
 	currentArena.endedProperly = false;
 	currentArena.won = nil;
-	currentArena.firstDeath = nil;
 	currentArena.deathData = {};
 end
 ArenaTracker:ResetCurrentArenaValues();

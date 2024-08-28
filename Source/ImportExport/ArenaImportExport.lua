@@ -30,11 +30,11 @@ local function RecomputeFirstAndLastStoredTimes()
 
     earliestStartTime, latestStartTime = nil, nil;
     arenasSkippedByDate = 0;
-    existingArenaCount = #ArenaAnalyticsMatchHistoryDB;
+    existingArenaCount = #ArenaAnalyticsDB;
 
     -- Earliest start times (Loop in case of invalid dates)
-    for i = #ArenaAnalyticsMatchHistoryDB, 1, -1 do
-        local match = ArenaAnalyticsMatchHistoryDB[i];
+    for i = #ArenaAnalyticsDB, 1, -1 do
+        local match = ArenaAnalyticsDB[i];
         
         if(match["date"] and match["date"] > 0) then
             earliestStartTime = match["date"];
@@ -42,8 +42,8 @@ local function RecomputeFirstAndLastStoredTimes()
     end
     
     -- Latest start times (Loop in case of invalid dates)
-    for i = 1, #ArenaAnalyticsMatchHistoryDB do
-        local match = ArenaAnalyticsMatchHistoryDB[i];
+    for i = 1, #ArenaAnalyticsDB do
+        local match = ArenaAnalyticsDB[i];
 
         if(match["date"] and match["date"] > 0) then
             latestStartTime = match["date"];
@@ -177,7 +177,7 @@ function Import:parseRawData(data)
     
     if(isImporting) then
         ArenaAnalytics:Print("Another import already in progress!");
-    elseif(not ArenaAnalyticsSettingsDB["allowImportDataMerge"] and ArenaAnalytics:HasStoredMatches()) then
+    elseif(not ArenaAnalyticsSharedSettingsDB["allowImportDataMerge"] and ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalytics:Print("Import failed due to existing stored matches!");
         Import:reset();
     elseif(dataSource == "Invalid") then
@@ -520,7 +520,7 @@ function Import:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
             ["importInfo"] = {"ArenaStats", (existingArenaCount > 0 and true or false)} -- Import Source, isMergeImport
         }
 
-        table.insert(ArenaAnalyticsMatchHistoryDB, arena);
+        table.insert(ArenaAnalyticsDB, arena);
         arenasImportedThisFrame = arenasImportedThisFrame + 1;
 
         if(arenasImportedThisFrame >= 500 and i < #cachedArenas) then
@@ -750,7 +750,7 @@ function Import:addCachedArenasToMatchHistory_ArenaAnalytics(nextIndex)
             ["importInfo"] = {"ArenaAnalytics", (existingArenaCount > 0 and true or false)} -- Import Source, isMergeImport
         }
 
-        table.insert(ArenaAnalyticsMatchHistoryDB, arena);
+        table.insert(ArenaAnalyticsDB, arena);
         arenasImportedThisFrame = arenasImportedThisFrame + 1;
 
         if(arenasImportedThisFrame >= 500 and i < #cachedArenas) then
@@ -769,7 +769,7 @@ function Import:completeImport()
     Import:tryHide();
 
     
-    table.sort(ArenaAnalyticsMatchHistoryDB, function (k1,k2)
+    table.sort(ArenaAnalyticsDB, function (k1,k2)
         if (k1["date"] and k2["date"]) then
             return k1["date"] < k2["date"];
         end
@@ -777,11 +777,11 @@ function Import:completeImport()
     
     ArenaAnalytics:RecomputeSessionsForMatchHistory();
     ArenaAnalytics:UpdateLastSession();
-	ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsMatchHistoryDB;
+	ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
     
     Filters:Refresh();
     
-    ArenaAnalytics:Print("Import complete. " .. (#ArenaAnalyticsMatchHistoryDB - existingArenaCount) .. " arenas added!");
+    ArenaAnalytics:Print("Import complete. " .. (#ArenaAnalyticsDB - existingArenaCount) .. " arenas added!");
     ArenaAnalytics:Log("Import ignored", arenasSkippedByDate, "arenas due to their date.");
 end
 
@@ -819,7 +819,7 @@ end
 -- ArenaAnalytics export
 ---------------------------------
 
--- Returns a CSV-formatted string using ArenaAnalyticsMatchHistoryDB info
+-- Returns a CSV-formatted string using ArenaAnalyticsDB info
 function Export:combineExportCSV()
     if(not ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalytics:Log("Export: No games to export!");
@@ -869,8 +869,8 @@ function Export:addMatchesToExport(exportTable, nextIndex)
     local playerData = {"name", "race", "class", "spec", "kills", "deaths", "damage", "healing"};
     
     local arenasAddedThisFrame = 0;
-    for i = nextIndex, #ArenaAnalyticsMatchHistoryDB do
-        local match = ArenaAnalyticsMatchHistoryDB[i];
+    for i = nextIndex, #ArenaAnalyticsDB do
+        local match = ArenaAnalyticsDB[i];
         
         local victory = match["won"] ~= nil and (match["won"] and "1" or "0") or "";
         
@@ -912,7 +912,7 @@ function Export:addMatchesToExport(exportTable, nextIndex)
 
         arenasAddedThisFrame = arenasAddedThisFrame + 1;
 
-        if(arenasAddedThisFrame >= 10000 and i < #ArenaAnalyticsMatchHistoryDB) then
+        if(arenasAddedThisFrame >= 10000 and i < #ArenaAnalyticsDB) then
             C_Timer.After(0, function() Export:addMatchesToExport(exportTable, i + 1) end);
             return;
         end

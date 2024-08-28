@@ -4,6 +4,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
 local Constants = ArenaAnalytics.Constants;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
@@ -187,8 +188,8 @@ function ArenaMatch:SetBracket(match, value)
         end
     end
     
-    match[key] = nil;
     ArenaAnalytics:Log("Error: Attempted to set invalid bracket:", value);
+    match[key] = nil;
 end
 
 -------------------------------------------------------------------------
@@ -472,18 +473,17 @@ end
 function ArenaMatch:IsSamePlayer(player, otherName, otherRealm)
     assert(player and otherName);
 
-    local playerName, playerRealm = player[playerKeys.name], player[playerKeys.realm];
-
+    local playerName, playerRealm = ArenaMatch:GetPlayerNameAndRealm(player, true);
     return (playerName and playerName == otherName and playerRealm == otherRealm);
 end
 
 function ArenaMatch:GetTeam(match, isEnemyTeam)
     if(not match) then 
-        return nil 
+        return nil;
     end;
 
     local key = isEnemyTeam and matchKeys.enemy_team or matchKeys.team;
-    return key and match[key];
+    return key and match[key] or {};
 end
 
 function ArenaMatch:GetTeamSize(match, isEnemyTeam)
@@ -493,6 +493,25 @@ function ArenaMatch:GetTeamSize(match, isEnemyTeam)
 
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
     return ArenaAnalytics:getTeamSizeFromBracketIndex(bracketIndex);
+end
+
+function ArenaMatch:GetPlayerCount(match)
+    if(not match) then
+        return 0;
+    end
+
+    local team = ArenaMatch:GetTeam(match, false);
+    local enemy = ArenaMatch:GetTeam(match, true);
+    
+    if(not team) then
+        return enemy and #enemy or 0;
+    end
+    
+    if(not enemy) then
+        return #team;
+    end
+
+    return #team + #enemy;
 end
 
 function ArenaMatch:GetPlayer(match, isEnemyTeam, index)
@@ -511,28 +530,27 @@ function ArenaMatch:GetPlayer(match, isEnemyTeam, index)
     return team[index];
 end
 
-function ArenaMatch:GetPlayerInfo(match, player, isEnemyTeam)
-    if(not match) then 
-        return nil 
-    end;
-
+function ArenaMatch:GetPlayerInfo(player)
     if(not player) then
-        return {};
+        return nil;
     end
 
     local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
     local class, spec = Constants:GetClassAndSpec(spec_id);
 
-    local name = ArenaMatch:GetPlayerName(player);
-    local realm = ArenaMatch:GetPlayerName(player);
+    local name = player[playerKeys.name];
+    local realm = ArenaAnalytics:GetRealm(player[playerKeys.realm]);
+    local race_id = ArenaMatch:GetPlayerValue(player, "race");
 
     local playerInfo = {
-        is_self = ArenaMatch:GetPlayerValue(player, "is_self") == 1,
-        is_first_death = ArenaMatch:GetPlayerValue(player, "is_first_death") == 1,
+        is_self = (ArenaMatch:GetPlayerValue(player, "is_self") == 1),
+        is_first_death = (ArenaMatch:GetPlayerValue(player, "is_first_death") == 1),
         name = name,
         realm = realm,
         fullName = ArenaAnalytics:CombineNameAndRealm(name, realm),
-        race = ArenaMatch:GetPlayerValue(player, "race"),
+        faction = Internal:GetRaceFaction(race_id),
+        race = Internal:GetRace(race_id),
+        race_id = race_id,
         class = class,
         spec = spec,
         spec_id = spec_id,
@@ -551,8 +569,8 @@ function ArenaMatch:GetPlayerValue(player, key)
         return nil;
     end
 
-    if(key == "name") then
-        return ArenaMatch:GetPlayerName(player);
+    if(key == "full_name") then
+        return ArenaMatch:GetPlayerFullName(player);
     end
 
     local playerKey = playerKeys[key];
@@ -566,17 +584,28 @@ function ArenaMatch:GetComparisonValues(playerA, playerB, key)
     return valueA, valueB;
 end
 
-function ArenaMatch:GetPlayerName(player)
+function ArenaMatch:GetPlayerFullName(player)
+    if(not player) then
+        return "";
+    end
+
+    local name, realm = ArenaMatch:GetPlayerNameAndRealm(player);
+    return ArenaAnalytics:CombineNameAndRealm(name, realm);
+end
+
+function ArenaMatch:GetPlayerNameAndRealm(player, requireCompactRealm)
     if(not player) then
         return "";
     end
 
     local name = player[playerKeys.name];
-    
-    local realm = ArenaAnalytics:GetRealm(player[playerKeys.realm]);
-    realm = realm and ("-" .. realm) or "";
+    local realm = player[playerKeys.realm];
 
-    return name .. realm;
+    if(requireCompactRealm) then
+        return name, realm;
+    end
+
+    return name, ArenaAnalytics:GetRealm(realm);
 end
 
 local function GetTeamSpecs(team, size)
@@ -723,7 +752,7 @@ function ArenaMatch:GetSelf(match)
     if(team) then
         for i,player in ipairs(team) do
             if(ArenaMatch:GetPlayerValue(match, player, "is_self") == 1) then
-                return ArenaMatch:GetPlayerInfo(match, player, false);
+                return ArenaMatch:GetPlayerInfo(player);
             end
         end
     end
@@ -751,7 +780,7 @@ function ArenaMatch:GetFirstDeath(match)
     if(team) then
         for i,player in ipairs(team) do
             if(ArenaMatch:GetPlayerValue(match, player, "is_first_death") == 1) then
-                return ArenaMatch:GetPlayerInfo(match, player, false);
+                return ArenaMatch:GetPlayerInfo(player);
             end
         end
     end
@@ -760,7 +789,7 @@ function ArenaMatch:GetFirstDeath(match)
     if(enemyTeam) then
         for i,player in ipairs(enemyTeam) do
             if(ArenaMatch:GetPlayerValue(match, player, "is_first_death") == 1) then
-                return ArenaMatch:GetPlayerInfo(match, player, true);
+                return ArenaMatch:GetPlayerInfo(player);
             end
         end
     end

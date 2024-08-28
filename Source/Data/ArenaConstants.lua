@@ -3,6 +3,7 @@ local Constants = ArenaAnalytics.Constants;
 
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
@@ -277,21 +278,8 @@ function Constants:GetArenaTimer()
     end
 end
 
--- Returns class color hex by className
-function ArenaAnalytics:GetClassColor(className)
-    if(className == nil) then
-        return 'ffffffff';
-    end
-    
-    if(className == "Death Knight") then
-        className = "DEATHKNIGHT";
-    end
-    
-    return select(4, GetClassColor(className:upper()));
-end
-
-function ArenaAnalytics:ApplyClassColor(text, class)
-    return "|c" .. ArenaAnalytics:GetClassColor(class) .. text or "" .."|r";
+function ArenaAnalytics:ApplyClassColor(text, classIndex)
+    return "|c" .. Internal:GetClassColor(classIndex) .. text or "" .."|r";
 end
 
 -- Returns class icon path string
@@ -309,80 +297,80 @@ end
 
 local specIconTable = {
         -- Druid
-        [0] = "Interface\\Icons\\classicon_druid",
+        --[0] = "Interface\\Icons\\classicon_druid",
         [1] = [[Interface\Icons\spell_nature_healingtouch]],
         [2] = [[Interface\Icons\ability_racial_bearform]],
         [3] = [[Interface\Icons\spell_nature_starfall]],
     
         -- Paladin
-        [10] = "Interface\\Icons\\classicon_paladin",
+        --[10] = "Interface\\Icons\\classicon_paladin",
         [11] = [[Interface\Icons\spell_holy_holybolt]],
         [12] = [[Interface\Icons\spell_holy_devotionaura]],
         [13] = [[Interface\Icons\ability_paladin_hammeroftherighteous]],
         [14] = [[Interface\Icons\spell_holy_auraoflight]],
     
         -- Shaman
-        [20] = "Interface\\Icons\\classicon_shaman",
+        --[20] = "Interface\\Icons\\classicon_shaman",
         [21] = [[Interface\Icons\spell_nature_magicimmunity]],
         [22] = [[Interface\Icons\spell_nature_lightning]],
         [23] = [[Interface\Icons\spell_nature_lightningshield]],
     
         -- Death Knight
-        [30] = "Interface\\Icons\\classicon_deathknight",
+        --[30] = "Interface\\Icons\\classicon_deathknight",
         [31] = [[Interface\Icons\spell_deathknight_unholypresence]],
         [32] = [[Interface\Icons\spell_deathknight_frostpresence]],
         [33] = [[Interface\Icons\spell_deathknight_bloodpresence]],
     
         -- Hunter
-        [40] = "Interface\\Icons\\classicon_hunter",
+        --[40] = "Interface\\Icons\\classicon_hunter",
         [41] = [[Interface\Icons\ability_hunter_beasttaming]],
         [42] = [[Interface\Icons\ability_marksmanship]],
         [43] = [[Interface\Icons\ability_hunter_swiftstrike]],
     
         -- Mage
-        [50] = "Interface\\Icons\\classicon_mage",
+        --[50] = "Interface\\Icons\\classicon_mage",
         [51] = [[Interface\Icons\spell_frost_frostbolt02]],
         [52] = [[Interface\Icons\spell_fire_firebolt02]],
         [53] = [[Interface\Icons\spell_holy_magicalsentry]],
     
         -- Rogue
-        [60] = "Interface\\Icons\\classicon_rogue",
+        --[60] = "Interface\\Icons\\classicon_rogue",
         [61] = [[Interface\Icons\ability_stealth]],
         [62] = [[Interface\Icons\ability_rogue_eviscerate]],
         [63] = [[Interface\Icons\ability_backstab]],
         [64] = nil, -- Outlaw
     
         -- Warlock
-        [70] = "Interface\\Icons\\classicon_warlock",
+        --[70] = "Interface\\Icons\\classicon_warlock",
         [71] = [[Interface\Icons\spell_shadow_deathcoil]],
         [72] = [[Interface\Icons\spell_shadow_rainoffire]],
         [73] = [[Interface\Icons\spell_shadow_metamorphosis]],
     
         -- Warrior
-        [80] = "Interface\\Icons\\classicon_warrior",
+        --[80] = "Interface\\Icons\\classicon_warrior",
         [81] = [[Interface\Icons\inv_shield_06]],
         [82] = [[Interface\Icons\ability_rogue_eviscerate]],
         [83] = [[Interface\Icons\ability_warrior_innerrage]],
     
         -- Priest
-        [90] = "Interface\\Icons\\classicon_priest",
+        --[90] = "Interface\\Icons\\classicon_priest",
         [91] = [[Interface\Icons\spell_holy_wordfortitude]],
         [92] = [[Interface\Icons\spell_holy_guardianspirit]],
         [93] = [[Interface\Icons\spell_shadow_shadowwordpain]],
     
         -- Monk
-        [100] = nil, -- "Interface\\Icons\\classicon_monk",
+        --[100] = nil, -- "Interface\\Icons\\classicon_monk",
         [101] = nil, -- Mistweaver
         [102] = nil, -- Brewmaster
         [103] = nil, -- Windwalker
     
         -- Demon Hunter
-        [110] = nil, -- "Interface\\Icons\\classicon_demonhunter",
+        --[110] = nil, -- "Interface\\Icons\\classicon_demonhunter",
         [111] = nil, -- Vengeance
         [112] = nil, -- Havoc
     
         -- Evoker
-        [120] = nil, -- "Interface\\Icons\\classicon_evoker",
+        --[120] = nil, -- "Interface\\Icons\\classicon_evoker",
         [121] = nil, -- Preservation
         [122] = nil, -- Augmentation
         [123] = nil, -- Devastation
@@ -391,75 +379,6 @@ local specIconTable = {
 -- Returns spec icon path string
 function ArenaAnalytics:GetSpecIcon(ID)
     return ID and specIconTable[ID];
-end
-
-function ArenaAnalyticsGetSpecIcon(class, spec)
-    if(spec ~= nil) then
-        if (spec == "Subtlety") then
-            --return [[Interface\Icons\ability_stealth]];
-        elseif (spec == "Assassination") then
-            --return [[Interface\Icons\ability_rogue_eviscerate]];
-        elseif (spec == "Combat") then
-            --return [[Interface\Icons\ability_backstab]];
-        elseif (spec == "Blood") then
-            --return [[Interface\Icons\spell_deathknight_bloodpresence]];
-        elseif (spec == "Frost" and class == "Death Knight") then
-            --return [[Interface\Icons\spell_deathknight_frostpresence]];
-        elseif (spec == "Unholy") then
-            --return [[Interface\Icons\spell_deathknight_unholypresence]];
-        elseif (spec == "Balance") then
-            --return [[Interface\Icons\spell_nature_starfall]];
-        elseif (spec == "Feral") then
-            --return [[Interface\Icons\ability_racial_bearform]];
-        elseif (spec == "Restoration" and class == "Druid") then
-            --return [[Interface\Icons\spell_nature_healingtouch]];
-        elseif (spec == "Beast Mastery") then
-            --return [[Interface\Icons\ability_hunter_beasttaming]];
-        elseif (spec == "Marksmanship") then
-            --return [[Interface\Icons\ability_marksmanship]];
-        elseif (spec == "Survival") then
-            --return [[Interface\Icons\ability_hunter_swiftstrike]];
-        elseif (spec == "Arcane") then
-            --return [[Interface\Icons\spell_holy_magicalsentry]];
-        elseif (spec == "Fire") then
-            --return [[Interface\Icons\spell_fire_firebolt02]];
-        elseif (spec == "Frost") then
-            --return [[Interface\Icons\spell_frost_frostbolt02]];
-        elseif (spec == "Holy" and class == "Paladin") then
-            --return [[Interface\Icons\spell_holy_holybolt]];
-        elseif (spec == "Protection" and class == "Paladin") then
-            --return [[Interface\Icons\spell_holy_devotionaura]];
-        elseif (spec == "Retribution") then
-            --return [[Interface\Icons\spell_holy_auraoflight]];
-        elseif (spec == "Preg") then
-            --return [[Interface\Icons\ability_paladin_hammeroftherighteous]];
-        elseif (spec == "Discipline") then
-            --return [[Interface\Icons\spell_holy_wordfortitude]];
-        elseif (spec == "Holy") then
-            --return [[Interface\Icons\spell_holy_guardianspirit]];
-        elseif (spec == "Shadow") then
-            --return [[Interface\Icons\spell_shadow_shadowwordpain]];
-        elseif (spec == "Elemental") then
-            --return [[Interface\Icons\spell_nature_lightning]];
-        elseif (spec == "Enhancement") then
-            --return [[Interface\Icons\spell_nature_lightningshield]];
-        elseif (spec == "Restoration") then
-            --return [[Interface\Icons\spell_nature_magicimmunity]];
-        elseif (spec == "Affliction") then
-            --return [[Interface\Icons\spell_shadow_deathcoil]];
-        elseif (spec == "Demonology") then
-            --return [[Interface\Icons\spell_shadow_metamorphosis]];
-        elseif (spec == "Destruction") then
-            --return [[Interface\Icons\spell_shadow_rainoffire]];
-        elseif (spec == "Arms") then
-            --return [[Interface\Icons\ability_rogue_eviscerate]];
-        elseif (spec == "Fury") then
-            --return [[Interface\Icons\ability_warrior_innerrage]];
-        elseif (spec == "Protection") then
-            --return [[Interface\Icons\inv_shield_06]];
-        end
-    end
-	return "";
 end
 
 local mapsList = {

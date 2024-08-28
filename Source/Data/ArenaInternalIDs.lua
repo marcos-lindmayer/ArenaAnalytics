@@ -61,6 +61,7 @@ local addonRaceIDs = {
 }
 
 function Internal:GetAddonRaceIDByToken(token)
+    token = Helpers:ToSafeLower(token);
     if(token == nil) then
         return nil;
     end
@@ -70,11 +71,20 @@ function Internal:GetAddonRaceIDByToken(token)
     end
 
     for id,data in pairs(addonRaceIDs) do
-        if(data and Helpers:ToSafeLower(data.token) == token:lower()) then
+        if(data and Helpers:ToSafeLower(data.token) == token) then
             return id;
         end
     end
     return nil;
+end
+
+function Internal:GetRace(race_id)
+    local info = race_id and addonRaceIDs[race_id];
+    if(not info) then
+        return nil;
+    end
+
+    return info.name;
 end
 
 function Internal:GetRaceFaction(race_id)
@@ -83,6 +93,14 @@ function Internal:GetRaceFaction(race_id)
     end
 
     return (race_id % 2 == 1) and "Alliance" or "Horde";
+end
+
+function Internal:GetRaceFactionColor(race_id)
+    if(not race_id) then
+        return "ffffffff";
+    end
+
+    return (race_id % 2 == 1) and "ff3090FF" or "ffD00A06";
 end
 
 -------------------------------------------------------------------------
@@ -126,8 +144,13 @@ function Internal:GetClassInfo(classIndex)
 end
 
 function Internal:GetClassIcon(classIndex)
-    local classToken = classIndex and classIndexes[classIndex] and classIndex[classIndex].token;
+    local classToken = classIndex and classIndexes[classIndex] and classIndexes[classIndex].token;
     return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or "";
+end
+
+function Internal:GetClassColor(classIndex)
+    local classToken = classIndex and classIndexes[classIndex] and classIndexes[classIndex].token;
+    return classToken and select(4, GetClassColor(classToken)) or "ffffffff";
 end
 
 -------------------------------------------------------------------------
@@ -230,6 +253,19 @@ function Internal:GetSpecInfo(spec_id)
     end
 
     return class, spec, info.role, icon;
+end
+
+function Internal:GetClassIndex(spec_id)
+    if(not spec_id) then
+        return nil;
+    end
+
+    local info = spec_id and addonSpecializationIDs[spec_id];
+    if(not info) then
+        return nil;
+    end
+
+    return info.classIndex;
 end
 
 -- Get the ID from string class and spec. Should only be used by version control.
