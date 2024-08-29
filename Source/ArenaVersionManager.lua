@@ -99,7 +99,7 @@ function VersionManager:OnInit()
             ArenaAnalytics:Log("Version Control: Testing remaining old data after purging ArenaAnalyticsDB: ", k, v and #v);
         end
     end
-    --MatchHistoryDB = nil;
+    MatchHistoryDB = nil;
 
     NewMatchHistory = VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(NewMatchHistory); -- 0.7.0
 

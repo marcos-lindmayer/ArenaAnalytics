@@ -376,8 +376,19 @@ local function DoesAllTokensMatchExact(segment, tokens, skipName)
     return true;
 end
 
+local function GetPlayerInfo(playerFrame)
+    if(not playerFrame) then
+        return nil;
+    end
+
+    local match, filteredSession = ArenaAnalytics:GetFilteredMatch(playerFrame.matchIndex);
+    local player = match and ArenaMatch:GetPlayer(match, playerFrame.isEnemyTeam, playerFrame.playerIndex);
+    
+    return player and ArenaMatch:GetPlayerInfo(player, playerFrame.isEnemyTeam);
+end
+
 local locked = nil;
-function Search:QuickSearch(mouseButton, playerInfo, isEnemyTeam)
+function Search:QuickSearch(playerFrame, mouseButton)
     if(not Options:Get("quickSearchEnabled")) then
         return;
     end
@@ -386,6 +397,12 @@ function Search:QuickSearch(mouseButton, playerInfo, isEnemyTeam)
         return;
     end
     locked = true;
+
+    local playerInfo = playerFrame.player and ArenaMatch:GetPlayerInfo(playerFrame.player, playerFrame.isEnemyTeam); --GetPlayerInfo(playerFrame);
+    if(not playerInfo) then
+        locked = false;
+        return;
+    end
 
     team = isEnemyTeam and "enemy" or "team";
     local appendRule = GetAppendRule(mouseButton);

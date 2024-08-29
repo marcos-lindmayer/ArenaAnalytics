@@ -155,18 +155,7 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         BindPlayerFrameModifierChanged(playerFrame);
     end
 
-    local matchIndex = playerFrame.matchIndex;
-    local isEnemyTeam = playerFrame.isEnemyTeam;
-    local playerIndex = playerFrame.playerIndex;
-    
-    if(not matchIndex or not playerIndex or isEnemyTeam == nil) then
-        return;
-    end
-    
-    local match = ArenaAnalytics:GetFilteredMatch(matchIndex);
-    local player = match and ArenaMatch:GetPlayer(match, isEnemyTeam, playerIndex);
-    local playerInfo = ArenaMatch:GetPlayerInfo(player);
-
+    local playerInfo = ArenaMatch:GetPlayerInfo(playerFrame.player);
     if(not playerInfo) then
         return;
     end

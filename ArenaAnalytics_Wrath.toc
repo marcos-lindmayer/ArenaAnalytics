@@ -12,6 +12,7 @@ Source/init.lua
 
 Source/ArenaAnalytics.lua
 Source/ArenaOptions.lua
+Source/ArenaMatch.lua
 Source/ArenaEvents.lua
 Source/ArenaTracker.lua
 Source/ArenaVersionManager.lua
@@ -26,7 +27,6 @@ Source/UI/ArenaTooltips.lua
 Source/UI/ArenaIcon.lua
 
 Source/Data/ArenaInternalIDs.lua
-Source/Data/ArenaMatch.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaSpecSpells_Wrath.lua
 

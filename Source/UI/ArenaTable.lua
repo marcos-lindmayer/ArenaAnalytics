@@ -13,6 +13,8 @@ local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
 local Tooltips = ArenaAnalytics.Tooltips;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Internal = ArenaAnalytics.Internal;
+local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
@@ -503,12 +505,9 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
         assert(playerFrame);
 
         local player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
-        if (player) then
-            playerFrame.isEnemyTeam = isEnemyTeam;
-            playerFrame.playerIndex = i;
-            playerFrame.matchIndex = matchIndex;
-            
-            local playerInfo = ArenaMatch:GetPlayerInfo(player, isEnemyTeam);
+        local playerInfo = ArenaMatch:GetPlayerInfo(player);
+        if (playerInfo) then
+            playerFrame.player = player;
 
             if (playerFrame.texture == nil) then
                 -- No textures? Set them
@@ -516,9 +515,9 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
                 playerFrame.texture:SetPoint("LEFT", playerFrame ,"RIGHT", -26, 0);
                 playerFrame.texture:SetSize(26,26);
             end
-            
+
             -- Set texture
-            playerFrame.texture:SetTexture(ArenaAnalyticsGetClassIcon(playerInfo.class));
+            playerFrame.texture:SetTexture(Internal:GetClassIcon(playerInfo.spec_id));
             playerFrame.tooltip = "";
 
             -- Add spec info
@@ -535,7 +534,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
                     playerFrame.specOverlay.texture:SetTexture(nil);
                 end
 
-                local specIcon = ArenaAnalytics:GetSpecIcon(playerInfo.spec_id);
+                local specIcon = Constants:GetSpecIcon(playerInfo.spec_id);
                 playerFrame.specOverlay.texture:SetTexture(specIcon);
 
                 if (not Options:Get("alwaysShowSpecOverlay")) then
@@ -570,17 +569,17 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             end
 
             playerFrame.playerInfo = playerInfo;
-            playerFrame:SetScript("OnEnter", function ()
-                Tooltips:DrawPlayerTooltip(playerFrame);
+            playerFrame:SetScript("OnEnter", function(self)
+                Tooltips:DrawPlayerTooltip(self);
             end);
-            playerFrame:SetScript("OnLeave", function ()
+            playerFrame:SetScript("OnLeave", function()
                 Tooltips:HidePlayerTooltip();
             end);
             
             -- Quick Search
             playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
-            playerFrame:SetScript("OnClick", function(frame, btn)
-                Search:QuickSearch(btn, playerInfo, isEnemyTeam);
+            playerFrame:SetScript("OnClick", function(self, btn)
+                Search:QuickSearch(self, btn);
             end);
 
             playerFrame:Show()

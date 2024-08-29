@@ -282,19 +282,6 @@ function ArenaAnalytics:ApplyClassColor(text, classIndex)
     return "|c" .. Internal:GetClassColor(classIndex) .. text or "" .."|r";
 end
 
--- Returns class icon path string
-function ArenaAnalyticsGetClassIcon(className)
-    if(className == nil or className == "") then
-        return "";
-    end
-    
-    if(className == "Death Knight") then
-        return "Interface\\Icons\\spell_deathknight_classicon";
-    else
-        return "Interface\\Icons\\classicon_" .. className:lower();
-    end
-end
-
 local specIconTable = {
         -- Druid
         --[0] = "Interface\\Icons\\classicon_druid",
@@ -377,7 +364,7 @@ local specIconTable = {
 }
 
 -- Returns spec icon path string
-function ArenaAnalytics:GetSpecIcon(ID)
+function Constants:GetSpecIcon(ID)
     return ID and specIconTable[ID];
 end
 

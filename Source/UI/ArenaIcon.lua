@@ -35,7 +35,7 @@ function ArenaIcon:Create(parent, spec_id, size, hideSpec)
             newFrame.specOverlay.texture:SetPoint("CENTER");
             newFrame.specOverlay.texture:SetSize(halfSize, halfSize);
             
-            local specIconTexture = ArenaAnalytics:GetSpecIcon(spec_id);
+            local specIconTexture = Constants:GetSpecIcon(spec_id);
             newFrame.specOverlay.texture:SetTexture(specIconTexture);
 
             if(hideSpec) then
