@@ -608,8 +608,8 @@ function ArenaMatch:GetPlayerNameAndRealm(player, requireCompactRealm)
     return name, ArenaAnalytics:GetRealm(realm);
 end
 
-local function GetTeamSpecs(team, size)
-    if(not team or not size) then
+local function GetTeamSpecs(team, size)    
+    if(not team or not size or size == 0) then
         return nil;
     end
 
@@ -621,51 +621,45 @@ local function GetTeamSpecs(team, size)
     
     -- Gather all team specs, bailing out if any are missing
     for i,player in ipairs(team) do
-        local spec_id = ArenaMatch:GetPlayerValue(match, player, "spec_id");
-        if(not spec_id) then
+        local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
+        if(not spec_id or (spec_id % 10 == 0)) then
             return nil;
         end
 
         tinsert(teamSpecs, spec_id);
     end
 
-    if(#teamSpecs ~= size) then
-        return nil;
-    end
-
     return teamSpecs;
 end
 
-function ArenaMatch:GetComp(match, isEnemyComp)
+function ArenaMatch:GetComp(match, isEnemyTeam)
     assert(match);
 
-    local key = isEnemyComp and matchKeys.comp or matchKeys["enemyComp"];
-    return key and match[key];
+    local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
+    ArenaAnalytics:Log("GetComp:", isEnemyTeam, key, match[key]);
+    return match[key];
 end
 
 function ArenaMatch:UpdateComps(match)
     assert(match);
-
-    local sizeKey = matchKeys.size;
-    local size = sizeKey and match[sizeKey] or 0;
-    if(size == 0) then
-        return;
-    end
 
     ArenaMatch:UpdateComp(match, false);
     ArenaMatch:UpdateComp(match, true);
 end
 
 function ArenaMatch:UpdateComp(match, isEnemyTeam)
+    assert(match);
+
+    local requiredTeamSize = ArenaMatch:GetTeamSize(match, isEnemyTeam);
     local team = ArenaMatch:GetTeam(match, isEnemyTeam);
-    local teamSpecs = GetTeamSpecs(team, match.size);
-    if(teamSpecs) then        
+    local teamSpecs = GetTeamSpecs(team, requiredTeamSize);
+    if(teamSpecs and #teamSpecs > 0) then        
         table.sort(teamSpecs, function(a, b)
             return a < b;
         end);
 
-        local compKey = (teamKey == "team") and "comp" or "enemy_comp";
-        match[compKey] = table.concat(teamSpecs, '|');
+        local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
+        match[key] = table.concat(teamSpecs, '|');
     end
 end
 

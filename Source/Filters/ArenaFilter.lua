@@ -362,11 +362,12 @@ local function AddToCompData(match, isEnemyTeam)
     -- Add comp specific data
     local comp = ArenaMatch:GetComp(match, isEnemyTeam);
     if(comp ~= nil) then
+        ArenaAnalytics:Log("Adding comp:", comp, #transientCompData[compKey])
         findOrAddCompValues(transientCompData[compKey], comp, isWin, mmr);
     end
 end
 
-local function FinalizeCompDataTables(compData)
+local function FinalizeCompDataTables()
     local compKeys = { "Filter_Comp", "Filter_EnemyComp" }
     for _,compKey in ipairs(compKeys) do
         -- Compute winrates and average mmr
@@ -418,11 +419,11 @@ local function ProcessMatchIndex(index)
 
         if(Filters:IsFilterActive("Filter_Bracket")) then
             if(doesPassEnemyComp) then
-                AddToCompData("Filter_Comp", match);
+                AddToCompData(match, false);
             end
             
             if(doesPassComp) then
-                AddToCompData("Filter_EnemyComp", match);
+                AddToCompData(match, true);
             end
         end
 

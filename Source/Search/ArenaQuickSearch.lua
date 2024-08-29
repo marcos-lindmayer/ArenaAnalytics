@@ -410,7 +410,7 @@ function Search:QuickSearch(mouseButton, playerInfo, isEnemyTeam)
 
     local newSegment = {}
     local segmentIndex = 0;
-    
+
     -- Check for name match
     local nameMatch = nil;
     local newName = nil;
@@ -433,7 +433,7 @@ function Search:QuickSearch(mouseButton, playerInfo, isEnemyTeam)
                             RemoveSeparatorFromTokens(previousSegment.tokens);
                         end
                     end
-                    
+
                     table.remove(currentSegments, matchedSegmentIndex);
 
                     Search:CommitQuickSearch(currentSegments);

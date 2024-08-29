@@ -4,34 +4,38 @@ ArenaIcon.__index = ArenaIcon
 
 -- Local module aliases
 local Constants = ArenaAnalytics.Constants;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
-function ArenaIcon:Create(parent, classIndex, spec_id, size, hideSpec)
-    local name = "ArenaIcon_"..(class or "?").."_"..(spec or "");
+function ArenaIcon:Create(parent, spec_id, size, hideSpec)
+    local name = "ArenaIcon_"..(spec_id or "???");
     local newFrame = CreateFrame("Frame", name, parent);
     newFrame:SetSize(size, size);
-    
-    if(class) then 
+
+    spec_id = tonumber(spec_id);
+    if(spec_id) then
+        local classIndex = Internal:GetClassIndex(spec_id);        
+        
         newFrame.classTexture = newFrame:CreateTexture();
         newFrame.classTexture:SetPoint("CENTER", newFrame, 0, 0);
         newFrame.classTexture:SetSize(size,size);
-
-        local classIconTexture = Internal:GetClassIcon(classIndex);
+        
+        local classIconTexture = Internal:GetClassIcon(spec_id);
         newFrame.classTexture:SetTexture(classIconTexture);
-
-        if(spec) then
+        
+        if(spec_id % 10 ~= 0) then
             local halfSize = floor(size/2);
-
+            
             newFrame.specOverlay = CreateFrame("Frame", nil, newFrame);
             newFrame.specOverlay:SetPoint("BOTTOMRIGHT", newFrame.classTexture, -1, 2);
             newFrame.specOverlay:SetSize(halfSize, halfSize);
-
+            
             newFrame.specOverlay.texture = newFrame.specOverlay:CreateTexture();
             newFrame.specOverlay.texture:SetPoint("CENTER");
             newFrame.specOverlay.texture:SetSize(halfSize, halfSize);
             
-            local specIconTexture = ArenaAnalytics:GetSpecIcon(spec);
+            local specIconTexture = ArenaAnalytics:GetSpecIcon(spec_id);
             newFrame.specOverlay.texture:SetTexture(specIconTexture);
 
             if(hideSpec) then

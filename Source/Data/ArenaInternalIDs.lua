@@ -143,11 +143,6 @@ function Internal:GetClassInfo(classIndex)
     return classIndexes[classIndex];
 end
 
-function Internal:GetClassIcon(classIndex)
-    local classToken = classIndex and classIndexes[classIndex] and classIndexes[classIndex].token;
-    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or "";
-end
-
 function Internal:GetClassColor(classIndex)
     local classToken = classIndex and classIndexes[classIndex] and classIndexes[classIndex].token;
     return classToken and select(4, GetClassColor(classToken)) or "ffffffff";
@@ -237,7 +232,27 @@ local addonSpecializationIDs = {
     [123] = { classIndex = 13, spec = "Devastation", role = CASTER_DPS },
 }
 
+function Internal:GetClassIcon(spec_id)
+    spec_id = tonumber(spec_id);
+
+    local info = spec_id and addonSpecializationIDs[spec_id];
+    if(not info or not info.classIndex) then
+        return "";
+    end
+
+    -- Death Knight
+    if(info.classIndex == 6) then
+        return "Interface\\Icons\\spell_deathknight_classicon";
+    end
+
+    local classInfo = classIndexes[info.classIndex];
+    local classToken = classInfo and classInfo.token;
+    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or "";
+end
+
 function Internal:GetSpecInfo(spec_id)
+    spec_id = tonumber(spec_id);
+
     local info = spec_id and addonSpecializationIDs[spec_id];
     if(not info) then
         return nil;

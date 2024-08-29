@@ -91,16 +91,15 @@ function VersionManager:OnInit()
 
     -- Clear old data
     if(ArenaAnalyticsDB) then
-        --ArenaAnalyticsDB["2v2"] = nil;
-        --ArenaAnalyticsDB["3v3"] = nil;
-        --ArenaAnalyticsDB["5v5"] = nil;
+        ArenaAnalyticsDB["2v2"] = nil;
+        ArenaAnalyticsDB["3v3"] = nil;
+        ArenaAnalyticsDB["5v5"] = nil;
         
         for k,v in pairs(ArenaAnalyticsDB) do
             ArenaAnalytics:Log("Version Control: Testing remaining old data after purging ArenaAnalyticsDB: ", k, v and #v);
         end
     end
     --MatchHistoryDB = nil;
-
 
     NewMatchHistory = VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(NewMatchHistory); -- 0.7.0
 

@@ -429,7 +429,7 @@ function ArenaAnalytics:getBracketIdFromTeamSize(teamSize)
 end
 
 function ArenaAnalytics:getTeamSizeFromBracketIndex(bracketIndex)
-    if(not bracketIndex) then
+    if(bracketIndex) then
         if(bracketIndex == 1) then
             return 2;
         elseif(bracketIndex == 2) then
