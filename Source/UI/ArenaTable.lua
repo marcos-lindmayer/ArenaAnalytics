@@ -154,13 +154,22 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = {}
 
     HybridScrollFrame_SetDoNotHideScrollBar(ArenaAnalyticsScrollFrame.ListScrollFrame, true);
-    ArenaAnalyticsScrollFrame.Bg:SetTexture(nil)
-    ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.8)
+    ArenaAnalyticsScrollFrame.Bg:SetTexture(nil);
+    ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.8);
+    
+    ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8);
+
+    -- Add the addon title to the main frame
     ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
     ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, 0);
     ArenaAnalyticsScrollFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
     ArenaAnalyticsScrollFrame.title:SetText("Arena Analytics");
-    ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8)
+
+    -- Add the version to the main frame header
+    ArenaAnalyticsScrollFrame.titleVersion = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
+    ArenaAnalyticsScrollFrame.titleVersion:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 75, 0);
+    ArenaAnalyticsScrollFrame.titleVersion:SetFont("Fonts\\FRIZQT__.TTF", 11, "");
+    ArenaAnalyticsScrollFrame.titleVersion:SetText("|cff909090v" .. ArenaAnalytics:GetVersion() .. "|r");
 
     ArenaAnalyticsScrollFrame.teamBg = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame)
     ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.TitleBg, "TOPLEFT", 340, -90);
