@@ -5,6 +5,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Helpers = ArenaAnalytics.Helpers;
 local Constants = ArenaAnalytics.Constants;
 local Internal = ArenaAnalytics.Internal;
+local GroupSorter = ArenaAnalytics.GroupSorter;
 
 -------------------------------------------------------------------------
 
@@ -477,6 +478,13 @@ function ArenaMatch:IsSamePlayer(player, otherName, otherRealm)
     return (playerName and playerName == otherName and playerRealm == otherRealm);
 end
 
+function ArenaMatch:IsLocalPlayer(player)
+    assert(player);
+
+    local playerName, playerRealm = ArenaMatch:GetPlayerNameAndRealm(player);
+    return (playerName and playerName == UnitName("player") and ArenaAnalytics:IsLocalRealm(playerRealm));
+end
+
 function ArenaMatch:GetTeam(match, isEnemyTeam)
     if(not match) then 
         return nil;
@@ -502,11 +510,11 @@ function ArenaMatch:GetPlayerCount(match)
 
     local team = ArenaMatch:GetTeam(match, false);
     local enemy = ArenaMatch:GetTeam(match, true);
-    
+
     if(not team) then
         return enemy and #enemy or 0;
     end
-    
+
     if(not enemy) then
         return #team;
     end
@@ -522,7 +530,7 @@ function ArenaMatch:GetPlayer(match, isEnemyTeam, index)
     end;
 
     local team = ArenaMatch:GetTeam(match, isEnemyTeam);
-    
+
     if(not team or index < 1 or index > #team) then
         return nil;
     end
@@ -618,7 +626,7 @@ local function GetTeamSpecs(team, size)
     end
 
     local teamSpecs = {}
-    
+
     -- Gather all team specs, bailing out if any are missing
     for i,player in ipairs(team) do
         local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
@@ -666,90 +674,42 @@ end
 function ArenaMatch:SortGroups(match)
     assert(match);
     
-    ArenaMatch:SortGroup(match, false);
-    ArenaMatch:SortGroup(match, true);
-end
+	selfPlayerInfo = ArenaMatch:GetSelfInfo(match);
 
-function ArenaMatch:SortGroup(match, isEnemyTeam)
-    assert(match);
+    local team = ArenaMatch:GetTeam(match, false);
+    GroupSorter:SortGroup(team, selfPlayerInfo);
 
-    local group = ArenaMatch:GetTeam(match, isEnemyTeam);
-    if(not group or #group == 0) then
-		return;
-	end
-	
-	-- Set playerName if missing
-	if(not playerFullName) then
-		playerFullName = ArenaMatch:GetSelf() or Helpers:GetPlayerName();
-	end
-	local name = playerFullName:match("^[^-]+");
-
-    table.sort(group, function(playerA, playerB)
-        local classA, classB = ArenaMatch:GetComparisonValues(playerA, playerB, "class");
-        local specA, specB = ArenaMatch:GetComparisonValues(playerA, playerB, "spec");
-		local nameA, nameB = ArenaMatch:GetComparisonValues(playerA, playerB, "name");
-		
-        if(not isEnemyTeam) then
-			if(playerFullName) then
-				if(nameA == name or nameA == playerFullName) then
-					return true;
-				elseif(nameB == name or nameB == playerFullName) then
-					return false;
-				end
-			end
-
-            if(myClass) then
-                local priorityA = (classA == myClass) and 1 or 0;
-                local priorityB = (classB == myClass) and 1 or 0;
-
-                if(mySpec) then
-                    priorityA = priorityA + ((specA == mySpec) and 2 or 0);
-                    priorityB = priorityB + ((specB == mySpec) and 2 or 0);
-                end
-
-                return priorityA > priorityB;
-            end
-
-
-            if (playerClass) then 
-                if(classA == playerClass) then 
-                    return true;
-                elseif(classB == playerClass) then
-                    return false;
-                end
-            end
-        end
-
-		local specID_A = Constants:getAddonSpecializationID(classA, specA);
-        local priorityValueA = Constants:getSpecPriorityValue(specID_A);
-
-		local specID_B = Constants:getAddonSpecializationID(classB, specB);
-        local priorityValueB = Constants:getSpecPriorityValue(specID_B);
-
-		if(priorityValueA == priorityValueB) then
-			return nameA < nameB;
-		end
-
-        return priorityValueA < priorityValueB;
-    end);
+    local enemy = ArenaMatch:GetTeam(match, true);
+    GroupSorter:SortGroup(enemy, selfPlayerInfo);
 end
 
 -------------------------------------------------------------------------
 -- Self
 
-function ArenaMatch:GetSelf(match)
+-- Returns the player info of the 
+function ArenaMatch:GetSelfInfo(match)
     if(not match) then 
-        return nil 
-    end;
-    
+        return nil;
+    end
+
     local team = ArenaMatch:GetTeam(match, false);
     if(team) then
         for i,player in ipairs(team) do
-            if(ArenaMatch:GetPlayerValue(match, player, "is_self") == 1) then
+            local isSelf = false;
+            if(ArenaMatch:GetPlayerValue(player, "is_self") == 1) then
+                isSelf = true;
+            elseif(ArenaMatch:IsLocalPlayer(player)) then
+                isSelf = true;
+            end
+
+            if(isSelf) then
                 return ArenaMatch:GetPlayerInfo(player);
             end
         end
     end
+
+    -- Make self info from local player
+    return ArenaAnalytics:GetLocalPlayerInfo()
 end
 
 function ArenaMatch:SetSelf(match, fullName)
@@ -773,7 +733,7 @@ function ArenaMatch:GetFirstDeath(match)
     local team = ArenaMatch:GetTeam(match, false);
     if(team) then
         for i,player in ipairs(team) do
-            if(ArenaMatch:GetPlayerValue(match, player, "is_first_death") == 1) then
+            if(ArenaMatch:GetPlayerValue(player, "is_first_death") == 1) then
                 return ArenaMatch:GetPlayerInfo(player);
             end
         end
@@ -782,7 +742,7 @@ function ArenaMatch:GetFirstDeath(match)
     local enemyTeam = ArenaMatch:GetTeam(match, false);
     if(enemyTeam) then
         for i,player in ipairs(enemyTeam) do
-            if(ArenaMatch:GetPlayerValue(match, player, "is_first_death") == 1) then
+            if(ArenaMatch:GetPlayerValue(player, "is_first_death") == 1) then
                 return ArenaMatch:GetPlayerInfo(player);
             end
         end

@@ -3,6 +3,7 @@ local _, ArenaAnalytics = ...; -- Namespace
 -- Declare Module Namespaces
 ArenaAnalytics.Constants = {};
 ArenaAnalytics.SpecSpells = {};
+ArenaAnalytics.GroupSorter = {};
 ArenaAnalytics.ArenaMatch = {};
 ArenaAnalytics.Internal = {};
 

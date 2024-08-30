@@ -12,6 +12,7 @@ Source/init.lua
 
 Source/ArenaAnalytics.lua
 Source/ArenaOptions.lua
+Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
 Source/ArenaEvents.lua
 Source/ArenaTracker.lua

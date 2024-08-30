@@ -11,6 +11,7 @@ local Import = ArenaAnalytics.Import;
 local Options = ArenaAnalytics.Options;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Internal = ArenaAnalytics.Internal;
 
 
 function ArenaAnalytics:GetVersion()
@@ -111,6 +112,33 @@ function ArenaAnalytics:IsLocalRealm(realm)
 	
 	local _, localRealm = UnitFullName("player");
 	return realm == localRealm;
+end
+
+ArenaAnalytics.localPlayerInfo = nil;
+
+function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
+	if(not ArenaAnalytics.localPlayerInfo or forceUpdate) then
+		local spec_id = API:GetMySpec();
+		local class, spec = Constants:GetClassAndSpec(spec_id);
+	
+		local name, realm = UnitFullName("player");
+		local race_id = Helpers:GetUnitRace("player");
+	
+		ArenaAnalytics.localPlayerInfo = {
+			is_self = true,
+			name = name,
+			realm = realm,
+			fullName = ArenaAnalytics:CombineNameAndRealm(name, realm),
+			faction = Internal:GetRaceFaction(race_id),
+			race = Internal:GetRace(race_id),
+			race_id = race_id,
+			class = class,
+			spec = spec,
+			spec_id = Helpers:GetClassID(spec_id), -- Avoid dynamic changes for sorting
+		};
+	end
+
+	return ArenaAnalytics.localPlayerInfo;
 end
 
 -------------------------------------------------------------------------

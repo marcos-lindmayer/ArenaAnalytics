@@ -7,6 +7,7 @@ local AAtable = ArenaAnalytics.AAtable;
 local Tooltips = ArenaAnalytics.Tooltips;
 local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 -- General Helpers
@@ -54,20 +55,20 @@ end
 -- Data Helpers
 
 -- Get Addon Race ID from unit
-function Helpers:GetUnitClass(unit)
-    local _,token = UnitClass(unit);
-    return InternalIDs:GetRaceIDByToken(token);
+function Helpers:GetUnitRace(unit)
+    local _,token = UnitRace(unit);
+    return Internal:GetAddonRaceIDByToken(token);
 end
 
 -- Get Addon Class ID from unit
 function Helpers:GetUnitClass(unit)
     local _,token = UnitClass(unit);
-    return InternalIDs:GetAddonClassIDByToken(token);
+    return Internal:GetAddonClassIDByToken(token);
 end
 
 function Helpers:GetClassIcon(spec_id)
-    local specInfo = InternalIDs:GetSpecInfo(spec_id);
-    return InternalIDs:GetClassIcon(specInfo and specInfo.classIndex);
+    local specInfo = Internal:GetSpecInfo(spec_id);
+    return Internal:GetClassIcon(specInfo and specInfo.classIndex);
 end
 
 -- Gets the name, and realm if not local realm from player info
@@ -78,4 +79,8 @@ function Helpers:GetNameFromPlayerInfo(playerInfo)
 
     local isLocalRealm = ArenaAnalytics:IsLocalRealm(playerInfo.realm);
     return isLocalRealm and playerInfo.name or playerInfo.fullName or "";
+end
+
+function Helpers:GetClassID(spec_id)
+    return spec_id and floor(spec_id / 10) * 10;
 end

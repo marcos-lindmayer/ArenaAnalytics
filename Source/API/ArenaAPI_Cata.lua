@@ -112,7 +112,7 @@ API.specMappingTable = {
 }
 
 function API:GetSpecInfo(spec_id)
-	local expansionSpecID = spec_id and internalSpecIdMap[spec_id];
+	local expansionSpecID = spec_id and API.specMappingTable[spec_id];
     if(not expansionSpecID) then
         return nil;
     end
@@ -123,7 +123,7 @@ function API:GetSpecInfo(spec_id)
 end
 
 function API:GetMappedAddonSpecID(spec_id)
-	for addonSpecID,specID in pairs(internalSpecIdMap) do
+	for addonSpecID,specID in pairs(API.specMappingTable) do
 		if(specID == spec_id) then
 			return addonSpecID;
 		end

@@ -558,8 +558,9 @@ function Import:createGroupTable_ArenaStats(arena, groupType, size)
         end
     end
 
-    -- Place player first in the arena party group, sort rest
-	ArenaAnalytics:SortGroup(group, (groupType == "team"), arena["player"]);
+    -- TODO: Fix sorting to use updated version in GroupSorter
+    -- Sort the arena players by self name > role > class > spec, with self or local player values as top priority
+--	GroupSorter:SortGroup(group, (groupType == "team"), arena["player"]);
 
     return group;
 end
@@ -809,9 +810,9 @@ function Import:createGroupTable_ArenaAnalytics(arena, groupType, size)
         end
     end
 
+    -- TODO: Fix sorting to use updated version in GroupSorter
     -- Place player first in the arena party group, sort rest
-	ArenaAnalytics:SortGroup(group, (groupType == "party"), arena["player"]);
-
+--	GroupSorter:SortGroup(group, (groupType == "team"), arena["player"]);
     return group;
 end
 

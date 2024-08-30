@@ -5,6 +5,7 @@ local Search = ArenaAnalytics.Search;
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
 local Helpers = ArenaAnalytics.Helpers;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 -- Short Names
@@ -376,17 +377,6 @@ local function DoesAllTokensMatchExact(segment, tokens, skipName)
     return true;
 end
 
-local function GetPlayerInfo(playerFrame)
-    if(not playerFrame) then
-        return nil;
-    end
-
-    local match, filteredSession = ArenaAnalytics:GetFilteredMatch(playerFrame.matchIndex);
-    local player = match and ArenaMatch:GetPlayer(match, playerFrame.isEnemyTeam, playerFrame.playerIndex);
-    
-    return player and ArenaMatch:GetPlayerInfo(player, playerFrame.isEnemyTeam);
-end
-
 local locked = nil;
 function Search:QuickSearch(playerFrame, mouseButton)
     if(not Options:Get("quickSearchEnabled")) then
@@ -398,7 +388,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
     end
     locked = true;
 
-    local playerInfo = playerFrame.player and ArenaMatch:GetPlayerInfo(playerFrame.player, playerFrame.isEnemyTeam); --GetPlayerInfo(playerFrame);
+    local playerInfo = ArenaMatch:GetPlayerInfo(playerFrame.player);
     if(not playerInfo) then
         locked = false;
         return;
