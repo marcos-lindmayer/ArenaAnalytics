@@ -634,11 +634,8 @@ local function setColorForSession(button, session, index)
 
     local isOddIndex = (index or 0) % 2 == 1;
     if(isOddIndex) then
-        if(isOddSession) then
-            alpha = alpha - 0.07;
-        else
-            alpha = alpha + 0.07;
-        end
+        local delta = isOddSession and -0.07 or 0.07;
+        alpha = alpha + delta;
     end
 
     if isOddSession then
@@ -716,13 +713,13 @@ function AAtable:HandleArenaCountChanged()
     for i=#ArenaAnalytics.filteredMatchHistory, 1, -1 do
         local match, filteredSession = ArenaAnalytics:GetFilteredMatch(i);
         if(match) then 
-            if(match["won"]) then 
+            if(ArenaMatch:IsVictory(match)) then 
                 wins = wins + 1; 
             end
             
             if (filteredSession == 1) then
                 sessionGames = sessionGames + 1;
-                if (match["won"]) then
+                if (ArenaMatch:IsVictory(match)) then
                     sessionWins = sessionWins + 1;
                 end
             end

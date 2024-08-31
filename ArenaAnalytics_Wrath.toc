@@ -29,6 +29,7 @@ Source/UI/ArenaIcon.lua
 
 Source/Data/ArenaInternalIDs.lua
 Source/Data/ArenaConstants.lua
+Source/Data/ArenaBitmap.lua
 Source/Data/ArenaSpecSpells_Wrath.lua
 
 Source/Search/ArenaSearch.lua

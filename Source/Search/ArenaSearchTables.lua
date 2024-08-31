@@ -188,13 +188,13 @@ SearchTokenTypeTable = {
     },
     ["role"] = {
         noSpace = true,
-        values = { -- Bitmap values
-            [1] = {"tank"},
-            [2] = {"healer"},
-            [4] = {"damage dealer", "damage", "dps"},
-            [8] = { "melee" },
-            [16] = { "ranged" },
-            [32] = { "caster" },
+        values = { -- Bitmap indexes
+            [1] = { "tank" },
+            [2] = { "damage dealer", "damage", "dps" },
+            [3] = { "healer"},
+            [4] = { "caster" },
+            [5] = { "ranged" },
+            [6] = { "melee" },
         },
     },
     ["team"] = {
@@ -209,6 +209,7 @@ SearchTokenTypeTable = {
         requireExact = true,
         values = {
             ["not"] = { "not", "no", "inverse" },
+            ["self"] = { "self", "me" }
         }
     }
 }

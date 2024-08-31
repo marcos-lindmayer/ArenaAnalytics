@@ -50,6 +50,23 @@ function ArenaAnalytics:computeSeasonFromMatchDate(unixDate)
     return nil;
 end
 
+-------------------------------------------------------------------------
+
+-- NOTE: Indices here affect save data
+Constants.roleIndexes = { 
+    -- Main roles
+    { token = "tank", isMain = true, name = "Tank" },
+    { token = "damager", isMain = true, name = "Dps" },
+    { token = "healer", isMain = true, name = "Healer" },
+
+    -- Sub roles
+    { token = "caster", name = "Caster" },
+    { token = "ranged", name = "Ranged" },
+    { token = "melee", name = "Melee" },
+}
+
+-------------------------------------------------------------------------
+
 -- Addon specific spec IDs { ID, "class|spec", "class", "spec", priority value } (ID must never change to preserve data validity, priority is a runtime check)
 local addonSpecializationIDs = {
     -- Druid
@@ -206,17 +223,6 @@ function Constants:GetClassAndSpec(specID)
 
     -- class, spec
     return data[2], data[3];
-end
-
-function Constants:GetSpecRole(specID)
-    if(not tonumber(specID)) then
-        return nil;
-    end
-    local data = classAndSpecByID[tonumber(specID)];
-    assert(data);
-
-    -- class, spec
-    return data[4];
 end
 
 local raceToFaction = {

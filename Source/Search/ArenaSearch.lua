@@ -5,6 +5,7 @@ local Search = ArenaAnalytics.Search;
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
 local Constants = ArenaAnalytics.Constants;
+local Bitmap = ArenaAnalytics.Bitmap;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
@@ -135,17 +136,18 @@ local function GetPersistentData()
 
         for j,token in ipairs(segment.tokens) do
             -- Process transient tokens for logic only
-            if(not token.value or token.value == "") then
-            elseif(token.transient) then
-                if(token.explicitType == "logical") then
-                    if(token.value == "not") then
-                        persistentSegment.inversed = true;
+            if(token.value and token.value ~= "") then
+                if(token.transient) then
+                    if(token.explicitType == "logical") then
+                        if(token.value == "not") then
+                            persistentSegment.inversed = true;
+                        end
+                    elseif(token.explicitType == "team") then
+                        persistentSegment.isEnemyTeam = (token.value == "enemy");
                     end
-                elseif(token.explicitType == "team") then
-                    persistentSegment.isEnemyTeam = (token.value == "enemy");
+                else -- Persistent tokens, kept for direct comparisons
+                    tinsert(persistentSegment.tokens, token);
                 end
-            else -- Persistent tokens, kept for direct comparisons
-                tinsert(persistentSegment.tokens, token);
             end
         end
         
@@ -263,7 +265,18 @@ local function CheckTypeForPlayer(searchType, token, playerInfo)
             return false;
         end
     elseif(searchType == "role") then
-        return playerInfo.role and playerInfo.role:lower() == token.value;
+        if(playerInfo.role) then
+            if(playerInfo.role == token.value) then
+                return true;
+            elseif(Bitmap:HasBitByIndex(playerInfo.role, token.value, true)) then
+                return true;
+            end
+        end
+        return false;
+    elseif(searchType == "logical") then
+        if(token.value == "self") then
+            return playerInfo.isSelf;
+        end
     end
 
     if(searchType == "name") then
@@ -274,7 +287,7 @@ local function CheckTypeForPlayer(searchType, token, playerInfo)
     if(not playerValue or playerValue == "") then
         return false;
     end
-    
+
     -- Class and Spec IDs may be numbers in the token
     if(tonumber(token.value)) then
         return playerInfo.spec_id == token.value;

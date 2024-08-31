@@ -3,6 +3,7 @@ local AAmatch = ArenaAnalytics.AAmatch;
 
 -- Local module aliases
 local Constants = ArenaAnalytics.Constants;
+local Bitmap = ArenaAnalytics.Bitmap;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local Filters = ArenaAnalytics.Filters;
 local AAtable = ArenaAnalytics.AAtable;
@@ -118,12 +119,12 @@ ArenaAnalytics.localPlayerInfo = nil;
 
 function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
 	if(not ArenaAnalytics.localPlayerInfo or forceUpdate) then
-		local spec_id = API:GetMySpec();
-		local class, spec = Constants:GetClassAndSpec(spec_id);
-	
+		local spec_id = API:GetMySpec();	
 		local name, realm = UnitFullName("player");
 		local race_id = Helpers:GetUnitRace("player");
-	
+
+		local role_bitmap = Internal:GetRoleBitmap(spec_id);
+
 		ArenaAnalytics.localPlayerInfo = {
 			is_self = true,
 			name = name,
@@ -132,9 +133,10 @@ function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
 			faction = Internal:GetRaceFaction(race_id),
 			race = Internal:GetRace(race_id),
 			race_id = race_id,
-			class = class,
-			spec = spec,
 			spec_id = Helpers:GetClassID(spec_id), -- Avoid dynamic changes for sorting
+			role = role_bitmap,
+			role_main = Bitmap:GetMainRole(role_bitmap),
+			role_sub = Bitmap:GetSubRole(role_bitmap),
 		};
 	end
 

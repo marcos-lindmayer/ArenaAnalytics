@@ -6,6 +6,7 @@ ArenaAnalytics.SpecSpells = {};
 ArenaAnalytics.GroupSorter = {};
 ArenaAnalytics.ArenaMatch = {};
 ArenaAnalytics.Internal = {};
+ArenaAnalytics.Bitmap = {};
 
 ArenaAnalytics.Helpers = {};
 ArenaAnalytics.API = {};
@@ -35,6 +36,8 @@ ArenaAnalytics.Export = {};
 ArenaAnalytics.VersionManager = {};
 
 -- Local module aliases
+local Internal = ArenaAnalytics.Internal;
+local Bitmap = ArenaAnalytics.Bitmap;
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
 local FilterTables = ArenaAnalytics.FilterTables;
@@ -76,7 +79,7 @@ ArenaAnalytics.commands = {
 		local currentSeasonTotalPlayed = 0;
 		for i=1, #ArenaAnalyticsDB do
 			local match = ArenaAnalyticsDB[i];
-			local duration = tonumber(match["duration"]) or 0;
+			local duration = ArenaMatch:GetDuration(match) or 0;
 			if(duration > 0) then
 				totalDurationInArenas = totalDurationInArenas + duration;
 
@@ -184,13 +187,8 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 
-		if(false) then
-			for i=1, 13 do
-				for j=0, 4 do
-					print(GetSpecializationInfoForClassID(i,j))
-				end
-				ArenaAnalytics:LogSpacer();
-			end
+		for k,v in pairs(ArenaAnalytics.Constants.roles) do
+			ArenaAnalytics:Log("Roles:", k,v);
 		end
 
 		--ArenaAnalytics:Log(ArenaAnalytics:GetArenaStatus(), ArenaAnalytics:IsArenaPreparationStateActive());
@@ -404,6 +402,8 @@ function ArenaAnalytics:init()
 	-- Initialize modules
 	---------------------------------
 
+	Bitmap:Initialize();
+	Internal:Initialize();
 	Options:Init();
 	FilterTables:Init();
 	Filters:Init();

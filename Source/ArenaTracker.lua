@@ -117,11 +117,11 @@ function ArenaTracker:HandleArenaEnter(...)
 		-- Add player
 		local GUID = UnitGUID("player");
 		local name = currentArena.playerName;
-		local raceID = Helpers:GetUnitRace("player");
-		local classID = Helpers:GetUnitClass("player");
-		local spec_id = API:GetMySpec();
+		local race_id = Helpers:GetUnitRace("player");
+		local class_id = Helpers:GetUnitClass("player");
+		local spec_id = API:GetMySpec() or class_id;
 
-		local player = ArenaTracker:CreatePlayerTable("team", GUID, name, raceID, classID, spec_id);
+		local player = ArenaTracker:CreatePlayerTable("team", GUID, name, race_id, spec_id);
 		table.insert(currentArena.players, player);
 	end
 
@@ -178,18 +178,21 @@ function ArenaTracker:HandleArenaEnd()
 			name = name.."-"..realm;
 		end
 
-		-- Get spec and GUID from existing data, if available
-		local spec_id = ArenaTracker:GetCollectedValue("spec", name);
-		local raceID = ArenaTracker:GetCollectedValue("race", name);
+		-- Get class_id from clasToken
+		local class_id = Internal:GetAddonClassIDByToken(classToken);
 
-		if(not raceID) then
+		-- Get spec and GUID from existing data, if available
+		local spec_id = ArenaTracker:GetCollectedValue("spec", name) or class_id;
+		local race_id = ArenaTracker:GetCollectedValue("race", name);
+
+		if(not race_id) then
 			-- TODO: Implement this!
 			-- Convert localized race to raceID
-			raceID = Helpers:GetRaceIDFromLocalizedRace(race) or race;
+			race_id = Helpers:GetRaceIDFromLocalizedRace(race) or race;
 		end
 
 		-- Create complete player tables
-		local player = ArenaTracker:CreatePlayerTable(nil, nil, name, raceID, classToken, spec_id, kills, deaths, damage, healing);
+		local player = ArenaTracker:CreatePlayerTable(nil, nil, name, race_id, spec_id, kills, deaths, damage, healing);
 		player.teamIndex = teamIndex;
 		
 		if (name == currentArena.playerName) then
@@ -292,10 +295,10 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 				if (not ArenaTracker:IsTrackingPlayer(name)) then
 					local GUID = UnitGUID(unit .. i);
 					local team = (group == "party") and "team" or "enemy";
-					local raceID = Helpers:GetUnitRace(unit .. i);
-					local classID = Helpers:GetUnitClass(unit .. i);
-					local spec_id = GUID and GUID == unitGuid and unitSpec or nil;
-					local player = ArenaTracker:CreatePlayerTable(team, GUID, name, raceID, classIndex, spec_id);
+					local race_id = Helpers:GetUnitRace(unit .. i);
+					local class_id = Helpers:GetUnitClass(unit .. i);
+					local spec_id = GUID and GUID == unitGuid and unitSpec or class_id;
+					local player = ArenaTracker:CreatePlayerTable(team, GUID, name, race_id, spec_id);
 					table.insert(currentArena.players, player);
 				end
 			end
@@ -304,14 +307,14 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 end
 
 -- Returns a table with unit information to be placed inside either arena.party or arena.enemy
-function ArenaTracker:CreatePlayerTable(team, GUID, name, raceID, classIndex, spec_id, kills, deaths, damage, healing)
+function ArenaTracker:CreatePlayerTable(team, GUID, name, race_id, spec_id, kills, deaths, damage, healing)
 	return {
 		["team"] = team,
 		["GUID"] = GUID,
 		["name"] = name,
-		["race"] = raceID,
-		["class"] = classIndex,
+		["race"] = race_id,
 		["spec"] = spec_id,
+		["role"] = Internal:GetRoleBitmap(spec_id),
 		["kills"] = kills,
 		["deaths"] = deaths,
 		["damage"] = damage,

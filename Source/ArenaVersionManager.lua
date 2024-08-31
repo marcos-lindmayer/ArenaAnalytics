@@ -81,6 +81,9 @@ function VersionManager:OnInit()
         return;
     end
 
+    -- Force early init, to ensure the internal tables are valid.
+    Internal:Initialize();
+
     ArenaAnalytics:Log("Converting old data...")
 
     local NewMatchHistory = {};
@@ -108,7 +111,7 @@ function VersionManager:OnInit()
 
     ArenaAnalytics:ResortGroupsInMatchHistory();
     ArenaAnalytics:RecomputeSessionsForMatchHistory();
-end    
+end
 
 local function convertFormatedDurationToSeconds(inDuration)
     if(tonumber(inDuration)) then
@@ -335,14 +338,6 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
         return NewMatchHistory;
     end
 
-    local function ConvertNumber(number, allowZero, allowNegative)
-        number = tonumber(number);
-        if not number or (not allowZero and number == 0) or (not allowNegative and number < 0) then
-            return nil;
-        end
-        return number;
-    end
-    
     -- Fill race lookup table
     local localizedRaceLookupTable = {}
     for raceID = 1, API.maxRaceID do
@@ -401,7 +396,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
             ArenaAnalytics:Log("Failed to find spec_id when converting class:", class, "spec:", spec);
         end
 
-        return race, class, spec;
+        return race, tonumber(spec) or tonumber(class);
     end
 
     -- Convert old arenas
@@ -432,20 +427,20 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
 
             -- Add team
             for _,player in ipairs(oldArena["team"]) do
-                local name = player.name;
                 local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
-                local race, class, spec = ConvertValues(player.race, player.class, player.spec);
-                
-                ArenaMatch:AddPlayer(convertedArena, false, name, race, class, spec, kills, deaths, damage, healing);
+                local race_id, spec_id = ConvertValues(player.race, player.class, player.spec);
+                local role_id = Internal:GetRoleBitmap(spec_id);
+
+                ArenaMatch:AddPlayer(convertedArena, false, player.name, race_id, spec_id, role_id, kills, deaths, damage, healing);
             end
-            
+
             -- Add enemy team
             for _,player in ipairs(oldArena["enemyTeam"]) do
-                local name = player.name;
                 local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
-                local race, class, spec = ConvertValues(player.race, player.class, player.spec);
-                
-                ArenaMatch:AddPlayer(convertedArena, true, name, race, class, spec, kills, deaths, damage, healing);
+                local race_id, spec_id = ConvertValues(player.race, player.class, player.spec);
+                local role_id = Internal:GetRoleBitmap(spec_id);
+
+                ArenaMatch:AddPlayer(convertedArena, true, player.name, race_id, spec_id, role_id, kills, deaths, damage, healing);
             end
 
             ArenaMatch:SetSelf(convertedArena, oldArena["player"]);

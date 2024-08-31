@@ -99,7 +99,7 @@ function Search:CreateToken(raw, isExact)
     end
     
     -- Valid if it has a keyword or no spaces
-    newToken.isValid = newToken.value and not newToken.noSpace or not newToken.value:find(' ');
+    newToken.isValid = newToken.value and not newToken.noSpace or type(newToken.value) == "number" or not newToken.value:find(' ');
 
     if(type(newToken.value) == "string") then
         newToken.value = newToken.value:gsub("-", "%%-"):lower();

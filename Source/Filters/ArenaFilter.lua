@@ -362,7 +362,6 @@ local function AddToCompData(match, isEnemyTeam)
     -- Add comp specific data
     local comp = ArenaMatch:GetComp(match, isEnemyTeam);
     if(comp ~= nil) then
-        ArenaAnalytics:Log("Adding comp:", comp, #transientCompData[compKey])
         findOrAddCompValues(transientCompData[compKey], comp, isWin, mmr);
     end
 end
@@ -396,22 +395,49 @@ local function FinalizeCompDataTables()
 end
 
 local function GetFilteredSession(index)
-    if(not index or index == 1) then
+    assert(index);
+
+    local match = ArenaAnalytics:GetMatch(index);
+    local session = ArenaMatch:GetSession(match);
+    
+    local prevSession = cachedRealSession;
+    cachedRealSession = session or cachedRealSession;
+
+    if(index == 1) then
         return 1;
     end
-
-    local currentArena = ArenaAnalytics:GetMatch(index);
-    local previousArena, prevFilteredSession = ArenaAnalytics:GetFilteredMatch(index - 1);
     
-    if not previousArena or prevFilteredSession ~= ArenaMatch:GetSession(currentArena) then
+    local previousArena, prevFilteredSession = ArenaAnalytics:GetFilteredMatch(#ArenaAnalytics.filteredMatchHistory);
+    if not previousArena or session ~= prevSession then
         prevFilteredSession = prevFilteredSession or 0;
-        return prevFilteredSession and prevFilteredSession + 1 or 1;
+        return prevFilteredSession + 1;
     end
     
-    return prevFilteredSession;
+    return prevFilteredSession or 1;
+end
+
+local function RecomputeFilteredSession()
+    local cachedRealSession = 0;
+    local filteredSession = 1;
+
+    for i=#ArenaAnalytics.filteredMatchHistory, 1, -1 do
+        local match = ArenaAnalytics:GetFilteredMatch(i);
+        local nextMatch = ArenaAnalytics:GetFilteredMatch(i+1);
+
+        local session = ArenaMatch:GetSession(match);
+        local nextSession = ArenaMatch:GetSession(nextMatch);
+
+        if(session ~= nextSession) then
+            filteredSession = filteredSession + 1;
+        end
+
+        ArenaAnalytics.filteredMatchHistory[i].filteredSession = filteredSession;
+    end
 end
 
 local function ProcessMatchIndex(index)
+    assert(index);
+
     local match = ArenaAnalytics:GetMatch(index);
     if(match and Filters:DoesMatchPassAllFilters(match, "comps")) then
         local doesPassComp = doesMatchPassFilter_Comp(match, false);
@@ -428,9 +454,7 @@ local function ProcessMatchIndex(index)
         end
 
         if(doesPassComp and doesPassEnemyComp) then
-            local filteredSession = GetFilteredSession(index);
-
-            table.insert(ArenaAnalytics.filteredMatchHistory, { index = index, filteredSession = filteredSession });
+            table.insert(ArenaAnalytics.filteredMatchHistory, { index = index });
         end
     end
 end
@@ -448,6 +472,7 @@ function Filters:Refresh(onCompleteFunc)
     ArenaAnalytics.filteredMatchHistory = {}
     Selection:ClearSelectedMatches();
     ResetTransientCompData();
+    cachedRealSession = 0;
     
     local currentIndex = 1;
     local batchDurationLimit = 0.05;
@@ -457,6 +482,8 @@ function Filters:Refresh(onCompleteFunc)
         FinalizeCompDataTables();
         ArenaAnalytics:SetCurrentCompData(transientCompData);
         ResetTransientCompData();
+
+        RecomputeFilteredSession();
     
         AAtable:ForceRefreshFilterDropdowns();
         AAtable:HandleArenaCountChanged();

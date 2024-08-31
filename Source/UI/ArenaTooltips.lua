@@ -214,6 +214,12 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     GameTooltip:AddDoubleLine(ColorText("Damage: ") .. FormatValue(playerInfo.damage), ColorText("Healing: ") .. FormatValue(playerInfo.healing));
     GameTooltip:AddDoubleLine(ColorText("Kills: ") .. FormatValue(playerInfo.kills), ColorText("Deaths: ") .. FormatValue(playerInfo.deaths));
 
+	if(Options:Get("debuggingEnabled")) then
+        GameTooltip:AddLine(" ");
+        GameTooltip:AddDoubleLine(playerInfo.role_main or " ", playerInfo.role_sub or " ");
+        GameTooltip:AddLine(playerInfo.role or " ");
+    end
+
     -- Quick Search Shortcuts
     TryAddQuickSearchShortcutTips();
 

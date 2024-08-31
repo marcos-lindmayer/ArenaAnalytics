@@ -121,10 +121,21 @@ local function ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo)
         end
     end
     
-    -- Role Comparison
-    if(selfPlayerInfo.role and playerInfoA.role ~= playerInfoB.role) then
-        local matchA = playerInfoA.role == selfPlayerInfo.role;
-        local matchB = playerInfoB.role == selfPlayerInfo.role;
+    -- Main Role Comparison
+    if(selfPlayerInfo.role_main and playerInfoA.role_main ~= playerInfoB.role_main) then
+        local matchA = playerInfoA.role_main == selfPlayerInfo.role_main;
+        local matchB = playerInfoB.role_main == selfPlayerInfo.role_main;
+        if matchA and not matchB then
+            return true;
+        elseif matchB and not matchA then
+            return false;
+        end
+    end
+
+    -- Main Role Comparison
+    if(selfPlayerInfo.role_sub and playerInfoA.role_sub ~= playerInfoB.role_sub) then
+        local matchA = playerInfoA.role_sub == selfPlayerInfo.role_sub;
+        local matchB = playerInfoB.role_sub == selfPlayerInfo.role_sub;
         if matchA and not matchB then
             return true;
         elseif matchB and not matchA then
@@ -145,8 +156,6 @@ local function ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo)
         
         if(classA ~= classB) then
             local selfClassID = Helpers:GetClassID(selfPlayerInfo.spec_id);
-
-            ArenaAnalytics:Print(classA, "     ", classB, "     ", selfClassID)
             
             if(classA == selfClassID) then
                 return true;
@@ -172,10 +181,6 @@ local function ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo)
     local selfComparisonResult = ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo);
     if(selfComparisonResult ~= nil) then
         return selfComparisonResult;
-    end
-
-    if(playerInfoA.class == "Priest" or playerInfoB.class == "Priest") then
-        ArenaAnalytics:Log("Priest skipped self check!", selfPlayerInfo and selfPlayerInfo.spec_id, "     ", playerInfoA.spec_id, "     ", playerInfoB.spec_id, "     ", Helpers:GetClassID(selfPlayerInfo.spec_id));
     end
 
     local specPriorityA = GroupSorter:GetSpecPriority(playerInfoA.spec_id);
