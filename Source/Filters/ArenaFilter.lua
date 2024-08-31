@@ -394,28 +394,6 @@ local function FinalizeCompDataTables()
     end
 end
 
-local function GetFilteredSession(index)
-    assert(index);
-
-    local match = ArenaAnalytics:GetMatch(index);
-    local session = ArenaMatch:GetSession(match);
-    
-    local prevSession = cachedRealSession;
-    cachedRealSession = session or cachedRealSession;
-
-    if(index == 1) then
-        return 1;
-    end
-    
-    local previousArena, prevFilteredSession = ArenaAnalytics:GetFilteredMatch(#ArenaAnalytics.filteredMatchHistory);
-    if not previousArena or session ~= prevSession then
-        prevFilteredSession = prevFilteredSession or 0;
-        return prevFilteredSession + 1;
-    end
-    
-    return prevFilteredSession or 1;
-end
-
 local function RecomputeFilteredSession()
     local cachedRealSession = 0;
     local filteredSession = 1;
