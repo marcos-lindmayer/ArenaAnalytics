@@ -136,23 +136,11 @@ function ArenaMatch:GetMap(match)
     return mapID and Constants:GetShortMapName(mapID);
 end
 
-function ArenaMatch:SetMapID(match, value)
-    assert(match);
-
-    if(type(value) == "string") then
-        value = Constants:GetMapIdByKey(mapKey);
-    end
-
-    local key = matchKeys.map;
-    match[key] = tonumber(value);
-end
-
 function ArenaMatch:SetMap(match, value)
     assert(match);
 
-    local key = matchKeys.map;
     mapId = tonumber(value) or Constants:GetMapIdByKey(value);
-    match[key] = tonumber(mapId);
+    match[matchKeys.map] = tonumber(mapId);
 end
 
 -------------------------------------------------------------------------

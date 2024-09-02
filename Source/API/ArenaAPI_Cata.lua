@@ -13,10 +13,10 @@ API.availableBrackets = {
 }
 
 API.availableMaps = {
-	{ name = "Blade's Edge Arena", key = "BEA"},
-	{ name = "Dalaran Arena", key = "DA"},
-	{ name = "Nagrand Arena", key = "NA"},
-	{ name = "Ruins of Lordaeron", key = "RoL"},
+	{ name = "Blade's Edge Arena", key = 562},
+	{ name = "Dalaran Arena", key = 617},
+	{ name = "Nagrand Arena", key = 559},
+	{ name = "Ruins of Lordaeron", key = 572},
 };
 
 -- Get local player current spec

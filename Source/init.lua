@@ -186,12 +186,6 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-
-		for k,v in pairs(ArenaAnalytics.Constants.roles) do
-			ArenaAnalytics:Log("Roles:", k,v);
-		end
-
-		--ArenaAnalytics:Log(ArenaAnalytics:GetArenaStatus(), ArenaAnalytics:IsArenaPreparationStateActive());
 	end,	
 };
 

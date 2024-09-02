@@ -383,7 +383,11 @@ local mapsList = {
 }
 
 function Constants:GetMapIdByKey(mapKey)
-    mapKey = Helpers:ToSafeLower(mapKey);    
+    if(type(mapKey) ~= "string") then
+        return nil;
+    end
+
+    mapKey = mapKey:lower();
     for mapId,key in pairs(mapsList) do
         if(mapKey == key:lower()) then
             return mapId;

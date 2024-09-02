@@ -163,12 +163,14 @@ end
 
 -- check bracket filter
 local function doesMatchPassFilter_Bracket(match)
-    if match == nil then return false end;
+    if not match then 
+        return false;
+    end
 
     if(currentFilters["Filter_Bracket"] == "All") then
         return true;
     end
-    
+
     return ArenaMatch:GetBracketIndex(match) == currentFilters["Filter_Bracket"];
 end
 
