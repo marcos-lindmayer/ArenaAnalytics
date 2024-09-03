@@ -439,7 +439,6 @@ local function ProcessMatchIndex(index)
 
             if(filteredIndex > #ArenaAnalytics.filteredMatchHistory) then
                 tmpCount = (tmpCount or 0) + 1;
-                ArenaAnalytics:Log("Adding new filtered history entry", tmpCount)
                 table.insert(ArenaAnalytics.filteredMatchHistory, {});
             end
 
@@ -463,9 +462,9 @@ function Filters:Refresh(onCompleteFunc)
     Selection:ClearSelectedMatches();
     ResetTransientCompData();
     cachedRealSession = 0;
-    
+
     local currentIndex = 1;
-    local batchDurationLimit = 0.01;
+    local batchDurationLimit = 0.05;
 
     local function Finalize()
         -- Assign session to filtered matches
@@ -474,7 +473,7 @@ function Filters:Refresh(onCompleteFunc)
         ResetTransientCompData();
 
         RecomputeFilteredSession();
-    
+
         AAtable:ForceRefreshFilterDropdowns();
         AAtable:HandleArenaCountChanged();
 
@@ -497,7 +496,7 @@ function Filters:Refresh(onCompleteFunc)
                 return;
             end
         end
-        
+
         Finalize();
     end
 

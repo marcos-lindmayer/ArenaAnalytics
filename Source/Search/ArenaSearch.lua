@@ -250,9 +250,10 @@ local function CheckTypeForPlayer(searchType, token, player)
 end
 
 local function CheckTokenForPlayer(token, player)
-    local explicitType = token.explicitType;
-    if(explicitType) then
-        if(CheckTypeForPlayer(explicitType, token, player)) then
+    assert(token and player);
+
+    if(token.explicitType) then
+        if(CheckTypeForPlayer(token.explicitType, token, player)) then
             return true;
         end
     else -- Loop through all types

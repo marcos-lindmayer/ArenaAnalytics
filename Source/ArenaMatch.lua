@@ -528,7 +528,7 @@ function ArenaMatch:GetPlayer(match, isEnemyTeam, index)
     return team[index];
 end
 
-function ArenaMatch:GetPlayerInfo(player)
+function ArenaMatch:GetPlayerInfo(player, existingTable)
     if(not player) then
         return nil;
     end
@@ -542,27 +542,26 @@ function ArenaMatch:GetPlayerInfo(player)
 
     local role_bitmap = ArenaMatch:GetPlayerValue(player, "role");
 
-    local playerInfo = {
-        isSelf = (ArenaMatch:GetPlayerValue(player, "is_self") == 1),
-        isFirstDeath = (ArenaMatch:GetPlayerValue(player, "is_first_death") == 1),
-        name = name,
-        realm = realm,
-        fullName = ArenaAnalytics:CombineNameAndRealm(name, realm),
-        faction = Internal:GetRaceFaction(race_id),
-        race = Internal:GetRace(race_id),
-        race_id = race_id,
-        class = class,
-        spec = spec,
-        spec_id = spec_id,
-        role = role_bitmap,
-        role_main = Bitmap:GetMainRole(role_bitmap),
-        role_sub = Bitmap:GetSubRole(role_bitmap),
-        kills = ArenaMatch:GetPlayerValue(player, "kills"),
-        deaths = ArenaMatch:GetPlayerValue(player, "deaths"),
-        damage = ArenaMatch:GetPlayerValue(player, "damage"),
-        healing = ArenaMatch:GetPlayerValue(player, "healing"),
-        wins = ArenaMatch:GetPlayerValue(player, "wins"),
-    }
+    local playerInfo = existingTable or {};
+    playerInfo.isSelf = (ArenaMatch:GetPlayerValue(player, "is_self") == 1);
+    playerInfo.isFirstDeath = (ArenaMatch:GetPlayerValue(player, "is_first_death") == 1);
+    playerInfo.name = name;
+    playerInfo.realm = realm;
+    playerInfo.fullName = ArenaAnalytics:CombineNameAndRealm(name, realm);
+    playerInfo.faction = Internal:GetRaceFaction(race_id);
+    playerInfo.race = Internal:GetRace(race_id);
+    playerInfo.race_id = race_id;
+    playerInfo.class = class;
+    playerInfo.spec = spec;
+    playerInfo.spec_id = spec_id;
+    playerInfo.role = role_bitmap;
+    playerInfo.role_main = Bitmap:GetMainRole(role_bitmap);
+    playerInfo.role_sub = Bitmap:GetSubRole(role_bitmap);
+    playerInfo.kills = ArenaMatch:GetPlayerValue(player, "kills");
+    playerInfo.deaths = ArenaMatch:GetPlayerValue(player, "deaths");
+    playerInfo.damage = ArenaMatch:GetPlayerValue(player, "damage");
+    playerInfo.healing = ArenaMatch:GetPlayerValue(player, "healing");
+    playerInfo.wins = ArenaMatch:GetPlayerValue(player, "wins");
 
     return playerInfo;
 end

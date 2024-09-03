@@ -514,8 +514,10 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
         assert(playerFrame);
 
         local player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
-        local playerInfo = ArenaMatch:GetPlayerInfo(player);
+        local playerInfo = ArenaMatch:GetPlayerInfo(player, playerFrame.playerInfo);
         if (playerInfo) then
+            playerFrame.playerInfo = playerInfo;
+
             if (playerFrame.texture == nil) then
                 -- No textures? Set them
                 playerFrame.texture = playerFrame:CreateTexture();
@@ -547,7 +549,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
 
             -- Add death overlay            
             if (ArenaMatch:IsPlayerFirstDeath(player)) then
-                if (playerFrame.deathOverlay == nil) then
+                if (not playerFrame.deathOverlay) then
                     playerFrame.deathOverlay = CreateFrame("Frame", nil, playerFrame);
                     playerFrame.deathOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")
                     playerFrame.deathOverlay:SetSize(26,26)
@@ -557,23 +559,21 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
                     playerFrame.deathOverlay.texture:SetSize(26,26)
                     playerFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.27);
                 end
+
                 if (not Options:Get("alwaysShowDeathOverlay")) then
                     playerFrame.deathOverlay:Hide();
                 end
-            elseif (playerFrame.deathOverlay ~= nil) then
+            elseif (playerFrame.deathOverlay) then
                 playerFrame.deathOverlay:Hide();
-                playerFrame.deathOverlay.texture:SetTexture(nil);
-                playerFrame.deathOverlay = nil;
             end
 
-            playerFrame.playerInfo = playerInfo;
             playerFrame:SetScript("OnEnter", function(self)
                 Tooltips:DrawPlayerTooltip(self);
             end);
             playerFrame:SetScript("OnLeave", function()
                 Tooltips:HidePlayerTooltip();
             end);
-            
+
             -- Quick Search
             playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
             playerFrame:SetScript("OnClick", function(self, btn)
@@ -597,18 +597,23 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
     local visible = entry:GetAttribute("selected") or entry:GetAttribute("hovered");
 
     for i = 1, #matchData do
-        if (matchData[i].specOverlay) then
+        local playerFrame = matchData[i];
+        assert(playerFrame);
+
+        if (playerFrame.specOverlay) then
             if (visible or Options:Get("alwaysShowSpecOverlay")) then
-                matchData[i].specOverlay:Show();
+                playerFrame.specOverlay:Show();
             else
-                matchData[i].specOverlay:Hide();
+                playerFrame.specOverlay:Hide();
             end
         end
-        if (matchData[i].deathOverlay) then
-            if (visible or Options:Get("alwaysShowDeathOverlay")) then
-                matchData[i].deathOverlay:Show();
+
+        if (playerFrame.deathOverlay) then
+            local isFirstDeath = playerFrame.playerInfo and playerFrame.playerInfo.isFirstDeath;
+            if (isFirstDeath and (visible or Options:Get("alwaysShowDeathOverlay"))) then
+                playerFrame.deathOverlay:Show();
             else
-                matchData[i].deathOverlay:Hide();
+                playerFrame.deathOverlay:Hide();
             end
         end
     end
