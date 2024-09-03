@@ -8,7 +8,7 @@ local Filters = ArenaAnalytics.Filters;
 -------------------------------------------------------------------------
 
 
-FilterTables.brackets = { }
+FilterTables.brackets = {}
 
 local function GetCurrentBracketName(dropdownContext)
     assert(dropdownContext, "Nil dropdownContext.");

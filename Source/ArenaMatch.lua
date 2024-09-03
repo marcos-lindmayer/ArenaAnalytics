@@ -587,12 +587,12 @@ function ArenaMatch:GetComparisonValues(playerA, playerB, key)
     return valueA, valueB;
 end
 
-function ArenaMatch:GetPlayerFullName(player)
+function ArenaMatch:GetPlayerFullName(player, requireCompactRealm)
     if(not player) then
         return "";
     end
 
-    local name, realm = ArenaMatch:GetPlayerNameAndRealm(player);
+    local name, realm = ArenaMatch:GetPlayerNameAndRealm(player, requireCompactRealm);
     return ArenaAnalytics:CombineNameAndRealm(name, realm);
 end
 
@@ -680,6 +680,10 @@ end
 -------------------------------------------------------------------------
 -- Self
 
+function ArenaMatch:IsPlayerSelf(player)
+    return player and player[playerKeys.is_self] or false;
+end
+
 -- Returns the player info of the 
 function ArenaMatch:GetSelfInfo(match)
     if(not match) then 
@@ -719,6 +723,10 @@ end
 -------------------------------------------------------------------------
 -- First Death
 
+function ArenaMatch:IsPlayerFirstDeath(player)
+    return player and player[playerKeys.is_first_death] or false;
+end
+
 function ArenaMatch:GetFirstDeath(match)
     if(not match) then 
         return nil 
@@ -754,5 +762,63 @@ function ArenaMatch:SetFirstDeath(match, fullName)
     
     if(not success) then
         ArenaMatch:SetTeamMemberValue(match, true, fullName, "is_first_death", 1);
+    end
+end
+
+-------------------------------------------------------------------------
+-- Player Value Search Checks
+
+function ArenaMatch:CheckPlayerSpecID(player, spec_id)
+    if(not spec_id) then
+        return false;
+    end
+    
+    local playerSpec = ArenaMatch:GetPlayerValue(player, "faction");
+
+    if(Helpers:IsClassID(spec_id)) then
+        local class_id = Helpers:GetClassID(spec_id);
+        return class_id and class_id == Helpers:GetClassID(playerSpec);
+    end
+
+    return spec_id == playerSpec;
+end
+
+function ArenaMatch:CheckPlayerRoleByIndex(player, roleIndex)
+    local role_bitmap = ArenaMatch:GetPlayerValue(player, "role");
+    return role_bitmap and Bitmap:HasBitByIndex(role_bitmap, roleIndex);
+end
+
+function ArenaMatch:CheckPlayerFaction(player, faction)
+    local playerFaction = ArenaMatch:GetPlayerValue(player, "faction");
+    return playerFaction and faction == playerFaction;
+end
+
+function ArenaMatch:CheckPlayerName(player, searchValue, isExact)    
+    if(not searchValue or searchValue == "") then
+        return false;
+    end
+
+    local valueHasDash = searchValue:find('-');
+    local playerName = valueHasDash and ArenaMatch:GetPlayerFullName(player) or player[playerKeys.name];
+        
+    if(not playerName or playerName == "") then
+        return false;
+    end
+
+    playerName = playerName:lower();
+
+    if(isExact) then
+        if(valueHasDash) then
+            return searchValue == playerName:gsub('-', "%%-");
+        else
+            return searchValue == playerName;
+        end
+    end
+
+    -- Check partial match
+    if(valueHasDash) then
+        return playerName:gsub("-", "%-"):find(searchValue) ~= nil;
+    else
+        return playerName:find(searchValue) ~= nil;
     end
 end

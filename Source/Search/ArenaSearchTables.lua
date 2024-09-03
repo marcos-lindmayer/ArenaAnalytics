@@ -75,18 +75,19 @@ SearchTokenTypeTable = {
     ["class"] = {
         noSpace = false,
         values = {
-            ["death knight"] = {"death knight", "deathknight", "dk"},
-            ["demon hunter"] = {"demon hunter", "demonhunter", "dh"},
-            ["druid"] = {"druid"},
-            ["hunter"] = {"hunter", "hunt", "huntard"},
-            ["mage"] = {"mage"},
-            ["monk"] = {"monk"},
-            ["paladin"] = {"paladin", "pala"},
-            ["priest"] = {"priest"},
-            ["rogue"] = {"rogue", "rog"},
-            ["shaman"] = {"shaman", "sham"},
-            ["warlock"] = {"warlock", "lock", "wlock"},
-            ["warrior"] = {"warrior"},
+            [0] = {"druid"},
+            [10] = {"paladin", "pala"},
+            [20] = {"shaman", "sham"},
+            [30] = {"death knight", "deathknight", "dk"},
+            [40] = {"hunter", "hunt", "huntard"},
+            [50] = {"mage"},
+            [60] = {"rogue", "rog"},
+            [70] = {"warlock", "lock", "wlock"},
+            [80] = {"warrior"},
+            [90] = {"priest"},
+            [100] = {"monk"},
+            [110] = {"demon hunter", "demonhunter", "dh"},
+            [120] = {"evoker"},
         }
     },
     ["spec"] = {
@@ -182,8 +183,8 @@ SearchTokenTypeTable = {
     ["faction"] = {
         noSpace = true,
         values = {
-            ["alliance"] = {"alliance"},
-            ["horde"] = {"horde"},
+            [1] = {"alliance"},
+            [2] = {"horde"},
         }
     },
     ["role"] = {

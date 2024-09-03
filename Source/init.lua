@@ -186,6 +186,7 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
+		collectgarbage("collect");
 	end,	
 };
 

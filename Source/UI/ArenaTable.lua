@@ -516,8 +516,6 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
         local player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
         local playerInfo = ArenaMatch:GetPlayerInfo(player);
         if (playerInfo) then
-            playerFrame.player = player;
-
             if (playerFrame.texture == nil) then
                 -- No textures? Set them
                 playerFrame.texture = playerFrame:CreateTexture();
@@ -526,38 +524,29 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             end
 
             -- Set texture
-            playerFrame.texture:SetTexture(Internal:GetClassIcon(playerInfo.spec_id));
+            playerFrame.texture:SetTexture(Internal:GetClassIcon(playerInfo.spec_id) or 134400);
             playerFrame.tooltip = "";
 
             -- Add spec info
-            if(playerInfo.class) then
-                if (playerFrame.specOverlay == nil) then
-                    playerFrame.specOverlay = CreateFrame("Frame", nil, playerFrame);
-                    playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")
-                    playerFrame.specOverlay:SetSize(12,12)
-                    
-                    playerFrame.specOverlay.texture = playerFrame.specOverlay:CreateTexture();
-                    playerFrame.specOverlay.texture:SetPoint("CENTER")
-                    playerFrame.specOverlay.texture:SetSize(12,12)
-                else
-                    playerFrame.specOverlay.texture:SetTexture(nil);
-                end
+            if (not playerFrame.specOverlay) then
+                playerFrame.specOverlay = CreateFrame("Frame", nil, playerFrame);
+                playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT");
+                playerFrame.specOverlay:SetSize(12,12);
+                
+                playerFrame.specOverlay.texture = playerFrame.specOverlay:CreateTexture();
+                playerFrame.specOverlay.texture:SetPoint("CENTER");
+                playerFrame.specOverlay.texture:SetSize(12,12);
+            end
 
-                local specIcon = Constants:GetSpecIcon(playerInfo.spec_id);
-                playerFrame.specOverlay.texture:SetTexture(specIcon);
+            local specIcon = Constants:GetSpecIcon(playerInfo.spec_id);
+            playerFrame.specOverlay.texture:SetTexture(specIcon or "");
 
-                if (not Options:Get("alwaysShowSpecOverlay")) then
-                    playerFrame.specOverlay:Hide();
-                end
-            else
-                if (playerFrame.specOverlay and playerFrame.specOverlay.SetTexture) then
-                    playerFrame.specOverlay:SetTexture(nil);
-                    playerFrame.specOverlay:Hide();
-                end
+            if (not Options:Get("alwaysShowSpecOverlay")) then
+                playerFrame.specOverlay:Hide();
             end
 
             -- Add death overlay            
-            if (playerInfo.is_first_death) then
+            if (ArenaMatch:IsPlayerFirstDeath(player)) then
                 if (playerFrame.deathOverlay == nil) then
                     playerFrame.deathOverlay = CreateFrame("Frame", nil, playerFrame);
                     playerFrame.deathOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")
@@ -710,7 +699,7 @@ function AAtable:HandleArenaCountChanged()
 
     wins, sessionGames, sessionWins = 0,0,0;
     -- Update arena count & winrate
-    for i=#ArenaAnalytics.filteredMatchHistory, 1, -1 do
+    for i=ArenaAnalytics.filteredMatchCount, 1, -1 do
         local match, filteredSession = ArenaAnalytics:GetFilteredMatch(i);
         if(match) then 
             if(ArenaMatch:IsVictory(match)) then 
@@ -738,7 +727,7 @@ function AAtable:HandleArenaCountChanged()
     ArenaAnalyticsScrollFrame.sessionStats:SetText(sessionText .. sessionGames .. arenaText .. "   " .. winsText .. " / " .. lossesText .. "  " .. winrateText .. "% Winrate");
 
     -- Update the 
-    local totalArenas = #ArenaAnalytics.filteredMatchHistory;
+    local totalArenas = ArenaAnalytics.filteredMatchCount;
     local winrate = totalArenas > 0 and math.floor(wins * 100 / totalArenas) or 0;
     local winsColoured =  "|cff00cc66" .. wins .. "|r";
     local lossesColoured =  "|cffff0000" .. (totalArenas - wins) .. "|r";
@@ -792,7 +781,7 @@ function AAtable:RefreshLayout()
 
     for buttonIndex = 1, #buttons do
         local button = buttons[buttonIndex];
-        local matchIndex = #ArenaAnalytics.filteredMatchHistory - (buttonIndex + offset - 1);
+        local matchIndex = ArenaAnalytics.filteredMatchCount - (buttonIndex + offset - 1);
 
         local match, filteredSession = ArenaAnalytics:GetFilteredMatch(matchIndex);
         if (match ~= nil) then
@@ -880,8 +869,8 @@ function AAtable:RefreshLayout()
     end
 
     -- Adjust Team bg
-    if (#ArenaAnalytics.filteredMatchHistory < 15) then
-        local newHeight = (#ArenaAnalytics.filteredMatchHistory * 28) - 1;
+    if (ArenaAnalytics.filteredMatchCount < 15) then
+        local newHeight = (ArenaAnalytics.filteredMatchCount * 28) - 1;
         ArenaAnalyticsScrollFrame.teamBgT:SetHeight(newHeight);
         ArenaAnalyticsScrollFrame.teamBg:SetHeight(newHeight);
     else
@@ -890,7 +879,7 @@ function AAtable:RefreshLayout()
     end
 
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;
-    local totalHeight = #ArenaAnalytics.filteredMatchHistory * buttonHeight;
+    local totalHeight = ArenaAnalytics.filteredMatchCount * buttonHeight;
     local shownHeight = #buttons * buttonHeight;
     HybridScrollFrame_Update(ArenaAnalyticsScrollFrame.ListScrollFrame, totalHeight, shownHeight);
 end

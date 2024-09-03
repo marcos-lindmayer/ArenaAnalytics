@@ -67,8 +67,7 @@ function Helpers:GetUnitClass(unit)
 end
 
 function Helpers:GetClassIcon(spec_id)
-    local specInfo = Internal:GetSpecInfo(spec_id);
-    return Internal:GetClassIcon(specInfo and specInfo.classIndex);
+    return Internal:GetClassIcon(spec_id);
 end
 
 -- Gets the name, and realm if not local realm from player info
@@ -83,4 +82,8 @@ end
 
 function Helpers:GetClassID(spec_id)
     return spec_id and floor(spec_id / 10) * 10;
+end
+
+function Helpers:IsClassID(spec_id)
+    return spec_id and (spec_id % 10 == 0);
 end

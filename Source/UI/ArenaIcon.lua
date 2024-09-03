@@ -22,7 +22,7 @@ function ArenaIcon:Create(parent, spec_id, size, hideSpec)
         newFrame.classTexture:SetSize(size,size);
         
         local classIconTexture = Internal:GetClassIcon(spec_id);
-        newFrame.classTexture:SetTexture(classIconTexture);
+        newFrame.classTexture:SetTexture(classIconTexture or 134400);
         
         if(spec_id % 10 ~= 0) then
             local halfSize = floor(size/2);

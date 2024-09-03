@@ -5,6 +5,8 @@ local Dropdown = ArenaAnalytics.Dropdown;
 local List = Dropdown.List;
 List.__index = List;
 
+-- Local module aliases
+
 -------------------------------------------------------------------------
 
 List.verticalPadding = 5;

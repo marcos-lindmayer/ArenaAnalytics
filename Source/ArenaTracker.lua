@@ -14,7 +14,7 @@ function ArenaTracker:getCurrentArena()
 end
 
 -- Arena variables
-local currentArena = { }
+local currentArena = {}
 
 -- Reset current arena values
 function ArenaTracker:ResetCurrentArenaValues()

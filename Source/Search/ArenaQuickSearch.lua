@@ -383,20 +383,18 @@ function Search:QuickSearch(playerFrame, mouseButton)
         return;
     end
 
+    if(not playerFrame or not playerFrame.playerInfo) then
+        return;
+    end
+
     if(locked) then
         return;
     end
     locked = true;
 
-    local playerInfo = ArenaMatch:GetPlayerInfo(playerFrame.player);
-    if(not playerInfo) then
-        locked = false;
-        return;
-    end
-
     team = isEnemyTeam and "enemy" or "team";
     local appendRule = GetAppendRule(mouseButton);
-    local tokens = GetQuickSearchTokens(playerInfo, team, mouseButton);
+    local tokens = GetQuickSearchTokens(playerFrame.playerInfo, team, mouseButton);
 
     if(not tokens or #tokens == 0) then
         return;
@@ -463,7 +461,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
         end
 
         if(#currentSegments == 0 or appendRule ~= "Same Segment") then
-            tinsert(currentSegments, { tokens = {} });
+            tinsert(currentSegments, Search:GetEmptySegment());
         end
 
         segmentIndex = #currentSegments;

@@ -400,7 +400,7 @@ local function RecomputeFilteredSession()
     local cachedRealSession = 0;
     local filteredSession = 1;
 
-    for i=#ArenaAnalytics.filteredMatchHistory, 1, -1 do
+    for i=ArenaAnalytics.filteredMatchCount, 1, -1 do
         local match = ArenaAnalytics:GetFilteredMatch(i);
         local nextMatch = ArenaAnalytics:GetFilteredMatch(i+1);
 
@@ -434,7 +434,17 @@ local function ProcessMatchIndex(index)
         end
 
         if(doesPassComp and doesPassEnemyComp) then
-            table.insert(ArenaAnalytics.filteredMatchHistory, { index = index });
+            local filteredIndex = ArenaAnalytics.filteredMatchCount + 1;
+            ArenaAnalytics.filteredMatchCount = filteredIndex;
+
+            if(filteredIndex > #ArenaAnalytics.filteredMatchHistory) then
+                tmpCount = (tmpCount or 0) + 1;
+                ArenaAnalytics:Log("Adding new filtered history entry", tmpCount)
+                table.insert(ArenaAnalytics.filteredMatchHistory, {});
+            end
+
+            local filteredMatch = ArenaAnalytics.filteredMatchHistory[filteredIndex];
+            filteredMatch.index = index;
         end
     end
 end
@@ -447,15 +457,15 @@ function Filters:Refresh(onCompleteFunc)
         return;
     end
     Filters.isRefreshing = true;
-    
+
     -- Reset tables
-    ArenaAnalytics.filteredMatchHistory = {}
+    ArenaAnalytics.filteredMatchCount = 0;    
     Selection:ClearSelectedMatches();
     ResetTransientCompData();
     cachedRealSession = 0;
     
     local currentIndex = 1;
-    local batchDurationLimit = 0.05;
+    local batchDurationLimit = 0.01;
 
     local function Finalize()
         -- Assign session to filtered matches

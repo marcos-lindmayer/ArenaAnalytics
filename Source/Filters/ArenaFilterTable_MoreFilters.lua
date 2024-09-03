@@ -8,7 +8,7 @@ local Filters = ArenaAnalytics.Filters;
 -------------------------------------------------------------------------
 
 
-FilterTables.moreFilters = { }
+FilterTables.moreFilters = {}
 
 local function GenerateSeasonData()
     local currentSeason = GetCurrentArenaSeason()

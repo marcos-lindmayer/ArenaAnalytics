@@ -11,8 +11,8 @@ local Display = Dropdown.Display;
 -------------------------------------------------------------------------
 
 
-FilterTables.comps = { }
-FilterTables.enemyComps = { }
+FilterTables.comps = {}
+FilterTables.enemyComps = {}
 
 local function IsDisabled()
     return not Filters:IsFilterActive("Filter_Bracket");

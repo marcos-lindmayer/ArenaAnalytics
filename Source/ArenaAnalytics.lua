@@ -14,6 +14,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 
+-------------------------------------------------------------------------
 
 function ArenaAnalytics:GetVersion()
     return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
@@ -21,8 +22,8 @@ end
 
 -------------------------------------------------------------------------
 -- Character SavedVariables match history
-ArenaAnalyticsDB = ArenaAnalyticsDB or { }
-ArenaAnalyticsRealmsDB = ArenaAnalyticsRealmsDB or { }
+ArenaAnalyticsDB = ArenaAnalyticsDB or {}
+ArenaAnalyticsRealmsDB = ArenaAnalyticsRealmsDB or {}
 
 -------------------------------------------------------------------------
 -- Realms logic
@@ -82,8 +83,8 @@ function ArenaAnalytics:CombineNameAndRealm(name, realm)
 	end
 
 	if(tonumber(realm)) then
-		realm = ArenaAnalyticsRealmsDB[i];
-		assert(realm);
+		realm = ArenaAnalyticsRealmsDB[tonumber(realm)];
+		assert(realm, "Realm index had no realm stored!");
 	end
 
 	realm = realm and ("-" .. realm) or "";
@@ -203,14 +204,19 @@ end
 
 ArenaAnalytics.unsavedArenaCount = 0;
 
-ArenaAnalytics.filteredMatchHistory = { };
+ArenaAnalytics.filteredMatchCount = 0;
+ArenaAnalytics.filteredMatchHistory = {};
 
 function ArenaAnalytics:GetMatch(index)
 	return index and ArenaAnalyticsDB and ArenaAnalyticsDB[index];
 end
 
 function ArenaAnalytics:GetFilteredMatch(index)
-	local filteredMatchInfo = index and ArenaAnalytics.filteredMatchHistory[index];
+	if(not index or index > ArenaAnalytics.filteredMatchCount) then
+		return nil;
+	end
+
+	local filteredMatchInfo = ArenaAnalytics.filteredMatchHistory[index];
 	if(not filteredMatchInfo) then
 		return nil;
 	end

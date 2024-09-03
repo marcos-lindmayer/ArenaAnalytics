@@ -1,6 +1,8 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
 local Dropdown = ArenaAnalytics.Dropdown;
-Dropdown.__index = Dropdown
+Dropdown.__index = Dropdown;
+
+-- Local module aliases
 
 -------------------------------------------------------------------------
 -- TODO: Add dropdown table format

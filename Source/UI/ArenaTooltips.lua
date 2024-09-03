@@ -155,7 +155,7 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         BindPlayerFrameModifierChanged(playerFrame);
     end
 
-    local playerInfo = ArenaMatch:GetPlayerInfo(playerFrame.player);
+    local playerInfo = playerFrame.playerInfo;
     if(not playerInfo) then
         return;
     end

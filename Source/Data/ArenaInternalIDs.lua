@@ -226,7 +226,7 @@ function Internal:GetClassIcon(spec_id)
 
     local info = spec_id and addonSpecializationIDs[spec_id];
     if(not info or not info.classIndex) then
-        return "";
+        return 134400; -- Question Mark
     end
 
     -- Death Knight
@@ -236,7 +236,7 @@ function Internal:GetClassIcon(spec_id)
 
     local classInfo = classIndexes[info.classIndex];
     local classToken = classInfo and classInfo.token;
-    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or "";
+    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or 134400;
 end
 
 function Internal:GetSpecInfo(spec_id)
