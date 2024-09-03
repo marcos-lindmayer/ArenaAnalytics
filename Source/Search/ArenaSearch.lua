@@ -232,7 +232,7 @@ local function CheckTypeForPlayer(searchType, token, player)
         return ArenaMatch:CheckPlayerRoleByIndex(player, token.value);
     elseif(searchType == "logical") then
         if(token.value == "self") then
-            return playerInfo.isSelf;
+            return ArenaMatch:IsPlayerSelf(player);
         end
     end
 

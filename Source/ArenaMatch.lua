@@ -76,8 +76,6 @@ local function ToNumericalBool(value)
     if(value == nil) then
         return;
     end
-
-    ArenaAnalytics:Log(value);
     return (value and value ~= 0) and 1 or 0;
 end
 
@@ -683,6 +681,20 @@ function ArenaMatch:IsPlayerSelf(player)
     return player and player[playerKeys.is_self] or false;
 end
 
+function ArenaMatch:HasSelf(match)
+    if(not match) then
+        return false;
+    end
+
+    local team = ArenaMatch:GetTeam(match, false);
+    for _,player in ipairs(team) do
+        if(ArenaMatch:IsPlayerSelf(player)) then
+            return true;
+        end
+    end
+    return false;
+end
+
 -- Returns the player info of the 
 function ArenaMatch:GetSelfInfo(match)
     if(not match) then 
@@ -716,7 +728,8 @@ function ArenaMatch:SetSelf(match, fullName)
         return;
     end
 
-    ArenaMatch:SetTeamMemberValue(match, false, fullName, "is_self", 1);
+    local result = ArenaMatch:SetTeamMemberValue(match, false, fullName, "is_self", 1);
+    return result;
 end
 
 -------------------------------------------------------------------------

@@ -399,6 +399,8 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
         return race, tonumber(spec) or tonumber(class);
     end
 
+    local selfNames = {}
+
     -- Convert old arenas
     for i=1, #OldMatchHistory do
         local oldArena = OldMatchHistory[i];
@@ -444,12 +446,35 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
             end
 
             ArenaMatch:SetSelf(convertedArena, oldArena["player"]);
+            if(oldArena["player"]) then
+                selfNames[oldArena["player"]] = true;
+            end
+
             ArenaMatch:SetFirstDeath(convertedArena, oldArena["firstDeath"]);
 
             -- Comps
             ArenaMatch:UpdateComps(convertedArena);
 
             tinsert(NewMatchHistory, convertedArena);
+        end
+    end
+
+    local myName = Helpers:GetPlayerName(skipRealm);
+    if(myName) then
+        tinsert(selfNames, myName);
+    else
+        ArenaAnalytics:Log("Failed to get local player name. Versioning called too early.");
+    end
+
+    -- Attempt retroactively assigning player names
+    for i,match in ipairs(NewMatchHistory) do
+        if(match and not ArenaMatch:HasSelf(match)) then
+            for name,_ in pairs(selfNames) do
+                local result = ArenaMatch:SetSelf(match, name);
+                if(result) then
+                    break;
+                end
+            end
         end
     end
 
