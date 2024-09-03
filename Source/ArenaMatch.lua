@@ -771,8 +771,8 @@ function ArenaMatch:CheckPlayerSpecID(player, spec_id)
     if(not spec_id) then
         return false;
     end
-    
-    local playerSpec = ArenaMatch:GetPlayerValue(player, "faction");
+
+    local playerSpec = ArenaMatch:GetPlayerValue(player, "spec_id");
 
     if(Helpers:IsClassID(spec_id)) then
         local class_id = Helpers:GetClassID(spec_id);
@@ -788,8 +788,8 @@ function ArenaMatch:CheckPlayerRoleByIndex(player, roleIndex)
 end
 
 function ArenaMatch:CheckPlayerFaction(player, faction)
-    local playerFaction = ArenaMatch:GetPlayerValue(player, "faction");
-    return playerFaction and faction == playerFaction;
+    local race_id = ArenaMatch:GetPlayerValue(player, "race");
+    return race_id and faction == (race_id % 2);
 end
 
 function ArenaMatch:CheckPlayerName(player, searchValue, isExact)    

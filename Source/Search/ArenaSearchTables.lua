@@ -183,8 +183,8 @@ SearchTokenTypeTable = {
     ["faction"] = {
         noSpace = true,
         values = {
+            [0] = {"horde"},
             [1] = {"alliance"},
-            [2] = {"horde"},
         }
     },
     ["role"] = {
