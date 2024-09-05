@@ -31,8 +31,9 @@ ArenaAnalytics.Search = {};
 ArenaAnalytics.Filters = {};
 ArenaAnalytics.FilterTables = {};
 
-ArenaAnalytics.Import = {};
 ArenaAnalytics.Export = {};
+ArenaAnalytics.Import = {};
+ArenaAnalytics.ImportBox = {};
 ArenaAnalytics.VersionManager = {};
 
 -- Local module aliases
@@ -161,6 +162,7 @@ ArenaAnalytics.commands = {
 			if (ArenaAnalytics:HasStoredMatches()) then
 				ArenaAnalytics:Log("Clearing ArenaAnalyticsDB.");
 				ArenaAnalyticsDB = {}
+				ArenaAnalyticsRealmsDB = {}
 				ArenaAnalytics.AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
 				
 				ArenaAnalytics.Filters:Refresh();

@@ -44,7 +44,8 @@ Source/Filters/ArenaFilterTable_Brackets.lua
 Source/Filters/ArenaFilterTable_Comps.lua
 Source/Filters/ArenaFilterTable_MoreFilters.lua
 
-Source/ImportExport/ArenaImportExport.lua
+Source/ImportExport/ArenaImport.lua
+Source/ImportExport/ArenaImportBox.lua
 
 Source/UI/Dropdowns/ArenaDropdown.lua
 Source/UI/Dropdowns/ArenaDropdownList.lua

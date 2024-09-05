@@ -408,9 +408,9 @@ function ArenaMatch:AddPlayer(match, isEnemyTeam, fullName, race_id, spec_id, ro
     if(fullName == nil) then
         ArenaAnalytics:Log("Warning: Adding player to stored match without name!");
     end
-    
+
     local name, realm = ArenaAnalytics:GetNameAndRealm(fullName, true);
-    
+
     local newPlayer = {}
     SetPlayerValue(match, newPlayer, "name", name);
     SetPlayerValue(match, newPlayer, "realm", realm);

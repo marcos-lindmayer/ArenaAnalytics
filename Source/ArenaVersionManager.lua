@@ -102,7 +102,7 @@ function VersionManager:OnInit()
             ArenaAnalytics:Log("Version Control: Testing remaining old data after purging ArenaAnalyticsDB: ", k, v and #v);
         end
     end
-    MatchHistoryDB = nil;
+    --MatchHistoryDB = nil;
 
     NewMatchHistory = VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(NewMatchHistory); -- 0.7.0
 
@@ -338,6 +338,8 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
         return NewMatchHistory;
     end
 
+    ArenaAnalyticsRealmsDB = {}
+
     -- Fill race lookup table
     local localizedRaceLookupTable = {}
     for raceID = 1, API.maxRaceID do
@@ -412,7 +414,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
             ArenaMatch:SetDuration(convertedArena, oldArena["duration"]);
             ArenaMatch:SetMap(convertedArena, oldArena["map"]);
             ArenaMatch:SetBracket(convertedArena, oldArena["bracket"]);
-            ArenaMatch:SetMatchType(convertedArena, oldArena["isRated"] and "rated" or "skirmish");
+            ArenaMatch:SetMatchType(convertedArena, (not oldArena["isRated"] or oldArena["rating"] == "SKIRMISH") and "skirmish" or "rated");
 
             ArenaMatch:SetPartyRating(convertedArena, oldArena["rating"]);
             ArenaMatch:SetPartyMMR(convertedArena, oldArena["mmr"]);

@@ -15,6 +15,7 @@ local Tooltips = ArenaAnalytics.Tooltips;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Constants = ArenaAnalytics.Constants;
+local ImportBox = ArenaAnalytics.ImportBox;
 
 -------------------------------------------------------------------------
 
@@ -333,7 +334,11 @@ function AAtable:OnLoad()
 end
 
 function AAtable:TryShowimportDialogFrame(parent)
-    if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then       
+    if(true) then -- TODO: Implement updated import/export
+        return;
+    end
+
+    if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
         ArenaAnalyticsScrollFrame.importDialogFrame = CreateFrame("Frame", "ArenaAnalyticsImportFrame", parent or UIParent, "BasicFrameTemplateWithInset")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetPoint("CENTER")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetSize(475, 145)
@@ -345,87 +350,20 @@ function AAtable:TryShowimportDialogFrame(parent)
         ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, "Paste the ArenaStats or ArenaAnalytics export on the text box below.");
         ArenaAnalyticsScrollFrame.importDialogFrame.Text2 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -65, "|cffCCCCCCNote:|r |cff888888Matches with missing specs detected won't show on comp filters.|r");
             
-        ArenaAnalyticsScrollFrame.importDialogFrame.button = AAtable:CreateButton("TOPRIGHT", ArenaAnalyticsScrollFrame.importDialogFrame, "TOPRIGHT", -70, -80, "Import");
+        ArenaAnalyticsScrollFrame.importDialogFrame.button = AAtable:CreateButton("TOPRIGHT", ArenaAnalyticsScrollFrame.importDialogFrame, "TOPRIGHT", -45, -80, "Import");
         ArenaAnalyticsScrollFrame.importDialogFrame.button:SetSize(115, 25);
         
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox = CreateFrame("EditBox", "exportFrameScroll", ArenaAnalyticsScrollFrame.importDialogFrame, "InputBoxTemplate")
+        -- Import Edit Box
+        ArenaAnalyticsScrollFrame.importDialogFrame.editbox = ImportBox:Create(parent, "ImportDialogBox", 255, 55);
         ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetPoint("RIGHT", ArenaAnalyticsScrollFrame.importDialogFrame.button, "LEFT", -10, 0);
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetFrameStrata("DIALOG");
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetSize(213, 55);
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetAutoFocus(false);
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetMaxBytes(50);
 
         ArenaAnalyticsScrollFrame.importDataText3 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "BOTTOM", 0, 25, "|cffff0000Do this NOW|r You won't be able to do this while you have stored arenas!");
 
-        
-        local pasteBuffer, lastPasteTime, index = {}, 0, 0;
-
-        local function onCharAdded(self, c)
-            if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
-                return;
-            end
-
-            if(ArenaAnalyticsScrollFrame.importDialogFrame.editbox:IsEnabled()) then
-                ArenaAnalyticsScrollFrame.importDialogFrame.editbox:Disable();
-                pasteBuffer, index = {}, 0;
-
-                ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnChar", nil);
-                ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText("");
-                ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnChar", onCharAdded);
-
-                C_Timer.After(0, function()
-                    if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
-                        return;
-                    end
-
-                    ArenaAnalytics:Log("Finalizing import paste.");
-                    ArenaImportPasteStringTable = {}
-                    tinsert(ArenaImportPasteStringTable, (string.trim(table.concat(pasteBuffer)) or ""));
-                    ArenaAnalytics:Log(#ArenaImportPasteStringTable);
-
-                    if(#ArenaImportPasteStringTable[1] > 0) then
-                        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:Enable();
-                    end
-
-                    pasteBuffer = {}
-                    index = 0;
-
-                    -- Update text: 1) Prevent OnChar for changing text
-                    ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnChar", nil);
-                    ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText(Import:determineImportSource(ArenaImportPasteStringTable) .. " import detected...");
-                    ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnChar", onCharAdded);
-                end);
-            end
-
-            index = index + 1;
-            pasteBuffer[index] = c;
-        end
-
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnChar", onCharAdded);
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnEditFocusGained", function()
-            ArenaAnalyticsScrollFrame.importDialogFrame.editbox:HighlightText();
-        end);
-
-        ArenaAnalyticsScrollFrame.importDialogFrame.button:SetScript("OnClick", function (i) 
+        ArenaAnalyticsScrollFrame.importDialogFrame.button:SetScript("OnClick", function (i)
             ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
             Import:parseRawData(ArenaImportPasteStringTable);
             ArenaImportPasteStringTable = {};
         end);
-
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnEnterPressed", function(self)
-            self:ClearFocus();
-        end);
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnEscapePressed", function(self)
-            self:ClearFocus();
-        end);
-
-		-- Clear text
-		ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetScript("OnHide", function(self)
-			-- Garbage collect
-			self:SetText("");
-            collectgarbage("collect");
-            ArenaAnalytics:Log("Garbage Collection forced by import frame.");
-		end);
     end
 
     ArenaAnalyticsScrollFrame.importDialogFrame:SetParent(parent or UIParent);
@@ -436,7 +374,7 @@ end
 
 -- Creates the Export DB frame
 function AAtable:CreateExportDialogFrame()
-    if (not ArenaAnalytics:HasStoredMatches()) then
+    if (not ArenaAnalytics:HasStoredMatches() or true) then -- TODO: Implement updated import/export
         return;
     end
 
