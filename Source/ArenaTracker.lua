@@ -6,6 +6,8 @@ local AAmatch = ArenaAnalytics.AAmatch;
 local Constants = ArenaAnalytics.Constants;
 local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
+local Helpers = ArenaAnalytics.Helpers;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
@@ -36,8 +38,6 @@ function ArenaTracker:ResetCurrentArenaValues()
 	currentArena.size = nil;
 	currentArena.isRated = nil;
 	currentArena.players = {};
-	currentArena.party = {};
-	currentArena.enemy = {};
 	currentArena.ended = false;
 	currentArena.endedProperly = false;
 	currentArena.won = nil;
@@ -48,7 +48,7 @@ ArenaTracker:ResetCurrentArenaValues();
 function ArenaTracker:IsTrackingPlayer(name)
 	for i = 1, #currentArena.players do
 		local player = currentArena.players[i];
-		if (player and player["name"] == name) then
+		if (player and player.name == name) then
 			return true;
 		end
 	end
@@ -94,9 +94,12 @@ function ArenaTracker:HandleArenaEnter(...)
 
 	local battlefieldId = ...;
 	currentArena.battlefieldId = battlefieldId or ArenaAnalytics:GetActiveBattlefieldID();
+
+	if(not currentArena.battlefieldId) then
+		ArenaAnalytics:Log("ERROR: Invalid Battlefield ID in HandleArenaEnter");
+	end
 	
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRated, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena.battlefieldId);
-	
 	if (status ~= "active") then
 		return false
 	end
@@ -104,6 +107,12 @@ function ArenaTracker:HandleArenaEnter(...)
 	currentArena.playerName = Helpers:GetPlayerName();
 	currentArena.isRated = isRated;
 	currentArena.size = teamSize;
+
+	if(C_PvP and C_PvP.IsSoloShuffle) then
+		currentArena.isShuffle = C_PvP.IsSoloShuffle() or nil;
+	end
+
+	ArenaTracker:UpdateBracket();
 	
 	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(teamSize);
 	if(isRated and ArenaAnalytics.cachedBracketRatings[bracketId] == nil) then
@@ -113,7 +122,7 @@ function ArenaTracker:HandleArenaEnter(...)
 	end
 
 	-- Add self
-	if (not IsTrackingPlayer(currentArena.playerName)) then
+	if (not ArenaTracker:IsTrackingPlayer(currentArena.playerName)) then
 		-- Add player
 		local GUID = UnitGUID("player");
 		local name = currentArena.playerName;
@@ -121,42 +130,33 @@ function ArenaTracker:HandleArenaEnter(...)
 		local class_id = Helpers:GetUnitClass("player");
 		local spec_id = API:GetMySpec() or class_id;
 
-		local player = ArenaTracker:CreatePlayerTable("team", GUID, name, race_id, spec_id);
+		local player = ArenaTracker:CreatePlayerTable(false, GUID, name, race_id, spec_id);
 		table.insert(currentArena.players, player);
 	end
 
 	if(ArenaAnalytics.DataSync) then
 		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
 	end
-	
-	-- Not using mapName since string is lang based (unreliable) 
+
 	currentArena.mapId = select(8,GetInstanceInfo())
-	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId)
+	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId);
 
 	RequestBattlefieldScoreData();
-
-	-- Determine if a winner has already been determined.
-	if(GetBattlefieldWinner() ~= nil) then
-		ArenaAnalytics:Log("Started tracking after a team won. Calling HandleArenaEnd().")
-		--ArenaTracker:HandleArenaEnd();
-	end
 end
-
 
 -- Returns currently stored value by character name
 -- Used to link existing spec and GUID info with players'
 -- info from the UPDATE_BATTLEFIELD_SCORE event
 function ArenaTracker:GetCollectedValue(valueKey, name)
 	for i = 1, #currentArena.players do
-		local player = currentArena.players
-		if (player and player["name"] == name) then
+		local player = currentArena.players[i];
+		if (player and player.name == name) then
 			return player[valueKey];
 		end
 	end
 	return nil;
 end
 
---- TODO: Refactor this?
 -- Gets arena information when it ends and the scoreboard is shown
 -- Matches obtained info with previously collected player values
 function ArenaTracker:HandleArenaEnd()
@@ -168,7 +168,7 @@ function ArenaTracker:HandleArenaEnd()
 
 	-- Figure out how to default to nil, without failing to count losses.
 	local myTeamIndex = nil;
-	
+
 	local numScores = GetNumBattlefieldScores();
 	for i=1, numScores do
 		-- TODO: Find a way to convert race to raceID securely for any localization!
@@ -182,19 +182,20 @@ function ArenaTracker:HandleArenaEnd()
 		local class_id = Internal:GetAddonClassIDByToken(classToken);
 
 		-- Get spec and GUID from existing data, if available
-		local spec_id = ArenaTracker:GetCollectedValue("spec", name) or class_id;
+		local spec_id = ArenaTracker:GetCollectedValue("spec", name);
 		local race_id = ArenaTracker:GetCollectedValue("race", name);
 
+		ArenaAnalytics:Log("Collected spec:", spec_id)
+
 		if(not race_id) then
-			-- TODO: Implement this!
 			-- Convert localized race to raceID
 			race_id = Helpers:GetRaceIDFromLocalizedRace(race) or race;
 		end
 
 		-- Create complete player tables
-		local player = ArenaTracker:CreatePlayerTable(nil, nil, name, race_id, spec_id, kills, deaths, damage, healing);
+		local player = ArenaTracker:CreatePlayerTable(nil, nil, name, race_id, (spec_id or class_id), kills, deaths, damage, healing);
 		player.teamIndex = teamIndex;
-		
+
 		if (name == currentArena.playerName) then
 			myTeamIndex = teamIndex;
 		elseif(currentArena.isShuffle) then
@@ -226,14 +227,16 @@ function ArenaTracker:HandleArenaEnd()
 		local _, oldPartyRating, newPartyRating, partyMMR = GetBattlefieldTeamInfo(myTeamIndex);
 		local _, oldEnemyRating, newEnemyRating, enemyMMR = GetBattlefieldTeamInfo(otherTeamIndex);
 
-		currentArena.partyRating = tonumber(newPartyRating);
+		--currentArena.partyRating = tonumber(newPartyRating);
+		--currentArena.partyRatingDelta = abs(Round(newPartyRating - oldPartyRating));
 		currentArena.partyMMR = tonumber(partyMMR);
-		currentArena.partyRatingDelta = abs(round(newPartyRating - oldPartyRating));
 		
 		currentArena.enemyRating = tonumber(newEnemyRating);
+		currentArena.enemyRatingDelta = abs(Round(newEnemyRating - oldEnemyRating));
 		currentArena.enemyMMR = tonumber(enemyMMR);
-		currentArena.enemyRatingDelta = abs(round(newEnemyRating - oldEnemyRating));
 	end
+
+	currentArena.players = players;
 
 	ArenaAnalytics:Log("Match ended!");
 end
@@ -257,8 +260,8 @@ function ArenaTracker:HandleArenaExit()
 		local oldRating = ArenaAnalytics.cachedBracketRatings[bracketId];
 		ArenaAnalyticsDebugAssert(ArenaAnalytics.cachedBracketRatings[bracketId] ~= nil);
 		
-		if(oldRating == nil or oldRating == "SKIRMISH") then
-			oldRating = ArenaAnalytics:GetLatestRating();
+		if(not oldRating) then
+			oldRating = ArenaAnalytics:GetLatestRating(currentArena.size);
 		end
 		
 		local deltaRating = newRating - oldRating;
@@ -280,7 +283,7 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 	local groups = {"party", "arena"};
 	for _,group in ipairs(groups) do
 		for i = 1, currentArena.size do
-			local name, realm = UnitNameUnmodified(unit .. i);
+			local name, realm = UnitNameUnmodified(group .. i);
 			
 			if (name ~= nil and name ~= "Unknown") then
 				if(realm == nil or realm == "") then
@@ -293,12 +296,12 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 				
 				-- Check if they were already added
 				if (not ArenaTracker:IsTrackingPlayer(name)) then
-					local GUID = UnitGUID(unit .. i);
-					local team = (group == "party") and "team" or "enemy";
-					local race_id = Helpers:GetUnitRace(unit .. i);
-					local class_id = Helpers:GetUnitClass(unit .. i);
+					local GUID = UnitGUID(group .. i);
+					local isEnemy = (group ~= "party");
+					local race_id = Helpers:GetUnitRace(group .. i);
+					local class_id = Helpers:GetUnitClass(group .. i);
 					local spec_id = GUID and GUID == unitGuid and unitSpec or class_id;
-					local player = ArenaTracker:CreatePlayerTable(team, GUID, name, race_id, spec_id);
+					local player = ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, spec_id);
 					table.insert(currentArena.players, player);
 				end
 			end
@@ -306,10 +309,10 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 	end
 end
 
--- Returns a table with unit information to be placed inside either arena.party or arena.enemy
-function ArenaTracker:CreatePlayerTable(team, GUID, name, race_id, spec_id, kills, deaths, damage, healing)
+-- Returns a table with unit information to be placed inside arena.players
+function ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, spec_id, kills, deaths, damage, healing)
 	return {
-		["team"] = team,
+		["isEnemy"] = isEnemy,
 		["GUID"] = GUID,
 		["name"] = name,
 		["race"] = race_id,
@@ -326,15 +329,15 @@ end
 local function tryRemoveFromDeaths(playerGUID, spell)
 	local existingData = currentArena.deathData[playerGUID];
 	if(existingData ~= nil) then
-		local timeSinceDeath = time() - existingData["time"];
+		local timeSinceDeath = time() - existingData.time;
 		
-		local minimumDelay = existingData["isHunter"] and 2 or 10;
-		if(existingData["hasKillCredit"]) then
+		local minimumDelay = existingData.isHunter and 2 or 10;
+		if(existingData.hasKillCredit) then
 			minimumDelay = minimumDelay + 5;
 		end
 		
 		if(timeSinceDeath > 0) then
-			ArenaAnalytics:Log("Removed death by post-death action: ", spell, " for player: ",currentArena.deathData[playerGUID]["name"], " Time since death: ", timeSinceDeath);
+			ArenaAnalytics:Log("Removed death by post-death action: ", spell, " for player: ",currentArena.deathData[playerGUID].name, " Time since death: ", timeSinceDeath);
 			currentArena.deathData[playerGUID] = nil;
 		end
 	end
@@ -350,14 +353,14 @@ function ArenaTracker:GetFirstDeathFromCurrentArena()
 
 	local bestKey, bestTime;
 	for key,data in pairs(deathData) do
-		if(bestTime == nil or data["time"] < deathData[bestKey]["time"]) then
+		if(bestTime == nil or data.time < deathData[bestKey].time) then
 			bestKey = key;
-			bestTime = data["time"];
+			bestTime = data.time;
 		end
 	end
 
 	if(bestKey) then
-		return deathData[bestKey] and deathData[bestKey]["name"] or nil;
+		return deathData[bestKey] and deathData[bestKey].name or nil;
 	end
 end
 
@@ -385,9 +388,29 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 		["time"] = time(), 
 		["GUID"] = playerGUID,
 		["name"] = playerName,
-		["isHunter"] = (class == "HUNTER") or nil;
-		["hasKillCredit"] = isKillCredit or currentArena.deathData[playerGUID]["hasKillCredit"]
+		["isHunter"] = (class == "HUNTER") or nil,
+		["hasKillCredit"] = isKillCredit or currentArena.deathData[playerGUID].hasKillCredit,
 	}
+end
+
+function ArenaTracker:UpdateBracket()
+	if(currentArena.size) then
+		local bracket = nil;
+		if(currentArena.isShuffle) then
+			bracket = "shuffle";
+		elseif(currentArena.size == 2) then
+			bracket = "2v2";
+		elseif(currentArena.size == 3) then
+			bracket = "3v3";
+		elseif(currentArena.size == 5) then
+			bracket = "5v5";
+		else
+			ArenaAnalytics:Log("Tracker: Failed to determine bracket!", currentArena.size);
+		end
+
+		ArenaAnalytics:Log("Setting bracket:", bracket);
+		currentArena.bracket = bracket;
+	end
 end
 
 -- Attempts to get initial data on arena players:
@@ -397,6 +420,8 @@ function ArenaTracker:ProcessCombatLogEvent(eventType, ...)
 		if (IsActiveBattlefieldArena() and currentArena.battlefieldId ~= nil) then
 			local _, _, _, _, _, teamSize = GetBattlefieldStatus(currentArena.battlefieldId);
 			currentArena.size = teamSize;
+
+			ArenaTracker:UpdateBracket();
 		else
 			return false;
 		end
@@ -425,33 +450,18 @@ function ArenaTracker:ProcessCombatLogEvent(eventType, ...)
 				ArenaAnalytics:Log("Party Kill!");
 			end
 		end
-	elseif (#currentArena.party < (currentArena.size * 2)) then
+	elseif (#currentArena.players < (currentArena.size * 2)) then
 		ArenaTracker:FillMissingPlayers();
 	end
 
 	-- Look for missing party member or party member with missing spec. (Preg is considered uncertain)
-	for i = 1, currentArena.size do
-		local partyMember = currentArena.party[i];
-		if(partyMember == nil) then
-			return false;
-		end
-
-		local spec = partyMember["spec"]
-		if (spec == nil or string.len(spec) < 3 or spec == "Preg") then
-			return false;
-		end
-	end
-
-	-- Look for missing enemy or enemy with missing spec. (Preg is considered uncertain)
-	for i = 1, currentArena.size do
-		local enemy = currentArena.enemy[i];
-		if(enemy == nil) then
-			return false;
-		end
-
-		local spec = enemy["spec"];
-		if (spec == nil or string.len(spec) < 3 or spec == "Preg") then
-			return false;
+	for i = 1, #currentArena.players do
+		local partyMember = currentArena.players[i];
+		if(partyMember) then
+			local spec = partyMember.spec;
+			if (spec == nil or spec == 13) then -- (13 = Preg)
+				return false;
+			end
 		end
 	end
 end
@@ -459,17 +469,18 @@ end
 function ArenaTracker:AssignSpec(unit, newSpec)
 	assert(unit and newSpec);
 
-	local class, oldSpec = unit["class"], unit["spec"];
+	local class, oldSpec = unit.class, unit.spec;
 
-	if(oldSpec == newSpec) then 
+	if(oldSpec == newSpec) then
 		return;
 	end
 
-	if(oldSpec == nil or oldSpec == "Preg") then
-		ArenaAnalytics:Log("Assigning spec: ", newSpec, " for unit: ", unit["name"]);
-		unit["spec"] = newSpec;
+	ArenaAnalytics:Log(oldSpec, newSpec)
+	if(oldSpec == nil or oldSpec == 13 or Helpers:IsClassID(oldSpec)) then
+		ArenaAnalytics:Log("Assigning spec: ", newSpec, " for unit: ", unit.name);
+		unit.spec = newSpec;
 	else
-		ArenaAnalytics:Log("Tracker: Assigning spec is keeping old spec:", oldSpec, " for unit: ", unit["name"]);
+		ArenaAnalytics:Log("Tracker: Assigning spec is keeping old spec:", oldSpec, " for unit: ", unit.name);
 	end
 end
 
@@ -490,7 +501,7 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 		-- Check if spell was casted by party
 		for i = 1, #currentArena.players do
 			local player = currentArena.players[i];
-			if (player and player["GUID"] == sourceGUID) then
+			if (player and player.GUID == sourceGUID) then
 				-- Adding spec to party member
 				ArenaTracker:AssignSpec(player, spec);
 				return;

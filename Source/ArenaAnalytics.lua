@@ -238,13 +238,14 @@ function ArenaAnalytics:RecomputeSessionsForMatchHistory()
 		local current = ArenaAnalytics:GetMatch(i);
 		local prev = ArenaAnalytics:GetMatch(i - 1);
 		
-		if(prev and current) then
-			if(not ArenaAnalytics:IsMatchesSameSession(prev, current)) then
+		if(current) then
+			if(prev and not ArenaAnalytics:IsMatchesSameSession(prev, current)) then
 				session = session + 1;
 			end
 
 			ArenaMatch:SetSession(current, session);
 		end
+
 	end
 
 	ArenaAnalytics:UpdateLastSession();
@@ -330,9 +331,9 @@ function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
 	if(not team1 or not team2) then
 		return false;
 	end
-	
+
 	local bracket1, bracket2 = ArenaMatch:GetBracketIndex(arena1), ArenaMatch:GetBracketIndex(arena2);
-	if(not bracket1 or bracket1 ~= bracket2) then
+	if(bracket1 ~= bracket2) then
 		return false;
 	end
 
@@ -346,7 +347,7 @@ function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
 		if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, name, realm)) then
 			return false;
 		end
-	end   
+	end
 
     return true;
 end
@@ -377,7 +378,7 @@ function ArenaAnalytics:ShouldSkipMatchForSessions(match)
 	end
 
 	-- Invalid session Check
-	if(tonumber(session) == nil) then
+	if(ArenaMatch:GetSession(match) == nil) then
 		return true;
 	end
 
@@ -401,7 +402,7 @@ end
 function ArenaAnalytics:GetLatestSession()
 	for i=#ArenaAnalyticsDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
-		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
+		if(not ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
 			local session = ArenaMatch:GetSession(match);
 
 			local matchDate = ArenaMatch:GetDate(match);
@@ -409,7 +410,7 @@ function ArenaAnalytics:GetLatestSession()
 			return session, expired;
 		end
 	end
-	return 1, false;
+	return 0, false;
 end
 
 -- Returns the start and end times of the last session
@@ -463,10 +464,12 @@ function ArenaAnalytics:GetLatestRating(teamSize)
 	if(targetBracket ~= nil) then
 		for i = #ArenaAnalyticsDB, 1, -1 do
 			local match = ArenaAnalytics:GetMatch(i);
-			local rating = ArenaMatch:GetPartyRating(match);
 			local bracket = ArenaMatch:GetBracket(match);
-			if(rating and bracket == targetBracket) then
-				return rating;
+			if(match) then
+				local rating = ArenaMatch:GetPartyRating(match);
+				if(rating and bracket == targetBracket) then
+					return rating;
+				end
 			end
 		end
 	end
@@ -547,9 +550,10 @@ ArenaAnalytics.cachedBracketRatings = ArenaAnalytics.cachedBracketRatings ~= nil
 -- Updates the cached bracket rating for each bracket
 function AAmatch:updateCachedBracketRatings()
 	if(IsActiveBattlefieldArena()) then
+		ArenaAnalytics:Log()
 		ArenaAnalytics.cachedBracketRatings[1] = ArenaAnalytics:GetLatestRating(2); -- 2v2
 		ArenaAnalytics.cachedBracketRatings[2] = ArenaAnalytics:GetLatestRating(3); -- 3v3
-		ArenaAnalytics.cachedBracketRatings[3] = ArenaAnalytics:GetLatestRating(4); -- 5v5
+		ArenaAnalytics.cachedBracketRatings[3] = ArenaAnalytics:GetLatestRating(5); -- 5v5
 	else
 		ArenaAnalytics.cachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
 		ArenaAnalytics.cachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
@@ -631,11 +635,14 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	ArenaMatch:SetDate(arenaData, newArena.startTime);
 	ArenaMatch:SetDuration(arenaData, newArena.duration);
 	ArenaMatch:SetMap(arenaData, newArena.mapId);
+	
+	ArenaAnalytics:Log("Bracket:", newArena.bracket);
 	ArenaMatch:SetBracket(arenaData, newArena.bracket);
+
 	ArenaMatch:SetMatchType(arenaData, matchType);
 
 	if (newArena.isRated) then
-		ArenaMatch:SetPartyRating(arenaData, newArena.rating);
+		ArenaMatch:SetPartyRating(arenaData, newArena.partyRating);
 		ArenaMatch:SetPartyRatingDelta(arenaData, newArena.partyRatingDelta);
 		ArenaMatch:SetPartyMMR(arenaData, newArena.partyMMR);
 
@@ -644,14 +651,14 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 		ArenaMatch:SetEnemyMMR(arenaData, newArena.enemyMMR);
 	end
 
-	ArenaMatch:SetSeason(arenaData, oldArena.season);
+	ArenaMatch:SetSeason(arenaData, season);
 
 	ArenaMatch:SetVictory(arenaData, newArena.won);
 
 	-- Add players from both teams sorted, and assign comps.
-	ArenaMatch:AddPlayers(match, newArena.players);
+	ArenaMatch:AddPlayers(arenaData, newArena.players);
 
-	ArenaMatch:SetSelf(arenaData, newArena.player);
+	ArenaMatch:SetSelf(arenaData, (newArena.player or Helpers:GetPlayerName()));
 
 	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
 	ArenaMatch:SetFirstDeath(arenaData, firstDeath);
@@ -662,13 +669,16 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	if (not ArenaAnalytics:IsMatchesSameSession(lastMatch, arenaData)) then
 		session = session + 1;
 	end
-	ArenaMatch:SetSession(arenaData, oldArena.session);
+	ArenaMatch:SetSession(arenaData, session);
 	ArenaAnalytics.lastSession = session;
+	ArenaAnalytics:Log("session:", session)
 
 	-- Insert arena data as a new ArenaAnalyticsDB entry
 	table.insert(ArenaAnalyticsDB, arenaData);
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
-	Import:tryHide();
+	if(Import.tryHide) then
+		Import:tryHide();
+	end
 
 	ArenaAnalytics:Print("Arena recorded!");
 	

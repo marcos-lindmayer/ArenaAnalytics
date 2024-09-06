@@ -87,3 +87,23 @@ end
 function Helpers:IsClassID(spec_id)
     return spec_id and (spec_id % 10 == 0);
 end
+
+function Helpers:GetRaceIDFromLocalizedRace(race)
+    if(not race) then
+        return nil;
+    end
+
+    for raceID = 1, API.maxRaceID do
+        local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)        
+        if(raceInfo and race == raceInfo.raceName) then
+            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString) or (1000 + raceID)
+            if addonRaceID then
+                return addonRaceID;
+            else
+                ArenaAnalytics:Log("Error: No Addon Race ID found for:", raceID, raceInfo.raceName, raceInfo.clientFileString);
+            end
+        end
+    end
+    
+    return race;
+end

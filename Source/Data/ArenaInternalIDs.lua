@@ -43,13 +43,14 @@ local addonRaceIDs = {
 }
 
 function Internal:GetAddonRaceIDByToken(token)
-    token = Helpers:ToSafeLower(token);
-    if(token == nil) then
+    if(not token) then
         return nil;
     end
 
-    if(token == "Scourge") then
-        token = "Undead";
+    token = Helpers:ToSafeLower(token);
+
+    if(token == "scourge") then
+        token = "undead";
     end
 
     for id,data in pairs(addonRaceIDs) do

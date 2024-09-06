@@ -57,7 +57,6 @@ function VersionManager:compareVersions(version, otherVersion)
     return 0;
 end
 
-
 function VersionManager:HasOldData()
     -- Original format of ArenaAnalyticsDB (Outdated as of 0.3.0)
     if(ArenaAnalyticsDB) then
@@ -75,9 +74,11 @@ function VersionManager:HasOldData()
     return false;
 end
 
+MatchHistoryDB = MatchHistoryDB or {}
+
 -- Returns true if loading should convert data
 function VersionManager:OnInit()
-    if(not VersionManager:HasOldData()) then
+    if(not VersionManager:HasOldData() or #ArenaAnalyticsDB > 0) then
         return;
     end
 
@@ -86,28 +87,20 @@ function VersionManager:OnInit()
 
     ArenaAnalytics:Log("Converting old data...")
 
-    local NewMatchHistory = {};
-    NewMatchHistory = VersionManager:convertArenaAnalyticsDBToMatchHistoryDB(ArenaAnalyticsDB, MatchHistoryDB) -- 0.3.0
-    ArenaAnalytics:Log("Matches after first conversion: ", #NewMatchHistory);
-
-    NewMatchHistory = VersionManager:renameMatchHistoryDBKeys(NewMatchHistory); -- 0.5.0
+    VersionManager:convertArenaAnalyticsDBToMatchHistoryDB() -- 0.3.0
+    VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
 
     -- Clear old data
     if(ArenaAnalyticsDB) then
         ArenaAnalyticsDB["2v2"] = nil;
         ArenaAnalyticsDB["3v3"] = nil;
         ArenaAnalyticsDB["5v5"] = nil;
-        
-        for k,v in pairs(ArenaAnalyticsDB) do
-            ArenaAnalytics:Log("Version Control: Testing remaining old data after purging ArenaAnalyticsDB: ", k, v and #v);
-        end
     end
-    --MatchHistoryDB = nil;
-
-    NewMatchHistory = VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(NewMatchHistory); -- 0.7.0
 
     -- Assign new format
-    ArenaAnalyticsDB = NewMatchHistory;
+    VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(); -- 0.7.0
+
+    MatchHistoryDB = nil;
 
     ArenaAnalytics:ResortGroupsInMatchHistory();
     ArenaAnalytics:RecomputeSessionsForMatchHistory();
@@ -233,25 +226,25 @@ local function getFullFirstDeathName(firstDeathName, team, enemyTeam)
 end
 
 -- 0.3.0 conversion from ArenaAnalyticsDB per bracket to MatchHistoryDB
-function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB(OldMatchHistory, NewMatchHistory)
-    local NewMatchHistory = NewMatchHistory or {}
+function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
+    MatchHistoryDB = MatchHistoryDB or {}
 
-    local oldTotal = (OldMatchHistory["2v2"] and #OldMatchHistory["2v2"] or 0) + (OldMatchHistory["3v3"] and #OldMatchHistory["3v3"] or 0) + (OldMatchHistory["5v5"] and #OldMatchHistory["5v5"] or 0);
+    local oldTotal = (ArenaAnalyticsDB["2v2"] and #ArenaAnalyticsDB["2v2"] or 0) + (ArenaAnalyticsDB["3v3"] and #ArenaAnalyticsDB["3v3"] or 0) + (ArenaAnalyticsDB["5v5"] and #ArenaAnalyticsDB["5v5"] or 0);
     if(oldTotal == 0) then
         ArenaAnalytics:Log("No old ArenaAnalyticsDB data found.")
-        return NewMatchHistory;
+        return;
     end
 
-    if(#NewMatchHistory > 0) then
+    if(#MatchHistoryDB > 0) then
         ArenaAnalytics:Log("Non-empty MatchHistoryDB.");
-        return NewMatchHistory;
+        return;
     end
     
 
     local brackets = { "2v2", "3v3", "5v5" }
     for _, bracket in ipairs(brackets) do
-        if(OldMatchHistory[bracket] ~= nil) then
-            for _, arena in ipairs(OldMatchHistory[bracket]) do
+        if(ArenaAnalyticsDB[bracket] ~= nil) then
+            for _, arena in ipairs(ArenaAnalyticsDB[bracket]) do
                 local team = updateGroupDataToNewFormat(arena["team"]);
                 local enemyTeam = updateGroupDataToNewFormat(arena["enemyTeam"]);
 
@@ -276,28 +269,25 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB(OldMatchHistory,
                     ["firstDeath"] = getFullFirstDeathName(arena["firstDeath"], team, enemyTeam)
                 }
 
-                ArenaAnalytics:Log("Adding arena from ArenaAnalyticsDB (Old format)", #NewMatchHistory)
-                table.insert(NewMatchHistory, updatedArenaData);
+                ArenaAnalytics:Log("Adding arena from ArenaAnalyticsDB (Old format)", #MatchHistoryDB)
+                table.insert(MatchHistoryDB, updatedArenaData);
                 requiresReload = true;
             end
         end
     end
 
-    ArenaAnalytics:Print("Converted data from old database. Old total: ", oldTotal, " New total: ", #NewMatchHistory);
+    ArenaAnalytics:Print("Converted data from old database. Old total: ", oldTotal, " New total: ", #MatchHistoryDB);
 
-    table.sort(NewMatchHistory, function (k1,k2)
+    table.sort(MatchHistoryDB, function (k1,k2)
         if (k1["date"] and k2["date"]) then
             return k1["date"] < k2["date"];
         end
     end);
-
-    -- Remove old storage
-    return NewMatchHistory;
 end
 
 -- 0.5.0 renamed keys
-function VersionManager:renameMatchHistoryDBKeys(MatchHistory)
-    MatchHistory = MatchHistory or {};
+function VersionManager:renameMatchHistoryDBKeys()
+    MatchHistoryDB = MatchHistoryDB or {};
 
     local function renameKey(table, oldKey, newKey)
         if(table[oldKey] and not table[newKey]) then
@@ -306,8 +296,8 @@ function VersionManager:renameMatchHistoryDBKeys(MatchHistory)
         end
     end
 
-    for i = 1, #MatchHistory do
-		local match = MatchHistory[i];
+    for i = 1, #MatchHistoryDB do
+		local match = MatchHistoryDB[i];
         
         local teams = {"team", "enemyTeam"}
 
@@ -322,20 +312,18 @@ function VersionManager:renameMatchHistoryDBKeys(MatchHistory)
             end    
         end
 	end
-
-    return MatchHistory;
 end
 
-function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHistory, NewMatchHistory)
-    local NewMatchHistory = NewMatchHistory or {};
+function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
+    ArenaAnalyticsDB = ArenaAnalyticsDB or {};
 
-    if(not OldMatchHistory or #OldMatchHistory == 0) then
-        return NewMatchHistory;
+    if(not MatchHistoryDB or #MatchHistoryDB == 0) then
+        return;
     end
 
-    if(NewMatchHistory and #NewMatchHistory > 0) then
+    if(ArenaAnalyticsDB and #ArenaAnalyticsDB > 0) then
         ArenaAnalytics:Log("Version Control: Non-empty ArenaAnalyticsDB.");
-        return NewMatchHistory;
+        return;
     end
 
     ArenaAnalyticsRealmsDB = {}
@@ -404,8 +392,8 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
     local selfNames = {}
 
     -- Convert old arenas
-    for i=1, #OldMatchHistory do
-        local oldArena = OldMatchHistory[i];
+    for i=1, #MatchHistoryDB do
+        local oldArena = MatchHistoryDB[i];
         if(oldArena) then 
             local convertedArena = { }
 
@@ -457,19 +445,19 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
             -- Comps
             ArenaMatch:UpdateComps(convertedArena);
 
-            tinsert(NewMatchHistory, convertedArena);
+            tinsert(ArenaAnalyticsDB, convertedArena);
         end
     end
 
     local myName = Helpers:GetPlayerName(skipRealm);
     if(myName) then
-        tinsert(selfNames, myName);
+        selfNames[myName] = true;
     else
         ArenaAnalytics:Log("Failed to get local player name. Versioning called too early.");
     end
 
     -- Attempt retroactively assigning player names
-    for i,match in ipairs(NewMatchHistory) do
+    for i,match in ipairs(ArenaAnalyticsDB) do
         if(match and not ArenaMatch:HasSelf(match)) then
             for name,_ in pairs(selfNames) do
                 local result = ArenaMatch:SetSelf(match, name);
@@ -479,8 +467,6 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(OldMatchHisto
             end
         end
     end
-
-    return NewMatchHistory;
 end
 
 function VersionManager:FinalizeConversionAttempts()

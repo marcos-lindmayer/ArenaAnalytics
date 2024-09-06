@@ -176,6 +176,7 @@ function ArenaMatch:SetBracket(match, value)
     value = Helpers:ToSafeLower(value);
     for index,bracket in ipairs(brackets) do
         if(value == Helpers:ToSafeLower(bracket)) then
+            ArenaAnalytics:Log("Setting Bracket for match:", value, index);
             match[key] = index;
             return;
         end
@@ -392,7 +393,8 @@ local function SetPlayerValue(match, player, key, value)
 end
 
 function ArenaMatch:AddPlayers(match, players)
-    assert(match and players);
+    assert(match)
+    assert(players);
 
     for _,player in ipairs(players) do
         ArenaMatch:AddPlayer(match, player.isEnemy, player.name, player.race, player.spec, player.role, player.kills, player.deaths, player.damage, player.healing);
@@ -723,6 +725,7 @@ end
 
 function ArenaMatch:SetSelf(match, fullName)
     assert(match);
+    assert(not fullName or type(fullName) == "string");
 
     if(not fullName) then
         return;
