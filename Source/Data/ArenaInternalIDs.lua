@@ -42,7 +42,7 @@ local addonRaceIDs = {
     [28] = { token = "Vulpera",              name = "Vulpera" },
 }
 
-function Internal:GetAddonRaceIDByToken(token)
+function Internal:GetAddonRaceIDByToken(token, factionIndex)
     if(not token) then
         return nil;
     end
@@ -55,7 +55,9 @@ function Internal:GetAddonRaceIDByToken(token)
 
     for id,data in pairs(addonRaceIDs) do
         if(data and Helpers:ToSafeLower(data.token) == token) then
-            return id;
+            if(not factionIndex or (id % 2 == factionIndex)) then
+                return id;
+            end
         end
     end
     return nil;

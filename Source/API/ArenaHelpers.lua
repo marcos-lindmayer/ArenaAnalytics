@@ -57,7 +57,14 @@ end
 -- Get Addon Race ID from unit
 function Helpers:GetUnitRace(unit)
     local _,token = UnitRace(unit);
-    return Internal:GetAddonRaceIDByToken(token);
+    local faction = UnitFactionGroup(unit);
+
+    local factionIndex = nil;
+    if(faction) then
+        factionIndex = (faction == "Alliance") and 1 or 0;
+    end
+
+    return Internal:GetAddonRaceIDByToken(token, factionIndex);
 end
 
 -- Get Addon Class ID from unit
@@ -96,14 +103,16 @@ function Helpers:GetRaceIDFromLocalizedRace(race)
     for raceID = 1, API.maxRaceID do
         local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)        
         if(raceInfo and race == raceInfo.raceName) then
-            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString) or (1000 + raceID)
+            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString);
             if addonRaceID then
                 return addonRaceID;
             else
                 ArenaAnalytics:Log("Error: No Addon Race ID found for:", raceID, raceInfo.raceName, raceInfo.clientFileString);
+                return 1000 + raceID;
             end
         end
     end
     
+    ArenaAnalytics:Log("Failed to find race ID for race:", race);
     return race;
 end

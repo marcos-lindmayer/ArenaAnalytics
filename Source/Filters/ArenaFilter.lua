@@ -398,7 +398,7 @@ end
 
 local function RecomputeFilteredSession()
     local cachedRealSession = 0;
-    local filteredSession = 1;
+    local filteredSession = 0;
 
     for i=ArenaAnalytics.filteredMatchCount, 1, -1 do
         local match = ArenaAnalytics:GetFilteredMatch(i);
@@ -407,7 +407,7 @@ local function RecomputeFilteredSession()
         local session = ArenaMatch:GetSession(match);
         local nextSession = ArenaMatch:GetSession(nextMatch);
 
-        if(session ~= nextSession) then
+        if(not nextMatch or session ~= nextSession) then
             filteredSession = filteredSession + 1;
         end
 

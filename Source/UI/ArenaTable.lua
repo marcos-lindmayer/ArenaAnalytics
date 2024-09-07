@@ -644,16 +644,19 @@ function AAtable:HandleArenaCountChanged()
     -- Update arena count & winrate
     for i=ArenaAnalytics.filteredMatchCount, 1, -1 do
         local match, filteredSession = ArenaAnalytics:GetFilteredMatch(i);
-        if(match) then 
+        if(match and filteredSession) then
             if(ArenaMatch:IsVictory(match)) then 
                 wins = wins + 1; 
             end
-            
+
             if (filteredSession == 1) then
                 sessionGames = sessionGames + 1;
+
                 if (ArenaMatch:IsVictory(match)) then
                     sessionWins = sessionWins + 1;
                 end
+            elseif(filteredSession > 1) then
+                break; -- We've passed the relevant session, no point looking further.
             end
         end
     end

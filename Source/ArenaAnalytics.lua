@@ -384,7 +384,7 @@ function ArenaAnalytics:ShouldSkipMatchForSessions(match)
 
 	-- Invalid date Check
 	local date = ArenaMatch:GetDate(match);
-	if(date and date > 0) then
+	if(not date or date == 0) then
 		return true;
 	end
 
@@ -398,15 +398,29 @@ function ArenaAnalytics:ShouldSkipMatchForSessions(match)
 	return false; 
 end
 
+function ArenaAnalytics:HasMatchSessionExpired(match)
+	if(not match) then
+		return nil;
+	end
+
+	local date = ArenaMatch:GetDate(match);
+	local duration = ArenaMatch:GetDuration(match) or 0;
+
+	local endTime = date and date + duration;
+	if(not endTime) then
+		return true;
+	end
+
+	return (time() - endTime) > 3600;
+end
+
 -- Returns the whether last session and whether it has expired by time
 function ArenaAnalytics:GetLatestSession()
 	for i=#ArenaAnalyticsDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
 		if(not ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
 			local session = ArenaMatch:GetSession(match);
-
-			local matchDate = ArenaMatch:GetDate(match);
-			local expired = matchDate and (time() - matchDate) > 3600 or true;
+			local expired = ArenaAnalytics:HasMatchSessionExpired(match);
 			return session, expired;
 		end
 	end
@@ -420,7 +434,7 @@ function ArenaAnalytics:GetLatestSessionStartAndEndTime()
 	for i=#ArenaAnalyticsDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
 
-		if(ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
+		if(not ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
 			local date = ArenaMatch:GetDate(match);
 			local session = ArenaMatch:GetSession(match);
 
@@ -430,7 +444,7 @@ function ArenaAnalytics:GetLatestSessionStartAndEndTime()
 				local duration = ArenaMatch:GetDuration(match);
 				local testEndTime = duration and date + duration or date;
 
-				expired = testEndTime and (time() - testEndTime) > 3600 or true;
+				expired = not testEndTime or (time() - testEndTime) > 3600;
 				endTime = expired and testEndTime or time();
 			end
 
