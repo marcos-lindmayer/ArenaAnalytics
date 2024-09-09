@@ -14,14 +14,17 @@ local arenaEventFrame = CreateFrame("Frame");
 local arenaEvents = { "UPDATE_BATTLEFIELD_SCORE", "UNIT_AURA", "CHAT_MSG_BG_SYSTEM_NEUTRAL", "COMBAT_LOG_EVENT_UNFILTERED", "ARENA_OPPONENT_UPDATE" }
 
 -- Register an event as a response to a 
-function Events:CreateEventListenerForRequest(event, callback)
+function Events:CreateEventListenerForRequest(event, repeatable, callback)
     local eventFrame = CreateFrame("Frame")
     eventFrame:RegisterEvent(event)
     eventFrame:SetScript("OnEvent", function(self)
-        self:UnregisterEvent(event, nil) -- Unregister the event handler
-        callback()
-        self:Hide() -- Hide the frame
-		eventFrame = nil;
+        if(not repeatable) then
+			self:UnregisterEvent(event, nil) -- Unregister the event handler
+			self:Hide() -- Hide the frame
+			eventFrame = nil;
+		end
+
+        callback();
     end)
 end
 
@@ -29,6 +32,13 @@ end
 -- UPDATE_BATTLEFIELD_STATUS: Begins arena tracking and arena events if inside arena
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
 local function HandleGlobalEvents(prefix, eventType, ...)
+	if(eventType == "PVP_RATED_STATS_UPDATE") then
+		ArenaAnalytics:TryFixLastMatchRating();
+		ArenaAnalytics.AAmatch:updateCachedBracketRatings();
+
+		ArenaAnalytics:Log("Events: Triggered PVP_RATED_STATS_UPDATE!", IsActiveBattlefieldArena(), GetPersonalRatedInfo(1));
+	end
+
 	if (IsActiveBattlefieldArena()) then
 		if (not ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
@@ -39,6 +49,7 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 		end
 	else -- Not in arena
 		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
+			ArenaAnalytics:Log("UPDATE_BATTLEFIELD_STATUS triggered!", IsActiveBattlefieldArena(), GetPersonalRatedInfo(1))
 			ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
 		elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
 			if(ArenaTracker:IsTrackingArena()) then
@@ -81,6 +92,7 @@ end
 function Events:RegisterGlobalEvents()
 	eventFrame:RegisterEvent("UPDATE_BATTLEFIELD_STATUS");
 	eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA");
+	eventFrame:RegisterEvent("PVP_RATED_STATS_UPDATE");
 	eventFrame:SetScript("OnEvent", HandleGlobalEvents);
 end
 

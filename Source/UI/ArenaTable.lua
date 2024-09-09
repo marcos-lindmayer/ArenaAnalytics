@@ -455,6 +455,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
         local playerInfo = ArenaMatch:GetPlayerInfo(player, playerFrame.playerInfo);
         if (playerInfo) then
             playerFrame.playerInfo = playerInfo;
+            playerFrame.match = match;
 
             if (playerFrame.texture == nil) then
                 -- No textures? Set them
@@ -655,8 +656,6 @@ function AAtable:HandleArenaCountChanged()
                 if (ArenaMatch:IsVictory(match)) then
                     sessionWins = sessionWins + 1;
                 end
-            elseif(filteredSession > 1) then
-                break; -- We've passed the relevant session, no point looking further.
             end
         end
     end

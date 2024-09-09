@@ -19,6 +19,21 @@ API.availableMaps = {
 	{ name = "Ruins of Lordaeron", key = 572},
 };
 
+function API:GetPersonalRatedInfo(bracketIndex)
+    bracketIndex = tonumber(bracketIndex);
+    if(not bracketIndex) then
+        return nil;
+    end
+
+    -- Solo Shuffle
+    if(bracketIndex == 4) then
+        return nil; -- NYI
+    end
+
+    local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
+    return rating, seasonPlayed;
+end
+
 -- Get local player current spec
 function API:GetMySpec()
     local spec_id = nil;

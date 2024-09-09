@@ -85,7 +85,7 @@ function Internal:GetRaceFactionColor(race_id)
         return "ffffffff";
     end
 
-    return (race_id % 2 == 1) and "ff3090FF" or "ffD00A06";
+    return (race_id % 2 == 1) and "FF009DEC" or "ffE00A05";
 end
 
 -------------------------------------------------------------------------

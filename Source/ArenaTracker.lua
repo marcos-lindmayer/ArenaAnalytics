@@ -24,23 +24,35 @@ function ArenaTracker:ResetCurrentArenaValues()
 
 	currentArena.battlefieldId = nil;
 	currentArena.mapId = nil;
+	
 	currentArena.playerName = "";
+
 	currentArena.duration = 0;
 	currentArena.startTime = nil;
 	currentArena.hasRealStartTime = nil;
 	currentArena.endTime = 0;
+	
+	currentArena.oldRating = nil;
+	currentArena.seasonPlayed = nil;
+	currentArena.requireRatingFix = nil;
+
 	currentArena.partyRating = nil;
 	currentArena.partyRatingDelta = nil;
 	currentArena.partyMMR = nil;
+	
 	currentArena.enemyRating = nil;
 	currentArena.enemyRatingDelta = nil;
 	currentArena.enemyMMR = nil;
+	
 	currentArena.size = nil;
 	currentArena.isRated = nil;
+	
 	currentArena.players = {};
+	
 	currentArena.ended = false;
 	currentArena.endedProperly = false;
 	currentArena.won = nil;
+	
 	currentArena.deathData = {};
 end
 ArenaTracker:ResetCurrentArenaValues();
@@ -98,7 +110,7 @@ function ArenaTracker:HandleArenaEnter(...)
 	if(not currentArena.battlefieldId) then
 		ArenaAnalytics:Log("ERROR: Invalid Battlefield ID in HandleArenaEnter");
 	end
-	
+
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRated, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena.battlefieldId);
 	if (status ~= "active") then
 		return false
@@ -113,12 +125,28 @@ function ArenaTracker:HandleArenaEnter(...)
 	end
 
 	ArenaTracker:UpdateBracket();
-	
-	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(teamSize);
-	if(isRated and ArenaAnalytics.cachedBracketRatings[bracketId] == nil) then
-		local lastRating = ArenaAnalytics:GetLatestRating(teamSize);
-		ArenaAnalytics:Log("Fallback: Updating cached rating to rating of last rated entry.");
-		ArenaAnalytics.cachedBracketRatings[bracketId] = lastRating;
+
+	if(isRated) then
+		local oldRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
+		if(GetBattlefieldWinner()) then
+			-- Get last rating, since we already found the winner here.
+			local season = GetCurrentArenaSeason();
+			currentArena.oldRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex, season, (seasonPlayed and seasonPlayed - 1));
+			currentArena.seasonPlayed = seasonPlayed;
+		else
+			currentArena.oldRating = oldRating;
+			currentArena.seasonPlayed = seasonPlayed and seasonPlayed + 1 or nil;  -- Season played after winner is determined
+		end
+
+		ArenaAnalytics:Log("Entered Arena:", currentArena.oldRating, currentArena.seasonPlayed);
+	end
+
+	if(isRated and tonumber(currentArena.bracketIndex)) then
+		if(not ArenaAnalytics:GetCachedRating(currentArena.bracketIndex)) then
+			local lastRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex);
+			ArenaAnalytics:Log("Fallback: Updating cached rating to rating of last rated entry.", lastRating);
+			ArenaAnalytics.cachedBracketRatings[currentArena.bracketIndex] = lastRating;
+		end
 	end
 
 	-- Add self
@@ -230,9 +258,9 @@ function ArenaTracker:HandleArenaEnd()
 		--currentArena.partyRating = tonumber(newPartyRating);
 		--currentArena.partyRatingDelta = abs(Round(newPartyRating - oldPartyRating));
 		currentArena.partyMMR = tonumber(partyMMR);
-		
-		currentArena.enemyRating = tonumber(newEnemyRating);
-		currentArena.enemyRatingDelta = abs(Round(newEnemyRating - oldEnemyRating));
+
+		--currentArena.enemyRating = tonumber(newEnemyRating);
+		--currentArena.enemyRatingDelta = abs(Round(newEnemyRating - oldEnemyRating));
 		currentArena.enemyMMR = tonumber(enemyMMR);
 	end
 
@@ -253,21 +281,33 @@ function ArenaTracker:HandleArenaExit()
 		ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
 	end
 
-	local bracketId = ArenaAnalytics:getBracketIdFromTeamSize(currentArena.size);
-	
+	ArenaAnalytics:Log("Exited Arena:", API:GetPersonalRatedInfo(currentArena.bracketIndex));
+
 	if(currentArena.isRated and not currentArena.partyRating) then
-		local newRating = GetPersonalRatedInfo(bracketId);
-		local oldRating = ArenaAnalytics.cachedBracketRatings[bracketId];
-		ArenaAnalyticsDebugAssert(ArenaAnalytics.cachedBracketRatings[bracketId] ~= nil);
-		
-		if(not oldRating) then
-			oldRating = ArenaAnalytics:GetLatestRating(currentArena.size);
+		local newRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
+		if(newRating and seasonPlayed) then
+			local oldRating = currentArena.oldRating;
+			if(not oldRating) then
+				local season = GetCurrentArenaSeason() or 0;
+				oldRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex, season, (seasonPlayed - 1));
+			end
+
+			currentArena.partyRating = newRating;
+			currentArena.partyRatingDelta = oldRating and newRating - oldRating or nil;
+		else
+			ArenaAnalytics:Log("Warning: Nil current rating retrieved from API upon leaving arena.");
 		end
-		
-		local deltaRating = newRating - oldRating;
-		
-		currentArena.partyRating = newRating;
-		currentArena.partyRatingDelta = deltaRating;
+
+		if(currentArena.seasonPlayed) then
+			if(seasonPlayed and seasonPlayed < currentArena.seasonPlayed) then
+				-- Rating has updated, no longer needed to store transient Season Played for fixup.
+				currentArena.requireRatingFix = true;
+			else
+				ArenaAnalytics:Log("Tracker: Invalid season played or already up to date.", seasonPlayed, currentArena.seasonPlayed);
+			end
+		else
+			ArenaAnalytics:Log("Tracker: No season played stored on currentArena");
+		end
 	end
 
 	-- Update all the cached bracket ratings
@@ -284,7 +324,7 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 	for _,group in ipairs(groups) do
 		for i = 1, currentArena.size do
 			local name, realm = UnitNameUnmodified(group .. i);
-			
+
 			if (name ~= nil and name ~= "Unknown") then
 				if(realm == nil or realm == "") then
 					_,realm = UnitFullName("player"); -- Local player's realm
@@ -293,7 +333,7 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 				local hasRealm = (realm and string.len(realm) > 2);
 				realm = hasRealm and ("-"..realm) or "";
 				name = name .. realm;
-				
+
 				-- Check if they were already added
 				if (not ArenaTracker:IsTrackingPlayer(name)) then
 					local GUID = UnitGUID(group .. i);
@@ -330,12 +370,12 @@ local function tryRemoveFromDeaths(playerGUID, spell)
 	local existingData = currentArena.deathData[playerGUID];
 	if(existingData ~= nil) then
 		local timeSinceDeath = time() - existingData.time;
-		
+
 		local minimumDelay = existingData.isHunter and 2 or 10;
 		if(existingData.hasKillCredit) then
 			minimumDelay = minimumDelay + 5;
 		end
-		
+
 		if(timeSinceDeath > 0) then
 			ArenaAnalytics:Log("Removed death by post-death action: ", spell, " for player: ",currentArena.deathData[playerGUID].name, " Time since death: ", timeSinceDeath);
 			currentArena.deathData[playerGUID] = nil;
@@ -409,7 +449,7 @@ function ArenaTracker:UpdateBracket()
 		end
 
 		ArenaAnalytics:Log("Setting bracket:", bracket);
-		currentArena.bracket = bracket;
+		currentArena.bracketIndex = ArenaAnalytics:GetAddonBracketIndex(bracket);
 	end
 end
 

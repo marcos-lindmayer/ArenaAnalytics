@@ -7,11 +7,9 @@ local Bitmap = ArenaAnalytics.Bitmap;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
 local GroupSorter = ArenaAnalytics.GroupSorter;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
-
-local matchTypes = { "rated", "skirmish", "wargame" }
-local brackets = { "2v2", "3v3", "5v5", "shuffle" }
 
 local matchKeys = {
     date = 0,
@@ -32,6 +30,9 @@ local matchKeys = {
     enemy_team = -15,
     comp = -16,
     enemy_comp = -17,
+
+    transient_seasonPlayed = -100,
+    transient_requireRatingFix = -101,
 }
 
 local playerKeys = {
@@ -85,6 +86,76 @@ local function ToNumericalBool(value)
         return;
     end
     return (value and value ~= 0) and 1 or 0;
+end
+
+-------------------------------------------------------------------------
+-- Rating fixup
+
+function ArenaMatch:ClearTransientValues(match)
+    assert(match);
+
+    match[matchKeys.transient_seasonPlayed] = nil;
+    match[matchKeys.transient_requireRatingFix] = nil;
+end
+
+function ArenaMatch:SetTransientSeasonPlayed(match, value)
+    assert(match);
+    ArenaAnalytics:Log("Assigning transient season played value:", value, "from:", match[matchKeys.transient_seasonPlayed]);
+    match[matchKeys.transient_seasonPlayed] = tonumber(value);
+end
+
+function ArenaMatch:SetRequireRatingFix(match, value)
+    assert(match);
+    ArenaAnalytics:Log("SetRequireRatingFix:", value, "from:", match[matchKeys.transient_requireRatingFix]);
+    match[matchKeys.transient_requireRatingFix] = value and true or nil;
+end
+
+function ArenaMatch:DoesRequireRatingFix(match)
+    return match and (match[matchKeys.transient_requireRatingFix] ~= nil);
+end
+
+function ArenaMatch:TryFixLastRating(match)
+    assert(match);
+
+    if(not ArenaMatch:DoesRequireRatingFix(match)) then
+        return;
+    end
+
+    local requiredSeasonPlayed = tonumber(match[matchKeys.transient_seasonPlayed]);
+    if(not requiredSeasonPlayed) then
+        return;    
+    end
+
+    local season = ArenaMatch:GetSeason(match);
+    local currentSeason = GetCurrentArenaSeason();
+    if(currentSeason and currentSeason > 0 and season and season ~= currentSeason) then
+        -- Season appears to have changed, too late to fix last rating.
+        ArenaMatch:ClearTransientValues(match);
+        return;
+    end
+
+    local bracketIndex = ArenaMatch:GetBracketIndex(match);
+    local newRating,seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
+    if(not seasonPlayed or seasonPlayed < requiredSeasonPlayed) then
+        ArenaAnalytics:Log("ArenaMatch: Delaying rating fix - Season Played.", seasonPlayed, bracketIndex, requiredSeasonPlayed)
+        return;
+    end
+
+    if(seasonPlayed == requiredSeasonPlayed) then
+        if(newRating) then
+            -- Fix rating
+            local oldRating = ArenaMatch:GetPartyRating(match);
+            local delta = oldRating and newRating - oldRating;
+
+            ArenaAnalytics:Log("ArenaMatch: Fixing rating from:", oldRating, "to:", newRating, delta);
+
+            ArenaMatch:SetPartyRating(match, newRating);
+            ArenaMatch:SetPartyRatingDelta(match, delta);
+        end
+    end
+
+    -- Clear transient values
+    ArenaMatch:ClearTransientValues(match);
 end
 
 -------------------------------------------------------------------------
@@ -165,33 +236,22 @@ function ArenaMatch:GetBracket(match)
     if(not match) then 
         return nil 
     end;
-    
+
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
-    return bracketIndex and brackets[bracketIndex];
+    return ArenaAnalytics:GetBracket(bracketIndex);
 end
 
-function ArenaMatch:SetBracketIndex(match, value)
+function ArenaMatch:SetBracketIndex(match, index)
     assert(match);
 
     local key = matchKeys.bracket;
-    match[key] = tonumber(value);
+    match[key] = tonumber(index);
 end
 
 function ArenaMatch:SetBracket(match, value)
     assert(match);
     local key = matchKeys.bracket;
-
-    value = Helpers:ToSafeLower(value);
-    for index,bracket in ipairs(brackets) do
-        if(value == Helpers:ToSafeLower(bracket)) then
-            ArenaAnalytics:Log("Setting Bracket for match:", value, index);
-            match[key] = index;
-            return;
-        end
-    end
-    
-    ArenaAnalytics:Log("Error: Attempted to set invalid bracket:", value);
-    match[key] = nil;
+    match[key] = ArenaAnalytics:GetAddonBracketIndex(value);
 end
 
 -------------------------------------------------------------------------
@@ -204,24 +264,14 @@ function ArenaMatch:GetMatchType(match)
     end;
     
     local key = matchKeys.match_type;
-    local typeKey = match and tonumber(match[key]);
-    return typeKey and matchTypes[typeKey];
+    local typeIndex = match and tonumber(match[key]);
+    return ArenaAnalytics:GetMatchType(typeIndex);
 end
 
 function ArenaMatch:SetMatchType(match, value)
     assert(match);
     local key = matchKeys.match_type;
-    
-    value = Helpers:ToSafeLower(value);
-    for index,matchType in ipairs(matchTypes) do
-        if(value == index or value == matchType:lower()) then
-            match[key] = index;
-            return;
-        end
-    end
-
-    match[key] = nil;
-    ArenaAnalytics:Log("Error: Attempted to set invalid match type:", value);
+    match[key] = ArenaAnalytics:GetAddonMatchTypeIndex(value);
 end
 
 -------------------------------------------------------------------------

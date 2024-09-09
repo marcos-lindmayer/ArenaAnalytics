@@ -399,6 +399,8 @@ function ArenaAnalytics:init()
 	-- Initialize modules
 	---------------------------------
 
+	ArenaAnalytics:TryFixLastMatchRating();
+
 	Bitmap:Initialize();
 	Internal:Initialize();
 	Options:Init();
@@ -407,13 +409,11 @@ function ArenaAnalytics:init()
 
 	ArenaAnalytics:UpdateLastSession();
 
-	-- Update cached rating as soon as possible
-	ArenaAnalytics.Events:CreateEventListenerForRequest("PVP_RATED_STATS_UPDATE", function() 
-		ArenaAnalytics.AAmatch:updateCachedBracketRatings();
-	end);
-	RequestRatedInfo();
-
 	ArenaAnalytics.Events:RegisterGlobalEvents();
+
+	-- Update cached rating as soon as possible, through PVP_RATED_STATS_UPDATE event
+	RequestRatedInfo();
+	
 	ArenaAnalytics.AAtable:OnLoad();
 	
 	if(IsInInstance() or IsInGroup(1)) then
