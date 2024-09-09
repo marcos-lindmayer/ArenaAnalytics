@@ -206,6 +206,10 @@ function ArenaTracker:HandleArenaEnd()
 			name = name.."-"..realm;
 		end
 
+		ArenaAnalytics:Log("=============================");
+		ArenaAnalytics:Log("Scoreboard race:", race);
+		ArenaAnalytics:Log("=============================");
+
 		-- Get class_id from clasToken
 		local class_id = Internal:GetAddonClassIDByToken(classToken);
 

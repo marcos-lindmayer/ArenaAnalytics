@@ -35,8 +35,7 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
 		ArenaAnalytics:TryFixLastMatchRating();
 		ArenaAnalytics.AAmatch:updateCachedBracketRatings();
-
-		ArenaAnalytics:Log("Events: Triggered PVP_RATED_STATS_UPDATE!", IsActiveBattlefieldArena(), GetPersonalRatedInfo(1));
+		--ArenaAnalytics:Log("Events: Triggered PVP_RATED_STATS_UPDATE!", IsActiveBattlefieldArena(), API:GetPersonalRatedInfo(1));
 	end
 
 	if (IsActiveBattlefieldArena()) then
