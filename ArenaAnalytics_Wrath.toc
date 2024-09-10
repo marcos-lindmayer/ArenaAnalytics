@@ -31,6 +31,7 @@ Source/Data/ArenaInternalIDs.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
 Source/Data/ArenaSpecSpells_Wrath.lua
+Source/Data/ArenaLocalizationTables.lua
 
 Source/Search/ArenaSearch.lua
 Source/Search/ArenaSearchParser.lua

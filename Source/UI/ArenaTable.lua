@@ -465,7 +465,8 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             end
 
             -- Set texture
-            playerFrame.texture:SetTexture(Internal:GetClassIcon(playerInfo.spec_id) or 134400);
+            local classIcon = Internal:GetClassIcon(playerInfo.spec_id);
+            playerFrame.texture:SetTexture(classIcon);
             playerFrame.tooltip = "";
 
             -- Add spec info

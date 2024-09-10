@@ -25,7 +25,7 @@ function Internal:GetAddonMapID(map)
     map = Helpers:ToSafeLower(map);
 
     for map_id,data in pairs(addonMapIDs) do
-        assert(data);
+        assert(data and data.id);
 
         if(tonumber(map) == data.id or map == Helpers:ToSafeLower(data.shortName) or map == Helpers:ToSafeLower(data.name)) then
             return map_id;
@@ -128,45 +128,51 @@ end
 -------------------------------------------------------------------------
 -- Class indexes
 
-local classIndexes = {
-    [1]  = { addonID = 80,  token = "WARRIOR",      name = "Warrior" },
-    [2]  = { addonID = 10,  token = "PALADIN",      name = "Paladin" },
-    [3]  = { addonID = 40,  token = "HUNTER",       name = "Hunter" },
-    [4]  = { addonID = 60,  token = "ROGUE",        name = "Rogue" },
-    [5]  = { addonID = 90,  token = "PRIEST",       name = "Priest" },
-    [6]  = { addonID = 30,  token = "DEATHKNIGHT",  name = "Death Knight" },
-    [7]  = { addonID = 20,  token = "SHAMAN",       name = "Shaman" },
-    [8]  = { addonID = 50,  token = "MAGE",         name = "Mage" },
-    [9]  = { addonID = 70,  token = "WARLOCK",      name = "Warlock" },
-    [10] = { addonID = 100, token = "MONK",         name = "Monk" },
-    [11] = { addonID = 0,   token = "DRUID",        name = "Druid" },
-    [12] = { addonID = 110, token = "DEMONHUNTER",  name = "Demon Hunter" },
-    [13] = { addonID = 120, token = "EVOKER",       name = "Evoker" },
+local addonClassIDs = {
+    [0]   = { token = "DRUID",        name = "Druid" },
+    [10]  = { token = "PALADIN",      name = "Paladin" },
+    [20]  = { token = "SHAMAN",       name = "Shaman" },
+    [30]  = { token = "DEATHKNIGHT",  name = "Death Knight" },
+    [40]  = { token = "HUNTER",       name = "Hunter" },
+    [50]  = { token = "MAGE",         name = "Mage" },
+    [60]  = { token = "ROGUE",        name = "Rogue" },
+    [70]  = { token = "WARLOCK",      name = "Warlock" },
+    [80]  = { token = "WARRIOR",      name = "Warrior" },
+    [90]  = { token = "PRIEST",       name = "Priest" },
+    [100] = { token = "MONK",         name = "Monk" },
+    [110] = { token = "DEMONHUNTER",  name = "Demon Hunter" },
+    [120] = { token = "EVOKER",       name = "Evoker" },
 }
 
-function Internal:GetAddonClassIDByToken(classToken)
-    if(classToken == nil) then
+function Internal:GetAddonClassID(class)
+    if(class == nil) then
         return nil;
     end
 
-    for _,data in pairs(classIndexes) do
-        if(data and data.token == classToken) then
-            return data.addonID;
+    class = Helpers:ToSafeLower(class);
+
+    for class_id,data in pairs(addonClassIDs) do
+        assert(data);
+
+        if(class == Helpers:ToSafeLower(data.token) or class == Helpers:ToSafeLower(data.name)) then
+            return class_id;
         end
     end
+
     return nil;
 end
 
-function Internal:GetClassInfo(classIndex)
-    if(not classIndex) then
+function Internal:GetClassInfo(class_id)
+    if(not class_id) then
         return nil;
     end
-    
-    return classIndexes[classIndex];
+
+    return addonClassIDs[class_id];
 end
 
-function Internal:GetClassColor(classIndex)
-    local classToken = classIndex and classIndexes[classIndex] and classIndexes[classIndex].token;
+function Internal:GetClassColor(class_id)
+    local classInfo = Internal:GetClassInfo(class_id);
+    local classToken = classInfo and classInfo.token;
     return classToken and select(4, GetClassColor(classToken)) or "ffffffff";
 end
 
@@ -181,143 +187,105 @@ function InitializeSpecIDs()
 
     addonSpecializationIDs = {
         -- Druid
-        [0] = { classIndex = 11 },
-        [1] = { classIndex = 11, spec = "Restoration", role = roles.healer },
-        [2] = { classIndex = 11, spec = "Feral", role = roles.melee_damager },
-        [3] = { classIndex = 11, spec = "Balance", role = roles.caster_damager},
+        [0] = { },
+        [1] = { spec = "Restoration", role = roles.healer },
+        [2] = { spec = "Feral", role = roles.melee_damager },
+        [3] = { spec = "Balance", role = roles.caster_damager},
 
         -- Paladin
-        [10] = { classIndex = 2, role = roles.melee },
-        [11] = { classIndex = 2, spec = "Holy", role = roles.melee_healer},
-        [12] = { classIndex = 2, spec = "Protection", role = roles.melee_tank },
-        [13] = { classIndex = 2, spec = "Preg", role = roles.melee_damager },
-        [14] = { classIndex = 2, spec = "Retribution", role = roles.melee_damager },
+        [10] = { role = roles.melee },
+        [11] = { spec = "Holy", role = roles.melee_healer},
+        [12] = { spec = "Protection", role = roles.melee_tank },
+        [13] = { spec = "Preg", role = roles.melee_damager },
+        [14] = { spec = "Retribution", role = roles.melee_damager },
 
         -- Shaman
-        [20] = { classIndex = 7 },
-        [21] = { classIndex = 7, spec = "Restoration", role = roles.caster_healer },
-        [22] = { classIndex = 7, spec = "Elemental", role = roles.caster_damager },
-        [23] = { classIndex = 7, spec = "Enhancement", role = roles.melee_damager },
+        [20] = { },
+        [21] = { spec = "Restoration", role = roles.caster_healer },
+        [22] = { spec = "Elemental", role = roles.caster_damager },
+        [23] = { spec = "Enhancement", role = roles.melee_damager },
 
         -- Death Knight
-        [30] = { classIndex = 6, role = roles.melee },
-        [31] = { classIndex = 6, spec = "Unholy", role = roles.melee_damager },
-        [32] = { classIndex = 6, spec = "Frost", role = roles.melee_damager },
-        [33] = { classIndex = 6, spec = "Blood", role = roles.melee_tank },
+        [30] = { role = roles.melee },
+        [31] = { spec = "Unholy", role = roles.melee_damager },
+        [32] = { spec = "Frost", role = roles.melee_damager },
+        [33] = { spec = "Blood", role = roles.melee_tank },
 
         -- Hunter
-        [40] = { classIndex = 3 },
-        [41] = { classIndex = 3, spec = "Beast Mastery", role = roles.ranged_damager },
-        [42] = { classIndex = 3, spec = "Marksmanship", role = roles.ranged_damager },
-        [43] = { classIndex = 3, spec = "Survival", role = roles.ranged_damager },
+        [40] = { },
+        [41] = { spec = "Beast Mastery", role = roles.ranged_damager },
+        [42] = { spec = "Marksmanship", role = roles.ranged_damager },
+        [43] = { spec = "Survival", role = roles.ranged_damager },
 
         -- Mage
-        [50] = { classIndex = 8, role = roles.caster_damager },
-        [51] = { classIndex = 8, spec = "Frost", role = roles.caster_damager },
-        [52] = { classIndex = 8, spec = "Fire", role = roles.caster_damager },
-        [53] = { classIndex = 8, spec = "Arcane", role = roles.caster_damager },
+        [50] = { role = roles.caster_damager },
+        [51] = { spec = "Frost", role = roles.caster_damager },
+        [52] = { spec = "Fire", role = roles.caster_damager },
+        [53] = { spec = "Arcane", role = roles.caster_damager },
 
         -- Rogue
-        [60] = { classIndex = 4, role = roles.melee_damager },
-        [61] = { classIndex = 4, spec = "Subtlety", role = roles.melee_damager },
-        [62] = { classIndex = 4, spec = "Assassination", role = roles.melee_damager },
-        [63] = { classIndex = 4, spec = "Combat", role = roles.melee_damager },
-        [64] = { classIndex = 4, spec = "Outlaw", role = roles.melee_damager },
+        [60] = { role = roles.melee_damager },
+        [61] = { spec = "Subtlety", role = roles.melee_damager },
+        [62] = { spec = "Assassination", role = roles.melee_damager },
+        [63] = { spec = "Combat", role = roles.melee_damager },
+        [64] = { spec = "Outlaw", role = roles.melee_damager },
 
         -- Warlock
-        [70] = { classIndex = 9, role = roles.caster_damager },
-        [71] = { classIndex = 9, spec = "Affliction", role = roles.caster_damager },
-        [72] = { classIndex = 9, spec = "Destruction", role = roles.caster_damager },
-        [73] = { classIndex = 9, spec = "Demonology", role = roles.caster_damager },
+        [70] = { role = roles.caster_damager },
+        [71] = { spec = "Affliction", role = roles.caster_damager },
+        [72] = { spec = "Destruction", role = roles.caster_damager },
+        [73] = { spec = "Demonology", role = roles.caster_damager },
 
         -- Warrior
-        [80] = { classIndex = 1, role = roles.melee },
-        [81] = { classIndex = 1, spec = "Protection", role = roles.melee_tank },
-        [82] = { classIndex = 1, spec = "Arms", role = roles.melee_damager },
-        [83] = { classIndex = 1, spec = "Fury", role = roles.melee_damager },
+        [80] = { role = roles.melee },
+        [81] = { spec = "Protection", role = roles.melee_tank },
+        [82] = { spec = "Arms", role = roles.melee_damager },
+        [83] = { spec = "Fury", role = roles.melee_damager },
 
         -- Priest
-        [90] = { classIndex = 5, role = roles.caster },
-        [91] = { classIndex = 5, spec = "Discipline", role = roles.caster_healer },
-        [92] = { classIndex = 5, spec = "Holy", role = roles.caster_healer },
-        [93] = { classIndex = 5, spec = "Shadow", role = roles.caster_damager },
+        [90] = { role = roles.caster },
+        [91] = { spec = "Discipline", role = roles.caster_healer },
+        [92] = { spec = "Holy", role = roles.caster_healer },
+        [93] = { spec = "Shadow", role = roles.caster_damager },
 
         -- Monk
-        [100] = { classIndex = 10, role = roles.melee },
-        [101] = { classIndex = 10, spec = "Mistweaver", role = roles.melee_healer },
-        [102] = { classIndex = 10, spec = "Brewmaster", role = roles.melee_tank },
-        [103] = { classIndex = 10, spec = "Windwalker", role = roles.melee_damager },
+        [100] = { role = roles.melee },
+        [101] = { spec = "Mistweaver", role = roles.melee_healer },
+        [102] = { spec = "Brewmaster", role = roles.melee_tank },
+        [103] = { spec = "Windwalker", role = roles.melee_damager },
 
         -- Demon Hunter
-        [110] = { classIndex = 12, role = roles.melee },
-        [111] = { classIndex = 12, spec = "Vengeance", role = roles.melee_tank },
-        [112] = { classIndex = 12, spec = "Havoc", role = roles.melee_damager },
+        [110] = { role = roles.melee },
+        [111] = { spec = "Vengeance", role = roles.melee_tank },
+        [112] = { spec = "Havoc", role = roles.melee_damager },
 
         -- Evoker
-        [120] = { classIndex = 13, role = roles.caster },
-        [121] = { classIndex = 13, spec = "Preservation", role = roles.caster_healer },
-        [122] = { classIndex = 13, spec = "Augmentation", role = roles.caster_damager },
-        [123] = { classIndex = 13, spec = "Devastation", role = roles.caster_damager },
+        [120] = { role = roles.caster },
+        [121] = { spec = "Preservation", role = roles.caster_healer },
+        [122] = { spec = "Augmentation", role = roles.caster_damager },
+        [123] = { spec = "Devastation", role = roles.caster_damager },
     }
 end
 
 function Internal:GetClassIcon(spec_id)
-    spec_id = tonumber(spec_id);
-
-    local info = spec_id and addonSpecializationIDs[spec_id];
-    if(not info or not info.classIndex) then
+    class_id = Helpers:GetClassID(spec_id);
+    if(not class_id) then
         return 134400; -- Question Mark
     end
 
     -- Death Knight
-    if(info.classIndex == 6) then
+    if(class_id == 30) then
         return "Interface\\Icons\\spell_deathknight_classicon";
     end
 
-    local classInfo = classIndexes[info.classIndex];
+    local classInfo = addonClassIDs[class_id];
     local classToken = classInfo and classInfo.token;
     return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or 134400;
 end
 
-function Internal:GetSpecInfo(spec_id)
-    spec_id = tonumber(spec_id);
-
-    local info = spec_id and addonSpecializationIDs[spec_id];
-    if(not info) then
-        return nil;
-    end
-
-    -- Get expansion spec ID from API mapping table
-    local class,spec,icon = API:GetMappedSpecID(spec_id);
-    spec = spec or info.spec or "";
-
-    if(not class) then
-        local classInfo = Internal:GetClassInfo(info.classIndex);
-        class = classInfo and classInfo.name or "";
-    end
-
-    return class, spec, info.role, icon;
-end
-
-function Internal:GetClassIndex(spec_id)
-    if(not spec_id) then
-        return nil;
-    end
-
-    local info = spec_id and addonSpecializationIDs[spec_id];
-    if(not info) then
-        return nil;
-    end
-
-    return info.classIndex;
-end
-
 -- Get the ID from string class and spec. Should only be used by version control.
-function Internal:GetSpecFromSpecString(classID, spec, forceExactSpec)
-    local info = classID and addonSpecializationIDs[classID] or nil;
-    local classIndex = info and info.classIndex or nil;
-
-    if(not classIndex) then 
+function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
+    if(not class_id) then
         return nil;
     end
 
@@ -326,9 +294,9 @@ function Internal:GetSpecFromSpecString(classID, spec, forceExactSpec)
     end
 
     -- Iterate through the table to find the matching class and spec
-    for id, data in pairs(addonSpecializationIDs) do
-        if(data.classIndex == classIndex) then
-            if((not forceExactSpec and spec == nil) or (data.spec == spec)) then
+    for id,data in pairs(addonSpecializationIDs) do
+        if(Helpers:GetClassID(id) == class_id) then
+            if((not forceExactSpec and spec == nil) or (spec == data.spec)) then
                 return id;
             end
         end

@@ -211,7 +211,7 @@ function ArenaTracker:HandleArenaEnd()
 		ArenaAnalytics:Log("=============================");
 
 		-- Get class_id from clasToken
-		local class_id = Internal:GetAddonClassIDByToken(classToken);
+		local class_id = Internal:GetAddonClassID(classToken);
 
 		-- Get spec and GUID from existing data, if available
 		local spec_id = ArenaTracker:GetCollectedValue("spec", name);

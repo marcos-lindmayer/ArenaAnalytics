@@ -541,7 +541,7 @@ function ArenaMatch:GetTeam(match, isEnemyTeam)
     return key and match[key] or {};
 end
 
-function ArenaMatch:GetTeamSize(match, isEnemyTeam)
+function ArenaMatch:GetTeamSize(match)
     if(not match) then 
         return nil 
     end;
@@ -708,8 +708,9 @@ end
 function ArenaMatch:UpdateComp(match, isEnemyTeam)
     assert(match);
 
-    local requiredTeamSize = ArenaMatch:GetTeamSize(match, isEnemyTeam);
     local team = ArenaMatch:GetTeam(match, isEnemyTeam);
+    local requiredTeamSize = ArenaMatch:GetTeamSize(match);
+
     local teamSpecs = GetTeamSpecs(team, requiredTeamSize);
     if(teamSpecs and #teamSpecs > 0) then        
         table.sort(teamSpecs, function(a, b)

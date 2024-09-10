@@ -3,8 +3,7 @@ local _, ArenaAnalytics = ...; -- Namespace
 -- Declare Module Namespaces
 ArenaAnalytics.Constants = {};
 ArenaAnalytics.SpecSpells = {};
-ArenaAnalytics.GroupSorter = {};
-ArenaAnalytics.ArenaMatch = {};
+ArenaAnalytics.Localization = {};
 ArenaAnalytics.Internal = {};
 ArenaAnalytics.Bitmap = {};
 
@@ -26,6 +25,8 @@ ArenaAnalytics.Options = {};
 ArenaAnalytics.AAmatch = {};
 ArenaAnalytics.Events = {};
 ArenaAnalytics.ArenaTracker = {}
+ArenaAnalytics.ArenaMatch = {};
+ArenaAnalytics.GroupSorter = {};
 
 ArenaAnalytics.Search = {};
 ArenaAnalytics.Filters = {};

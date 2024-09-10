@@ -165,8 +165,12 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     local function ColorClass(text, spec_id)
-        local classIndex = Internal:GetClassIndex(playerInfo.spec_id);
-        return ArenaAnalytics:ApplyClassColor(text, classIndex);
+        local class_id = Helpers:GetClassID(playerInfo.spec_id);
+        local color = Internal:GetClassColor(class_id);
+        if(color) then
+            return "|c" .. color .. text .."|r";
+        end
+        return text;
     end
 
     local function ColorFaction(text, race_id)

@@ -648,6 +648,7 @@ function ArenaAnalytics:ClearLastMatchTransientValues(bracketIndex)
 	end
 end
 
+-- DEPRECATED
 -- Returns a table with the selected arena's player comp
 function AAmatch:GetArenaComp(teamTable, teamSize)	
 	if(teamTable == nil or teamSize > #teamTable) then

@@ -284,10 +284,6 @@ function Constants:GetArenaTimer()
     end
 end
 
-function ArenaAnalytics:ApplyClassColor(text, classIndex)
-    return "|c" .. Internal:GetClassColor(classIndex) .. text or "" .."|r";
-end
-
 local specIconTable = {
         -- Druid
         --[0] = "Interface\\Icons\\classicon_druid",
@@ -370,8 +366,8 @@ local specIconTable = {
 }
 
 -- Returns spec icon path string
-function Constants:GetSpecIcon(ID)
-    return ID and specIconTable[ID];
+function Constants:GetSpecIcon(spec_id)
+    return spec_id and specIconTable[spec_id];
 end
 
 function ArenaAnalytics:getBracketFromTeamSize(teamSize)

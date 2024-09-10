@@ -10,6 +10,7 @@ local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
+local Localization = ArenaAnalytics.Localization;
 
 -------------------------------------------------------------------------
 
@@ -343,20 +344,6 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
             end
         end
     end
-    
-    -- Fill class lookup table
-    local localizedClassLookupTable = {}
-    for classIndex, addonClassID in pairs(API.classMappingTable) do
-        -- Get the localized name and token for the class
-        local localizedName, classToken = GetClassInfo(classIndex);
-        if(localizedName and classToken) then
-            localizedClassLookupTable[localizedName] = {
-                classIndex = classIndex,
-                classToken = classToken,
-                addonSpecID = addonClassID,
-            };
-        end
-    end
 
     local function ConvertValues(race, class, spec)
         local raceInfo = race and localizedRaceLookupTable[race];
@@ -370,11 +357,11 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
             end
         end
 
-        local classInfo = class and localizedClassLookupTable[class];
-        if(classInfo) then
-            class = classInfo.addonSpecID;
+        local class_id = Localization:GetClassID(class);
+        if(class_id) then
+            class = class_id;
         else
-            ArenaAnalytics:Log("Failed to find classInfo when converting class:", class);
+            ArenaAnalytics:Log("Failed to find class_id when converting class:", class);
         end
 
         local spec_id = Internal:GetSpecFromSpecString(class, spec);

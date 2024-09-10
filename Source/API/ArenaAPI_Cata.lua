@@ -126,17 +126,6 @@ API.specMappingTable = {
     [123] = nil, -- Devastation Evoker
 }
 
-function API:GetSpecInfo(spec_id)
-	local expansionSpecID = spec_id and API.specMappingTable[spec_id];
-    if(not expansionSpecID) then
-        return nil;
-    end
-    
-    local _,spec,_,icon,_,_,class = GetSpecializationInfoByID(spec_id);
-    return class,spec,icon;
-
-end
-
 function API:GetMappedAddonSpecID(spec_id)
 	for addonSpecID,specID in pairs(API.specMappingTable) do
 		if(specID == spec_id) then

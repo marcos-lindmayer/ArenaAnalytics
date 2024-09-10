@@ -70,7 +70,7 @@ end
 -- Get Addon Class ID from unit
 function Helpers:GetUnitClass(unit)
     local _,token = UnitClass(unit);
-    return Internal:GetAddonClassIDByToken(token);
+    return Internal:GetAddonClassID(token);
 end
 
 function Helpers:GetClassIcon(spec_id)
