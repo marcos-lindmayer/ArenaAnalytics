@@ -189,25 +189,6 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 
-		-- Print all races among first 10k ids (Only valid entries)
-		for raceID = 1, 10000 do
-			local raceInfo = C_CreatureInfo.GetRaceInfo(raceID);
-			if(raceInfo) then
-				ArenaAnalytics:Log("GetRaceInfo("..raceID..")", raceInfo.raceName);
-				for k,v in pairs(raceInfo) do
-					ArenaAnalytics:Log("     Info:", k,v);
-				end
-			end
-		end
-
-		-- Print classes
-		for i=1, 100 do
-			-- Get the localized name and token for the class
-			if(GetClassInfo(i)) then
-				ArenaAnalytics:Log("GetClassInfo("..i..")", GetClassInfo(i));
-			end
-		end
-
 		print(" ");
 	end,	
 };

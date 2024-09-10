@@ -9,6 +9,7 @@ local Constants = ArenaAnalytics.Constants;
 local Helpers = ArenaAnalytics.Helpers;
 local AAtable = ArenaAnalytics.AAtable;
 local AAmatch = ArenaAnalytics.AAmatch;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
@@ -164,6 +165,8 @@ end
 ---------------------------------
 
 function Import:parseRawData(data)
+    if(true) then return end; -- Disabled import
+
     if(data == nil or tostring(data[1]) == nil) then
         ArenaAnalytics:Log("Invalid data for import attempt.. Bailing out immediately..");
         return;
@@ -502,7 +505,7 @@ function Import:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
             ["isRated"] = arena["isRated"],
             ["date"] = unixDate,
             ["season"] = ArenaAnalytics:computeSeasonFromMatchDate(unixDate),
-            ["map"] = Constants:GetShortMapName(tonumber(arena["zoneId"])), 
+            ["map"] = Internal:GetMapID(tonumber(arena["zoneId"])),
             ["bracket"] = bracket,
             ["duration"] = tonumber(arena["duration"]) or 0,
             ["team"] = group,
@@ -822,6 +825,8 @@ end
 
 -- Returns a CSV-formatted string using ArenaAnalyticsDB info
 function Export:combineExportCSV()
+    if(true) then return end; -- Disabled export
+
     if(not ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalytics:Log("Export: No games to export!");
         return "No games to export!";

@@ -203,21 +203,21 @@ function ArenaMatch:GetMapID(match)
     if(not match) then 
         return nil 
     end;
-    
+
     local key = matchKeys.map;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:GetMap(match)
-    local mapID = ArenaMatch:GetMapID(match);
-    return mapID and Constants:GetShortMapName(mapID);
+    local map_id = ArenaMatch:GetMapID(match);
+    return Internal:GetShortMapName(map_id);
 end
 
 function ArenaMatch:SetMap(match, value)
     assert(match);
 
-    mapId = tonumber(value) or Constants:GetMapIdByKey(value);
-    match[matchKeys.map] = tonumber(mapId);
+    map_id = Internal:GetAddonMapID(value) or value;
+    match[matchKeys.map] = tonumber(map_id);
 end
 
 -------------------------------------------------------------------------

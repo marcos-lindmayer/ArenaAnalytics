@@ -7,6 +7,43 @@ local Constants = ArenaAnalytics.Constants;
 local Bitmap = ArenaAnalytics.Bitmap;
 
 -------------------------------------------------------------------------
+-- Maps
+
+local addonMapIDs = {
+    [1] = { id = 562, shortName = "BEA", name = "Blade's Edge Arena" },
+    [2] = { id = 572, shortName = "RoL", name = "Ruins of Lordaeron" },
+    [3] = { id = 559, shortName = "NA", name = "Nagrand Arena" },
+    [4] = { id = 4406, shortName = "RoV", name = "Ring of Valor" },
+    [5] = { id = 617, shortName = "DA", name = "Dalaran Sewers" },
+}
+
+function Internal:GetAddonMapID(map)
+    if(not map) then
+        return nil;
+    end
+
+    map = Helpers:ToSafeLower(map);
+
+    for map_id,data in pairs(addonMapIDs) do
+        assert(data);
+
+        if(tonumber(map) == data.id or map == Helpers:ToSafeLower(data.shortName) or map == Helpers:ToSafeLower(data.name)) then
+            return map_id;
+        end
+    end
+end
+
+function Internal:GetShortMapName(map_id)
+    local mapInfo = map_id and addonMapIDs[map_id];
+    return mapInfo and mapInfo.shortName;
+end
+
+function Internal:GetMapName(map_id)
+    local mapInfo = map_id and addonMapIDs[map_id];
+    return mapInfo and mapInfo.name;
+end
+
+-------------------------------------------------------------------------
 -- Race
 
 -- Odd = Alliance, Even = Horde

@@ -74,36 +74,34 @@ function VersionManager:HasOldData()
     return false;
 end
 
-MatchHistoryDB = MatchHistoryDB or {}
-
 -- Returns true if loading should convert data
 function VersionManager:OnInit()
-    if(not VersionManager:HasOldData() or #ArenaAnalyticsDB > 0) then
-        return;
+    if(VersionManager:HasOldData() and #ArenaAnalyticsDB == 0) then
+        -- Force early init, to ensure the internal tables are valid.
+        Internal:Initialize();
+
+        ArenaAnalytics:Log("Converting old data...")
+
+        VersionManager:convertArenaAnalyticsDBToMatchHistoryDB() -- 0.3.0
+        VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
+
+        -- Clear old data
+        if(ArenaAnalyticsDB) then
+            ArenaAnalyticsDB["2v2"] = nil;
+            ArenaAnalyticsDB["3v3"] = nil;
+            ArenaAnalyticsDB["5v5"] = nil;
+        end
+
+        -- Assign new format
+        VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(); -- 0.7.0
+
+        MatchHistoryDB = nil;
+
+        ArenaAnalytics:ResortGroupsInMatchHistory();
+        ArenaAnalytics:RecomputeSessionsForMatchHistory();
     end
 
-    -- Force early init, to ensure the internal tables are valid.
-    Internal:Initialize();
-
-    ArenaAnalytics:Log("Converting old data...")
-
-    VersionManager:convertArenaAnalyticsDBToMatchHistoryDB() -- 0.3.0
-    VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
-
-    -- Clear old data
-    if(ArenaAnalyticsDB) then
-        ArenaAnalyticsDB["2v2"] = nil;
-        ArenaAnalyticsDB["3v3"] = nil;
-        ArenaAnalyticsDB["5v5"] = nil;
-    end
-
-    -- Assign new format
-    VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(); -- 0.7.0
-
-    MatchHistoryDB = nil;
-
-    ArenaAnalytics:ResortGroupsInMatchHistory();
-    ArenaAnalytics:RecomputeSessionsForMatchHistory();
+    VersionManager:ConvertMapID_Tmp();
 end
 
 local function convertFormatedDurationToSeconds(inDuration)
@@ -465,6 +463,15 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
                     break;
                 end
             end
+        end
+    end
+end
+
+function VersionManager:ConvertMapID_Tmp()
+    for i,match in ipairs(ArenaAnalyticsDB) do
+        local oldMapValue = ArenaMatch:GetMapID(match);
+        if(tonumber(oldMapValue) and tonumber(oldMapValue) > 10) then
+            ArenaMatch:SetMap(match, oldMapValue);
         end
     end
 end

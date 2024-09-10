@@ -4,6 +4,7 @@ local FilterTables = ArenaAnalytics.FilterTables;
 -- Local module aliases
 local API = ArenaAnalytics.API;
 local Filters = ArenaAnalytics.Filters;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
@@ -104,7 +105,7 @@ local function GenerateMapEntries(maps)
             label = data.name,
             alignment = "LEFT",
             key = "Filter_Map",
-            value = data.key,
+            value = Internal:GetAddonMapID(data.key),
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
         });

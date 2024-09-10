@@ -374,39 +374,6 @@ function Constants:GetSpecIcon(ID)
     return ID and specIconTable[ID];
 end
 
-local mapsList = {
-    [562] = "BEA", -- Blade's Edge Arena
-    [572] = "RoL", -- Ruins of Lordaeron
-    [559] = "NA", -- Nagrand Arena
-    [4406] = "RoV", -- Ring of Valor
-    [617] = "DA", -- Dalaran Arena
-}
-
-function Constants:GetMapIdByKey(mapKey)
-    if(type(mapKey) ~= "string") then
-        return nil;
-    end
-
-    mapKey = mapKey:lower();
-    for mapId,key in pairs(mapsList) do
-        if(mapKey == key:lower()) then
-            return mapId;
-        end
-    end
-    return nil;
-end
-
-function Constants:GetShortMapName(id)
-    if(id == nil) then
-        return nil;
-    end
-
-    if(not mapsList[id]) then
-        ArenaAnalytics:Log("Failed to find map for mapId:", id);
-    end
-    return mapsList[id];
-end
-
 function ArenaAnalytics:getBracketFromTeamSize(teamSize)
     if(teamSize == 2) then
         return "2v2";
