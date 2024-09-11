@@ -170,7 +170,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.titleVersion = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
     ArenaAnalyticsScrollFrame.titleVersion:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 75, 0);
     ArenaAnalyticsScrollFrame.titleVersion:SetFont("Fonts\\FRIZQT__.TTF", 11, "");
-    ArenaAnalyticsScrollFrame.titleVersion:SetText("|cff909090v" .. ArenaAnalytics:GetVersion() .. "|r");
+    ArenaAnalyticsScrollFrame.titleVersion:SetText("|cff909090v" .. API:GetAddonVersion() .. "|r");
 
     ArenaAnalyticsScrollFrame.teamBg = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame)
     ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.TitleBg, "TOPLEFT", 340, -90);

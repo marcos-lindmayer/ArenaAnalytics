@@ -16,12 +16,6 @@ local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
-function ArenaAnalytics:GetVersion()
-    return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
-end
-
--------------------------------------------------------------------------
-
 local matchTypes = { "rated", "skirmish", "wargame" }
 local brackets = { "2v2", "3v3", "5v5", "shuffle" }
 

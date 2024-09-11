@@ -6,12 +6,13 @@ local Options = ArenaAnalytics.Options;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
 function Tooltips:DrawMinimapTooltip()
     GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
-    GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. ArenaAnalytics:GetVersion() .. "|r");
+    GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. API:GetAddonVersion() .. "|r");
     GameTooltip:AddLine("|cffBBBBBB" .. "Left Click|r" .. " to toggle ArenaAnalytics");
     GameTooltip:AddLine("|cffBBBBBB" .. "Right Click|r".. " to open Options");
     GameTooltip:Show();

@@ -224,7 +224,7 @@ local function InitializeTab(parent)
     local addonNameText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     addonNameText:SetPoint("TOPLEFT", parent, "TOPLEFT", -5, 32)
     addonNameText:SetTextHeight(TabTitleSize);
-    addonNameText:SetText("Arena|cff00ccffAnalytics|r   |cff666666v" .. ArenaAnalytics:GetVersion() .. "|r");
+    addonNameText:SetText("Arena|cff00ccffAnalytics|r   |cff666666v" .. API:GetAddonVersion() .. "|r");
     
     -- Reset Y offset
     offsetY = 0;
@@ -275,7 +275,7 @@ local function CreateCheckbox(setting, parent, x, text, func)
     assert(type(setting) == "string");
 
     local checkbox = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_"..setting, parent, "OptionsSmallCheckButtonTemplate");
-    
+
     checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
 
     checkbox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -676,7 +676,7 @@ end
 function Options:Init()
     Options:LoadSettings();
 
-    if not ArenaAnalyticsOptionsFrame then
+    if not ArenaAnalyticsOptionsFrame and false then
         ArenaAnalyticsOptionsFrame = CreateFrame("Frame");
         ArenaAnalyticsOptionsFrame.name = "Arena|cff00ccffAnalytics|r";
         InterfaceOptions_AddCategory(ArenaAnalyticsOptionsFrame);

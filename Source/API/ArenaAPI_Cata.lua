@@ -43,12 +43,11 @@ function API:GetMySpec()
         local id, name, _, _, pointsSpent = GetTalentTabInfo(i);
 		if (pointsSpent > currentSpecPoints) then
 			currentSpecPoints = pointsSpent;
-			spec_id = id;
+			spec_id = API:GetMappedAddonSpecID(id);;
 		end
  	end
 
-    local addonSpecID = API:GetMappedAddonSpecID(spec_id);
-	ArenaAnalytics:Log("My Spec ID:", addonSpecID);
+	ArenaAnalytics:Log("My Spec ID:", spec_id);
 	return addonSpecID;
 end
 
@@ -106,7 +105,7 @@ API.specMappingTable = {
     [72] = 865, -- Destruction Warlock
     [73] = 867, -- Demonology Warlock
 
-    [81] = 845, -- Protection Paladin
+    [81] = 845, -- Protection Warrior
     [82] = 746, -- Arms Warrior
     [83] = 815, -- Fury Warrior
 
@@ -126,9 +125,9 @@ API.specMappingTable = {
     [123] = nil, -- Devastation Evoker
 }
 
-function API:GetMappedAddonSpecID(spec_id)
-	for addonSpecID,specID in pairs(API.specMappingTable) do
-		if(specID == spec_id) then
+function API:GetMappedAddonSpecID(specID)
+	for spec_id,mappedID in pairs(API.specMappingTable) do
+		if(specID == mappedID) then
 			return addonSpecID;
 		end
 	end

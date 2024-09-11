@@ -43,6 +43,7 @@ local Bitmap = ArenaAnalytics.Bitmap;
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
 local FilterTables = ArenaAnalytics.FilterTables;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -69,7 +70,7 @@ ArenaAnalytics.commands = {
 	end,
 	
 	["version"] = function()
-		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (ArenaAnalytics:GetVersion() or "Invalid Version") .. " (Early Access)|r");
+		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (API:GetAddonVersion() or "Invalid Version") .. " (Early Access)|r");
 	end,
 	
 	["total"] = function()
@@ -189,7 +190,7 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-
+		API:GetMySpec()
 		print(" ");
 	end,	
 };
@@ -370,7 +371,7 @@ function ArenaAnalytics:init()
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
 	end
 
-	local version = ArenaAnalytics:GetVersion();
+	local version = API:GetAddonVersion();
 	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffAAAAAA" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");

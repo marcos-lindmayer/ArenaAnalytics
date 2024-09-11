@@ -107,7 +107,7 @@ API.specMappingTable = {
     [72] = 865, -- Destruction Warlock
     [73] = 867, -- Demonology Warlock
 
-    [81] = 845, -- Protection Paladin
+    [81] = 845, -- Protection Warrior
     [82] = 746, -- Arms Warrior
     [83] = 815, -- Fury Warrior
 

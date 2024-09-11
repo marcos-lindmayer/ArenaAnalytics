@@ -19,7 +19,7 @@ VersionManager.newDetectedVersion = false;
 
 -- Compare two version strings. Returns -1 if version is lower, 0 if equal, 1 if higher.
 function VersionManager:compareVersions(version, otherVersion)
-    otherVersion = otherVersion or ArenaAnalytics:GetVersion();
+    otherVersion = otherVersion or API:GetAddonVersion();
 
     if(version == nil or version == "") then
         return otherVersion and 1 or 0;

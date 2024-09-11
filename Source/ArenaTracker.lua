@@ -111,7 +111,8 @@ function ArenaTracker:HandleArenaEnter(...)
 	if(not currentArena.battlefieldId) then
 		ArenaAnalytics:Log("ERROR: Invalid Battlefield ID in HandleArenaEnter");
 	end
-
+	
+	local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(currentArena.battlefieldId);
 	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRated, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena.battlefieldId);
 	if (status ~= "active") then
 		return false
@@ -528,6 +529,11 @@ end
 -- Detects spec if a spell is spec defining, attaches it to its
 -- caster if they weren't defined yet, or adds a new unit with it
 function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
+	if(not SpecSpells or not SpecSpells.GetSpec) then
+		return;
+	end
+
+	-- Only players matter for spec detection
 	if (not string.find(sourceGUID, "Player-")) then
 		return;
 	end
