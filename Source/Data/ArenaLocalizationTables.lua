@@ -43,7 +43,7 @@ raceMapping = {
         ptBR = { "Humano", "Humana" },
         ruRU = { "Человек" },
         koKR = { "인간" },
-        zhCN = { "人类" },
+        zhTW = { "人类" },
     },
     Dwarf = {
         enGB = { "Dwarf" },
@@ -54,7 +54,7 @@ raceMapping = {
         ptBR = { "Anão", "Anã" },
         ruRU = { "Дворф", "Дворфийка" },
         koKR = { "드워프" },
-        zhCN = { "矮人" },
+        zhTW = { "矮人" },
     },
     NightElf = {
         enGB = { "Night Elf" },
@@ -65,7 +65,7 @@ raceMapping = {
         ptBR = { "Elfo Noturno", "Elfa Noturna" },
         ruRU = { "Ночной эльф", "Ночная эльфийка" },
         koKR = { "나이트 엘프" },
-        zhCN = { "暗夜精灵" },
+        zhTW = { "暗夜精灵" },
     },
     Gnome = {
         enGB = { "Gnome" },
@@ -76,7 +76,7 @@ raceMapping = {
         ptBR = { "Gnomo", "Gnomida" },
         ruRU = { "Гном", "Гномка"},
         koKR = { "노움" },
-        zhCN = { "侏儒" },
+        zhTW = { "侏儒" },
     },
     Draenei = {
         enGB = { "Draenei" },
@@ -87,7 +87,7 @@ raceMapping = {
         ptBR = { "Draenei", "Draenaia" },
         ruRU = { "Дреней", "Дренейка" },
         koKR = { "드레나이" },
-        zhCN = { "德莱尼" },
+        zhTW = { "德莱尼人" },
     },
     Worgen = {
         enGB = { "Worgen" },
@@ -98,7 +98,7 @@ raceMapping = {
         ptBR = { "Worgen", "Worgenin" },
         ruRU = { "Ворген" },
         koKR = { "늑대인간" },
-        zhCN = { "狼人" },
+        zhTW = { "狼人" },
     },
     Pandaren = {
         enGB = { "Pandaren" },
@@ -109,7 +109,7 @@ raceMapping = {
         ptBR = { "Pandaren", "Pandarena" },
         ruRU = { "Пандарен", "Пандаренка" },
         koKR = { "판다렌" },
-        zhCN = { "熊猫人" },
+        zhTW = { "熊猫人" },
     },
     Dracthyr = {
         enGB = { "Dracthyr" },
@@ -120,7 +120,7 @@ raceMapping = {
         ptBR = { "Dracthyr" },
         ruRU = { "Драктир" },
         koKR = {  },
-        zhCN = {  },
+        zhTW = {  },
     },
     VoidElf = {
         enGB = { "Void Elf" },
@@ -131,7 +131,7 @@ raceMapping = {
         ptBR = { "Elfo Caótico", "Elfa Caótica" },
         ruRU = { "Эльф Бездны", "Эльфийка Бездны" },
         koKR = { "공허 엘프" },
-        zhCN = { "虚空精灵" },
+        zhTW = { "虚空精灵" },
     },
     LightforgedDraenei = {
         enGB = { "Lightforged Draenei" },
@@ -142,7 +142,7 @@ raceMapping = {
         ptBR = { "Draenei Forjado a Luz", "Draenaia Forjada a Luz" },
         ruRU = { "Озаренный дреней", "Озаренная дренейка" },
         koKR = { "빛벼림 드레나이" },
-        zhCN = { "光铸德莱尼" },
+        zhTW = { "光铸德莱尼" },
     },
     DarkIronDwarf = {
         enGB = { "Dark Iron Dwarf" },
@@ -153,7 +153,7 @@ raceMapping = {
         ptBR = { "Anão Ferro Negro", "Anã Ferro Negro" },
         ruRU = { "Дворф из клана Черного Железа", "Дворфийка из клана Черного Железа" },
         koKR = { "검은무쇠 드워프" },
-        zhCN = { "黑铁矮人" },
+        zhTW = { "黑铁矮人" },
     },
     Earthen = {
         enGB = { "Earthen" },
@@ -164,7 +164,7 @@ raceMapping = {
         ptBR = { "Terrano" },
         ruRU = { "Земельник" },
         koKR = {  },
-        zhCN = {  },
+        zhTW = {  },
     },
     KulTiran = {
         enGB = { "Kul Tiran" },
@@ -174,8 +174,8 @@ raceMapping = {
         itIT = { "Kul Tirano", "Kul Tirana" },
         ptBR = { "Kultireno", "Kultirena" },
         ruRU = { "Култирасец", "Култираска" },
-        koKR = { "쿨티란" },
-        zhCN = { "库尔提拉斯人" },
+        koKR = { "쿨 티란" },
+        zhTW = { "库尔提拉斯人" },
     },
     Mechagnome = {
         enGB = { "Mechagnome" },
@@ -186,7 +186,7 @@ raceMapping = {
         ptBR = { "Gnomecânico", "Gnomecânica" },
         ruRU = { "Механогном", "Механогномка" },
         koKR = { "기계노움" },
-        zhCN = { "机械侏儒" },
+        zhTW = { "机械侏儒" },
     },
     Orc = {
         enGB = { "Orc" },
@@ -197,7 +197,7 @@ raceMapping = {
         ptBR = { "Orc", "Orquisa" },
         ruRU = { "Орк", "Орчиха" },
         koKR = { "오크" },
-        zhCN = { "兽人" },
+        zhTW = { "兽人" },
     },
     Undead = {
         enGB = { "Undead" },
@@ -208,7 +208,7 @@ raceMapping = {
         ptBR = { "Morto-vivo", "Morta-viva" },
         ruRU = { "Нежить" },
         koKR = { "언데드" },
-        zhCN = { "被遗忘者" },
+        zhTW = { "被遗忘者" },
     },
     Tauren = {
         enGB = { "Tauren" },
@@ -219,7 +219,7 @@ raceMapping = {
         ptBR = { "Tauren", "Taurena" },
         ruRU = { "Таурен", "Тауренка" },
         koKR = { "타우렌" },
-        zhCN = { "牛头人" },
+        zhTW = { "牛头人" },
     },
     Troll = {
         enGB = { "Troll" },
@@ -230,7 +230,7 @@ raceMapping = {
         ptBR = { "Troll", "Trolesa" },
         ruRU = { "Тролль" },
         koKR = { "트롤" },
-        zhCN = { "巨魔" },
+        zhTW = { "巨魔" },
     },
     BloodElf = {
         enGB = { "Blood Elf" },
@@ -241,7 +241,7 @@ raceMapping = {
         ptBR = { "Elfo Sangrento", "Elfa Sangrenta" },
         ruRU = { "Эльф крови", "Эльфийка крови" },
         koKR = { "블러드 엘프" },
-        zhCN = { "血精灵" },
+        zhTW = { "血精灵" },
     },
     Goblin = {
         enGB = { "Goblin" },
@@ -252,7 +252,7 @@ raceMapping = {
         ptBR = { "Goblin", "Goblina" },
         ruRU = { "Гоблин" },
         koKR = { "고블린" },
-        zhCN = { "地精" },
+        zhTW = { "地精" },
     },
     Nightborne = {
         enGB = { "Nightborne" },
@@ -263,7 +263,7 @@ raceMapping = {
         ptBR = { "Filho da Noite", "Filha da Noite" },
         ruRU = { "Ночнорожденный", "Ночнорожденная" },
         koKR = { "나이트본" },
-        zhCN = { "夜之子" },
+        zhTW = { "夜之子" },
     },
     HighmountainTauren = {
         enGB = { "Highmountain Tauren" },
@@ -274,7 +274,7 @@ raceMapping = {
         ptBR = { "Tauren Altamontês", "Taurena Altamontêsa" },
         ruRU = { "Таурен Крутогорья", "Тауренка Крутогорья" },
         koKR = { "높은산 타우렌" },
-        zhCN = { "至高岭牛头人" },
+        zhTW = { "至高岭牛头人" },
     },
     MagharOrc = {
         enGB = { "Mag'har Orc" },
@@ -285,7 +285,7 @@ raceMapping = {
         ptBR = { "Orc Mag'har" },
         ruRU = { "Маґ'хар", "Маґ'харка" },
         koKR = { "마그하르 오크" },
-        zhCN = { "玛格汉兽人" },
+        zhTW = { "玛格汉兽人" },
     },
     ZandalariTroll = {
         enGB = { "Zandalari Troll" },
@@ -296,7 +296,7 @@ raceMapping = {
         ptBR = { "Troll Zandalari", "Trolesa Zandalari" },
         ruRU = { "Зандалар", "Зандаларка" },
         koKR = { "잔달라 트롤" },
-        zhCN = { "赞达拉巨魔" },
+        zhTW = { "赞达拉巨魔" },
     },
     Vulpera = {
         enGB = { "Vulpera" },
@@ -307,7 +307,7 @@ raceMapping = {
         ptBR = { "Vulpera" },
         ruRU = { "Вульпера" },
         koKR = { "불페라" },
-        zhCN = { "狐人" },
+        zhTW = { "狐人" },
     },
 }
 
