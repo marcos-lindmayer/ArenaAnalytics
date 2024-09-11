@@ -8,6 +8,7 @@ local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
+local Localization = ArenaAnalytics.Localization;
 
 -------------------------------------------------------------------------
 
