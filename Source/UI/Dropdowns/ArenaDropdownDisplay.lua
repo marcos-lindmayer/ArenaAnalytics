@@ -68,7 +68,7 @@ function Display:AddFrame(frame, alignment, offsetX)
     end
 
     frame:SetParent(self.parent:GetFrame());
-    frame:SetPoint(alignment, self.parent:GetFrame(), offsetX, 0);
+    frame:SetPoint(alignment, self.parent:GetFrame(), offsetX, -1);
     frame:Show();
 
     tinsert(self.frames, frame);

@@ -110,13 +110,14 @@ end
 -- Dropdown Core
 ---------------------------------
 
-function Dropdown:Create(parent, dropdownType, frameName, config, width, height)
+function Dropdown:Create(parent, dropdownType, frameName, config, width, height, entryHeight)
     local self = setmetatable({}, Dropdown);
     self.owner = parent;
     self.name = frameName.."Dropdown";
 
     self.width = width;
     self.height = height;
+    self.entryHeight = entryHeight or height;
 
     self.frame = CreateFrame("Frame", self.name, parent);
     self.frame:SetPoint("CENTER");
@@ -135,7 +136,7 @@ function Dropdown:Create(parent, dropdownType, frameName, config, width, height)
             self.owner = self.selected.btn;
         end
     end
-    
+
     return self;
 end
 
@@ -241,7 +242,7 @@ function Dropdown:Show()
 
         -- Update meta data, if any was explicitly provided
         listInfo.meta.width = self.width or self.listInfo.width;
-        listInfo.meta.height = self.height or self.listInfo.height;
+        listInfo.meta.height = self.entryHeight or self.height or self.listInfo.height;
 
         self.list = Dropdown.List:Create(self, 1, listInfo);
         self.list:SetPoint("TOP", self.selected:GetFrame(), "BOTTOM");

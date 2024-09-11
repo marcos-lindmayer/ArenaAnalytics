@@ -309,7 +309,7 @@ local eventTracker = {
 
 function ArenaAnalytics:GetActiveBattlefieldID()
     for index = 1, GetMaxBattlefieldID() do
-        local status = GetBattlefieldStatus(index)
+        local status = API:GetBattlefieldStatus(index)
         if status == "active" then
 			ArenaAnalytics:Log("Found battlefield ID ", index)
             return index

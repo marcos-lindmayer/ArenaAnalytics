@@ -367,7 +367,11 @@ local specIconTable = {
 
 -- Returns spec icon path string
 function Constants:GetSpecIcon(spec_id)
-    return spec_id and specIconTable[spec_id];
+    if(not spec_id or Helpers:IsClassID(spec_id)) then
+        return "";
+    end
+
+    return specIconTable[spec_id] or 134400;
 end
 
 function ArenaAnalytics:getBracketFromTeamSize(teamSize)

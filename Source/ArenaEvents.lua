@@ -48,7 +48,6 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 		end
 	else -- Not in arena
 		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-			ArenaAnalytics:Log("UPDATE_BATTLEFIELD_STATUS triggered!", API:IsInArena(), API:GetPersonalRatedInfo(1))
 			ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
 		elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
 			if(ArenaTracker:IsTrackingArena()) then

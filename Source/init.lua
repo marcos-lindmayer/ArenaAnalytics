@@ -190,7 +190,7 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-		API:GetMySpec()
+		ArenaAnalytics:Log(IsArenaSkirmish(), C_PvP.IsRatedArena(), C_PvP.IsInBrawl(), IsWargame(), ArenaAnalytics.API:IsRatedArena(), IsActiveBattlefieldArena());
 		print(" ");
 	end,	
 };

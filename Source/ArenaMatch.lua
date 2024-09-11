@@ -216,9 +216,17 @@ end
 
 function ArenaMatch:SetMap(match, value)
     assert(match);
+    
+    if(not value) then
+        return;
+    end
 
-    map_id = Internal:GetAddonMapID(value) or value;
-    match[matchKeys.map] = tonumber(map_id);
+    local map_id = API:GetAddonMapID(value);
+    if(not map_id) then
+        ArenaAnalytics:Log("Warning: ArenaMatch:SetMap failed to find map_id for value:", value);
+    end
+
+    match[matchKeys.map] = tonumber(map_id)
 end
 
 -------------------------------------------------------------------------

@@ -25,7 +25,7 @@ function List:Create(parent, level, listInfo)
     -- nil width calculates desired width dynamically
     self.explicitWidth = listInfo.meta.width or nil; 
 
-    self.entryHeight = listInfo.meta.height or listInfo.meta.entryHeight or 20;
+    self.entryHeight = listInfo.meta.entryHeight or listInfo.meta.height or 20;
     self.maxHeight = self.entryHeight * List.maxVisibleEntries + List.verticalPadding * 2;
 
     self.entries = listInfo.entries;

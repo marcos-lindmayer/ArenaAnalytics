@@ -13,14 +13,18 @@ API.availableBrackets = {
 };
 
 API.availableMaps = {
-	{ name = "Blade's Edge Arena", key = "BEA"},
-	{ name = "Dalaran Arena", key = "DA"},
-	{ name = "Nagrand Arena", key = "NA"},
-	{ name = "Ruins of Lordaeron", key = "RoL"},
+    { id = 562,  token = "BladesEdgeArena" },
+    { id = 559,  token = "NagrandArena" },
+    { id = 572,  token = "RuinsOfLordaeron" },
+    { id = 617,  token = "DalaranArena" },
 };
 
 function API:IsInArena()
     return IsActiveBattlefieldArena();
+end
+
+function API:IsRatedArena()
+    return API:IsInArena() and C_PvP.IsRatedArena() and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
 end
 
 function API:IsShuffle()
@@ -59,6 +63,10 @@ end
 -- NOTE: Not updated to release data format (id and preg missing)
 -- Get local player current spec
 function API:GetMySpec()
+    if(true) then
+        return;
+    end
+
     local spec = nil
 	local currentSpecPoints = 0
 

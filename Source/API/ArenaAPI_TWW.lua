@@ -7,20 +7,38 @@ local API = ArenaAnalytics.API;
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
 
 API.availableBrackets = {
+    { name = "Solo", key = 4},
 	{ name = "2v2", key = 1},
 	{ name = "3v3", key = 2},
 	{ name = "5v5", key = 3},
 }
 
 API.availableMaps = {
-	{ name = "Blade's Edge Arena", key = "BEA"},
-	{ name = "Dalaran Arena", key = "DA"},
-	{ name = "Nagrand Arena", key = "NA"},
-	{ name = "Ruins of Lordaeron", key = "RoL"},
-};
+    { id = 8624,  token = "ShadoPanShowdown" },
+    { id = 3698,  token = "NagrandArena" },
+    { id = 3968,  token = "RuinsOfLordaeron" },
+    { id = 10497, token = "TheRobodrome" },
+    { id = 14436, token = "NokhudonProvingGrounds" },
+    { id = 8008,  token = "AshamanesFall" },
+    { id = 3702,  token = "BladesEdgeArena" },
+    { id = 9992,  token = "Mugambala" },
+    { id = 7816,  token = "BlackRookHoldArena" },
+    { id = 9279,  token = "HookPoint" },
+    { id = 13428, token = "EmpyreanDomain" },
+    { id = 4378,  token = "DalaranArena" },
+    { id = 6732,  token = "TheTigersPeak" },
+    { id = 14083, token = "EnigmaCrucible" },
+    { id = 9278,  token = "KulTirasArena" },
+    { id = 13971, token = "MaldraxxusColiseum" },
+    { id = 6296,  token = "TolVironArena" },
+}
 
 function API:IsInArena()
-    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
+    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl() and not C_PvP.IsSoloShuffle(); -- TODO: Add solo shuffle support
+end
+
+function API:IsRatedArena()
+    return API:IsInArena() and C_PvP.IsRatedArena() and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
 end
 
 function API:IsShuffle()
@@ -29,7 +47,7 @@ end
 
 function API:GetBattlefieldStatus(battlefieldId)
     local status,_, teamSize = GetBattlefieldStatus(battlefieldId);
-    local isRated = C_PvP.IsRatedArena();
+    local isRated = API:IsRatedArena();
 
     return status, teamSize, isRated;
 end

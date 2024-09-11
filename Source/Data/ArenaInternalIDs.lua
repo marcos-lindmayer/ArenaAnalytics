@@ -5,16 +5,36 @@ local Internal = ArenaAnalytics.Internal;
 local Helpers = ArenaAnalytics.Helpers;
 local Constants = ArenaAnalytics.Constants;
 local Bitmap = ArenaAnalytics.Bitmap;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 -- Maps
 
 local addonMapIDs = {
-    [1] = { id = 562, shortName = "BEA", name = "Blade's Edge Arena" },
-    [2] = { id = 572, shortName = "RoL", name = "Ruins of Lordaeron" },
-    [3] = { id = 559, shortName = "NA", name = "Nagrand Arena" },
-    [4] = { id = 4406, shortName = "RoV", name = "Ring of Valor" },
-    [5] = { id = 617, shortName = "DA", name = "Dalaran Sewers" },
+    [1]  =  { token = "BladesEdgeArena", shortName = "BEA", name = "Blade's Edge Arena" },
+    [2]  =  { token = "RuinsOfLordaeron", shortName = "RoL", name = "Ruins of Lordaeron" },
+    [3]  =  { token = "NagrandArena", shortName = "NA", name = "Nagrand Arena" },
+
+    [4]  =  { token = "RingOfValor", shortName = "RoV", name = "Ring of Valor" },
+    [5]  =  { token = "DalaranArena", shortName = "DA", name = "Dalaran Arena" },
+
+    [6]  =  { token = "TheTigersPeak", shortName = "TTP", name = "The Tiger's Peak" },
+    [7]  =  { token = "TolVironArena", shortName = "TVA", name = "Tol'Viron Arena" },
+
+    [8]  =  { token = "AshamanesFall", shortName = "AF", name = "Ashamane's Fall" },
+    [9]  =  { token = "BlackRookHoldArena", shortName = "BRH", name = "Black Rook Hold Arena" },
+    [10] =  { token = "ShadoPanShowdown", shortName = "SPS", name = "Shado-Pan Showdown" },
+
+    [11] =  { token = "HookPoint", shortName = "HP", name = "Hook Point" },
+    [12] =  { token = "KulTirasArena", shortName = "KTA", name = "Kul Tiras Arena" },
+    [13] =  { token = "Mugambala", shortName = "MGA", name = "Mugambala" },
+    [14] =  { token = "TheRobodrome", shortName = "TR", name = "The Robodrome" },
+
+    [15] =  { token = "EmpyreanDomain", shortName = "ED", name = "Empyrean Domain" },
+    [16] =  { token = "EnigmaCrucible", shortName = "EC", name = "Enigma Crucible" },
+    [17] =  { token = "MaldraxxusColiseum", shortName = "MC", name = "Maldraxxus Coliseum" },
+
+    [18] =  { token = "NokhudonProvingGrounds", shortName = "NPG", name = "Nokhudon Proving Grounds" },
 }
 
 function Internal:GetAddonMapID(map)
@@ -22,12 +42,20 @@ function Internal:GetAddonMapID(map)
         return nil;
     end
 
+    if(tonumber(map)) then
+        map = API:GetMapToken(map);
+    end
+
     map = Helpers:ToSafeLower(map);
 
-    for map_id,data in pairs(addonMapIDs) do
-        assert(data and data.id);
+    for map_id, data in pairs(addonMapIDs) do
+        assert(data and data.token);
 
-        if(tonumber(map) == data.id or map == Helpers:ToSafeLower(data.shortName) or map == Helpers:ToSafeLower(data.name)) then
+        if(map == Helpers:ToSafeLower(data.token)) then
+            return map_id;
+        elseif(map == Helpers:ToSafeLower(data.shortName)) then
+            return map_id;
+        elseif(map == Helpers:ToSafeLower(data.name)) then
             return map_id;
         end
     end

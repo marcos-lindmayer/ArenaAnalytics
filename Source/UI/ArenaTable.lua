@@ -57,7 +57,10 @@ end
 function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOffset, text, template)
     local btn = CreateFrame("Button", nil, relativeFrame, AAtable:GetDropdownTemplate(template));
     btn:SetPoint(point, relativeFrame, relativePoint, xOffset, yOffset);
-    btn:SetSize(120, 25);
+
+    local height = (template == "UIPanelButtonTemplate" and 35 or 25);
+    btn:SetSize(120, height);
+
     btn:SetText(text);
     btn:SetNormalFontObject("GameFontHighlight");
     btn:SetHighlightFontObject("GameFontHighlight");
@@ -183,7 +186,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
 
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
-    ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 35, -44);
+    ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 35, -47);
     ArenaAnalyticsScrollFrame.searchBox:SetSize(225, 25);
     ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
     ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(1024);
@@ -219,7 +222,7 @@ function AAtable:OnLoad()
 
     -- Filter Bracket Dropdown
     ArenaAnalyticsScrollFrame.filterBracketDropdown = nil;
-    ArenaAnalyticsScrollFrame.filterBracketDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Simple", "FilterBracket", FilterTables.brackets, 55, 25);
+    ArenaAnalyticsScrollFrame.filterBracketDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Simple", "FilterBracket", FilterTables.brackets, 55, 35, 25);
     ArenaAnalyticsScrollFrame.filterBracketDropdown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.searchBox, "RIGHT", 10, 0);
 
     CreateFilterTitle(ArenaAnalyticsScrollFrame.filterBracketDropdown, "Bracket");
@@ -249,7 +252,7 @@ function AAtable:OnLoad()
     end);
 
     -- Table headers
-    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, -75, "Date");
+    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "BOTTOMLEFT", -5, -10, "Date");
     ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, "Map");
     ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 60, 0, "Duration");
     ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 118, 0, "Team");
@@ -273,7 +276,7 @@ function AAtable:OnLoad()
     
     AAtable:TryStartSessionDurationTimer();
 
-    ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 10, "Clear Selected", AAtable:GetDropdownTemplate());
+    ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 8, "Clear Selected", AAtable:GetDropdownTemplate());
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(110)
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function() Selection:ClearSelectedMatches() end);
@@ -306,7 +309,7 @@ function AAtable:OnLoad()
 
     HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListMatch");
 
-    ArenaAnalyticsScrollFrame.moreFiltersDrodown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", "MoreFilters", FilterTables.moreFilters, 90, 25);
+    ArenaAnalyticsScrollFrame.moreFiltersDrodown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", "MoreFilters", FilterTables.moreFilters, 90, 35, 25);
     ArenaAnalyticsScrollFrame.moreFiltersDrodown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame(), "RIGHT", 10, 0);
     
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.moreFiltersDrodown:GetFrame(), "RIGHT", 10, 0, "Clear", AAtable:GetDropdownTemplate());
@@ -481,7 +484,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             end
 
             local specIcon = Constants:GetSpecIcon(playerInfo.spec_id);
-            playerFrame.specOverlay.texture:SetTexture(specIcon or "");
+            playerFrame.specOverlay.texture:SetTexture(specIcon);
 
             if (not Options:Get("alwaysShowSpecOverlay")) then
                 playerFrame.specOverlay:Hide();
@@ -585,7 +588,7 @@ end
 function AAtable:CreateDropdownForFilterComps(isEnemyComp)
     local config = isEnemyComp and FilterTables.enemyComps or FilterTables.comps;
     local frameName = isEnemyComp and "FitlerEnemyComp" or "FilterComp";
-    local newDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", frameName, config, 235, 25);
+    local newDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", frameName, config, 235, 35, 25);
     local relativeFrame = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
     newDropdown:SetPoint("LEFT", relativeFrame:GetFrame(), "RIGHT", 10, 0);
         

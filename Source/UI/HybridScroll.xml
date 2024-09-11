@@ -174,14 +174,14 @@
 	</Slider>
 
     <Frame name="ArenaAnalyticsScrollFrame" parent="UIParent" inherits="BasicFrameTemplate" mixin="HybridScrollMixin">
-        <Size x="1000" y="550"/>
+        <Size x="1000" y="540"/>
         <Anchors>
             <Anchor point="CENTER" x="0" y="0"/>
         </Anchors>
         <Frames>
             <ScrollFrame parentKey="ListScrollFrame" inherits="HybridScrollFrameTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" x="10" y="-90"/>
+                    <Anchor point="TOPLEFT" x="10" y="-100"/>
                     <Anchor point="BOTTOMRIGHT" x="-25" y="47"/>
                 </Anchors>
                 <Frames>

@@ -30,16 +30,16 @@ function Button:Create(parent, width, height, config)
 
     self.name = (parent:GetName() .. "Button");
 
-    -- Temp for nested list
+    self.template = AAtable:GetDropdownTemplate(config.template);
+
     self.width = width;
-    self.height = height;
-    
+    self.height = (self.template == "UIPanelButtonTemplate" and height or height - 8);
+
     -- Config
     self:SetConfig(config);
     
-    self.template = AAtable:GetDropdownTemplate(config.template);
     self.btn = CreateFrame("Button", self.name, parent:GetOwner(), self.template);
-    self.btn:SetSize(width, height);
+    self.btn:SetSize(width, self.height);
     self.btn:SetText("");
     self.btn:Show();
 

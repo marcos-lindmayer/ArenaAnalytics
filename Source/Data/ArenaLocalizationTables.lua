@@ -4,6 +4,7 @@ local Localization = ArenaAnalytics.Localization;
 -- Local module aliases
 local Internal = ArenaAnalytics.Internal;
 local Helpers = ArenaAnalytics.Helpers;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 

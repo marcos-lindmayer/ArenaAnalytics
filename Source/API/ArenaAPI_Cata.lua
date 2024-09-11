@@ -13,14 +13,18 @@ API.availableBrackets = {
 }
 
 API.availableMaps = {
-	{ name = "Blade's Edge Arena", key = "BEA"},
-	{ name = "Dalaran Arena", key = "DA"},
-	{ name = "Nagrand Arena", key = "NA"},
-	{ name = "Ruins of Lordaeron", key = "RoL"},
+    { id = 562,  token = "BladesEdgeArena" },
+    { id = 559,  token = "NagrandArena" },
+    { id = 572,  token = "RuinsOfLordaeron" },
+    { id = 617,  token = "DalaranArena" },
 };
 
 function API:IsInArena()
     return IsActiveBattlefieldArena();
+end
+
+function API:IsRatedArena()
+    return API:IsInArena() and not IsWargame() and not IsArenaSkirmish();
 end
 
 function API:IsShuffle()
@@ -65,7 +69,7 @@ function API:GetMySpec()
         local id, name, _, _, pointsSpent = GetTalentTabInfo(i);
 		if (pointsSpent > currentSpecPoints) then
 			currentSpecPoints = pointsSpent;
-			spec_id = API:GetMappedAddonSpecID(id);;
+			spec_id = API:GetMappedAddonSpecID(id);
 		end
  	end
 

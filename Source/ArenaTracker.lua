@@ -25,14 +25,14 @@ function ArenaTracker:ResetCurrentArenaValues()
 
 	currentArena.battlefieldId = nil;
 	currentArena.mapId = nil;
-	
+
 	currentArena.playerName = "";
 
 	currentArena.duration = 0;
 	currentArena.startTime = nil;
 	currentArena.hasRealStartTime = nil;
 	currentArena.endTime = 0;
-	
+
 	currentArena.oldRating = nil;
 	currentArena.seasonPlayed = nil;
 	currentArena.requireRatingFix = nil;
@@ -40,20 +40,20 @@ function ArenaTracker:ResetCurrentArenaValues()
 	currentArena.partyRating = nil;
 	currentArena.partyRatingDelta = nil;
 	currentArena.partyMMR = nil;
-	
+
 	currentArena.enemyRating = nil;
 	currentArena.enemyRatingDelta = nil;
 	currentArena.enemyMMR = nil;
-	
+
 	currentArena.size = nil;
 	currentArena.isRated = nil;
-	
+
 	currentArena.players = {};
-	
+
 	currentArena.ended = false;
 	currentArena.endedProperly = false;
 	currentArena.won = nil;
-	
+
 	currentArena.deathData = {};
 end
 ArenaTracker:ResetCurrentArenaValues();
