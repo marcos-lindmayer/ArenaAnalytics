@@ -327,34 +327,12 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
 
     ArenaAnalyticsRealmsDB = {}
 
-    -- Fill race lookup table
-    local localizedRaceLookupTable = {}
-    for raceID = 1, API.maxRaceID do
-        local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)        
-        if raceInfo and raceInfo.raceName and raceInfo.clientFileString then
-            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString) or (1000 + raceID)
-            if addonRaceID then
-                localizedRaceLookupTable[raceInfo.raceName] = {
-                    raceID = raceID,
-                    raceToken = raceInfo.clientFileString,
-                    addonRaceID = addonRaceID,
-                }
-            else
-                ArenaAnalytics:Log("Error: No Addon Race ID found for:", raceID, raceInfo.raceName, raceInfo.clientFileString);
-            end
-        end
-    end
-
     local function ConvertValues(race, class, spec)
-        local raceInfo = race and localizedRaceLookupTable[race];
-        if(raceInfo and raceInfo.addonRaceID < 1000) then
-            race = raceInfo.addonRaceID;
+        local race_id = Localization:GetRaceID(race);
+        if(race_id) then
+            race = race_id;
         else
-            race = Internal:GetAddonRaceIDByToken(race);
-            
-            if(not race) then
-                ArenaAnalytics:Log("Failed to find raceInfo when converting race:", race, raceInfo and raceInfo.addonRaceID, raceInfo and raceInfo.raceToken);
-            end
+            ArenaAnalytics:Log("Failed to find race_id when converting race:", race);
         end
 
         local class_id = Localization:GetClassID(class);

@@ -60,8 +60,13 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
-local function ParseArenaTimerMessages(msg)
-	local localizedMessage = Constants.GetArenaTimer()
+local function ParseArenaTimerMessages(msg, ...)
+	if(GetLocale() == "itIT") then
+		ArenaAnalytics:Log("ParseArenaTimerMessages", msg and msg:gsub("\\", "\\\\"));
+		ArenaAnalytics:Log("     ", ...);
+	end
+
+	local localizedMessage = Constants.GetArenaTimer();
 	if(msg:find(localizedMessage)) then
 		ArenaTracker:HandleArenaStart();
 	end

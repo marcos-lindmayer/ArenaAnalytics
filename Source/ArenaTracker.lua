@@ -206,9 +206,7 @@ function ArenaTracker:HandleArenaEnd()
 			name = name.."-"..realm;
 		end
 
-		ArenaAnalytics:Log("=============================");
 		ArenaAnalytics:Log("Scoreboard race:", race);
-		ArenaAnalytics:Log("=============================");
 
 		-- Get class_id from clasToken
 		local class_id = Internal:GetAddonClassID(classToken);
@@ -217,11 +215,9 @@ function ArenaTracker:HandleArenaEnd()
 		local spec_id = ArenaTracker:GetCollectedValue("spec", name);
 		local race_id = ArenaTracker:GetCollectedValue("race", name);
 
-		ArenaAnalytics:Log("Collected spec:", spec_id)
-
-		if(not race_id) then
+		if(not tonumber(race_id)) then
 			-- Convert localized race to raceID
-			race_id = Helpers:GetRaceIDFromLocalizedRace(race) or race;
+			race_id = Localization:GetRaceID(race);
 		end
 
 		-- Create complete player tables
