@@ -19,6 +19,30 @@ API.availableMaps = {
 	{ name = "Ruins of Lordaeron", key = "RoL"},
 };
 
+function API:IsInArena()
+    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
+end
+
+function API:IsShuffle()
+    return C_PvP.IsSoloShuffle();
+end
+
+function API:GetBattlefieldStatus(battlefieldId)
+    local status,_, teamSize = GetBattlefieldStatus(battlefieldId);
+    local isRated = C_PvP.IsRatedArena();
+
+    return status, teamSize, isRated;
+end
+
+function API:GetCurrentMapID()
+    return select(8,GetInstanceInfo());
+end
+
+function API:GetTeamMMR(teamIndex)
+    local _,_,_,mmr = GetBattlefieldTeamInfo(teamIndex);
+    return tonumber(mmr);
+end
+
 function API:GetPersonalRatedInfo(bracketIndex)
     bracketIndex = tonumber(bracketIndex);
     if(not bracketIndex) then
@@ -42,6 +66,11 @@ function API:GetMySpec()
     local spec_id = API:GetMappedAddonSpecID(id);
 	ArenaAnalytics:Log("My Spec ID:", spec_id);
 	return spec_id;
+end
+
+function API:GetPlayerInfoByGUID(GUID)
+    local _,class,_,race,_,name,realm = GetPlayerInfoByGUID(GUID);
+    return class,race,name,realm;
 end
 
 API.maxRaceID = 70;

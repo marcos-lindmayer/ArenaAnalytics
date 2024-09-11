@@ -19,6 +19,28 @@ API.availableMaps = {
 	{ name = "Ruins of Lordaeron", key = "RoL"},
 };
 
+function API:IsInArena()
+    return IsActiveBattlefieldArena();
+end
+
+function API:IsShuffle()
+    return nil;
+end
+
+function API:GetBattlefieldStatus(battlefieldId)
+    local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(currentArena.battlefieldId);
+    return status, teamSize, isRated;
+end
+
+function API:GetCurrentMapID()
+    return select(8,GetInstanceInfo());
+end
+
+function API:GetTeamMMR(teamIndex)
+    local _,_,_,mmr = GetBattlefieldTeamInfo(teamIndex);
+    return tonumber(mmr);
+end
+
 function API:GetPersonalRatedInfo(bracketIndex)
     bracketIndex = tonumber(bracketIndex);
     if(not bracketIndex) then
@@ -51,6 +73,11 @@ function API:GetMySpec()
 	spec = spec == "Feral Combat" and "Feral" or spec;
 
     return nil;
+end
+
+function API:GetPlayerInfoByGUID(GUID)
+    local _,class,_,race,_,name,realm = GetPlayerInfoByGUID(GUID);
+    return class,race,name,realm;
 end
 
 API.maxRaceID = 70;

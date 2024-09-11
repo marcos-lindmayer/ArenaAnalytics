@@ -594,40 +594,6 @@ function ArenaAnalytics:SortGroup(group, isPlayerPriority, playerFullName)
     end);
 end
 
--- Cached last rating per bracket ID
-ArenaAnalytics.cachedBracketRatings = ArenaAnalytics.cachedBracketRatings ~= nil and ArenaAnalytics.cachedBracketRatings or {
-	[1] = nil,
-	[2] = nil,
-	[3] = nil,
-}
-
--- Updates the cached bracket rating for each bracket
-function AAmatch:updateCachedBracketRatings()
-	if(IsActiveBattlefieldArena() and false) then
-		local season = GetCurrentArenaSeason();
-		ArenaAnalytics.cachedBracketRatings[1] = ArenaAnalytics:GetLatestRating(1, season); -- 2v2
-		ArenaAnalytics.cachedBracketRatings[2] = ArenaAnalytics:GetLatestRating(2, season); -- 3v3
-		ArenaAnalytics.cachedBracketRatings[3] = ArenaAnalytics:GetLatestRating(3, season); -- 5v5
-		ArenaAnalytics.cachedBracketRatings[4] = ArenaAnalytics:GetLatestRating(4, season); -- Shuffle
-	else
-		ArenaAnalytics.cachedBracketRatings[1] = GetPersonalRatedInfo(1); -- 2v2
-		ArenaAnalytics.cachedBracketRatings[2] = GetPersonalRatedInfo(2); -- 3v3
-		ArenaAnalytics.cachedBracketRatings[3] = GetPersonalRatedInfo(3); -- 5v5
-		ArenaAnalytics.cachedBracketRatings[4] = nil; -- Shuffle -- TODO: Implement this
-	end
-end
-
-function ArenaAnalytics:GetCachedRating(bracketIndex)
-	return bracketIndex and ArenaAnalytics.cachedBracketRatings[bracketIndex];
-end
-
-function ArenaAnalytics:SetCachedRating(bracketIndex, rating)
-	bracketIndex = tonumber(bracketIndex)
-	if(bracketIndex) then
-		ArenaAnalytics.cachedBracketRatings[bracketIndex] = rating;
-	end
-end
-
 function ArenaAnalytics:TryFixLastMatchRating()
 	local lastMatch = ArenaAnalytics:GetLastMatch(nil, true);
 	if(ArenaMatch:DoesRequireRatingFix(lastMatch)) then
@@ -779,38 +745,4 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	Filters:Refresh();
 
 	AAtable:TryStartSessionDurationTimer();
-end
-
-function ArenaAnalytics:IsArenaPreparationStateActive()
-	local auraIndex = 1;
-	local spellID = select(10, UnitAura("player", auraIndex));
-
-	while(tonumber(spellID)) do
-		local auraID = tonumber(spellID);
-		if(auraID and (auraID == 32728 or auraID == 32727)) then
-			ArenaAnalytics:Log("Arena Preparation active!");
-			return true;
-		end
-
-		auraIndex = auraIndex + 1;
-		spellID = select(10, UnitAura("player", auraIndex));
-	end
-
-	return false;
-end
-
-function ArenaAnalytics:GetArenaStatus()
-	if(not IsActiveBattlefieldArena()) then
-		return "None";
-	end
-
-	if(GetBattlefieldWinner() ~= nil) then
-		return "Ended";
-	end
-
-	if(ArenaAnalytics:IsArenaPreparationStateActive()) then
-		return "Preparation";
-	end
-
-	return "Active";
 end

@@ -4,6 +4,7 @@ local Events = ArenaAnalytics.Events;
 -- Local module aliases
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local Constants = ArenaAnalytics.Constants;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -34,11 +35,10 @@ end
 local function HandleGlobalEvents(prefix, eventType, ...)
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
 		ArenaAnalytics:TryFixLastMatchRating();
-		ArenaAnalytics.AAmatch:updateCachedBracketRatings();
-		--ArenaAnalytics:Log("Events: Triggered PVP_RATED_STATS_UPDATE!", IsActiveBattlefieldArena(), API:GetPersonalRatedInfo(1));
+		--ArenaAnalytics:Log("Events: Triggered PVP_RATED_STATS_UPDATE!", API:IsInArena(), API:GetPersonalRatedInfo(1));
 	end
 
-	if (IsActiveBattlefieldArena()) then
+	if (API:IsInArena()) then
 		if (not ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
 				ArenaTracker:HandleArenaEnter(...);
@@ -48,7 +48,7 @@ local function HandleGlobalEvents(prefix, eventType, ...)
 		end
 	else -- Not in arena
 		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-			ArenaAnalytics:Log("UPDATE_BATTLEFIELD_STATUS triggered!", IsActiveBattlefieldArena(), GetPersonalRatedInfo(1))
+			ArenaAnalytics:Log("UPDATE_BATTLEFIELD_STATUS triggered!", API:IsInArena(), API:GetPersonalRatedInfo(1))
 			ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
 		elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
 			if(ArenaTracker:IsTrackingArena()) then
@@ -77,7 +77,7 @@ end
 -- UNIT_AURA, COMBAT_LOG_EVENT_UNFILTERED, ARENA_OPPONENT_UPDATE: try to get more arena information (players, specs, etc)
 -- CHAT_MSG_BG_SYSTEM_NEUTRAL: Detect if the arena started
 local function HandleArenaEvents(_, eventType, ...)
-	if (IsActiveBattlefieldArena()) then 
+	if (API:IsInArena()) then 
 		if (ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
 				ArenaTracker:HandleArenaEnd();

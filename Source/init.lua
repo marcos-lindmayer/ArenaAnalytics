@@ -427,7 +427,7 @@ function ArenaAnalytics:init()
 	createMinimapButton();
 
 	-- Already in an arena
-	if (IsActiveBattlefieldArena()) then
+	if (API:IsInArena()) then
 		ArenaAnalytics.Events:RegisterArenaEvents();
 		ArenaAnalytics.ArenaTracker:HandleArenaEnter();
 	end

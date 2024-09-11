@@ -162,13 +162,13 @@ function AAtable:OnLoad()
 
     -- Add the addon title to the main frame
     ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
-    ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, 0);
+    ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, -2);
     ArenaAnalyticsScrollFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
     ArenaAnalyticsScrollFrame.title:SetText("Arena Analytics");
 
     -- Add the version to the main frame header
     ArenaAnalyticsScrollFrame.titleVersion = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
-    ArenaAnalyticsScrollFrame.titleVersion:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 75, 0);
+    ArenaAnalyticsScrollFrame.titleVersion:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 75, -2);
     ArenaAnalyticsScrollFrame.titleVersion:SetFont("Fonts\\FRIZQT__.TTF", 11, "");
     ArenaAnalyticsScrollFrame.titleVersion:SetText("|cff909090v" .. API:GetAddonVersion() .. "|r");
 

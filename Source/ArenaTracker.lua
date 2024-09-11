@@ -112,19 +112,15 @@ function ArenaTracker:HandleArenaEnter(...)
 		ArenaAnalytics:Log("ERROR: Invalid Battlefield ID in HandleArenaEnter");
 	end
 	
-	local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(currentArena.battlefieldId);
-	local status, mapName, instanceID, levelRangeMin, levelRangeMax, teamSize, isRated, suspendedQueue, bool, queueType = GetBattlefieldStatus(currentArena.battlefieldId);
+	local status, teamSize, isRated = API:GetBattlefieldStatus(currentArena.battlefieldId);
 	if (status ~= "active") then
 		return false
 	end
 
 	currentArena.playerName = Helpers:GetPlayerName();
 	currentArena.isRated = isRated;
+	currentArena.isShuffle = API:IsShuffle();
 	currentArena.size = teamSize;
-
-	if(C_PvP and C_PvP.IsSoloShuffle) then
-		currentArena.isShuffle = C_PvP.IsSoloShuffle() or nil;
-	end
 
 	ArenaTracker:UpdateBracket();
 
@@ -141,14 +137,6 @@ function ArenaTracker:HandleArenaEnter(...)
 		end
 
 		ArenaAnalytics:Log("Entered Arena:", currentArena.oldRating, currentArena.seasonPlayed);
-	end
-
-	if(isRated and tonumber(currentArena.bracketIndex)) then
-		if(not ArenaAnalytics:GetCachedRating(currentArena.bracketIndex)) then
-			local lastRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex);
-			ArenaAnalytics:Log("Fallback: Updating cached rating to rating of last rated entry.", lastRating);
-			ArenaAnalytics.cachedBracketRatings[currentArena.bracketIndex] = lastRating;
-		end
 	end
 
 	-- Add self
@@ -168,7 +156,7 @@ function ArenaTracker:HandleArenaEnter(...)
 		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
 	end
 
-	currentArena.mapId = select(8,GetInstanceInfo())
+	currentArena.mapId = API:GetCurrentMapID();
 	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId);
 
 	RequestBattlefieldScoreData();
@@ -199,8 +187,7 @@ function ArenaTracker:HandleArenaEnd()
 	-- Figure out how to default to nil, without failing to count losses.
 	local myTeamIndex = nil;
 
-	local numScores = GetNumBattlefieldScores();
-	for i=1, numScores do
+	for i=1, GetNumBattlefieldScores() do
 		-- TODO: Find a way to convert race to raceID securely for any localization!
 		local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(i);
 		if(not name:find("-")) then
@@ -254,16 +241,8 @@ function ArenaTracker:HandleArenaEnd()
 	if (currentArena.isRated and myTeamIndex) then
 		local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
 
-		local _, oldPartyRating, newPartyRating, partyMMR = GetBattlefieldTeamInfo(myTeamIndex);
-		local _, oldEnemyRating, newEnemyRating, enemyMMR = GetBattlefieldTeamInfo(otherTeamIndex);
-
-		--currentArena.partyRating = tonumber(newPartyRating);
-		--currentArena.partyRatingDelta = abs(Round(newPartyRating - oldPartyRating));
-		currentArena.partyMMR = tonumber(partyMMR);
-
-		--currentArena.enemyRating = tonumber(newEnemyRating);
-		--currentArena.enemyRatingDelta = abs(Round(newEnemyRating - oldEnemyRating));
-		currentArena.enemyMMR = tonumber(enemyMMR);
+		currentArena.partyMMR = API:GetTeamMMR(myTeamIndex);
+		currentArena.enemyMMR = API:GetTeamMMR(otherTeamIndex);
 	end
 
 	currentArena.players = players;
@@ -311,9 +290,6 @@ function ArenaTracker:HandleArenaExit()
 			ArenaAnalytics:Log("Tracker: No season played stored on currentArena");
 		end
 	end
-
-	-- Update all the cached bracket ratings
-	AAmatch:updateCachedBracketRatings();
 
 	ArenaAnalytics:InsertArenaToMatchHistory(currentArena);
 end
@@ -414,7 +390,7 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 
 	currentArena.deathData[playerGUID] = currentArena.deathData[playerGUID] or {}
 
-	local _, class, _, _, _, playerName, realm = GetPlayerInfoByGUID(playerGUID);
+	local class, race, name, realm = API:GetPlayerInfoByGUID(playerGUID);
 	if(playerName and playerName ~= "Unknown") then
 		if(realm == nil or realm == "" or realm == "Unknown") then
 			_,realm = UnitFullName("player"); -- Local player's realm
@@ -458,15 +434,8 @@ end
 -- Attempts to get initial data on arena players:
 -- GUID, name, race, class, spec
 function ArenaTracker:ProcessCombatLogEvent(eventType, ...)
-	if (currentArena.size == nil) then
-		if (IsActiveBattlefieldArena() and currentArena.battlefieldId ~= nil) then
-			local _, _, _, _, _, teamSize = GetBattlefieldStatus(currentArena.battlefieldId);
-			currentArena.size = teamSize;
-
-			ArenaTracker:UpdateBracket();
-		else
-			return false;
-		end
+	if (not currentArena.size) then
+		return false;
 	end
 
 	-- Tracking teams for spec/race and in case arena is quitted
