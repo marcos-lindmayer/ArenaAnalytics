@@ -73,6 +73,38 @@ function Helpers:GetUnitClass(unit)
     return Internal:GetAddonClassID(token);
 end
 
+function Helpers:GetUnitFullName(unit)
+    local name, realm = UnitNameUnmodified(unit);
+
+    if (name == nil or name == "Unknown") then
+        return nil;
+    end
+
+    if(realm == nil or realm == "") then
+        _,realm = UnitFullName("player"); -- Local player's realm
+    end
+
+    if(not realm) then
+        ArenaAnalytics:Log("Helpers:GetUnitFullName failed to retrieve any realm!");
+        return name;
+    end
+
+    return name.."-"..realm;
+end
+
+function Helpers:ToFullName(name)
+    if(not name) then
+        return nil;
+    end
+
+    if(not name:find("-")) then
+        _,realm = UnitFullName("player"); -- Local player's realm
+        name = realm and (name.."-"..realm) or name;
+    end
+
+    return name;
+end
+
 function Helpers:GetClassIcon(spec_id)
     return Internal:GetClassIcon(spec_id);
 end

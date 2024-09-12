@@ -32,10 +32,9 @@ end
 -- Assigns behaviour for "global" events
 -- UPDATE_BATTLEFIELD_STATUS: Begins arena tracking and arena events if inside arena
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
-local function HandleGlobalEvents(prefix, eventType, ...)
+local function HandleGlobalEvents(_, eventType, ...)
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
 		ArenaAnalytics:TryFixLastMatchRating();
-		--ArenaAnalytics:Log("Events: Triggered PVP_RATED_STATS_UPDATE!", API:IsInArena(), API:GetPersonalRatedInfo(1));
 	end
 
 	if (API:IsInArena()) then
@@ -82,8 +81,12 @@ local function HandleArenaEvents(_, eventType, ...)
 				ArenaTracker:HandleArenaEnd();
 				ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
 				Events:UnregisterArenaEvents();
-			elseif (eventType == "UNIT_AURA" or eventType == "COMBAT_LOG_EVENT_UNFILTERED" or eventType == "ARENA_OPPONENT_UPDATE") then
-				ArenaTracker:ProcessCombatLogEvent(eventType, ...);
+			elseif (eventType == "UNIT_AURA") then
+				ArenaTracker:ProcessUnitAuraEvent(...);
+			elseif(eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
+				ArenaTracker:ProcessCombatLogEvent(...);
+			elseif(eventType == "ARENA_OPPONENT_UPDATE") then
+				ArenaTracker:ProcessOpponentUpdate(...);
 			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
 				ParseArenaTimerMessages(...);
 			end

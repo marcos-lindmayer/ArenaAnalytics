@@ -82,7 +82,7 @@ function API:GetMySpec()
     local id = currentSpec and GetSpecializationInfo(currentSpec);
 
     local spec_id = API:GetMappedAddonSpecID(id);
-	ArenaAnalytics:Log("My Spec ID:", spec_id);
+	ArenaAnalytics:Log("My Spec ID:", spec_id, "from ID:", id);
 	return spec_id;
 end
 
@@ -109,7 +109,6 @@ API.classMappingTable = {
     [13] = 120,
 }
 
--- TODO: Update for TWW IDs
 -- Internal Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
     [1] = 105, -- Restoration Druid
@@ -167,9 +166,13 @@ API.specMappingTable = {
     [123] = 1467, -- Devastation Evoker
 }
 
-function API:GetMappedAddonSpecID(spec_id)
-	for addonSpecID,specID in pairs(API.specMappingTable) do
-		if(specID == spec_id) then
+function API:GetMappedAddonSpecID(specID)
+    if(not specID) then
+        return nil;
+    end
+
+    for spec_id, mappedID in pairs(API.specMappingTable) do
+		if(specID == mappedID) then
 			return addonSpecID;
 		end
 	end

@@ -157,7 +157,11 @@ API.specMappingTable = {
 }
 
 function API:GetMappedAddonSpecID(specID)
-	for spec_id,mappedID in pairs(API.specMappingTable) do
+    if(not specID) then
+        return nil;
+    end
+
+    for spec_id, mappedID in pairs(API.specMappingTable) do
 		if(specID == mappedID) then
 			return addonSpecID;
 		end
