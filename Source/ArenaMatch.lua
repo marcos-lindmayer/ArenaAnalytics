@@ -8,6 +8,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
 local GroupSorter = ArenaAnalytics.GroupSorter;
 local API = ArenaAnalytics.API;
+local Search = ArenaAnalytics.Search;
 
 -------------------------------------------------------------------------
 
@@ -853,7 +854,7 @@ function ArenaMatch:CheckPlayerSpecID(player, spec_id)
         return class_id and class_id == Helpers:GetClassID(playerSpec);
     end
 
-    return spec_id == playerSpec;
+    return Search:CheckSpecMatch(spec_id, playerSpec)
 end
 
 function ArenaMatch:CheckPlayerRoleByIndex(player, roleIndex)

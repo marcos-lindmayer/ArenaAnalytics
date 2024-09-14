@@ -71,7 +71,55 @@ end
 -- Search Type Data tables
 ---------------------------------
 
-SearchTokenTypeTable = {
+local neutralRaceRedirects = {
+    [14] = 13,
+    [16] = 15,
+    [24] = 23,
+}
+
+function Search:GetNormalizedRace(race_id)
+    race_id = tonumber(race_id);
+    if(not race_id) then
+        return nil;
+    end
+
+    return neutralRaceRedirects[race_id] or race_id;
+end
+
+local ambiguousSpecMappings = {
+    [-1] = { 32, 51 },
+    [-2] = { 1, 21 },
+    [-3] = { 11, 92 },
+    [-4] = { 12, 81 },
+}
+
+-- Get a shared id for ambiguous
+function Search:CheckSpecMatch(searchSpec, playerSpec)
+    searchSpec = tonumber(searchSpec);
+    playerSpec = tonumber(playerSpec);
+    if(not searchSpec or not playerSpec) then
+        return false;
+    end
+
+    if(searchSpec == playerSpec) then
+        return true;
+    end
+
+    local values = ambiguousSpecMappings[searchSpec];
+    if(type(values) ~= "table") then
+        return false;
+    end
+
+    for _,value in ipairs(values) do
+        if(playerSpec == value) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+local SearchTokenTypeTable = {
     ["class"] = {
         noSpace = false,
         values = {
@@ -94,10 +142,10 @@ SearchTokenTypeTable = {
         noSpace = false,
         values = {
             -- Ambiguous
-            ["frost"] = {"frost"},
-            ["restoration"] = {"restoration", "resto"},
-            ["holy"] = {"holy"},
-            ["protection"] = {"protection", "prot"},
+            [-1] = {"frost"}, -- frost (mage or DK)
+            [-2] = {"restoration", "resto"}, -- (Shaman or Druid)
+            [-3] = {"holy"}, -- (Pala or Priest)
+            [-4] = {"protection", "prot"}, -- (Pala or Warrior)
 
             -- Druid
             [1] = { "restoration druid", "resto druid", "rdruid", "rd" },
@@ -155,29 +203,31 @@ SearchTokenTypeTable = {
     ["race"] = {
         noSpace = false,
         values = {
-            ["blood elf"] = {"blood elf", "bloodelf", "belf"},
-            ["draenei"] = {"draenei"},
-            ["dwarf"] = {"dwarf"},
-            ["gnome"] = {"gnome"},
-            ["goblin"] = {"goblin"},
-            ["human"] = {"human"},
-            ["night elf"] = {"night elf", "nightelf", "nelf"},
-            ["orc"] = {"orc"},
-            ["pandaren"] = {"pandaren"},
-            ["tauren"] = {"tauren"},
-            ["troll"] = {"troll"},
-            ["undead"] = {"undead"},
-            ["worgen"] = {"worgen"},
-            ["void elf"] = {"void elf", "voidelf", "velf"},
-            ["lightforged draenei"] = {"lightforged draenei", "lightforgeddraenei", "ldraenei"},
-            ["nightborne"] = {"nightborne"},
-            ["highmountain tauren"] = {"highmountain tauren", "highmountaintauren", "htauran"},
-            ["zandalari troll"] = {"zandalari troll", "zandalaritroll", "ztroll"},
-            ["kul tiran"] = {"kul tiran", "kultiran"},
-            ["dark iron dwarf"] = {"dark iron dwarf", "darkirondwarf", "didwarf", "ddwarf"},
-            ["mag'har orc"] = {"mag'har orc", "magharorc", "morc"},
-            ["mechagnome"] = {"mechagnome", "mgnome"},
-            ["vulpera"] = {"vulpera"}
+            [1]  = {"human"},
+            [2]  = {"orc"},
+            [3]  = {"dwarf"},
+            [4]  = {"undead"},
+            [5]  = {"night elf", "nightelf", "nelf"},
+            [6]  = {"tauren"},
+            [7]  = {"gnome"},
+            [8]  = {"troll"},
+            [9]  = {"draenei"},
+            [10] = {"blood elf", "bloodelf", "belf"},
+            [11] = {"worgen"},
+            [12] = {"goblin"},
+            [13] = {"pandaren"}, -- Also matches 14, by neutralRaceRedirects table
+            [15] = {"dracthyr"}, -- Also matches 16, by neutralRaceRedirects table
+            [17] = {"void elf", "voidelf", "velf"},
+            [18] = {"nightborne"},
+            [19] = {"lightforged draenei", "lightforgeddraenei", "ldraenei"},
+            [20] = {"highmountain tauren", "highmountaintauren", "htauren"},
+            [21] = {"dark iron dwarf", "darkirondwarf", "didwarf", "ddwarf"},
+            [22] = {"mag'har orc", "magharorc", "morc"},
+            [23] = {"earthen"}, -- Also matches 24, by neutralRaceRedirects table
+            [25] = {"kul tiran", "kultiran"},
+            [26] = {"zandalari troll", "zandalaritroll", "ztroll"},
+            [27] = {"mechagnome", "mgnome"},
+            [28] = {"vulpera"},
         }
     },
     ["faction"] = {
@@ -188,7 +238,7 @@ SearchTokenTypeTable = {
         }
     },
     ["role"] = {
-        noSpace = true,
+        noSpace = false,
         values = { -- Bitmap indexes
             [1] = { "tank" },
             [2] = { "damage dealer", "damage", "dps" },

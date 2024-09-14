@@ -241,9 +241,14 @@ local function CheckTypeForPlayer(searchType, token, player)
         return false;
     end
 
+    if(searchType == "race") then
+        -- Overrides to treat neutral races as same ID
+        return tonumber(token.value) == Search:GetNormalizedRace(playerValue);
+    end
+
     -- Class and Spec IDs may be numbers in the token
-    if(tonumber(token.value)) then
-        return playerInfo.spec_id == token.value;
+    if(tonumber(playerValue) or tonumber(token.value)) then
+        return tonumber(playerValue) == tonumber(token.value);
     else
         return not token.exact and playerValue:find(token.value) or (token.value == playerValue);
     end
