@@ -16,6 +16,13 @@ local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
+-- NOTE: Most modules don't support this currently.
+function ArenaAnalytics:IsModuleInitialized(namespace)
+	return namespace and namespace.isInitialized or false;
+end
+
+-------------------------------------------------------------------------
+
 local matchTypes = { "rated", "skirmish", "wargame" }
 local brackets = { "2v2", "3v3", "5v5", "shuffle" }
 
@@ -529,69 +536,6 @@ function ArenaAnalytics:GetLatestRating(bracketIndex, explicitSeason, explicitSe
 	end
 
 	return 0;
-end
-
--- TODO: Replace with ArenaMatch:SortGroup(match)
--- TODO: Look into use cases, determine if new data structure affects this
-function ArenaAnalytics:SortGroup(group, isPlayerPriority, playerFullName)
-	if(not group or #group == 0) then
-		return;
-	end
-	
-	-- Set playerName if missing
-	if(not playerFullName) then
-		playerFullName = Helpers:GetPlayerName();
-	end
-	local name = playerFullName:match("^[^-]+");
-	
-    table.sort(group, function(playerA, playerB)
-		local classA, classB = playerA["class"], playerB["class"];
-        local specA, specB = playerA["spec"], playerB["spec"];
-		local nameA, nameB = playerA["name"], playerB["name"];
-		
-        if(isPlayerPriority) then
-			if(playerFullName) then
-				if(nameA == name or nameA == playerFullName) then
-					return true;
-				elseif(nameB == name or nameB == playerFullName) then
-					return false;
-				end
-			end
-
-            if(myClass) then
-                local priorityA = (classA == myClass) and 1 or 0;
-                local priorityB = (classB == myClass) and 1 or 0;
-
-                if(mySpec) then
-                    priorityA = priorityA + ((specA == mySpec) and 2 or 0);
-                    priorityB = priorityB + ((specB == mySpec) and 2 or 0);
-                end
-
-                return priorityA > priorityB;
-            end
-
-
-            if (playerClass) then 
-                if(classA == playerClass) then 
-                    return true;
-                elseif(classB == playerClass) then
-                    return false;
-                end
-            end
-        end
-
-		local specID_A = Constants:getAddonSpecializationID(classA, specA);
-        local priorityValueA = Constants:getSpecPriorityValue(specID_A);
-
-		local specID_B = Constants:getAddonSpecializationID(classB, specB);
-        local priorityValueB = Constants:getSpecPriorityValue(specID_B);
-
-		if(priorityValueA == priorityValueB) then
-			return nameA < nameB;
-		end
-
-        return priorityValueA < priorityValueB;
-    end);
 end
 
 function ArenaAnalytics:TryFixLastMatchRating()

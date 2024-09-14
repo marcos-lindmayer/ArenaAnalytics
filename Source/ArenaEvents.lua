@@ -12,7 +12,22 @@ local arenaEventsRegistered = false;
 local eventFrame = CreateFrame("Frame");
 local arenaEventFrame = CreateFrame("Frame");
 
-local arenaEvents = { "UPDATE_BATTLEFIELD_SCORE", "UNIT_AURA", "CHAT_MSG_BG_SYSTEM_NEUTRAL", "COMBAT_LOG_EVENT_UNFILTERED", "ARENA_OPPONENT_UPDATE" }
+local arenaEvents = { 
+	"UPDATE_BATTLEFIELD_SCORE", 
+	"UNIT_AURA", 
+	"CHAT_MSG_BG_SYSTEM_NEUTRAL", 
+	"COMBAT_LOG_EVENT_UNFILTERED", 
+	"INSPECT_READY", 
+	"ARENA_OPPONENT_UPDATE", 
+	"GROUP_ROSTER_UPDATE", 
+	"ARENA_PREP_OPPONENT_SPECIALIZATIONS",
+}
+
+local globalEvents = { 
+	"UPDATE_BATTLEFIELD_STATUS", 
+	"ZONE_CHANGED_NEW_AREA", 
+	"PVP_RATED_STATS_UPDATE",
+}
 
 -- Register an event as a response to a 
 function Events:CreateEventListenerForRequest(event, repeatable, callback)
@@ -32,7 +47,7 @@ end
 -- Assigns behaviour for "global" events
 -- UPDATE_BATTLEFIELD_STATUS: Begins arena tracking and arena events if inside arena
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
-local function HandleGlobalEvents(_, eventType, ...)
+local function HandleGlobalEvent(_, eventType, ...)
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
 		ArenaAnalytics:TryFixLastMatchRating();
 	end
@@ -43,6 +58,7 @@ local function HandleGlobalEvents(_, eventType, ...)
 				ArenaTracker:HandleArenaEnter(...);
 			end
 			
+			print("Register arena events...")
 			Events:RegisterArenaEvents();
 		end
 	else -- Not in arena
@@ -74,21 +90,29 @@ end
 -- UPDATE_BATTLEFIELD_SCORE: the arena ended, final info is grabbed and stored
 -- UNIT_AURA, COMBAT_LOG_EVENT_UNFILTERED, ARENA_OPPONENT_UPDATE: try to get more arena information (players, specs, etc)
 -- CHAT_MSG_BG_SYSTEM_NEUTRAL: Detect if the arena started
-local function HandleArenaEvents(_, eventType, ...)
-	if (API:IsInArena()) then 
-		if (ArenaTracker:IsTrackingArena()) then
-			if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
-				ArenaTracker:HandleArenaEnd();
-				ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
-				Events:UnregisterArenaEvents();
-			elseif (eventType == "UNIT_AURA") then
-				ArenaTracker:ProcessUnitAuraEvent(...);
-			elseif(eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
-				ArenaTracker:ProcessCombatLogEvent(...);
-			elseif(eventType == "ARENA_OPPONENT_UPDATE") then
-				ArenaTracker:ProcessOpponentUpdate(...);
-			elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
-				ParseArenaTimerMessages(...);
+local function HandleArenaEvent(_, eventType, ...)
+	if (not API:IsInArena()) then 
+		return;
+	end
+
+	if (ArenaTracker:IsTrackingArena()) then
+		if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
+			ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
+			ArenaTracker:HandleArenaEnd();
+			Events:UnregisterArenaEvents();
+		elseif (eventType == "UNIT_AURA") then
+			ArenaTracker:ProcessUnitAuraEvent(...);
+		elseif(eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
+			ArenaTracker:ProcessCombatLogEvent(...);
+		elseif(eventType == "ARENA_OPPONENT_UPDATE" or eventType == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
+			ArenaTracker:HandleOpponentUpdate(...);
+		elseif(eventType == "GROUP_ROSTER_UPDATE") then
+			ArenaTracker:HandlePartyUpdate();
+		elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
+			ParseArenaTimerMessages(...);
+		elseif(eventType == "INSPECT_READY") then
+			if(ArenaAnalytics:IsModuleInitialized(Inspection)) then
+				Inspection:HandleInspectReady(...);
 			end
 		end
 	end
@@ -96,19 +120,31 @@ end
 
 -- Creates "global" events
 function Events:RegisterGlobalEvents()
-	eventFrame:RegisterEvent("UPDATE_BATTLEFIELD_STATUS");
-	eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA");
-	eventFrame:RegisterEvent("PVP_RATED_STATS_UPDATE");
-	eventFrame:SetScript("OnEvent", HandleGlobalEvents);
+	for _,event in ipairs(globalEvents) do
+		if(C_EventUtils.IsEventValid(event)) then
+			ArenaAnalytics:Log("Registering global event:", event);
+			eventFrame:RegisterEvent(event);
+		else
+			ArenaAnalytics:Log("Invalid global event:", event);
+		end
+	end
+	eventFrame:SetScript("OnEvent", HandleGlobalEvent);
 end
 
 -- Adds events used inside arenas
 function Events:RegisterArenaEvents()
+	print("Register arena events...", arenaEventsRegistered);
 	if(not arenaEventsRegistered) then
 		for _,event in ipairs(arenaEvents) do
-			arenaEventFrame:RegisterEvent(event);
+			if(C_EventUtils.IsEventValid(event)) then
+				ArenaAnalytics:Log("Registering arena event:", event);
+				arenaEventFrame:RegisterEvent(event);
+			else
+				ArenaAnalytics:Log("Invalid arena event:", event);
+			end
 		end
-		arenaEventFrame:SetScript("OnEvent", HandleArenaEvents);
+
+		arenaEventFrame:SetScript("OnEvent", HandleArenaEvent);
 		arenaEventsRegistered = true;
 	end
 end
@@ -117,9 +153,13 @@ end
 function Events:UnregisterArenaEvents()
 	if(arenaEventsRegistered) then
 		for _,event in ipairs(arenaEvents) do
-			arenaEventFrame:UnregisterEvent(event);
+			if(C_EventUtils.IsEventValid(event)) then
+				ArenaAnalytics:Log("Unregistering arena event:", event);
+				arenaEventFrame:UnregisterEvent(event);
+			end
 		end
-		arenaEventFrame:SetScript("OnEvent", HandleArenaEvents);
+
+		arenaEventFrame:SetScript("OnEvent", nil);
 		arenaEventsRegistered = false;
 	end
 end

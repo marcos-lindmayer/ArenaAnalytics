@@ -37,13 +37,13 @@ function API:GetAddonMapID(map)
     return Internal:GetAddonMapID(token);
 end
 
-function API:GetArenaOpponentSpec(index, isEnemy)
-    -- Depends on GotArenaOpponentSpec API to function
-    if(not GetArenaOpponentSpec) then
-        return nil;
-    end
-
+function API:GetArenaPlayerSpec(index, isEnemy)
+    -- Depends on GotArenaOpponentSpec API to function    
     if(isEnemy) then
+        if(not GetArenaOpponentSpec) then
+            return nil;
+        end
+
         local id = GetArenaOpponentSpec(index);
         local spec_id API:GetMappedAddonSpecID(id);
         ArenaAnalytics:Log("Retrieved opponent spec:", spec_id, id);

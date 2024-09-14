@@ -176,14 +176,13 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.titleVersion:SetText("|cff909090v" .. API:GetAddonVersion() .. "|r");
 
     ArenaAnalyticsScrollFrame.teamBg = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame)
-    ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.TitleBg, "TOPLEFT", 340, -90);
+    ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.TitleBg, "TOPLEFT", 349, -97);
+    ArenaAnalyticsScrollFrame.teamBg:SetSize(289, 393);
     ArenaAnalyticsScrollFrame.teamBg:SetFrameStrata("LOW");
-    ArenaAnalyticsScrollFrame.teamBg:SetSize(270, 413);
     
     ArenaAnalyticsScrollFrame.teamBgT = ArenaAnalyticsScrollFrame:CreateTexture()
-    ArenaAnalyticsScrollFrame.teamBgT:SetColorTexture(0, 0, 0, 0.3)
-    ArenaAnalyticsScrollFrame.teamBgT:SetSize(270, 413);
-    ArenaAnalyticsScrollFrame.teamBgT:SetPoint("CENTER", ArenaAnalyticsScrollFrame.teamBg, "CENTER");
+    ArenaAnalyticsScrollFrame.teamBgT:SetAllPoints(ArenaAnalyticsScrollFrame.teamBg);
+    ArenaAnalyticsScrollFrame.teamBgT:SetColorTexture(0, 0, 0, 0.93);
 
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
     ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 35, -47);
@@ -475,12 +474,12 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             -- Add spec info
             if (not playerFrame.specOverlay) then
                 playerFrame.specOverlay = CreateFrame("Frame", nil, playerFrame);
-                playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT");
-                playerFrame.specOverlay:SetSize(12,12);
+                playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT", -1.5, 1);
+                playerFrame.specOverlay:SetSize(13,13);
                 
                 playerFrame.specOverlay.texture = playerFrame.specOverlay:CreateTexture();
                 playerFrame.specOverlay.texture:SetPoint("CENTER");
-                playerFrame.specOverlay.texture:SetSize(12,12);
+                playerFrame.specOverlay.texture:SetSize(13,13);
             end
 
             local specIcon = Constants:GetSpecIcon(playerInfo.spec_id);
@@ -823,8 +822,7 @@ function AAtable:RefreshLayout()
         ArenaAnalyticsScrollFrame.teamBgT:SetHeight(newHeight);
         ArenaAnalyticsScrollFrame.teamBg:SetHeight(newHeight);
     else
-        ArenaAnalyticsScrollFrame.teamBgT:SetHeight(413);
-        ArenaAnalyticsScrollFrame.teamBg:SetHeight(413);
+        ArenaAnalyticsScrollFrame.teamBg:SetHeight(393);
     end
 
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;

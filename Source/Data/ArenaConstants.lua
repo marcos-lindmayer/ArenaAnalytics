@@ -144,87 +144,6 @@ function Constants:getAddonSpecializationID(class, spec, forceExactSpec)
     return tonumber(addonSpecializationIDs[specKey]);
 end
 
--- ID to class and spec
-local classAndSpecByID = {
-    -- Druid
-    [0] = {nil, "Druid", nil},
-    [1] = {"Druid|Restoration", "Druid", "Restoration", "Healer"},
-    [2] = {"Druid|Feral", "Druid", "Feral", "Dps"},
-    [3] = {"Druid|Balance", "Druid", "Balance", "Dps"},
-    [4] = {"Druid|Guardian", "Druid", "Guardian", "Tank"},
-    
-    -- Paladin
-    [10] = {nil, "Paladin", nil},
-    [11] = {"Paladin|Holy", "Paladin", "Holy", "Healer"},
-    [12] = {"Paladin|Protection", "Paladin", "Protection", "Tank"},
-    [13] = {"Paladin|Preg", "Paladin", "Preg", "Dps"},
-    [14] = {"Paladin|Retribution", "Paladin", "Retribution", "Dps"},
-    
-    -- Shaman
-    [20] = {nil, "Shaman", nil},
-    [21] = {"Shaman|Restoration", "Shaman", "Restoration", "Healer"},
-    [22] = {"Shaman|Elemental", "Shaman", "Elemental", "Dps"},
-    [23] = {"Shaman|Enhancement", "Shaman", "Enhancement", "Dps"},
-
-    -- Death Knight
-    [30] = {nil, "Death Knight", nil},
-    [31] = {"Death Knight|Unholy", "Death Knight", "Unholy", "Dps"},
-    [32] = {"Death Knight|Frost", "Death Knight", "Frost", "Dps"},
-    [33] = {"Death Knight|Blood", "Death Knight", "Blood", "Tank"},
-
-    -- Hunter
-    [40] = {nil, "Hunter", nil},
-    [41] = {"Hunter|Beast Mastery", "Hunter", "Beast Mastery", "Dps"},
-    [42] = {"Hunter|Marksmanship", "Hunter", "Marksmanship", "Dps"},
-    [43] = {"Hunter|Survival", "Hunter", "Survival", "Dps"},
-
-    -- Mage
-    [50] = {nil, "Mage", nil},
-    [51] = {"Mage|Frost", "Mage", "Frost", "Dps"},
-    [52] = {"Mage|Fire", "Mage", "Fire", "Dps"},
-    [53] = {"Mage|Arcane", "Mage", "Arcane", "Dps"},
-
-    -- Rogue
-    [60] = {nil, "Rogue", nil},
-    [61] = {"Rogue|Subtlety", "Rogue", "Subtlety", "Dps"},
-    [62] = {"Rogue|Assassination", "Rogue", "Assassination", "Dps"},
-    [63] = {"Rogue|Combat", "Rogue", "Combat", "Dps"},
-    [64] = {"Rogue|Outlaw", "Rogue", "Outlaw", "Dps"},
-
-    -- Warlock
-    [70] = {nil, "Warlock", nil},
-    [71] = {"Warlock|Affliction", "Warlock", "Affliction", "Dps"},
-    [72] = {"Warlock|Destruction", "Warlock", "Destruction", "Dps"},
-    [73] = {"Warlock|Demonology", "Warlock", "Demonology", "Dps"},
-
-    -- Warrior
-    [80] = {nil, "Warrior", nil},
-    [81] = {"Warrior|Protection", "Warrior", "Protection", "Tank"},
-    [82] = {"Warrior|Arms", "Warrior", "Arms", "Dps"},
-    [83] = {"Warrior|Fury", "Warrior", "Fury", "Dps"},
-    
-    -- Priest
-    [90] = {nil, "Priest", nil},
-    [91] = {"Priest|Discipline", "Priest", "Discipline", "Healer"},
-    [92] = {"Priest|Holy", "Priest", "Holy", "Healer"},
-    [93] = {"Priest|Shadow", "Priest", "Shadow", "Dps"},
-}
-
--- TODO: Add real priority values (Possible player customizable option?)
-function Constants:getSpecPriorityValue(specID)
-    return tonumber(specID) or 0
-end
-
-function Constants:GetClassAndSpec(specID)
-    local data = classAndSpecByID[tonumber(specID)];
-    if (not data) then 
-        return nil, nil;
-    end
-
-    -- class, spec
-    return data[2], data[3];
-end
-
 local raceToFaction = {
     -- Horde Races
     ["Orc"] = "Horde",
@@ -286,83 +205,70 @@ end
 
 local specIconTable = {
         -- Druid
-        --[0] = "Interface\\Icons\\classicon_druid",
         [1] = [[Interface\Icons\spell_nature_healingtouch]],
         [2] = [[Interface\Icons\ability_racial_bearform]],
         [3] = [[Interface\Icons\spell_nature_starfall]],
     
         -- Paladin
-        --[10] = "Interface\\Icons\\classicon_paladin",
         [11] = [[Interface\Icons\spell_holy_holybolt]],
         [12] = [[Interface\Icons\spell_holy_devotionaura]],
         [13] = [[Interface\Icons\ability_paladin_hammeroftherighteous]],
         [14] = [[Interface\Icons\spell_holy_auraoflight]],
     
         -- Shaman
-        --[20] = "Interface\\Icons\\classicon_shaman",
         [21] = [[Interface\Icons\spell_nature_magicimmunity]],
         [22] = [[Interface\Icons\spell_nature_lightning]],
         [23] = [[Interface\Icons\spell_nature_lightningshield]],
     
         -- Death Knight
-        --[30] = "Interface\\Icons\\classicon_deathknight",
         [31] = [[Interface\Icons\spell_deathknight_unholypresence]],
         [32] = [[Interface\Icons\spell_deathknight_frostpresence]],
         [33] = [[Interface\Icons\spell_deathknight_bloodpresence]],
     
         -- Hunter
-        --[40] = "Interface\\Icons\\classicon_hunter",
         [41] = [[Interface\Icons\ability_hunter_beasttaming]],
         [42] = [[Interface\Icons\ability_marksmanship]],
         [43] = [[Interface\Icons\ability_hunter_swiftstrike]],
     
         -- Mage
-        --[50] = "Interface\\Icons\\classicon_mage",
         [51] = [[Interface\Icons\spell_frost_frostbolt02]],
         [52] = [[Interface\Icons\spell_fire_firebolt02]],
         [53] = [[Interface\Icons\spell_holy_magicalsentry]],
     
         -- Rogue
-        --[60] = "Interface\\Icons\\classicon_rogue",
         [61] = [[Interface\Icons\ability_stealth]],
         [62] = [[Interface\Icons\ability_rogue_eviscerate]],
         [63] = [[Interface\Icons\ability_backstab]],
-        [64] = nil, -- Outlaw
+        [64] = [[Interface\Icons\ability_rogue_waylay]], -- Outlaw
     
         -- Warlock
-        --[70] = "Interface\\Icons\\classicon_warlock",
-        [71] = [[Interface\Icons\spell_shadow_deathcoil]],
-        [72] = [[Interface\Icons\spell_shadow_rainoffire]],
-        [73] = [[Interface\Icons\spell_shadow_metamorphosis]],
+        [71] = [[Interface\Icons\spell_shadow_deathcoil]], -- Affliction
+        [72] = [[Interface\Icons\spell_shadow_rainoffire]], -- Destruction
+        [73] = [[Interface\Icons\spell_shadow_metamorphosis]], -- Demonology
     
         -- Warrior
-        --[80] = "Interface\\Icons\\classicon_warrior",
-        [81] = [[Interface\Icons\inv_shield_06]],
-        [82] = [[Interface\Icons\ability_rogue_eviscerate]],
-        [83] = [[Interface\Icons\ability_warrior_innerrage]],
+        [81] = [[Interface\Icons\inv_shield_06]], -- Protection
+        [82] = [[Interface\Icons\ability_rogue_eviscerate]], -- Arms
+        [83] = [[Interface\Icons\ability_warrior_innerrage]], -- Fury
     
         -- Priest
-        --[90] = "Interface\\Icons\\classicon_priest",
-        [91] = [[Interface\Icons\spell_holy_wordfortitude]],
-        [92] = [[Interface\Icons\spell_holy_guardianspirit]],
-        [93] = [[Interface\Icons\spell_shadow_shadowwordpain]],
+        [91] = [[Interface\Icons\spell_holy_wordfortitude]], -- Disc
+        [92] = [[Interface\Icons\spell_holy_guardianspirit]], -- Holy
+        [93] = [[Interface\Icons\spell_shadow_shadowwordpain]], -- Shadow
     
         -- Monk
-        --[100] = nil, -- "Interface\\Icons\\classicon_monk",
-        [101] = nil, -- Mistweaver
-        [102] = nil, -- Brewmaster
-        [103] = nil, -- Windwalker
+        [101] = [[Interface\Icons\Spell_monk_mistweaver_spec]], -- Mistweaver
+        [102] = [[Interface\Icons\spell_monk_brewmaster_spec]], -- Brewmaster
+        [103] = [[Interface\Icons\spell_monk_windwalker_spec]], -- Windwalker
     
         -- Demon Hunter
-        --[110] = nil, -- "Interface\\Icons\\classicon_demonhunter",
-        [111] = nil, -- Vengeance
-        [112] = nil, -- Havoc
+        [111] = [[Interface\Icons\ability_demonhunter_spectank]], -- Vengeance
+        [112] = [[Interface\Icons\ability_demonhunter_specdps]], -- Havoc
     
         -- Evoker
-        --[120] = nil, -- "Interface\\Icons\\classicon_evoker",
-        [121] = nil, -- Preservation
-        [122] = nil, -- Augmentation
-        [123] = nil, -- Devastation
+        [121] = [[Interface\Icons\classicon_evoker_preservation]], -- Preservation
+        [122] = [[Interface\Icons\classicon_evoker_augmentation]], -- Augmentation
+        [123] = [[Interface\Icons\classicon_evoker_devastation]], -- Devastation
 }
 
 -- Returns spec icon path string

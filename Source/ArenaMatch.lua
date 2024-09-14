@@ -600,7 +600,7 @@ function ArenaMatch:GetPlayerInfo(player, existingTable)
     end
 
     local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
-    local class, spec = Constants:GetClassAndSpec(spec_id);
+    local class, spec = Internal:GetClassAndSpec(spec_id);
 
     local name = player[playerKeys.name];
     local realm = ArenaAnalytics:GetRealm(player[playerKeys.realm]);

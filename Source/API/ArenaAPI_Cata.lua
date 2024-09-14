@@ -2,6 +2,11 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
 local API = ArenaAnalytics.API;
 
+-- Local module aliases
+local Helpers = ArenaAnalytics.Helpers;
+local Localization = ArenaAnalytics.Localization;
+local Internal = ArenaAnalytics.Internal;
+
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIServiceButtonTemplate";
@@ -32,7 +37,7 @@ function API:IsShuffle()
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
-    local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(currentArena.battlefieldId);
+    local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
     return status, teamSize, isRated;
 end
 
@@ -58,6 +63,17 @@ function API:GetPersonalRatedInfo(bracketIndex)
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
     return rating, seasonPlayed;
+end
+
+function API:GetBattlefieldScore(index)
+    local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(index);
+    name = Helpers:ToFullName(name);
+
+    -- Convert values
+    local race_id = Localization:GetRaceID(race);
+    local class_id = Internal:GetAddonClassID(classToken);
+    
+    return name, race_id, class_id, teamIndex, kills, deaths, damage, healing;
 end
 
 -- Get local player current spec
@@ -163,7 +179,7 @@ function API:GetMappedAddonSpecID(specID)
 
     for spec_id, mappedID in pairs(API.specMappingTable) do
 		if(specID == mappedID) then
-			return addonSpecID;
+			return spec_id;
 		end
 	end
 end

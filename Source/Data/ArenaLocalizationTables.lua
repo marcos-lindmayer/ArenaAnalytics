@@ -33,6 +33,30 @@ end
 
 -------------------------------------------------------------------------
 
+function Localization:GetSpecID(spec)
+    if(not spec and spec ~= "") then
+        return nil;
+    end
+
+    for genderIndex = 1, 3 do
+        for classIndex=1, GetNumClasses() do
+            for specIndex=0, 5 do
+                local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
+                if(specID) then
+                    local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
+                    if(spec == specName) then
+                        local spec_id = API:GetMappedAddonSpecID(id);
+                        ArenaAnalytics:Log("Localization: Mapped spec:", spec, "to:", spec_id);
+                        return spec_id;
+                    end
+                end
+            end
+        end
+    end
+end
+
+-------------------------------------------------------------------------
+
 -- NOTE: Korean and Chinese are ChatGPT-4o values. Untested and unreliable.
 raceMapping = {
     Human = {

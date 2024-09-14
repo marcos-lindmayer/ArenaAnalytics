@@ -164,17 +164,17 @@ end
 function Display.SetComp(dropdownContext, display)
     assert(dropdownContext and display);
     display:Reset();
-    
+
     local comp = Dropdown:RetrieveValue(dropdownContext.label, dropdownContext);
     local fontSize = dropdownContext.fontSize or 12;
     local fontColor = dropdownContext.disabledColor or "ffffff";
 
     local padding = 1;
-    
+
     -- Create container
     local containerFrame = CreateFrame("Frame", display:GetName() .. "CompContainer", dropdownContext:GetFrame());
     containerFrame:SetSize(10, 27);
-    
+
     local totalWidth = 0;
     local offsetX = dropdownContext.offsetX or 0;
 
@@ -195,27 +195,26 @@ function Display.SetComp(dropdownContext, display)
         if(played and played > 9999) then
             fontSize = min(fontSize, 10);
         end
-        
+
         local lastFrame = nil
-        
+
         -- Add played text
         local playedPrefix = played and (played .. " ") or "|cffff0000" .. "0  " .. "|r";
         containerFrame.played = CreateText(containerFrame, playedPrefix, fontSize, fontColor);
         containerFrame.played:SetPoint("LEFT", padding, 0);
-        
+
         lastFrame = containerFrame.played;
         totalWidth = totalWidth + containerFrame.played:GetWidth() + padding;
-        
+
         -- Add each player spec icon
         for spec_id in comp:gmatch("([^|]+)") do
-            local class_id = Constants:GetClassAndSpec(specID);
             local iconFrame = ArenaIcon:Create(containerFrame, spec_id, 25);
             iconFrame:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0);
-            
+
             lastFrame = iconFrame;
             totalWidth = totalWidth + iconFrame:GetWidth() + padding;
         end
-        
+
         -- Add winrate text
         local winrateSuffix = winrate and (" " .. winrate .. "%") or "|cffff0000" .. "  0%" .. "|r";
         containerFrame.winrate = CreateText(containerFrame, winrateSuffix, fontSize, fontColor);

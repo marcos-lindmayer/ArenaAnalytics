@@ -191,6 +191,21 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 		ArenaAnalytics:Log(IsArenaSkirmish(), C_PvP.IsRatedArena(), C_PvP.IsInBrawl(), IsWargame(), ArenaAnalytics.API:IsRatedArena(), IsActiveBattlefieldArena());
+
+		for classIndex=1, GetNumClasses() do
+			for specIndex=0, 5 do
+				for genderIndex = 1, 3 do
+					local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
+					if(specID) then
+						local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
+						if(specName and specName ~= "") then
+							ArenaAnalytics:Log("Spec:", classIndex, specIndex, genderIndex, ":", id, specName, type(specName));
+						end
+					end
+				end
+			end
+		end
+
 		print(" ");
 	end,	
 };

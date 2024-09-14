@@ -343,6 +343,29 @@ end
 
 -------------------------------------------------------------------------
 
+function Internal:GetClassAndSpec(spec_id)
+    if(not spec_id) then
+        return nil;
+    end
+
+    if(Helpers:IsClassID(spec_id)) then
+        local classInfo = addonClassIDs[spec_id];
+        return classInfo and classInfo.name;
+    end
+
+    -- Class
+    local class_id = Helpers:GetClassID(spec_id)
+    local classInfo = addonClassIDs[class_id];
+    local class = classInfo and classInfo.name;
+
+    -- Spec
+    local specInfo = addonSpecializationIDs[spec_id];
+    local spec = specInfo and specInfo.spec;
+    return class, spec;
+end
+
+-------------------------------------------------------------------------
+
 local hasInitialized = nil;
 function Internal:Initialize()
     if(hasInitialized) then

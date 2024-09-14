@@ -2,6 +2,11 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
 local API = ArenaAnalytics.API;
 
+-- Local module aliases
+local Helpers = ArenaAnalytics.Helpers;
+local Localization = ArenaAnalytics.Localization;
+local Internal = ArenaAnalytics.Internal;
+
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
@@ -14,23 +19,22 @@ API.availableBrackets = {
 }
 
 API.availableMaps = {
-    { id = 8624,  token = "ShadoPanShowdown" },
-    { id = 3698,  token = "NagrandArena" },
-    { id = 3968,  token = "RuinsOfLordaeron" },
-    { id = 10497, token = "TheRobodrome" },
-    { id = 14436, token = "NokhudonProvingGrounds" },
-    { id = 8008,  token = "AshamanesFall" },
-    { id = 3702,  token = "BladesEdgeArena" },
-    { id = 9992,  token = "Mugambala" },
-    { id = 7816,  token = "BlackRookHoldArena" },
-    { id = 9279,  token = "HookPoint" },
-    { id = 13428, token = "EmpyreanDomain" },
-    { id = 4378,  token = "DalaranArena" },
-    { id = 6732,  token = "TheTigersPeak" },
-    { id = 14083, token = "EnigmaCrucible" },
-    { id = 9278,  token = "KulTirasArena" },
-    { id = 13971, token = "MaldraxxusColiseum" },
-    { id = 6296,  token = "TolVironArena" },
+    { id = 1134,  token = "ShadoPanShowdown" },
+    { id = 1505,  token = "NagrandArena" },
+    { id = 572,  token = "RuinsOfLordaeron" },
+    { id = 2167, token = "TheRobodrome" },
+    { id = 2563, token = "NokhudonProvingGrounds" },
+    { id = 1552,  token = "AshamanesFall" },
+    { id = 1672,  token = "BladesEdgeArena" },
+    { id = 1911,  token = "Mugambala" },
+    { id = 1504,  token = "BlackRookHoldArena" },
+    { id = 1825,  token = "HookPoint" },
+    { id = 2373, token = "EmpyreanDomain" },
+    { id = 617,  token = "DalaranArena" },
+    { id = 1134,  token = "TheTigersPeak" },
+    { id = 2511, token = "EnigmaCrucible" }, -- OR 2511
+    { id = 2509, token = "MaldraxxusColiseum" },
+    { id = 980,  token = "TolVironArena" },
 }
 
 function API:IsInArena()
@@ -74,6 +78,24 @@ function API:GetPersonalRatedInfo(bracketIndex)
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
     return rating, seasonPlayed;
+end
+
+-- TODO: Decide if we wanna get rating and MMR values from here
+function API:GetBattlefieldScore(index)
+    -- NOTE: GetBattlefieldScore appears to be deprecated in Blizzard API. Find the replacement.
+    local name, kills, _, deaths, _, teamIndex, race, _, classToken, damage, healing, rating, ratingDelta, preMatchMMR, mmrChange, spec = GetBattlefieldScore(index);
+    name = Helpers:ToFullName(name);
+
+    -- Convert localized values
+    local race_id = Localization:GetRaceID(race);
+    local spec_id = Localization:GetSpecID(spec);
+
+    -- Fall back to class ID
+    if(not spec_id) then
+        spec_id = Internal:GetAddonClassID(classToken);
+    end
+    
+    return name, race_id, spec_id, teamIndex, kills, deaths, damage, healing;
 end
 
 -- Get local player current spec
@@ -173,7 +195,10 @@ function API:GetMappedAddonSpecID(specID)
 
     for spec_id, mappedID in pairs(API.specMappingTable) do
 		if(specID == mappedID) then
-			return addonSpecID;
+			return spec_id;
 		end
 	end
+
+    ArenaAnalytics:Log("Failed to find spec_id for:", specID, type(specID));
+    return nil;
 end

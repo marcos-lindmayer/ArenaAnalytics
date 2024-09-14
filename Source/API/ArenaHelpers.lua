@@ -8,6 +8,7 @@ local Tooltips = ArenaAnalytics.Tooltips;
 local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 local Internal = ArenaAnalytics.Internal;
+local Localization = ArenaAnalytics.Localization;
 
 -------------------------------------------------------------------------
 -- General Helpers
@@ -125,4 +126,8 @@ end
 
 function Helpers:IsClassID(spec_id)
     return spec_id and (spec_id % 10 == 0);
+end
+
+function Helpers:IsSpecID(spec_id)
+    return spec_id and (spec_id % 10 ~= 0);
 end
