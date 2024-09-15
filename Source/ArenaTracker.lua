@@ -9,6 +9,7 @@ local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
 local Localization = ArenaAnalytics.Localization;
+local Inspection = ArenaAnalytics.Inspection;
 
 -------------------------------------------------------------------------
 
@@ -88,7 +89,7 @@ function ArenaTracker:GetPlayer(playerID)
 	for i = 1, #currentArena.players do
 		local player = currentArena.players[i];
 		if (player) then
-			if(player.name == playerID) then
+			if(Helpers:ToSafeLower(player.name) == Helpers:ToSafeLower(playerID)) then
 				return player;
 			elseif(player.GUID == playerID) then
 				return player;
@@ -100,8 +101,12 @@ function ArenaTracker:GetPlayer(playerID)
 			end
 		end
 	end
-
 	return nil;
+end
+
+function ArenaTracker:HasSpec(GUID)
+	local player = ArenaTracker:GetPlayer(GUID);
+	return player and Helpers:IsSpecID(player.spec);
 end
 
 -- Gates opened, match has officially started
@@ -109,7 +114,10 @@ function ArenaTracker:HandleArenaStart(...)
 	currentArena.startTime = time();
 	currentArena.hasRealStartTime = true; -- The start time has been set by gates opened
 
-	ArenaAnalytics:Log("Match started!");
+	ArenaTracker:HandleOpponentUpdate();
+
+	ArenaAnalytics:Log("Match started!", API:GetCurrentMapID(), GetZoneText());
+
 end
 
 -- Begins capturing data for the current arena
@@ -177,22 +185,9 @@ function ArenaTracker:HandleArenaEnter(...)
 	end
 
 	currentArena.mapId = API:GetCurrentMapID();
-	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId);
+	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId, GetZoneText());
 
 	RequestBattlefieldScoreData();
-end
-
--- Returns currently stored value by character name
--- Used to link existing spec and GUID info with players'
--- info from the UPDATE_BATTLEFIELD_SCORE event
-function ArenaTracker:GetCollectedValue(valueKey, name)
-	for i = 1, #currentArena.players do
-		local player = currentArena.players[i];
-		if (player and player.name == name) then
-			return player[valueKey];
-		end
-	end
-	return nil;
 end
 
 -- Gets arena information when it ends and the scoreboard is shown
@@ -210,19 +205,21 @@ function ArenaTracker:HandleArenaEnd()
 	for i=1, GetNumBattlefieldScores() do
 		local name, race_id, spec_id, teamIndex, kills, deaths, damage, healing = API:GetBattlefieldScore(i);
 
-		ArenaAnalytics:Log("Score of player", i, ":", API:GetBattlefieldScore(i));
-
 		-- Find or add player
 		local player = ArenaTracker:GetPlayer(name);
 		if(not player) then
 			-- Use scoreboard info
+			ArenaAnalytics:Log("Creating new player by scoreboard:", name);
 			player = ArenaTracker:CreatePlayerTable(nil, nil, name, race_id, spec_id, kills, deaths, damage, healing);
 		end
 
 		player.teamIndex = teamIndex;
-
 		player.spec = Helpers:IsSpecID(player.spec) and player.spec or spec_id;
 		player.race = player.race or race_id;
+		player.kills = kills;
+		player.deaths = deaths;
+		player.damage = damage;
+		player.healing = healing;
 
 		if (name == currentArena.playerName) then
 			ArenaAnalytics:Log("My Team:", teamIndex);
@@ -231,7 +228,9 @@ function ArenaTracker:HandleArenaEnd()
 			player.isEnemy = true;
 		end
 
-		table.insert(players, player);
+		if(player.name ~= nil) then
+			table.insert(players, player);
+		end
 	end
 
 	-- Assign isEnemy value
@@ -259,13 +258,17 @@ function ArenaTracker:HandleArenaEnd()
 
 	currentArena.players = players;
 
-	ArenaAnalytics:Log("Match ended!");
+	ArenaAnalytics:Log("Match ended!", currentArena.mapId, GetZoneText());
 end
 
 -- Player left an arena (Zone changed to non-arena with valid arena data)
 function ArenaTracker:HandleArenaExit()
 	assert(currentArena.size);
 	assert(currentArena.mapId);
+
+	if(Inspection and Inspection.CancelTimer) then
+		Inspection:CancelTimer();
+	end
 
 	if(not currentArena.endedProperly) then
 		currentArena.ended = true;
@@ -317,25 +320,25 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 	local groups = {"party", "arena"};
 	for _,group in ipairs(groups) do
 		for i = 1, currentArena.size do
-			local unit = group..i;
+			local unitToken = group..i;
 
-			local name = Helpers:GetUnitFullName(unit);
+			local name = Helpers:GetUnitFullName(unitToken);
 			local player = ArenaTracker:GetPlayer(name);
 			if(not player) then
-				local GUID = UnitGUID(unit);
-				local isEnemy = (group ~= "party");
-				local race_id = Helpers:GetUnitRace(unit);
-				local class_id = Helpers:GetUnitClass(unit);
+				local GUID = UnitGUID(unitToken);
+				local isEnemy = (group == "arena");
+				local race_id = Helpers:GetUnitRace(unitToken);
+				local class_id = Helpers:GetUnitClass(unitToken);
+				local spec_id = GUID and GUID == unitGUID and tonumber(unitSpec);
 
-				-- Spec
-				local spec_id = API:GetArenaPlayerSpec(i, isEnemy);
-				if(not spec_id and GUID == unitGUID) then
-					spec_id = tonumber(unitSpec);
+				if(GUID and name) then
+					player = ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, (spec_id or class_id));
+					table.insert(currentArena.players, player);
+
+					if(not isEnemy) then
+						Inspection:RequestSpec(unitToken)
+					end
 				end
-				ArenaAnalytics:Log("Setting spec for new player:", unit, isEnemy, spec_id)
-
-				player = ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, (spec_id or class_id));
-				table.insert(currentArena.players, player);
 			end
 		end
 	end
@@ -457,12 +460,17 @@ function ArenaTracker:HandleOpponentUpdate()
 	-- If API exist to get opponent spec, use it
 	if(GetArenaOpponentSpec) then
 		for i = 1, currentArena.size do
-			local player = ArenaTracker:GetPlayer("arena"..i);
-			if(player and not Helpers:IsSpecID(player.spec)) then
-				local spec_id = GetArenaOpponentSpec(i);
-				ArenaTracker:AssignSpec(player, spec_id);
+			local unitToken = "arena"..i;
+			local player = ArenaTracker:GetPlayer(unitToken);
+			if(player) then
+				if(not Helpers:IsSpecID(player.spec)) then
+					local spec_id = API:GetArenaPlayerSpec(i, true);
+					ArenaTracker:OnSpecDetected(unitToken, spec_id);
+				end
 			end
 		end
+	else
+		ArenaAnalytics:Log("GetArenaOpponentSpec was nil.")
 	end
 end
 
@@ -479,7 +487,8 @@ function ArenaTracker:HandlePartyUpdate()
 		local unit = "party"..i;
 		local player = ArenaTracker:GetPlayer(UnitGUID(unit));
 		if(player and not Helpers:IsSpecID(player.spec)) then
-			if(ArenaAnalytics:IsModuleInitialized(Inspection)) then
+			if(Inspection and Inspection.RequestSpec) then
+				ArenaAnalytics:Log("Tracker: HandlePartyUpdate requesting spec:", unit);
 				Inspection:RequestSpec(unit);
 			end
 		end
@@ -487,7 +496,7 @@ function ArenaTracker:HandlePartyUpdate()
 end
 
 function ArenaTracker:HandleInspect(...)
-	if(not GetInspectSpecialization) then
+	if(not API.GetInspectSpecialization) then
 		return;
 	end
 
@@ -497,7 +506,7 @@ function ArenaTracker:HandleInspect(...)
 		for i=1, 4 do
 			local playerGUID = UnitGUID("party"..i);
 			if(playerGUID == GUID) then
-				local specID = GetInspectSpecialization("party"..i);
+				local specID = API:GetInspectSpecialization("party"..i);
 				player.spec = API:GetMappedAddonSpecID(specID);
 				ArenaAnalytics:Log("HandleInspect:", GUID, player.spec);
 				break;
@@ -591,38 +600,18 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	end
 end
 
-function ArenaTracker:OnSpecDetected(GUID, spec_id)
-	if(not GUID or not spec_id) then
+function ArenaTracker:OnSpecDetected(playerID, spec_id)
+	if(not playerID or not spec_id) then
 		return;
 	end
 
-	local player = ArenaTracker:GetPlayer(GUID);
-	if(player and not player.spec or player.spec == 13 or Helpers:IsClassID(spec_id)) then
-		ArenaAnalytics:Log("Assigning spec: ", newSpec, " for player: ", player.name);
-		player.spec = newSpec;
+	ArenaAnalytics:Log("OnSpecDetected:", playerID, spec_id);
+
+	local player = ArenaTracker:GetPlayer(playerID);
+	if(player and (not Helpers:IsSpecID(player.spec) or player.spec == 13)) then
+		ArenaAnalytics:Log("Assigning spec: ", spec_id, " for player: ", player.name);
+		player.spec = spec_id;
 	else
-		ArenaAnalytics:Log("Tracker: Keeping old spec:", oldSpec, " for player: ", player.name);
-	end
-end
-
-function ArenaTracker:AssignSpec(player, newSpec)
-	assert(player);
-
-	if(not newSpec) then
-		return;
-	end
-
-	local class, oldSpec = player.class, player.spec;
-
-	if(oldSpec == newSpec) then
-		return;
-	end
-
-	ArenaAnalytics:Log(oldSpec, newSpec)
-	if(oldSpec == nil or oldSpec == 13 or Helpers:IsClassID(oldSpec)) then
-		ArenaAnalytics:Log("Assigning spec: ", newSpec, " for player: ", player.name);
-		player.spec = newSpec;
-	else
-		ArenaAnalytics:Log("Tracker: Assigning spec is keeping old spec:", oldSpec, " for player: ", player.name);
+		ArenaAnalytics:Log("Tracker: Keeping old spec:", oldSpec, " for player: ", player and player.name);
 	end
 end

@@ -46,13 +46,15 @@ function Localization:GetSpecID(spec)
                     local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
                     if(spec == specName) then
                         local spec_id = API:GetMappedAddonSpecID(id);
-                        ArenaAnalytics:Log("Localization: Mapped spec:", spec, "to:", spec_id);
                         return spec_id;
                     end
                 end
             end
         end
     end
+
+    ArenaAnalytics:Log("LocalizationTables: Failed to get spec_id for spec:", spec);
+    return nil;
 end
 
 -------------------------------------------------------------------------

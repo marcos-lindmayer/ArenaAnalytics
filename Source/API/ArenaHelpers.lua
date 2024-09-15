@@ -129,5 +129,5 @@ function Helpers:IsClassID(spec_id)
 end
 
 function Helpers:IsSpecID(spec_id)
-    return spec_id and (spec_id % 10 ~= 0);
+    return spec_id and (spec_id % 10 > 0);
 end

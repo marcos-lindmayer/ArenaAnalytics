@@ -18,23 +18,23 @@ API.availableBrackets = {
 	{ name = "5v5", key = 3},
 }
 
+-- Order defines the UI order of maps filter dropdown
 API.availableMaps = {
-    { id = 1134,  token = "ShadoPanShowdown" },
     { id = 1505,  token = "NagrandArena" },
     { id = 572,  token = "RuinsOfLordaeron" },
-    { id = 2167, token = "TheRobodrome" },
-    { id = 2563, token = "NokhudonProvingGrounds" },
+    { id = 2167, token = "TheRobodrome" }, -- Unconfirmed
+    { id = 2563, token = "NokhudonProvingGrounds" }, -- Unconfirmed
     { id = 1552,  token = "AshamanesFall" },
-    { id = 1672,  token = "BladesEdgeArena" },
-    { id = 1911,  token = "Mugambala" },
+    { id = 1672,  token = "BladesEdgeArena" }, -- Unconfirmed
+    { id = 1911,  token = "Mugambala" }, -- Unconfirmed
     { id = 1504,  token = "BlackRookHoldArena" },
     { id = 1825,  token = "HookPoint" },
-    { id = 2373, token = "EmpyreanDomain" },
-    { id = 617,  token = "DalaranArena" },
+    { id = 2373, token = "EmpyreanDomain" }, -- Unconfirmed
+    { id = 617,  token = "DalaranArena" }, -- Unconfirmed
     { id = 1134,  token = "TheTigersPeak" },
-    { id = 2511, token = "EnigmaCrucible" }, -- OR 2511
+    { id = 2547, token = "EnigmaCrucible" }, -- Unconfirmed
     { id = 2509, token = "MaldraxxusColiseum" },
-    { id = 980,  token = "TolVironArena" },
+    { id = 980,  token = "TolVironArena" }, -- Unconfirmed
 }
 
 function API:IsInArena()
@@ -106,6 +106,19 @@ function API:GetMySpec()
     local spec_id = API:GetMappedAddonSpecID(id);
 	ArenaAnalytics:Log("My Spec ID:", spec_id, "from ID:", id);
 	return spec_id;
+end
+
+function API:GetInspectSpecialization(unitToken)
+    if(not unitToken or not UnitExists(unitToken)) then
+        return;
+    end
+
+    if(UnitGUID("player") == UnitGUID(unitToken)) then
+        return API:GetMySpec();
+    end
+
+    local specID = GetInspectSpecialization(unitToken);
+    return API:GetMappedAddonSpecID(specID);
 end
 
 function API:GetPlayerInfoByGUID(GUID)

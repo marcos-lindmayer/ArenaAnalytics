@@ -16,13 +16,6 @@ local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
--- NOTE: Most modules don't support this currently.
-function ArenaAnalytics:IsModuleInitialized(namespace)
-	return namespace and namespace.isInitialized or false;
-end
-
--------------------------------------------------------------------------
-
 local matchTypes = { "rated", "skirmish", "wargame" }
 local brackets = { "2v2", "3v3", "5v5", "shuffle" }
 
@@ -342,8 +335,13 @@ function ArenaAnalytics:IsMatchesSameSession(arena1, arena2)
 		return false;
 	end
 	
-	if(not ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)) then
-		return false;
+	local matchType1 = ArenaMatch:GetMatchType(arena1);
+	local matchType2 = ArenaMatch:GetMatchType(arena2);
+
+	if(matchType1 ~= "skirmish" or matchType2 ~= "skirmish") then	
+		if(not ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)) then
+			return false;
+		end
 	end
 
 	return true;

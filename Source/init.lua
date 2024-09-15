@@ -9,6 +9,7 @@ ArenaAnalytics.Bitmap = {};
 
 ArenaAnalytics.Helpers = {};
 ArenaAnalytics.API = {};
+ArenaAnalytics.Inspection = {};
 
 ArenaAnalytics.AAtable = {};
 ArenaAnalytics.Selection = {};
@@ -44,6 +45,7 @@ local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
 local FilterTables = ArenaAnalytics.FilterTables;
 local API = ArenaAnalytics.API;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 
@@ -190,22 +192,7 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-		ArenaAnalytics:Log(IsArenaSkirmish(), C_PvP.IsRatedArena(), C_PvP.IsInBrawl(), IsWargame(), ArenaAnalytics.API:IsRatedArena(), IsActiveBattlefieldArena());
-
-		for classIndex=1, GetNumClasses() do
-			for specIndex=0, 5 do
-				for genderIndex = 1, 3 do
-					local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
-					if(specID) then
-						local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
-						if(specName and specName ~= "") then
-							ArenaAnalytics:Log("Spec:", classIndex, specIndex, genderIndex, ":", id, specName, type(specName));
-						end
-					end
-				end
-			end
-		end
-
+		ArenaAnalytics:Print("Test Print:", API:IsInArena(), API:GetCurrentMapID(), GetZoneText());
 		print(" ");
 	end,	
 };

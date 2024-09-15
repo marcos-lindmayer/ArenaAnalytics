@@ -38,15 +38,12 @@ function API:GetAddonMapID(map)
 end
 
 function API:GetArenaPlayerSpec(index, isEnemy)
-    -- Depends on GotArenaOpponentSpec API to function    
     if(isEnemy) then
-        if(not GetArenaOpponentSpec) then
-            return nil;
+        -- Depends on GotArenaOpponentSpec API to function    
+        if(GetArenaOpponentSpec) then
+            local id = GetArenaOpponentSpec(index);
+            return API:GetMappedAddonSpecID(id);
         end
-
-        local id = GetArenaOpponentSpec(index);
-        local spec_id API:GetMappedAddonSpecID(id);
-        ArenaAnalytics:Log("Retrieved opponent spec:", spec_id, id);
     else
         -- Add friendly support
     end

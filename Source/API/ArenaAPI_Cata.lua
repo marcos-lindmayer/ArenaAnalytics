@@ -93,6 +93,27 @@ function API:GetMySpec()
 	return addonSpecID;
 end
 
+function API:GetInspectSpecialization(unitToken)
+    if(not unitToken or not UnitExists(unitToken)) then
+        return;
+    end
+
+    if(UnitGUID("player") == UnitGUID(unitToken)) then
+        return API:GetMySpec();
+    end
+
+    local spec_id, currentSpecPoints = nil, 0;
+    for i = 1, 3 do
+        local id, name, _, _, pointsSpent = GetTalentTabInfo(i, true);
+		if (id and pointsSpent > currentSpecPoints) then
+			currentSpecPoints = pointsSpent;
+			spec_id = API:GetMappedAddonSpecID(id);
+		end
+ 	end
+
+    return API:GetMappedAddonSpecID(specID);
+end
+
 function API:GetPlayerInfoByGUID(GUID)
     local _,class,_,race,_,name,realm = GetPlayerInfoByGUID(GUID);
     return class,race,name,realm;

@@ -5,6 +5,7 @@ local Events = ArenaAnalytics.Events;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local Constants = ArenaAnalytics.Constants;
 local API = ArenaAnalytics.API;
+local Inspection = ArenaAnalytics.Inspection;
 
 -------------------------------------------------------------------------
 
@@ -58,7 +59,6 @@ local function HandleGlobalEvent(_, eventType, ...)
 				ArenaTracker:HandleArenaEnter(...);
 			end
 			
-			print("Register arena events...")
 			Events:RegisterArenaEvents();
 		end
 	else -- Not in arena
@@ -105,13 +105,13 @@ local function HandleArenaEvent(_, eventType, ...)
 		elseif(eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
 			ArenaTracker:ProcessCombatLogEvent(...);
 		elseif(eventType == "ARENA_OPPONENT_UPDATE" or eventType == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
-			ArenaTracker:HandleOpponentUpdate(...);
+			ArenaTracker:HandleOpponentUpdate();
 		elseif(eventType == "GROUP_ROSTER_UPDATE") then
 			ArenaTracker:HandlePartyUpdate();
 		elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
 			ParseArenaTimerMessages(...);
 		elseif(eventType == "INSPECT_READY") then
-			if(ArenaAnalytics:IsModuleInitialized(Inspection)) then
+			if(Inspection and Inspection.HandleInspectReady) then
 				Inspection:HandleInspectReady(...);
 			end
 		end
@@ -122,10 +122,7 @@ end
 function Events:RegisterGlobalEvents()
 	for _,event in ipairs(globalEvents) do
 		if(C_EventUtils.IsEventValid(event)) then
-			ArenaAnalytics:Log("Registering global event:", event);
 			eventFrame:RegisterEvent(event);
-		else
-			ArenaAnalytics:Log("Invalid global event:", event);
 		end
 	end
 	eventFrame:SetScript("OnEvent", HandleGlobalEvent);
@@ -133,14 +130,10 @@ end
 
 -- Adds events used inside arenas
 function Events:RegisterArenaEvents()
-	print("Register arena events...", arenaEventsRegistered);
 	if(not arenaEventsRegistered) then
 		for _,event in ipairs(arenaEvents) do
 			if(C_EventUtils.IsEventValid(event)) then
-				ArenaAnalytics:Log("Registering arena event:", event);
 				arenaEventFrame:RegisterEvent(event);
-			else
-				ArenaAnalytics:Log("Invalid arena event:", event);
 			end
 		end
 
@@ -154,7 +147,6 @@ function Events:UnregisterArenaEvents()
 	if(arenaEventsRegistered) then
 		for _,event in ipairs(arenaEvents) do
 			if(C_EventUtils.IsEventValid(event)) then
-				ArenaAnalytics:Log("Unregistering arena event:", event);
 				arenaEventFrame:UnregisterEvent(event);
 			end
 		end

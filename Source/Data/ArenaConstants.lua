@@ -206,8 +206,9 @@ end
 local specIconTable = {
         -- Druid
         [1] = [[Interface\Icons\spell_nature_healingtouch]],
-        [2] = [[Interface\Icons\ability_racial_bearform]],
+        [2] = [[Interface\Icons\ability_druid_catform]],
         [3] = [[Interface\Icons\spell_nature_starfall]],
+        [4] = [[Interface\Icons\ability_racial_bearform]],
     
         -- Paladin
         [11] = [[Interface\Icons\spell_holy_holybolt]],

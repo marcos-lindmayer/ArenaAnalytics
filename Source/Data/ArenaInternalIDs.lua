@@ -23,18 +23,17 @@ local addonMapIDs = {
 
     [8]  =  { token = "AshamanesFall", shortName = "AF", name = "Ashamane's Fall" },
     [9]  =  { token = "BlackRookHoldArena", shortName = "BRH", name = "Black Rook Hold Arena" },
-    [10] =  { token = "ShadoPanShowdown", shortName = "SPS", name = "Shado-Pan Showdown" },
 
-    [11] =  { token = "HookPoint", shortName = "HP", name = "Hook Point" },
-    [12] =  { token = "KulTirasArena", shortName = "KTA", name = "Kul Tiras Arena" },
-    [13] =  { token = "Mugambala", shortName = "MGA", name = "Mugambala" },
-    [14] =  { token = "TheRobodrome", shortName = "TR", name = "The Robodrome" },
+    [10] =  { token = "HookPoint", shortName = "HP", name = "Hook Point" },
+    [11] =  { token = "KulTirasArena", shortName = "KTA", name = "Kul Tiras Arena" },
+    [12] =  { token = "Mugambala", shortName = "MGA", name = "Mugambala" },
+    [13] =  { token = "TheRobodrome", shortName = "TR", name = "The Robodrome" },
 
-    [15] =  { token = "EmpyreanDomain", shortName = "ED", name = "Empyrean Domain" },
-    [16] =  { token = "EnigmaCrucible", shortName = "EC", name = "Enigma Crucible" },
-    [17] =  { token = "MaldraxxusColiseum", shortName = "MC", name = "Maldraxxus Coliseum" },
+    [14] =  { token = "EmpyreanDomain", shortName = "ED", name = "Empyrean Domain" },
+    [15] =  { token = "EnigmaCrucible", shortName = "EC", name = "Enigma Crucible" },
+    [16] =  { token = "MaldraxxusColiseum", shortName = "MC", name = "Maldraxxus Coliseum" },
 
-    [18] =  { token = "NokhudonProvingGrounds", shortName = "NPG", name = "Nokhudon Proving Grounds" },
+    [17] =  { token = "NokhudonProvingGrounds", shortName = "NPG", name = "Nokhudon Proving Grounds" },
 }
 
 function Internal:GetAddonMapID(map)
@@ -59,6 +58,8 @@ function Internal:GetAddonMapID(map)
             return map_id;
         end
     end
+
+    return nil;
 end
 
 function Internal:GetShortMapName(map_id)
@@ -218,7 +219,8 @@ function InitializeSpecIDs()
         [0] = { },
         [1] = { spec = "Restoration", role = roles.healer },
         [2] = { spec = "Feral", role = roles.melee_damager },
-        [3] = { spec = "Balance", role = roles.caster_damager},
+        [3] = { spec = "Balance", role = roles.caster_damager },
+        [4] = { spec = "Guardian", role = roles.melee_tank },
 
         -- Paladin
         [10] = { role = roles.melee },
