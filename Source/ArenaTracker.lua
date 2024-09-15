@@ -138,7 +138,7 @@ function ArenaTracker:HandleArenaEnter(...)
 	if(not currentArena.battlefieldId) then
 		ArenaAnalytics:Log("ERROR: Invalid Battlefield ID in HandleArenaEnter");
 	end
-	
+
 	local status, teamSize, isRated = API:GetBattlefieldStatus(currentArena.battlefieldId);
 	if (status ~= "active") then
 		return false
@@ -185,7 +185,7 @@ function ArenaTracker:HandleArenaEnter(...)
 	end
 
 	currentArena.mapId = API:GetCurrentMapID();
-	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId, GetZoneText());
+	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId);
 
 	RequestBattlefieldScoreData();
 end

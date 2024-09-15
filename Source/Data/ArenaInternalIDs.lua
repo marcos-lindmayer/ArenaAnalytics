@@ -26,7 +26,7 @@ local addonMapIDs = {
 
     [10] =  { token = "HookPoint", shortName = "HP", name = "Hook Point" },
     [11] =  { token = "KulTirasArena", shortName = "KTA", name = "Kul Tiras Arena" },
-    [12] =  { token = "Mugambala", shortName = "MGA", name = "Mugambala" },
+    [12] =  { token = "Mugambala", shortName = "M", name = "Mugambala" },
     [13] =  { token = "TheRobodrome", shortName = "TR", name = "The Robodrome" },
 
     [14] =  { token = "EmpyreanDomain", shortName = "ED", name = "Empyrean Domain" },

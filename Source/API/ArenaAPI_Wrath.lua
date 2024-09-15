@@ -124,68 +124,55 @@ API.classMappingTable = {
 
 -- Internal Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
-    [1] = 748, -- Restoration Druid
-    [2] = 750, -- Feral Druid
-    [3] = 752, -- Balance Druid
+    [748] = 1, -- Restoration Druid
+    [750] = 2, -- Feral Druid
+    [752] = 3, -- Balance Druid
 
-    [11] = 839, -- Holy Paladin
-    [12] = 845, -- Protection Paladin
-    [13] = nil, -- Preg Paladin
-    [14] = 855, -- Retribution Paladin
+    [839] = 11, -- Holy Paladin
+    [845] = 12, -- Protection Paladin
+    [855] = 14, -- Retribution Paladin
 
-    [21] = 262, -- Restoration Shaman
-    [22] = 261, -- Elemental Shaman
-    [23] = 263, -- Enhancement Shaman
+    [262] = 21, -- Restoration Shaman
+    [261] = 22, -- Elemental Shaman
+    [263] = 23, -- Enhancement Shaman
 
-    [31] = 400, -- Unholy Death Knight
-    [32] = 399, -- Frost Death Knight
-    [33] = 398, -- Blood Death Knight
+    [400] = 31, -- Unholy Death Knight
+    [399] = 32, -- Frost Death Knight
+    [398] = 33, -- Blood Death Knight
 
-    [41] = 811, -- Beast Mastery Hunter
-    [42] = 807, -- Marksmanship Hunter
-    [43] = 809, -- Survival Hunter
+    [811] = 41, -- Beast Mastery Hunter
+    [807] = 42, -- Marksmanship Hunter
+    [809] = 43, -- Survival Hunter
 
-    [51] = 823, -- Frost Mage
-    [52] = 851, -- Fire Mage
-    [53] = 799, -- Arcane Mage
+    [823] = 51, -- Frost Mage
+    [851] = 52, -- Fire Mage
+    [799] = 53, -- Arcane Mage
 
-    [61] = 183, -- Subtlety Rogue
-    [62] = 182, -- Assassination Rogue
-    [63] = 181, -- Combat Rogue
-    [64] = nil, -- Outlaw Rogue
+    [183] = 61, -- Subtlety Rogue
+    [182] = 62, -- Assassination Rogue
+    [181] = 63, -- Combat Rogue
 
-    [71] = 871, -- Affliction Warlock
-    [72] = 865, -- Destruction Warlock
-    [73] = 867, -- Demonology Warlock
+    [871] = 71, -- Affliction Warlock
+    [865] = 72, -- Destruction Warlock
+    [867] = 73, -- Demonology Warlock
 
-    [81] = 845, -- Protection Warrior
-    [82] = 746, -- Arms Warrior
-    [83] = 815, -- Fury Warrior
+    [845] = 81, -- Protection Warrior
+    [746] = 82, -- Arms Warrior
+    [815] = 83, -- Fury Warrior
 
-    [91] = 760, -- Discipline Priest
-    [92] = 813, -- Holy Priest
-    [93] = 795, -- Shadow Priest
-    
-    [101] = nil, -- Mistweaver Monk
-    [102] = nil, -- Brewmaster Monk
-    [103] = nil, -- Windwalker Monk
-    
-    [111] = nil, -- Vengeance Demon Hunter
-    [112] = nil, -- Havoc Demon Hunter
-    
-    [122] = nil, -- Preservation Evoker
-    [123] = nil, -- Augmentation Evoker
-    [123] = nil, -- Devastation Evoker
+    [760] = 91, -- Discipline Priest
+    [813] = 92, -- Holy Priest
+    [795] = 93, -- Shadow Priest
 }
 
 function API:GetMappedAddonSpecID(specID)
-    if(not specID) then
+    specID = tonumber(specID);
+
+    local spec_id = specID and API.specMappingTable[specID];
+    if(not spec_id) then
+        ArenaAnalytics:Log("Failed to find spec_id for:", specID, type(specID));
         return nil;
     end
 
-    for spec_id, mappedID in pairs(API.specMappingTable) do
-		if(specID == mappedID) then
-			return spec_id;
-		end
-	end
+    return spec_id;
 end

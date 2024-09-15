@@ -318,11 +318,11 @@ local function createMinimapButton()
 	minibtnBorderT:SetPoint("TOPLEFT", -2, 2);
 	minibtnBorderT:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 
-	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos or 0
+	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos or 0;
 	
 	local function SetMinimapIconPosition(angle)
 		minibtn:ClearAllPoints();
-		local radius = 75;
+		local radius = API.minimapIconRadius or 75;
 		minibtn:SetPoint("CENTER", Minimap, "CENTER", -(radius * cos(ArenaAnalyticsMapIconPos)), (radius * sin(ArenaAnalyticsMapIconPos)));
 	end
 
