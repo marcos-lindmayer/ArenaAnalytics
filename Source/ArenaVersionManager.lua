@@ -101,8 +101,6 @@ function VersionManager:OnInit()
         ArenaAnalytics:ResortGroupsInMatchHistory();
         ArenaAnalytics:RecomputeSessionsForMatchHistory();
     end
-
-    VersionManager:ConvertMapID_Tmp();
 end
 
 local function convertFormatedDurationToSeconds(inDuration)
@@ -428,15 +426,6 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
                     break;
                 end
             end
-        end
-    end
-end
-
-function VersionManager:ConvertMapID_Tmp()
-    for i,match in ipairs(ArenaAnalyticsDB) do
-        local oldMapValue = ArenaMatch:GetMapID(match);
-        if(tonumber(oldMapValue) and tonumber(oldMapValue) > 10) then
-            ArenaMatch:SetMap(match, oldMapValue);
         end
     end
 end
