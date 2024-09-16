@@ -55,6 +55,8 @@ local specSpells = {
     [ 85285 ] = 14, -- Sacred Shield (Passive Trigger)
     [ 20066 ] = 14, -- Repentance
     [ 85696 ] = 14, -- Zealoty
+    [ 20424 ] = 14, -- Seals of Command
+    [ 59578 ] = 14, -- The Art of War (Aura)
 
     --------------------------------------------------------
     -- SHAMAN
@@ -262,6 +264,9 @@ local debugSpells = {
     [ 59672 ] = 73, -- Metamorphosis?
     [ 47241 ] = 73, -- Metamorphosis?
     [ 59673 ] = 73, -- Metamorphosis?
+
+    -- Retribution
+    [59578] = 14, -- Art of War?
 }
 
 function SpecSpells:GetSpec(spellID)
