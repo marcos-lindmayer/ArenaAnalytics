@@ -295,44 +295,53 @@ end
 
 local function createMinimapButton()
 	-- Create minimap button -- Credit to Leatrix
-	local minibtn = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap)
-	minibtn:SetFrameLevel(13)
-	minibtn:SetSize(24,24)
-	minibtn:SetMovable(true)
-	minibtn:SetNormalTexture([[Interface\AddOns\ArenaAnalytics\icon\mmicon]])
-	--minibtn:SetPushedTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconP]]) -- FIX: Bugged icon when not mouseover!
-	minibtn:SetHighlightTexture([[Interface\AddOns\ArenaAnalytics\icon\mmiconH]])
-	minibtn:SetScript("OnEnter", function ()
+	local minimapButton = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap);
+	minimapButton:SetFrameLevel(13);
+	minimapButton:SetSize(25,25);
+	minimapButton:SetMovable(true);
+	minimapButton:SetNormalTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmicon");
+	minimapButton:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight");
+
+	local size = 50;
+	minimapButton.Border = CreateFrame("Frame", nil, minimapButton)
+	minimapButton.Border:SetSize(size,size);
+	minimapButton.Border:SetPoint("CENTER", minimapButton, "CENTER");
+
+	minimapButton.Border.texture = minimapButton.Border:CreateTexture();
+	minimapButton.Border.texture:SetSize(size,size);
+	minimapButton.Border.texture:SetPoint("TOPLEFT", 9.5, -9.5);
+	minimapButton.Border.texture:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder");
+
+	minimapButton:SetScript("OnEnter", function ()
 		ArenaAnalytics.Tooltips:DrawMinimapTooltip();
 	end);
-	minibtn:SetScript("OnLeave", function ()
+
+	minimapButton:SetScript("OnLeave", function ()
 		GameTooltip:Hide();
 	end);
 
-	local size = 50;
-	local minibtnBorder = CreateFrame("Frame", nil, minibtn)
-	minibtnBorder:SetSize(size,size)
-	minibtnBorder:SetPoint("TOPLEFT");
-	local minibtnBorderT = minibtnBorder:CreateTexture()
-	minibtnBorderT:SetSize(size,size)
-	minibtnBorderT:SetPoint("TOPLEFT", -2, 2);
-	minibtnBorderT:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
-
 	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos or 0;
-	
+
 	local function SetMinimapIconPosition(angle)
-		minibtn:ClearAllPoints();
-		local radius = API.minimapIconRadius or 75;
-		minibtn:SetPoint("CENTER", Minimap, "CENTER", -(radius * cos(ArenaAnalyticsMapIconPos)), (radius * sin(ArenaAnalyticsMapIconPos)));
+		minimapButton:ClearAllPoints();
+		local radius = (Minimap:GetWidth() / 2) + 5
+		local xOffset = radius * cos(angle);
+		local yOffset = radius * sin(angle);
+		minimapButton:SetPoint("CENTER", Minimap, "CENTER", xOffset, yOffset);
 	end
 
 	-- Control movement
 	local function UpdateMapBtn()
 		local cursorX, cursorY = GetCursorPosition();
-		local minX, minY = Minimap:GetLeft(), Minimap:GetBottom();
-		cursorX = minX - cursorX / Minimap:GetEffectiveScale() + 70;
-		cursorY = cursorY / Minimap:GetEffectiveScale() - minY - 70;
-		ArenaAnalyticsMapIconPos = math.deg(math.atan2(cursorY, cursorX));
+		local scale = UIParent:GetEffectiveScale() or 1;
+		cursorX = cursorX / scale;
+		cursorY = cursorY / scale;
+	
+		local radius = (Minimap:GetWidth() / 2) + 5
+
+		local centerX, centerY = Minimap:GetCenter();
+		local angle = math.atan2(cursorY - centerY, cursorX - centerX);
+		ArenaAnalyticsMapIconPos = math.deg(angle);
 		
 		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 	end
@@ -340,22 +349,22 @@ local function createMinimapButton()
 	-- Set position
 	SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 
-	minibtn:RegisterForClicks("LeftButtonDown", "RightButtonDown");
-	minibtn:RegisterForDrag("LeftButton")
+	minimapButton:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+	minimapButton:RegisterForDrag("LeftButton")
 
-	minibtn:SetScript("OnDragStart", function()
-		minibtn:StartMoving()
-		minibtn:SetScript("OnUpdate", UpdateMapBtn)
+	minimapButton:SetScript("OnDragStart", function()
+		minimapButton:StartMoving()
+		minimapButton:SetScript("OnUpdate", UpdateMapBtn)
 	end)
 	
-	minibtn:SetScript("OnDragStop", function()
-		minibtn:StopMovingOrSizing();
-		minibtn:SetScript("OnUpdate", nil)
+	minimapButton:SetScript("OnDragStop", function()
+		minimapButton:StopMovingOrSizing();
+		minimapButton:SetScript("OnUpdate", nil)
 		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 	end)
 	
 	-- Control clicks
-	minibtn:SetScript("OnClick", function(self, button)
+	minimapButton:SetScript("OnClick", function(self, button)
 		if(button == "RightButton") then
 			-- Open ArenaAnalytics Options
 			Options:Open();

@@ -10,7 +10,6 @@ local Internal = ArenaAnalytics.Internal;
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
-API.minimapIconRadius = 105;
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {

@@ -585,18 +585,18 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	end
 
 	-- Check if spell belongs to spec defining spells
-	local spec, shouldDebug = SpecSpells:GetSpec(spellID);
+	local spec_id, shouldDebug = SpecSpells:GetSpec(spellID);
 	if(shouldDebug ~= nil) then
 		ArenaAnalytics:Log("DEBUG ID Detected spec: ", sourceGUID, spellID, spellName);
 	end
 
-	if (spec ~= nil) then
+	if (spec_id ~= nil) then
 		if(ArenaTracker:IsTrackingPlayer(playerID)) then
 			ArenaTracker:OnSpecDetected(sourceGUID, spec_id);
 		end
 
 		-- Check if unit should be added
-		ArenaTracker:FillMissingPlayers(sourceGUID, spec);
+		ArenaTracker:FillMissingPlayers(sourceGUID, spec_id);
 	end
 end
 
