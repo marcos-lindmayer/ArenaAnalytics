@@ -22,6 +22,7 @@ local arenaEvents = {
 	"ARENA_OPPONENT_UPDATE", 
 	"GROUP_ROSTER_UPDATE", 
 	"ARENA_PREP_OPPONENT_SPECIALIZATIONS",
+	"PVP_MATCH_COMPLETE", -- TEST
 }
 
 local globalEvents = { 
@@ -48,9 +49,17 @@ end
 -- Assigns behaviour for "global" events
 -- UPDATE_BATTLEFIELD_STATUS: Begins arena tracking and arena events if inside arena
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
+local lastStatsUpdateTime = 0;
 local function HandleGlobalEvent(_, eventType, ...)
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
-		ArenaAnalytics:TryFixLastMatchRating();
+		if(time() - lastStatsUpdateTime > 3) then
+			lastStatsUpdateTime = time();
+
+			ArenaAnalytics:TryFixLastMatchRating();
+			
+			-- This checks for IsInArena() and IsTrackingArena()
+			C_Timer.After(1, ArenaTracker.CheckRoundEnded);
+		end
 	end
 
 	if (API:IsInArena()) then
@@ -93,6 +102,10 @@ end
 local function HandleArenaEvent(_, eventType, ...)
 	if (not API:IsInArena()) then 
 		return;
+	end
+
+	if(eventType == "PVP_MATCH_COMPLETE") then
+		ArenaAnalytics:Log("PVP_MATCH_COMPLETE");
 	end
 
 	if (ArenaTracker:IsTrackingArena()) then

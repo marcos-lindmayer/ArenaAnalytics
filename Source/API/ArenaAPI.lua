@@ -48,3 +48,7 @@ function API:GetArenaPlayerSpec(index, isEnemy)
         -- Add friendly support
     end
 end
+
+function API:IsSoloShuffle()
+    return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
+end

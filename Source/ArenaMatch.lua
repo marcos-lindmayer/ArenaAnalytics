@@ -82,10 +82,15 @@ local function ToNonZeroNumber(value)
     return value;
 end
 
-local function ToNumericalBool(value)
+local function ToNumericalBool(value, drawValue)
     if(value == nil) then
         return;
     end
+
+    if(drawValue and value == drawValue) then
+        return tonumber(value);
+    end
+
     return (value and value ~= 0) and 1 or 0;
 end
 
@@ -440,7 +445,7 @@ end
 function ArenaMatch:SetVictory(match, value)
     assert(match);
 
-    match[matchKeys.won] = ToNumericalBool(value);
+    match[matchKeys.won] = ToNumericalBool(value, 2);
 end
 
 -------------------------------------------------------------------------

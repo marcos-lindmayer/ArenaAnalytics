@@ -33,20 +33,23 @@ end
 
 -------------------------------------------------------------------------
 
-function Localization:GetSpecID(spec)
-    if(not spec and spec ~= "") then
+function Localization:GetSpecID(classToken, spec)
+    if(not classToken or not spec or spec == "") then
         return nil;
     end
 
-    for genderIndex = 1, 3 do
-        for classIndex=1, GetNumClasses() do
+    for classIndex=1, GetNumClasses() do
+        local _,token = GetClassInfo(classIndex);
+        if(token == classToken) then
             for specIndex=0, 5 do
                 local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
                 if(specID) then
-                    local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
-                    if(spec == specName) then
-                        local spec_id = API:GetMappedAddonSpecID(id);
-                        return spec_id;
+                    for genderIndex = 1, 3 do
+                        local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
+                        if(spec == specName) then
+                            local spec_id = API:GetMappedAddonSpecID(id);
+                            return spec_id;
+                        end
                     end
                 end
             end

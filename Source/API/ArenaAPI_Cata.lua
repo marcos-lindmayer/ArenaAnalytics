@@ -32,10 +32,6 @@ function API:IsRatedArena()
     return API:IsInArena() and not IsWargame() and not IsArenaSkirmish();
 end
 
-function API:IsShuffle()
-    return nil;
-end
-
 function API:GetBattlefieldStatus(battlefieldId)
     local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
     return status, teamSize, isRated;

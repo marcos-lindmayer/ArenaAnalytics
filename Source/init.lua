@@ -192,7 +192,9 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-		ArenaAnalytics:Print("Test Print:", API:IsInArena(), API:GetCurrentMapID(), GetZoneText());
+
+		ArenaAnalytics:Log(API:IsSoloShuffle());
+
 		print(" ");
 	end,	
 };

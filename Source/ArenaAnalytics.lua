@@ -680,9 +680,12 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	end
 
 	ArenaAnalytics:Print("Arena recorded!");
-	
+
+	ArenaAnalytics:Log("Rounds debugging..", #newArena.rounds)
+	Helpers:DebugLogTable(newArena.rounds);
+
 	-- Refresh and reset current arena
-	ArenaTracker:ResetCurrentArenaValues();
+	ArenaTracker:Reset();
 	
 	Filters:Refresh();
 

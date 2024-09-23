@@ -33,6 +33,25 @@ function Helpers:DeepCopy(original)
     return copy;
 end
 
+function Helpers:DebugLogTable(table, level)
+    if(not table) then
+        ArenaAnalytics:Log("DebugLogTable: Nil table");
+        return;
+    end
+
+    level = level or 0;
+    local indentation = string.rep(" ", 3*level);
+
+    for key,value in pairs(table) do
+        if(type(value) == "table") then
+            ArenaAnalytics:Log(indentation .. key);
+            Helpers:DebugLogTable(value, level+1);
+        else
+            ArenaAnalytics:Log(indentation .. key, value);
+        end
+    end
+end
+
 function Helpers:GetPlayerName(skipRealm)
     local name, realm = UnitFullName("player");
 	if(name and realm and not skipRealm) then
@@ -74,8 +93,8 @@ function Helpers:GetUnitClass(unit)
     return Internal:GetAddonClassID(token);
 end
 
-function Helpers:GetUnitFullName(unit)
-    local name, realm = UnitNameUnmodified(unit);
+function Helpers:GetUnitFullName(unitToken)
+    local name, realm = UnitNameUnmodified(unitToken);
 
     if (name == nil or name == "Unknown") then
         return nil;

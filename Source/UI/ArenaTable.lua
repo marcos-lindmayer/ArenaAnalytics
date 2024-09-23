@@ -760,9 +760,18 @@ function AAtable:RefreshLayout()
             end
 
             -- Party Rating & Delta
-            local rating, ratingDelta = ArenaMatch:GetPartyRating(match), ArenaMatch:GetPartyRatingDelta(match);
-            local ratingText = ratingToText(rating, ratingDelta) or "SKIRMISH";
-            button.Rating:SetText("|c" .. hex .. ratingText .."|r");
+            local ratingText = "-";
+            local matchType = ArenaMatch:GetMatchType(match);
+            if(matchType == "rated") then
+                local rating, ratingDelta = ArenaMatch:GetPartyRating(match), ArenaMatch:GetPartyRatingDelta(match);
+                ratingText = ratingToText(rating, ratingDelta) or "-";
+            elseif(matchType == "skirmish") then
+                ratingText = "SKIRMISH";
+            elseif(matchType == "wargame") then
+                ratingText = "WAR GAME";
+            end
+
+            button.Rating:SetText("|c" .. hex .. (ratingText or "") .."|r");
             
             -- Party MMR
             button.MMR:SetText(ArenaMatch:GetPartyMMR(match) or "-");

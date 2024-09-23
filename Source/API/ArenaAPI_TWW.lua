@@ -39,15 +39,11 @@ API.availableMaps = {
 }
 
 function API:IsInArena()
-    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl() and not C_PvP.IsSoloShuffle(); -- TODO: Add solo shuffle support
+    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl(); -- TODO: Add solo shuffle support
 end
 
 function API:IsRatedArena()
-    return API:IsInArena() and C_PvP.IsRatedArena() and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
-end
-
-function API:IsShuffle()
-    return C_PvP.IsSoloShuffle();
+    return API:IsInArena() and (C_PvP.IsRatedArena() or C_PvP.IsRatedSoloShuffle()) and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
@@ -74,7 +70,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
 
     -- Solo Shuffle
     if(bracketIndex == 4) then
-        return nil; -- NYI
+        bracketIndex = 7;
     end
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
@@ -83,20 +79,22 @@ end
 
 -- TODO: Decide if we wanna get rating and MMR values from here
 function API:GetBattlefieldScore(index)
-    -- NOTE: GetBattlefieldScore appears to be deprecated in Blizzard API. Find the replacement.
-    local name, kills, _, deaths, _, teamIndex, race, _, classToken, damage, healing, rating, ratingDelta, preMatchMMR, mmrChange, spec = GetBattlefieldScore(index);
-    name = Helpers:ToFullName(name);
+    local scoreInfo = C_PvP.GetScoreInfo(index);
+    name = Helpers:ToFullName(scoreInfo.name);
 
     -- Convert localized values
-    local race_id = Localization:GetRaceID(race);
-    local spec_id = Localization:GetSpecID(spec);
+    local race_id = Localization:GetRaceID(scoreInfo.raceName);
+    local spec_id = Localization:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
 
     -- Fall back to class ID
     if(not spec_id) then
-        spec_id = Internal:GetAddonClassID(classToken);
+        spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
     end
+
+    --ArenaAnalytics:Log("Score:", name);
+    --Helpers:DebugLogTable(scoreInfo.stats);
     
-    return name, race_id, spec_id, teamIndex, kills, deaths, damage, healing;
+    return name, race_id, spec_id, scoreInfo.faction, scoreInfo.killingBlows, scoreInfo.deaths, scoreInfo.damageDone, scoreInfo.healingDone;
 end
 
 -- Get local player current spec
@@ -196,6 +194,7 @@ API.specMappingTable = {
     [577] = 112, -- Havoc Demon Hunter
 
     [1468] = 122, -- Preservation Evoker
+    [1473] = 122, -- Augmentation Evoker
     [1467] = 123, -- Devastation Evoker
 }
 

@@ -3,6 +3,7 @@
 ## Notes: Arena log and statistics.
 ## Author: Lingo, Zeetrax
 ## Version: 0.7.0
+## IconTexture: Interface\Icons\achievement_arena_3v3_7
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSharedSettingsDB
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB
