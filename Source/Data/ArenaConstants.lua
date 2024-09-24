@@ -299,17 +299,10 @@ function ArenaAnalytics:getBracketIdFromTeamSize(teamSize)
     return 3;
 end
 
+local bracketTeamSizes = { 2, 3, 5, 3 };
 function ArenaAnalytics:getTeamSizeFromBracketIndex(bracketIndex)
-    if(bracketIndex) then
-        if(bracketIndex == 1) then
-            return 2;
-        elseif(bracketIndex == 2) then
-            return 3;
-        elseif(bracketIndex == 3) then
-            return 5;
-        end
-    end
-    return 0;
+    bracketIndex = tonumber(bracketIndex);
+    return bracketIndex and bracketTeamSizes[bracketIndex];
 end
 
 function ArenaAnalytics:getTeamSizeFromBracketId(bracketId)

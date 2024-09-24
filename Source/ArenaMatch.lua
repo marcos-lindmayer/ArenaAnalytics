@@ -31,6 +31,7 @@ local matchKeys = {
     enemy_team = -15,
     comp = -16,
     enemy_comp = -17,
+    rounds = -18,
 
     transient_seasonPlayed = -100,
     transient_requireRatingFix = -101,
@@ -49,6 +50,12 @@ local playerKeys = {
     healing = -9,
     damage = -10,
     wins = -11,
+}
+
+local roundKeys = {
+    data = 0,
+    comp = -1,
+    enemy_comp = -2,
 }
 
 -------------------------------------------------------------------------
@@ -495,10 +502,8 @@ function ArenaMatch:AddPlayer(match, isEnemyTeam, fullName, race_id, spec_id, ro
     SetPlayerValue(match, newPlayer, "damage", tonumber(damage));
     SetPlayerValue(match, newPlayer, "healing", tonumber(healing));
     SetPlayerValue(match, newPlayer, "wins", tonumber(wins));
-    
-    local teamKey = isEnemyTeam and matchKeys.enemy_team or matchKeys.team;
-    assert(teamKey);
 
+    local teamKey = isEnemyTeam and matchKeys.enemy_team or matchKeys.team;
     match[teamKey] = match[teamKey] or {}
     tinsert(match[teamKey], newPlayer);
 end
@@ -681,12 +686,12 @@ function ArenaMatch:GetPlayerNameAndRealm(player, requireCompactRealm)
     return name, ArenaAnalytics:GetRealm(realm);
 end
 
-local function GetTeamSpecs(team, size)    
-    if(not team or not size or size == 0) then
+local function GetTeamSpecs(team, requiredSize)    
+    if(not team or not requiredSize or requiredSize == 0) then
         return nil;
     end
 
-    if(#team ~= size) then
+    if(#team ~= requiredSize) then
         return nil;
     end
 
@@ -695,7 +700,7 @@ local function GetTeamSpecs(team, size)
     -- Gather all team specs, bailing out if any are missing
     for i,player in ipairs(team) do
         local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
-        if(not spec_id or (spec_id % 10 == 0)) then
+        if(not Helpers:IsSpecID(spec_id)) then
             return nil;
         end
 
@@ -703,6 +708,25 @@ local function GetTeamSpecs(team, size)
     end
 
     return teamSpecs;
+end
+
+local function GetCompForSpecs(teamSpecs, requiredSize)
+    if(not teamSpecs or not requiredSize or requiredSize == 0) then
+        ArenaAnalytics:Log("GetCompForSpecs", teamSpecs and #teamSpecs, requiredSize);
+        Helpers:DebugLogTable(teamSpecs, 1);
+        return nil;
+    end
+
+    if(#teamSpecs ~= requiredSize) then
+        ArenaAnalytics:Log("GetCompForSpecs Invalid team size.")
+        return nil;
+    end
+
+    table.sort(teamSpecs, function(a, b)
+        return a < b;
+    end);
+
+    return table.concat(teamSpecs, '|');
 end
 
 function ArenaMatch:GetComp(match, isEnemyTeam)
@@ -726,26 +750,9 @@ function ArenaMatch:UpdateComp(match, isEnemyTeam)
     local requiredTeamSize = ArenaMatch:GetTeamSize(match);
 
     local teamSpecs = GetTeamSpecs(team, requiredTeamSize);
-    if(teamSpecs and #teamSpecs > 0) then        
-        table.sort(teamSpecs, function(a, b)
-            return a < b;
-        end);
 
-        local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
-        match[key] = table.concat(teamSpecs, '|');
-    end
-end
-
-function ArenaMatch:SortGroups(match)
-    assert(match);
-    
-	selfPlayerInfo = ArenaMatch:GetSelfInfo(match);
-
-    local team = ArenaMatch:GetTeam(match, false);
-    GroupSorter:SortGroup(team, selfPlayerInfo);
-
-    local enemy = ArenaMatch:GetTeam(match, true);
-    GroupSorter:SortGroup(enemy, selfPlayerInfo);
+    local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
+    match[key] = GetCompForSpecs(teamSpecs, requiredTeamSize);
 end
 
 -------------------------------------------------------------------------
@@ -769,8 +776,7 @@ function ArenaMatch:HasSelf(match)
     return false;
 end
 
--- Returns the player info of the 
-function ArenaMatch:GetSelfInfo(match)
+function ArenaMatch:GetSelf(match, fallbackToLocal)
     if(not match) then 
         return nil;
     end
@@ -778,21 +784,32 @@ function ArenaMatch:GetSelfInfo(match)
     local team = ArenaMatch:GetTeam(match, false);
     if(team) then
         for i,player in ipairs(team) do
-            local isSelf = false;
             if(ArenaMatch:GetPlayerValue(player, "is_self") == 1) then
-                isSelf = true;
-            elseif(ArenaMatch:IsLocalPlayer(player)) then
-                isSelf = true;
-            end
-
-            if(isSelf) then
-                return ArenaMatch:GetPlayerInfo(player);
+                return player;
+            elseif(fallbackToLocal and ArenaMatch:IsLocalPlayer(player)) then
+                return player;
             end
         end
     end
 
-    -- Make self info from local player
-    return ArenaAnalytics:GetLocalPlayerInfo()
+    return nil;
+end
+
+-- Returns the player info of the 
+function ArenaMatch:GetSelfInfo(match, fallbackToLocal)
+    if(not match) then 
+        return nil;
+    end
+
+    local player = ArenaMatch:GetSelf(match, fallbackToLocal);
+    local playerInfo = ArenaMatch:GetPlayerInfo(player);
+
+    if(not playerInfo and fallbackToLocal) then
+        -- Make self info from local player
+        return ArenaAnalytics:GetLocalPlayerInfo()
+    end
+
+    return playerInfo;
 end
 
 function ArenaMatch:SetSelf(match, fullName)
@@ -908,4 +925,167 @@ function ArenaMatch:CheckPlayerName(player, searchValue, isExact)
     else
         return playerName:find(searchValue) ~= nil;
     end
+end
+
+-------------------------------------------------------------------------
+-- Solo Shuffle
+
+-- Set rounds data
+function ArenaMatch:SetRounds(match, rounds)
+    assert(match);
+    assert(not match[matchKeys.rounds]);
+
+    if(not rounds or #rounds == 0) then
+        ArenaAnalytics:Log("ArenaMatch:SetRounds bailing out due to invalid incoming rounds:", rounds and #rounds);
+        return;
+    end
+
+    -- Only solo shuffle supports multiple rounds
+    if(ArenaMatch:GetBracket(match) ~= "shuffle") then
+        ArenaAnalytics:Log("ArenaMatch:SetRounds skipping shuffle match type.", ArenaMatch:GetBracket(match));
+        return;
+    end
+
+    local enemyTeam = ArenaMatch:GetTeam(match, true);
+    assert(enemyTeam and #enemyTeam > 0); -- Must already have players, to compact round data
+
+    match[matchKeys.rounds] = {};
+
+    ArenaMatch:SortGroups(match);
+
+    -- Fill player name to index mapping
+    local indexMapping = {}
+    for index, player in ipairs(enemyTeam) do
+        local fullName = ArenaMatch:GetPlayerFullName(player);
+        if(fullName and fullName ~= "") then
+            indexMapping[fullName] = index;
+        end
+    end
+
+    -- Cache values to help sort
+    local myName = Helpers:GetPlayerName();
+    local selfPlayerInfo = ArenaMatch:GetSelfInfo(match, true);
+    local requiredTeamSize = ArenaMatch:GetTeamSize(match);
+
+    local function compressGroup(group)
+        if(not group or #group == 0) then
+            return nil;
+        end
+
+        local compactGroup = {}
+        local specs = {}
+
+        for _,member in ipairs(group) do
+            local spec_id = nil;
+            local playerIndex = member and indexMapping[member] or nil;
+
+            if(playerIndex) then
+                local player = enemyTeam[playerIndex];
+                spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
+
+                tinsert(compactGroup, playerIndex);
+            elseif(member == myName) then
+                local player = ArenaMatch:GetSelf(match);
+                spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
+            end
+
+            if(Helpers:IsSpecID(spec_id)) then
+                tinsert(specs, spec_id);
+            end
+        end
+
+        GroupSorter:SortIndexGroup(compactGroup, selfPlayerInfo, enemyTeam);
+        local groupString = table.concat(compactGroup) or "";
+        local comp = GetCompForSpecs(specs, requiredTeamSize);
+
+        ArenaAnalytics:Log("compressGroup result:", groupString, comp, #specs);
+        return groupString, comp;
+    end
+
+    for i,round in ipairs(rounds) do
+        local team, comp = compressGroup(round.team);
+        local enemy, enemyComp = compressGroup(round.enemy);
+        local firstDeath = round.firstDeath and indexMapping[round.firstDeath] or "";
+        local duration = round.duration or "";
+
+        -- Insert the round to the match
+        local compactRound = {
+            [roundKeys.data] = team .. "-" .. enemy .. "-" .. firstDeath .. "-" .. duration,
+            [roundKeys.comp] = comp,
+            [roundKeys.enemy_comp] = enemyComp,
+        };
+
+        tinsert(match[matchKeys.rounds], compactRound);
+        
+        ArenaAnalytics:Log("SetRounds: Added round:", compactRound[0], compactRound[-1], compactRound[-2]);
+    end
+    
+    ArenaAnalytics:Log("Match:SetRounds outcome:", #match[matchKeys.rounds], #rounds);
+end
+
+function ArenaMatch:GetRounds(match)
+    return nil;
+end
+
+-------------------------------------------------------------------------
+-- Player Sorting
+
+-- Smart resort, fixing indicies stored per round
+function ArenaMatch:ResortPlayers(match)
+    -- If map is not solo shuffle, do standard sorting
+    if(ArenaMatch:GetMatchType() ~= "shuffle") then
+        ArenaMatch:SortGroups(match);
+        return
+    end
+
+    -- Fill old index to player name mapping
+    local enemyTeam = ArenaMatch:GetTeam(match, true);
+    local oldNameOrder = {}
+    for i,player in ipairs(enemyTeam) do
+        if(player and player.name) then
+            oldNameOrder[i] = player.name;
+        end
+    end
+
+    -- Sort match enemies
+	local selfPlayerInfo = ArenaMatch:GetSelfInfo(match);
+    GroupSorter:SortGroup(enemyTeam, selfPlayerInfo);
+
+    -- Fill old index to new index mapping
+    local indexMapping = {}
+    for newIndex,player in ipairs(enemyTeam) do
+        if(player and player.name) then
+            for oldIndex,name in pairs(oldNameOrder) do
+                if(oldIndex and oldNameOrder[oldIndex] == player.name) then
+                    indexMapping[oldIndex] = newIndex;
+                    break;
+                end
+            end
+        end
+    end
+
+    -- Update round groups to new index
+    -- TODO: For each round
+        -- For each group in that round
+            -- Convert each index to new index
+
+    -- Sort both groups for each round
+    -- TODO: Add GroupSorter:SortIndexGroup(group, players), where group is compacted 
+
+    -- Compress to index based format
+
+    -- Save
+end
+
+
+function ArenaMatch:SortGroups(match)
+    assert(match);
+
+	local selfPlayerInfo = ArenaMatch:GetSelfInfo(match);
+
+    local team = ArenaMatch:GetTeam(match, false);
+    GroupSorter:SortGroup(team, selfPlayerInfo);
+
+    local enemyTeam = ArenaMatch:GetTeam(match, true);
+    GroupSorter:SortGroup(enemyTeam, selfPlayerInfo);
 end

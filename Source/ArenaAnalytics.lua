@@ -430,7 +430,8 @@ function ArenaAnalytics:ShouldSkipMatchForSessions(match)
 
 	-- Invalid comp check (Missing players)
 	local team = ArenaMatch:GetTeam(match);
-	if(not team or #team < ArenaMatch:GetTeamSize(match)) then
+	local requiredTeamSize = ArenaMatch:GetTeamSize(match) or 0;
+	if(not team or #team < requiredTeamSize) then
 		return true;
 	end
 
@@ -595,15 +596,29 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	end
 	
 	-- Calculate arena duration
-	if (not hasStartTime) then
-		ArenaAnalytics:Log("Force fixed start time at match end.");
-		newArena.startTime = time();
+	if(newArena.isShuffle) then
 		newArena.duration = 0;
+
+		if(newArena.rounds) then
+			for _,round in ipairs(newArena.rounds) do
+				if(round) then
+					newArena.duration = newArena.duration + (tonumber(round.duration) or 0);
+				end
+			end
+		end
+
+		ArenaAnalytics:Log("Shuffle combined duration:", newArena.duration);
 	else
-		newArena.endTime = time();
-		local duration = (newArena.endTime - newArena.startTime);
-		duration = duration < 0 and 0 or duration;
-		newArena.duration = duration;
+		if (hasStartTime) then
+			newArena.endTime = time();
+			local duration = (newArena.endTime - newArena.startTime);
+			duration = duration < 0 and 0 or duration;
+			newArena.duration = duration;
+		else
+			ArenaAnalytics:Log("Force fixed start time at match end.");
+			newArena.startTime = time();
+			newArena.duration = 0;
+		end
 	end
 
 	local matchType = nil;
@@ -647,11 +662,14 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 
 	-- Add players from both teams sorted, and assign comps.
 	ArenaMatch:AddPlayers(arenaData, newArena.players);
-
 	ArenaMatch:SetSelf(arenaData, (newArena.player or Helpers:GetPlayerName()));
-
-	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
-	ArenaMatch:SetFirstDeath(arenaData, firstDeath);
+	
+	if(newArena.isShuffle) then
+		ArenaMatch:SetRounds(arenaData, newArena.rounds);
+	else
+		local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
+		ArenaMatch:SetFirstDeath(arenaData, firstDeath);
+	end
 	
 	-- Assign session
 	local session = ArenaAnalytics:GetLatestSession();
@@ -680,9 +698,6 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	end
 
 	ArenaAnalytics:Print("Arena recorded!");
-
-	ArenaAnalytics:Log("Rounds debugging..", #newArena.rounds)
-	Helpers:DebugLogTable(newArena.rounds);
 
 	-- Refresh and reset current arena
 	ArenaTracker:Reset();

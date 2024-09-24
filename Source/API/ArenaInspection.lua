@@ -114,7 +114,6 @@ local function HandleInspect_Internal(GUID)
     if(spec_id) then
         foundSpec = true;
         ArenaTracker:OnSpecDetected(GUID, spec_id);
-        ArenaAnalytics:Log("Inspection: Detected Spec:", spec_id, "for:", unitToken, " currentInspectGUID:", currentInspectGUID);
     end
 
     if(IsInQueue(GUID)) then

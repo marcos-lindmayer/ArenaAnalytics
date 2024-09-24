@@ -63,6 +63,7 @@ function ArenaTracker:Reset()
 
 	-- Current Round
 	currentRound.hasStarted = nil;
+	currentRound.startTime = nil;
 	currentRound.team = {}
 end
 ArenaTracker:Reset();
@@ -112,12 +113,10 @@ function ArenaTracker:IsSameRoundTeam()
 		local unitName = Helpers:GetUnitFullName(unitToken);
 
 		if(unitName and not ArenaTracker:RoundTeamContainsPlayer(unitName)) then
-			ArenaAnalytics:Log("IsSameRoundTeam rejecting player:", unitToken, unitName);
 			return false;
 		end
 	end
 
-	ArenaAnalytics:Log("IsSameRoundTeam confirmed!");
 	return true;
 end
 
@@ -127,7 +126,7 @@ function ArenaTracker:CommitCurrentRound()
 	end
 
 	local roundData = {
-		duration = currentArena.startTime and (time() - currentArena.startTime) or nil,
+		duration = currentRound.startTime and (time() - currentRound.startTime) or nil,
 		firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena(),
 		team = {},
 		enemy = {},
@@ -145,11 +144,11 @@ function ArenaTracker:CommitCurrentRound()
 	tinsert(currentArena.rounds, roundData);
 
 	-- Reset currentArena round data
-	currentArena.startTime = nil;
 	currentArena.deathData = {};
-
+	
 	-- Reset current round
 	currentRound.team = {};
+	currentRound.startTime = nil;
 	currentRound.hasStarted = false;
 end
 
@@ -209,6 +208,8 @@ end
 function ArenaTracker:HandleArenaStart(...)
 	currentArena.startTime = time();
 	currentArena.hasRealStartTime = true; -- The start time has been set by gates opened
+
+	currentRound.startTime = time();
 	currentRound.hasStarted = true;
 
 	ArenaTracker:FillMissingPlayers();
@@ -248,7 +249,7 @@ function ArenaTracker:HandleArenaEnter(...)
 	
 	if(API:IsSoloShuffle()) then
 		currentArena.isShuffle = true;
-		currentArena.size = 6;
+		currentArena.size = 3;
 	else
 		currentArena.size = teamSize;
 	end
@@ -467,7 +468,6 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 	end
 
 	if(#currentArena.players >= 2*currentArena.size) then
-		ArenaAnalytics:Log("FillMissingPlayers already full.", #currentArena.players, currentArena.size);
 		return;
 	end
 
@@ -492,8 +492,8 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 						Inspection:RequestSpec(unitToken)
 					end
 				end
-			else
-				ArenaAnalytics:Log("FillMissingPlayer rejecting:", player and player.name, group, class_id, spec_id, #currentArena.players);
+			elseif(player) then
+				ArenaAnalytics:Log("FillMissingPlayer rejecting:", player.name, group, class_id, spec_id, #currentArena.players);
 			end
 		end
 	end
@@ -570,7 +570,11 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 	currentArena.deathData[playerGUID] = currentArena.deathData[playerGUID] or {}
 
 	local class, race, name, realm = API:GetPlayerInfoByGUID(playerGUID);
-	name = Helpers:ToFullName(name);
+	if(not realm or realm == "") then
+		name = Helpers:ToFullName(name);
+	else
+		name = name .. "-" .. realm;
+	end
 
 	ArenaAnalytics:Log("Player Kill!", isKillCredit, name);
 

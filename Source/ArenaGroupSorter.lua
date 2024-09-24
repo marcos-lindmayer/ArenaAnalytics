@@ -204,3 +204,24 @@ function GroupSorter:SortGroup(group, selfPlayerInfo)
         return ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
     end);
 end
+
+function GroupSorter:SortIndexGroup(group, selfPlayerInfo, players)
+    if(not group or #group == 0) then
+        return;
+    end
+
+    -- Requires players table to process indices
+    if(not players or #players == 0) then
+        return;
+    end
+
+    table.sort(group, function(indexA, indexB)
+        local playerA = tonumber(indexA) and players[indexA];
+        local playerB = tonumber(indexB) and players[indexB];
+
+        local playerInfoA = ArenaMatch:GetPlayerInfo(playerA);
+        local playerInfoB = ArenaMatch:GetPlayerInfo(playerB);
+
+        return ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
+    end);
+end

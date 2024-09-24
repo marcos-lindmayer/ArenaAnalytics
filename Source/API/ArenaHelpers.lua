@@ -140,13 +140,16 @@ function Helpers:GetNameFromPlayerInfo(playerInfo)
 end
 
 function Helpers:GetClassID(spec_id)
+    spec_id = tonumber(spec_id);
     return spec_id and floor(spec_id / 10) * 10;
 end
 
 function Helpers:IsClassID(spec_id)
+    spec_id = tonumber(spec_id);
     return spec_id and (spec_id % 10 == 0);
 end
 
 function Helpers:IsSpecID(spec_id)
+    spec_id = tonumber(spec_id);
     return spec_id and (spec_id % 10 > 0);
 end
