@@ -7,10 +7,19 @@ local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local API = ArenaAnalytics.API;
+local ShuffleTooltip = ArenaAnalytics.ShuffleTooltip;
 
 -------------------------------------------------------------------------
 
+function Tooltips:HideAll()
+    Tooltips:UnbindPlayerFrameModifierChanged();
+    ShuffleTooltip:Hide();
+    GameTooltip:Hide();
+end
+
 function Tooltips:DrawMinimapTooltip()
+    Tooltips:HideAll();
+
     GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
     GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. API:GetAddonVersion() .. "|r");
     GameTooltip:AddLine("|cffBBBBBB" .. "Left Click|r" .. " to toggle ArenaAnalytics");
@@ -20,6 +29,8 @@ end
 
 function Tooltips:DrawOptionTooltip(frame, tooltip)
     assert(tooltip);
+
+    Tooltips:HideAll();
 
     local name, description = tooltip[1], tooltip[2];
 
@@ -126,7 +137,7 @@ local function TryAddQuickSearchShortcutTips()
 end
 
 local lastPlayerFrame = nil;
-local function UnbindPlayerFrameModifierChanged()
+function Tooltips:UnbindPlayerFrameModifierChanged()
     if(lastPlayerFrame) then
         lastPlayerFrame:UnregisterEvent("MODIFIER_STATE_CHANGED");
         lastPlayerFrame:SetScript("OnEvent", nil);
@@ -136,13 +147,11 @@ end
 
 local function BindPlayerFrameModifierChanged(playerFrame)
     --  Try unbind last player frame
-    UnbindPlayerFrameModifierChanged()
+    Tooltips:UnbindPlayerFrameModifierChanged()
 
     -- Bind new frame
     playerFrame:RegisterEvent("MODIFIER_STATE_CHANGED");    
-    playerFrame:SetScript("OnEvent", function(self)
-        Tooltips:DrawPlayerTooltip(self);
-    end);
+    playerFrame:SetScript("OnEvent", function(self) Tooltips:DrawPlayerTooltip(self) end);
 
     lastPlayerFrame = playerFrame;
 end
@@ -151,6 +160,8 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     if(not playerFrame) then
         return;
     end
+
+    Tooltips:HideAll();
     
     if(playerFrame ~= lastPlayerFrame) then
         BindPlayerFrameModifierChanged(playerFrame);
@@ -166,8 +177,7 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     local function ColorClass(text, spec_id)
-        local class_id = Helpers:GetClassID(playerInfo.spec_id);
-        local color = Internal:GetClassColor(class_id);
+        local color = Internal:GetClassColor(spec_id);
         if(color) then
             return "|c" .. color .. text .."|r";
         end
@@ -233,7 +243,21 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     GameTooltip:Show();
 end
 
-function Tooltips:HidePlayerTooltip()    
-    UnbindPlayerFrameModifierChanged();
-    GameTooltip:Hide();
+-------------------------------------------------------------------------
+-- Solo Shuffle Tooltips
+
+function Tooltips:DrawShuffleTooltip(entryFrame, match)
+    Tooltips:HideAll();
+
+    if(not entryFrame or not match) then
+        return;
+    end
+
+    ShuffleTooltip:SetMatch(match);
+    ShuffleTooltip:SetEntryFrame(entryFrame);
+    ShuffleTooltip:Show();
+end
+
+function Tooltips:HideShuffleTooltip()
+    ShuffleTooltip:Hide();
 end

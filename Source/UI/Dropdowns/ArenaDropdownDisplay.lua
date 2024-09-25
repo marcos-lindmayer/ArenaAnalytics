@@ -208,8 +208,9 @@ function Display.SetComp(dropdownContext, display)
 
         -- Add each player spec icon
         for spec_id in comp:gmatch("([^|]+)") do
-            local iconFrame = ArenaIcon:Create(containerFrame, spec_id, 25);
+            local iconFrame = ArenaIcon:Create(containerFrame, 25, true);
             iconFrame:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0);
+            iconFrame:SetSpec(spec_id);
 
             lastFrame = iconFrame;
             totalWidth = totalWidth + iconFrame:GetWidth() + padding;

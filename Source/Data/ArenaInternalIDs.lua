@@ -199,7 +199,8 @@ function Internal:GetClassInfo(class_id)
     return addonClassIDs[class_id];
 end
 
-function Internal:GetClassColor(class_id)
+function Internal:GetClassColor(spec_id)
+    local class_id = Helpers:GetClassID(spec_id);
     local classInfo = Internal:GetClassInfo(class_id);
     local classToken = classInfo and classInfo.token;
     return classToken and select(4, GetClassColor(classToken)) or "ffffffff";

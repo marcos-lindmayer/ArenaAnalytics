@@ -16,6 +16,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Constants = ArenaAnalytics.Constants;
 local ImportBox = ArenaAnalytics.ImportBox;
+local ArenaIcon = ArenaAnalytics.ArenaIcon;
 
 -------------------------------------------------------------------------
 
@@ -75,10 +76,10 @@ end
 
 -- Returns string frame
 function ArenaAnalyticsCreateText(parent, anchor, relativeFrame, relPoint, xOff, yOff, text, fontSize)
-    local fontString = parent:CreateFontString(nil, "OVERLAY");
-    fontString:SetFont("Fonts\\FRIZQT__.TTF", fontSize or 12, "");
+    local fontString = parent:CreateFontString(nil, "OVERLAY", "GameFontWhiteSmall");
     fontString:SetPoint(anchor, relativeFrame, relPoint, xOff, yOff);
     fontString:SetText(text);
+    fontString:SetFont(fontString:GetFont(), tonumber(fontSize) or 12, "");
     return fontString
 end
 
@@ -443,7 +444,6 @@ function AAtable:CreateExportDialogFrame()
     ArenaAnalyticsScrollFrame.exportDialogFrame:Show();
 end
 
--- TODO: Consider using ArenaIcon to draw the class and spec icons.
 local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnemyTeam, scrollEntry)
     if(not match) then
         return;
@@ -452,6 +452,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
     for i = 1, #teamPlayerFrames do
         local playerFrame = teamPlayerFrames[i];
         assert(playerFrame);
+        playerFrame:Show();
 
         local player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
         local playerInfo = ArenaMatch:GetPlayerInfo(player, playerFrame.playerInfo);
@@ -459,62 +460,23 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             playerFrame.playerInfo = playerInfo;
             playerFrame.match = match;
 
-            if (playerFrame.texture == nil) then
-                -- No textures? Set them
-                playerFrame.texture = playerFrame:CreateTexture();
-                playerFrame.texture:SetPoint("LEFT", playerFrame ,"RIGHT", -26, 0);
-                playerFrame.texture:SetSize(26,26);
+            if(not playerFrame.icon) then
+                playerFrame.icon = ArenaIcon:Create(playerFrame, 25);
             end
 
-            -- Set texture
-            local classIcon = Internal:GetClassIcon(playerInfo.spec_id);
-            playerFrame.texture:SetTexture(classIcon);
-            playerFrame.tooltip = "";
-
-            -- Add spec info
-            if (not playerFrame.specOverlay) then
-                playerFrame.specOverlay = CreateFrame("Frame", nil, playerFrame);
-                playerFrame.specOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT", -1.5, 1);
-                playerFrame.specOverlay:SetSize(13,13);
-                
-                playerFrame.specOverlay.texture = playerFrame.specOverlay:CreateTexture();
-                playerFrame.specOverlay.texture:SetPoint("CENTER");
-                playerFrame.specOverlay.texture:SetSize(13,13);
-            end
-
-            local specIcon = Constants:GetSpecIcon(playerInfo.spec_id);
-            playerFrame.specOverlay.texture:SetTexture(specIcon);
+            playerFrame.icon:SetSpec(playerInfo.spec_id);
+            playerFrame.icon:SetIsFirstDeath(playerInfo.isFirstDeath, Options:Get("alwaysShowDeathOverlay"));
 
             if (not Options:Get("alwaysShowSpecOverlay")) then
-                playerFrame.specOverlay:Hide();
+                playerFrame.icon:SetSpecVisibility(false);
             end
 
-            -- Add death overlay            
-            if (ArenaMatch:IsPlayerFirstDeath(player)) then
-                if (not playerFrame.deathOverlay) then
-                    playerFrame.deathOverlay = CreateFrame("Frame", nil, playerFrame);
-                    playerFrame.deathOverlay:SetPoint("BOTTOMRIGHT", playerFrame, "BOTTOMRIGHT")
-                    playerFrame.deathOverlay:SetSize(26,26)
-
-                    playerFrame.deathOverlay.texture = playerFrame.deathOverlay:CreateTexture();
-                    playerFrame.deathOverlay.texture:SetPoint("CENTER")
-                    playerFrame.deathOverlay.texture:SetSize(26,26)
-                    playerFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.27);
-                end
-
-                if (not Options:Get("alwaysShowDeathOverlay")) then
-                    playerFrame.deathOverlay:Hide();
-                end
-            elseif (playerFrame.deathOverlay) then
-                playerFrame.deathOverlay:Hide();
+            if (not Options:Get("alwaysShowDeathOverlay")) then
+                playerFrame.icon:SetDeathVisibility(false);
             end
 
-            playerFrame:SetScript("OnEnter", function(self)
-                Tooltips:DrawPlayerTooltip(self);
-            end);
-            playerFrame:SetScript("OnLeave", function()
-                Tooltips:HidePlayerTooltip();
-            end);
+            playerFrame:SetScript("OnEnter", function(self) Tooltips:DrawPlayerTooltip(self) end);
+            playerFrame:SetScript("OnLeave", Tooltips.HideAll);
 
             -- Quick Search
             playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
@@ -542,21 +504,9 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
         local playerFrame = matchData[i];
         assert(playerFrame);
 
-        if (playerFrame.specOverlay) then
-            if (visible or Options:Get("alwaysShowSpecOverlay")) then
-                playerFrame.specOverlay:Show();
-            else
-                playerFrame.specOverlay:Hide();
-            end
-        end
-
-        if (playerFrame.deathOverlay) then
-            local isFirstDeath = playerFrame.playerInfo and playerFrame.playerInfo.isFirstDeath;
-            if (isFirstDeath and (visible or Options:Get("alwaysShowDeathOverlay"))) then
-                playerFrame.deathOverlay:Show();
-            else
-                playerFrame.deathOverlay:Hide();
-            end
+        if(playerFrame.icon) then
+            playerFrame.icon:SetSpecVisibility(visible or Options:Get("alwaysShowSpecOverlay"));
+            playerFrame.icon:SetDeathVisibility(visible or Options:Get("alwaysShowDeathOverlay"));
         end
     end
 end
@@ -738,6 +688,7 @@ function AAtable:RefreshLayout()
             local matchDate = ArenaMatch:GetDate(match);
             local map = ArenaMatch:GetMap(match);
             local duration = ArenaMatch:GetDuration(match);
+            local bracket = ArenaMatch:GetBracket(match);
 
             button.Date:SetText(matchDate and date("%d/%m/%y %H:%M:%S", matchDate) or "");
             button.Map:SetText(map or "");
@@ -798,11 +749,19 @@ function AAtable:RefreshLayout()
             button:SetScript("OnEnter", function(args)
                 args:SetAttribute("hovered", true);
                 AAtable:ToggleSpecsAndDeathOverlay(args);
+
+                if(bracket == "shuffle") then
+                    Tooltips:DrawShuffleTooltip(button, match);
+                else
+                    Tooltips:HideShuffleTooltip();
+                end
             end);
 
             button:SetScript("OnLeave", function(args) 
                 args:SetAttribute("hovered", false);
                 AAtable:ToggleSpecsAndDeathOverlay(args);
+
+                Tooltips:HideShuffleTooltip();
             end);
             
             button:RegisterForClicks("LeftButtonDown", "RightButtonDown", "LeftButtonUp", "RightButtonUp");

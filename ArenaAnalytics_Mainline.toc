@@ -27,8 +27,9 @@ Source/API/ArenaInspection.lua
 Source/UI/HybridScroll.xml
 Source/UI/ArenaTable.lua
 Source/UI/ArenaMatchSelection.lua
-Source/UI/ArenaTooltips.lua
 Source/UI/ArenaIcon.lua
+Source/UI/ArenaTooltips.lua
+Source/UI/ArenaTooltips_Shuffle.lua
 
 Source/Data/ArenaInternalIDs.lua
 Source/Data/ArenaConstants.lua

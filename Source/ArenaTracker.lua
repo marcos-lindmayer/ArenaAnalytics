@@ -501,8 +501,6 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 	if(#currentArena.players == 2*currentArena.size) then
 		ArenaTracker:UpdateRoundTeam();
 	end
-
-	ArenaAnalytics:Print("FillMissingPlayers", #currentArena.players)
 end
 
 -- Returns a table with unit information to be placed inside arena.players

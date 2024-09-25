@@ -620,7 +620,7 @@ function ArenaMatch:GetPlayerInfo(player, existingTable)
 
     local playerInfo = existingTable or {};
     playerInfo.isSelf = (ArenaMatch:GetPlayerValue(player, "is_self") == 1);
-    playerInfo.isFirstDeath = (ArenaMatch:GetPlayerValue(player, "is_first_death") == 1);
+    playerInfo.isFirstDeath = ArenaMatch:IsPlayerFirstDeath(player);
     playerInfo.name = name;
     playerInfo.realm = realm;
     playerInfo.fullName = ArenaAnalytics:CombineNameAndRealm(name, realm);
@@ -828,7 +828,7 @@ end
 -- First Death
 
 function ArenaMatch:IsPlayerFirstDeath(player)
-    return player and player[playerKeys.is_first_death] or false;
+    return player and player[playerKeys.is_first_death] and true or false;
 end
 
 function ArenaMatch:GetFirstDeath(match)
@@ -1024,7 +1024,19 @@ function ArenaMatch:SetRounds(match, rounds)
 end
 
 function ArenaMatch:GetRounds(match)
-    return nil;
+    return match and match[matchKeys.rounds] or nil;
+end
+
+function ArenaMatch:GetRoundData(round)
+    return round and round[roundKeys.data];
+end
+
+function ArenaMatch:GetRoundComp(round)
+    return round and round[roundKeys.comp];
+end
+
+function ArenaMatch:GetRoundEnemyComp(round)
+    return round and round[roundKeys.enemy_comp];
 end
 
 -------------------------------------------------------------------------

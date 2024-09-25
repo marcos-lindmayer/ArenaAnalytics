@@ -13,8 +13,9 @@ ArenaAnalytics.Inspection = {};
 
 ArenaAnalytics.AAtable = {};
 ArenaAnalytics.Selection = {};
-ArenaAnalytics.Tooltips = {};
 ArenaAnalytics.ArenaIcon = {};
+ArenaAnalytics.Tooltips = {};
+ArenaAnalytics.ShuffleTooltip = {};
 
 ArenaAnalytics.Dropdown = {};
 ArenaAnalytics.Dropdown.List = {};
@@ -192,8 +193,6 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-
-		ArenaAnalytics:Log(API:IsSoloShuffle());
 
 		print(" ");
 	end,	
