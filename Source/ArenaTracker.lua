@@ -611,15 +611,14 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 
 	-- Store death
 	currentArena.deathData[playerGUID] = {
-		["time"] = time(), 
-		["GUID"] = playerGUID,
-		["name"] = name,
-		["isHunter"] = (class == "HUNTER") or nil,
-		["hasKillCredit"] = isKillCredit or currentArena.deathData[playerGUID].hasKillCredit,
+		time = time(), 
+		name = name,
+		isHunter = (class == "HUNTER") or nil,
+		hasKillCredit = isKillCredit or currentArena.deathData[playerGUID].hasKillCredit,
 	};
 
 	if(currentArena.isShuffle and (isKillCredit or class ~= "HUNTER")) then
-		ArenaTracker:HandleRoundEnd();
+		C_Timer.After(0, ArenaTracker.HandleRoundEnd);
 	end
 end
 

@@ -24,7 +24,7 @@ function ArenaIcon:Create(parent, size, skipDeath)
 
     if(not skipDeath) then
         newFrame.deathOverlay = CreateFrame("Frame", nil, newFrame);
-        newFrame.deathOverlay:SetAllPoints(newFrame);
+        newFrame.deathOverlay:SetAllPoints(newFrame.classTexture);
         newFrame.deathOverlay:SetFrameLevel(baseFrameLevel + 5);
 
         newFrame.deathOverlay.texture = newFrame.deathOverlay:CreateTexture();

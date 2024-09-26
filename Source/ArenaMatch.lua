@@ -456,7 +456,7 @@ end
 
 function ArenaMatch:IsLoss(match)
     local outcome = ArenaMatch:GetMatchOutcome(match);
-    return outcome ~= nil and (outcome ~= 1 and outcome ~= 2);
+    return outcome ~= nil and (outcome == 0);
 end
 
 function ArenaMatch:SetMatchOutcome(match, value)
@@ -964,19 +964,23 @@ function ArenaMatch:SetRounds(match, rounds)
 
     ArenaMatch:SortGroups(match);
 
-    -- Fill player name to index mapping
-    local indexMapping = {}
-    for index, player in ipairs(enemyTeam) do
-        local fullName = ArenaMatch:GetPlayerFullName(player);
-        if(fullName and fullName ~= "") then
-            indexMapping[fullName] = index;
-        end
-    end
-
     -- Cache values to help sort
     local myName = Helpers:GetPlayerName();
     local selfPlayerInfo = ArenaMatch:GetSelfInfo(match, true);
     local requiredTeamSize = ArenaMatch:GetTeamSize(match);
+    
+    -- Fill player name to index mapping
+    local indexMapping = {}
+
+    -- Add self
+    indexMapping[myName] = 0;
+    
+    for index, player in ipairs(enemyTeam) do
+        local fullName = ArenaMatch:GetPlayerFullName(player);
+        if(fullName and fullName ~= "" and fullName ~= myName) then
+            indexMapping[fullName] = index;
+        end
+    end
 
     local function compressGroup(group)
         if(not group or #group == 0) then
@@ -989,17 +993,17 @@ function ArenaMatch:SetRounds(match, rounds)
         for _,member in ipairs(group) do
             local spec_id = nil;
             local playerIndex = member and indexMapping[member] or nil;
+            local player = nil;
 
-            if(playerIndex) then
-                local player = enemyTeam[playerIndex];
-                spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
-
+            if(member == myName) then
+                player = ArenaMatch:GetSelf(match);
+            elseif(playerIndex) then
+                player = enemyTeam[playerIndex];
                 tinsert(compactGroup, playerIndex);
-            elseif(member == myName) then
-                local player = ArenaMatch:GetSelf(match);
-                spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
             end
 
+            -- Add spec for comp
+            local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
             if(Helpers:IsSpecID(spec_id)) then
                 tinsert(specs, spec_id);
             end
@@ -1015,12 +1019,11 @@ function ArenaMatch:SetRounds(match, rounds)
     for i,round in ipairs(rounds) do
         local team, comp = compressGroup(round.team);
         local enemy, enemyComp = compressGroup(round.enemy);
-        local firstDeath = round.firstDeath and indexMapping[round.firstDeath] or "";
-        local duration = round.duration or "";
+        local death = round.firstDeath and indexMapping[round.firstDeath];
 
-        -- Insert the round to the match
+        -- Insert the round to the match (team-enemy-death-duration)
         local compactRound = {
-            [roundKeys.data] = team .. "-" .. enemy .. "-" .. firstDeath .. "-" .. duration,
+            [roundKeys.data] = (team or "") .. "-" .. (enemy or "") .. "-" .. (death or "") .. "-" .. (round.duration or ""),
             [roundKeys.comp] = comp,
             [roundKeys.enemy_comp] = enemyComp,
         };

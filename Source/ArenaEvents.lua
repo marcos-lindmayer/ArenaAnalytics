@@ -22,7 +22,6 @@ local arenaEvents = {
 	"ARENA_OPPONENT_UPDATE", 
 	"GROUP_ROSTER_UPDATE", 
 	"ARENA_PREP_OPPONENT_SPECIALIZATIONS",
-	"PVP_MATCH_COMPLETE", -- TEST
 }
 
 local globalEvents = { 
@@ -102,10 +101,6 @@ end
 local function HandleArenaEvent(_, eventType, ...)
 	if (not API:IsInArena()) then 
 		return;
-	end
-
-	if(eventType == "PVP_MATCH_COMPLETE") then
-		ArenaAnalytics:Log("PVP_MATCH_COMPLETE");
 	end
 
 	if (ArenaTracker:IsTrackingArena()) then
