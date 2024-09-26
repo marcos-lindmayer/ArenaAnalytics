@@ -193,7 +193,7 @@ API.specMappingTable = {
     [581] = 111, -- Vengeance Demon Hunter
     [577] = 112, -- Havoc Demon Hunter
 
-    [1468] = 122, -- Preservation Evoker
+    [1468] = 121, -- Preservation Evoker
     [1473] = 122, -- Augmentation Evoker
     [1467] = 123, -- Devastation Evoker
 }
