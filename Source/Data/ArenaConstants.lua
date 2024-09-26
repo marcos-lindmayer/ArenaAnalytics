@@ -7,6 +7,18 @@ local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
+Constants.headerColor = "ffd0d0d0";
+Constants.prefixColor = "FF909090";
+Constants.valueColor = "fff9f9f9";
+Constants.infoColor = "ffbbbbbb";
+
+-- Outcome colors
+Constants.winColor = "ff00cc66";
+Constants.lossColor = "ffff0000";
+Constants.drawColor = "ffffcc00";
+
+-------------------------------------------------------------------------
+
 Constants.currentSeasonStartInt = 1687219201;
 
 -- (Assumes timestamp of 00:00:01 GMT and no difference between regions for now)

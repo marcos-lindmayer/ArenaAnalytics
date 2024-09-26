@@ -376,7 +376,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
             ArenaMatch:SetSeason(convertedArena, oldArena["season"]);
             ArenaMatch:SetSession(convertedArena, oldArena["session"]);
 
-            ArenaMatch:SetVictory(convertedArena, oldArena["won"]);
+            ArenaMatch:SetMatchOutcome(convertedArena, oldArena["won"]);
 
             -- Add team
             for _,player in ipairs(oldArena["team"]) do

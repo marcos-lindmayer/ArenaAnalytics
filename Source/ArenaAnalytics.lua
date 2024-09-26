@@ -270,7 +270,7 @@ function ArenaAnalytics:RecomputeSessionsForMatchHistory()
 	for i = 1, #ArenaAnalyticsDB do
 		local current = ArenaAnalytics:GetMatch(i);
 		local prev = ArenaAnalytics:GetMatch(i - 1);
-		
+
 		if(current) then
 			if(prev and not ArenaAnalytics:IsMatchesSameSession(prev, current)) then
 				session = session + 1;
@@ -278,7 +278,6 @@ function ArenaAnalytics:RecomputeSessionsForMatchHistory()
 
 			ArenaMatch:SetSession(current, session);
 		end
-
 	end
 
 	ArenaAnalytics:UpdateLastSession();
@@ -640,7 +639,7 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	ArenaMatch:SetDate(arenaData, newArena.startTime);
 	ArenaMatch:SetDuration(arenaData, newArena.duration);
 	ArenaMatch:SetMap(arenaData, newArena.mapId);
-	
+
 	ArenaAnalytics:Log("Bracket:", newArena.bracketIndex);
 	ArenaMatch:SetBracketIndex(arenaData, newArena.bracketIndex);
 
@@ -658,7 +657,7 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 
 	ArenaMatch:SetSeason(arenaData, season);
 
-	ArenaMatch:SetVictory(arenaData, newArena.won);
+	ArenaMatch:SetMatchOutcome(arenaData, newArena.outcome);
 
 	-- Add players from both teams sorted, and assign comps.
 	ArenaMatch:AddPlayers(arenaData, newArena.players);

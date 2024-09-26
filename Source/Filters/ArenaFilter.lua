@@ -117,7 +117,7 @@ function Filters:IsFilterActive(filterName)
     return false;
 end
 
-function Filters:getActiveFilterCount()
+function Filters:GetActiveFilterCount()
     local count = 0;
     if(not Search:IsEmpty()) then
         count = count + 1;

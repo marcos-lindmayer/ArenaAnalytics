@@ -26,7 +26,7 @@ local matchKeys = {
     enemy_mmr = -10,
     season = -11,
     session = -12,
-    won = -13,
+    outcome = -13,
     team = -14,
     enemy_team = -15,
     comp = -16,
@@ -440,19 +440,30 @@ end
 -------------------------------------------------------------------------
 -- Victory (14)
 
-function ArenaMatch:IsVictory(match)
-    local isWin = match and tonumber(match[matchKeys.won]);
-    if(isWin == nil) then
-        return nil;
-    end
-
-    return (isWin ~= 0);
+function ArenaMatch:GetMatchOutcome(match)
+    return match and tonumber(match[matchKeys.outcome]);
 end
 
-function ArenaMatch:SetVictory(match, value)
+function ArenaMatch:IsVictory(match)
+    local outcome = ArenaMatch:GetMatchOutcome(match);
+    return outcome ~= nil and (outcome == 1);
+end
+
+function ArenaMatch:IsDraw(match)
+    local outcome = ArenaMatch:GetMatchOutcome(match);
+    return outcome ~= nil and (outcome == 2);
+end
+
+function ArenaMatch:IsLoss(match)
+    local outcome = ArenaMatch:GetMatchOutcome(match);
+    return outcome ~= nil and (outcome ~= 1 and outcome ~= 2);
+end
+
+function ArenaMatch:SetMatchOutcome(match, value)
     assert(match);
 
-    match[matchKeys.won] = ToNumericalBool(value, 2);
+    -- 0 = loss, 1 = win, 2 = draw, nil = unknown. 
+    match[matchKeys.outcome] = ToNumericalBool(value, 2);
 end
 
 -------------------------------------------------------------------------
@@ -998,7 +1009,6 @@ function ArenaMatch:SetRounds(match, rounds)
         local groupString = table.concat(compactGroup) or "";
         local comp = GetCompForSpecs(specs, requiredTeamSize);
 
-        ArenaAnalytics:Log("compressGroup result:", groupString, comp, #specs);
         return groupString, comp;
     end
 
@@ -1016,11 +1026,7 @@ function ArenaMatch:SetRounds(match, rounds)
         };
 
         tinsert(match[matchKeys.rounds], compactRound);
-        
-        ArenaAnalytics:Log("SetRounds: Added round:", compactRound[0], compactRound[-1], compactRound[-2]);
     end
-    
-    ArenaAnalytics:Log("Match:SetRounds outcome:", #match[matchKeys.rounds], #rounds);
 end
 
 function ArenaMatch:GetRounds(match)

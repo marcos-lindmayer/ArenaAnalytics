@@ -55,7 +55,7 @@ function ArenaTracker:Reset()
 
 	currentArena.ended = false;
 	currentArena.endedProperly = false;
-	currentArena.won = nil;
+	currentArena.outcome = nil;
 
 	currentArena.rounds = {}
 
@@ -202,6 +202,34 @@ end
 function ArenaTracker:HasSpec(GUID)
 	local player = ArenaTracker:GetPlayer(GUID);
 	return player and Helpers:IsSpecID(player.spec);
+end
+
+function ArenaTracker:GetShuffleWinner()
+	if(currentArena.rounds) then
+		local wins = 0;
+
+        -- Iterate through all the rounds
+        for _, round in ipairs(currentArena.rounds) do
+            -- Check if firstDeath exists
+            if(round.firstDeath) then
+                for _, enemyPlayer in ipairs(round.enemy) do
+                    if enemyPlayer == round.firstDeath then
+                        wins = wins + 1;
+						break;
+                    end
+                end
+            end
+        end
+
+        if(wins == 3) then
+			-- Draw
+			return 2; 
+		else
+			return wins > 3 and 1 or 0;
+		end
+	end
+
+	return nil;
 end
 
 -- Gates opened, match has officially started
@@ -377,22 +405,27 @@ function ArenaTracker:HandleArenaEnd()
 		end
 	end
 
-	-- Assign isEnemy value
-	if(not currentArena.isShuffle) then
+	
+	if(currentArena.isShuffle) then
+		-- Determine match outcome
+		currentArena.outcome = ArenaTracker:GetShuffleWinner()
+	else
+		-- Assign isEnemy value
 		for _,player in ipairs(players) do
 			if(player and player.teamIndex) then
 				player.isEnemy = (player.teamIndex ~= myTeamIndex);
 			end
 		end
+
+		-- Assign Winner
+		if(winner == 255) then
+			currentArena.outcome = 2;
+		elseif(winner ~= nil) then
+			currentArena.outcome = (myTeamIndex == winner) and 1 or 0;
+		end
 	end
 
-	-- Assign Winner
-	ArenaAnalytics:Log("My faction: ", myTeamIndex, "(Winner:", winner,")")
-	if(winner == 255) then
-		currentArena.won = 2;
-	elseif(winner ~= nil) then
-		currentArena.won = (myTeamIndex == winner);
-	end
+	ArenaAnalytics:Log("My faction: ", myTeamIndex, "(Winner:", winner, currentArena.outcome, ")")
 
 	-- Process ranked information
 	if (currentArena.isRated and myTeamIndex) then
@@ -421,7 +454,7 @@ function ArenaTracker:HandleArenaExit()
 
 	if(not currentArena.endedProperly) then
 		currentArena.ended = true;
-		currentArena.won = false;
+		currentArena.outcome = false;
 
 		ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
 	end
