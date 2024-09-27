@@ -378,30 +378,44 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
 
             ArenaMatch:SetMatchOutcome(convertedArena, oldArena["won"]);
 
-            -- Add team
-            for _,player in ipairs(oldArena["team"]) do
-                local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
+            local function ConvertPlayerValues(player)
                 local race_id, spec_id = ConvertValues(player.race, player.class, player.spec);
                 local role_id = API:GetRoleBitmap(spec_id);
 
-                ArenaMatch:AddPlayer(convertedArena, false, player.name, race_id, spec_id, role_id, kills, deaths, damage, healing);
+                -- Update for new format values
+                player.spec = spec_id;
+                player.race = race_id;
+                player.role = role_id;
+                player.isEnemy = false;
+
+                if(player.name) then
+                    if(player.name == oldArena.player) then
+                        player.isSelf = true;
+                    end
+
+                    if(player.name == oldArena.isFirstDeath) then
+                        player.isFirstDeath = true;
+                    end
+                end
+            end
+
+            -- Add team
+            for _,player in ipairs(oldArena["team"]) do
+                ConvertPlayerValues(player);
+                player.isEnemy = false;
+                ArenaMatch:AddPlayer(convertedArena, player);
             end
 
             -- Add enemy team
             for _,player in ipairs(oldArena["enemyTeam"]) do
-                local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
-                local race_id, spec_id = ConvertValues(player.race, player.class, player.spec);
-                local role_id = API:GetRoleBitmap(spec_id);
-
-                ArenaMatch:AddPlayer(convertedArena, true, player.name, race_id, spec_id, role_id, kills, deaths, damage, healing);
+                ConvertPlayerValues(player);
+                player.isEnemy = true;
+                ArenaMatch:AddPlayer(convertedArena, player);
             end
 
-            ArenaMatch:SetSelf(convertedArena, oldArena["player"]);
-            if(oldArena["player"]) then
-                selfNames[oldArena["player"]] = true;
+            if(oldArena.player) then
+                selfNames[oldArena.player] = true;
             end
-
-            ArenaMatch:SetFirstDeath(convertedArena, oldArena["firstDeath"]);
 
             -- Comps
             ArenaMatch:UpdateComps(convertedArena);
