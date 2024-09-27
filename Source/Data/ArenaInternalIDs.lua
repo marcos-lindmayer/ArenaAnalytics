@@ -206,6 +206,22 @@ function Internal:GetClassColor(spec_id)
     return classToken and select(4, GetClassColor(classToken)) or "ffffffff";
 end
 
+function Internal:GetClassIcon(spec_id)
+    class_id = Helpers:GetClassID(spec_id);
+    if(not class_id) then
+        return 134400; -- Question Mark
+    end
+
+    -- Death Knight
+    if(class_id == 30) then
+        return "Interface\\Icons\\spell_deathknight_classicon";
+    end
+
+    local classInfo = addonClassIDs[class_id];
+    local classToken = classInfo and classInfo.token;
+    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or 134400;
+end
+
 -------------------------------------------------------------------------
 -- Specialization IDs
 
@@ -298,22 +314,6 @@ function InitializeSpecIDs()
     }
 end
 
-function Internal:GetClassIcon(spec_id)
-    class_id = Helpers:GetClassID(spec_id);
-    if(not class_id) then
-        return 134400; -- Question Mark
-    end
-
-    -- Death Knight
-    if(class_id == 30) then
-        return "Interface\\Icons\\spell_deathknight_classicon";
-    end
-
-    local classInfo = addonClassIDs[class_id];
-    local classToken = classInfo and classInfo.token;
-    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or 134400;
-end
-
 -- Get the ID from string class and spec. Should only be used by version control.
 function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
     if(not class_id) then
@@ -337,11 +337,12 @@ function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
 end
 
 function Internal:GetRoleBitmap(spec_id)
+    spec_id = tonumber(spec_id);
     if(not spec_id or not addonSpecializationIDs[spec_id]) then
         return nil;
     end
 
-    return addonSpecializationIDs[spec_id].role;
+    return tonumber(addonSpecializationIDs[spec_id].role);
 end
 
 -------------------------------------------------------------------------

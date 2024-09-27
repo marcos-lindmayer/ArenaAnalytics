@@ -106,8 +106,6 @@ end
 -------------------------------------------------------------------------
 
 local function ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo)
-    assert(playerInfoA and playerInfoB);
-
     if not selfPlayerInfo then
         return nil;
     end
@@ -120,26 +118,24 @@ local function ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo)
             return false;
         end
     end
-    
+
     -- Main Role Comparison
     if(selfPlayerInfo.role_main and playerInfoA.role_main ~= playerInfoB.role_main) then
-        local matchA = playerInfoA.role_main == selfPlayerInfo.role_main;
-        local matchB = playerInfoB.role_main == selfPlayerInfo.role_main;
-        if matchA and not matchB then
-            return true;
-        elseif matchB and not matchA then
-            return false;
+        local matchedA = playerInfoA.role_main == selfPlayerInfo.role_main;
+        local matchedB = playerInfoB.role_main == selfPlayerInfo.role_main;
+
+        if(matchedA ~= matchedB) then
+            return matchedA;
         end
     end
 
     -- Main Role Comparison
     if(selfPlayerInfo.role_sub and playerInfoA.role_sub ~= playerInfoB.role_sub) then
-        local matchA = playerInfoA.role_sub == selfPlayerInfo.role_sub;
-        local matchB = playerInfoB.role_sub == selfPlayerInfo.role_sub;
-        if matchA and not matchB then
-            return true;
-        elseif matchB and not matchA then
-            return false;
+        local matchedA = playerInfoA.role_sub == selfPlayerInfo.role_sub;
+        local matchedB = playerInfoB.role_sub == selfPlayerInfo.role_sub;
+        
+        if(matchedA ~= matchedB) then
+            return matchedA;
         end
     end
 
@@ -165,7 +161,7 @@ local function ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo)
         end
     end
 
-    -- If both match equally, return nil to indicate no decision
+    -- If both matched equally, return nil to indicate no decision
     return nil;
 end
 
@@ -205,23 +201,46 @@ function GroupSorter:SortGroup(group, selfPlayerInfo)
     end);
 end
 
-function GroupSorter:SortIndexGroup(group, selfPlayerInfo, players)
+function GroupSorter:SortIndexGroup(group, players, selfPlayerInfo)
     if(not group or #group == 0) then
+        ArenaAnalytics:Log("SortIndexGroup got invalid group.")
         return;
     end
 
     -- Requires players table to process indices
     if(not players or #players == 0) then
+        ArenaAnalytics:Log("SortIndexGroup got invalid players table")
         return;
     end
 
+    local function tempLog(playerInfo)
+        if(not playerInfo) then
+            return "nil info";
+        end
+
+        return playerInfo.role, playerInfo.role_main, playerInfo.role_sub, ArenaAnalytics.API:GetRoleBitmap(playerInfo.spec_id);
+    end
+
     table.sort(group, function(indexA, indexB)
-        local playerA = tonumber(indexA) and players[indexA];
-        local playerB = tonumber(indexB) and players[indexB];
+        indexA = tonumber(indexA);
+        indexB = tonumber(indexB);
 
-        local playerInfoA = ArenaMatch:GetPlayerInfo(playerA);
-        local playerInfoB = ArenaMatch:GetPlayerInfo(playerB);
+        local playerInfoA, playerInfoB;
 
-        return ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
+        -- 0 is always self
+        if(indexA == 0) then
+            return true;
+        elseif(indexB == 0) then
+            return false;
+        end
+
+        local playerInfoA = indexA and ArenaMatch:GetPlayerInfo(players[indexA]);
+        local playerInfoB = indexB and ArenaMatch:GetPlayerInfo(players[indexB]);
+
+        ArenaAnalytics:Log(indexA, indexB, #players, ":", tempLog(playerInfoA), "///", tempLog(playerInfoB))
+
+        local result = ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
+        ArenaAnalytics:Log("     ", result);
+        return result;
     end);
 end

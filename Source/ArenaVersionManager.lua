@@ -382,7 +382,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
             for _,player in ipairs(oldArena["team"]) do
                 local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
                 local race_id, spec_id = ConvertValues(player.race, player.class, player.spec);
-                local role_id = Internal:GetRoleBitmap(spec_id);
+                local role_id = API:GetRoleBitmap(spec_id);
 
                 ArenaMatch:AddPlayer(convertedArena, false, player.name, race_id, spec_id, role_id, kills, deaths, damage, healing);
             end
@@ -391,7 +391,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
             for _,player in ipairs(oldArena["enemyTeam"]) do
                 local kills, deaths, damage, healing = player.kills, player.deaths, player.damage, player.healing;
                 local race_id, spec_id = ConvertValues(player.race, player.class, player.spec);
-                local role_id = Internal:GetRoleBitmap(spec_id);
+                local role_id = API:GetRoleBitmap(spec_id);
 
                 ArenaMatch:AddPlayer(convertedArena, true, player.name, race_id, spec_id, role_id, kills, deaths, damage, healing);
             end

@@ -7,6 +7,11 @@ local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
+-- Initialize the general and expansion specific addon API
+function API:Initialize()
+
+end
+
 function API:GetAddonVersion()
     if(GetAddOnMetadata) then
         return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
@@ -51,4 +56,24 @@ end
 
 function API:IsSoloShuffle()
     return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
+end
+
+function API:GetRoleBitmap(spec_id)
+    spec_id = tonumber(spec_id);
+    if(not spec_id) then
+        return;
+    end
+
+    -- Check for override
+    local bitmapOverride = API.roleBitmapOverrides and API.roleBitmapOverrides[spec_id];
+
+    return bitmapOverride or Internal:GetRoleBitmap(spec_id);
+end
+
+-------------------------------------------------------------------------
+-- Initialize the general and expansion specific addon API
+function API:Initialize()
+    if(API.InitializeExpansion) then
+        API:InitializeExpansion();
+    end
 end

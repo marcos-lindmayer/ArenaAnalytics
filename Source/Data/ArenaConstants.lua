@@ -7,15 +7,20 @@ local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
+-- Text colors
 Constants.headerColor = "ffd0d0d0";
 Constants.prefixColor = "FF909090";
-Constants.valueColor = "fff9f9f9";
+Constants.valueColor = nil; -- f9f9f9 for white?
+Constants.statsColor = "ffffffff";
 Constants.infoColor = "ffbbbbbb";
 
 -- Outcome colors
 Constants.winColor = "ff00cc66";
 Constants.lossColor = "ffff0000";
-Constants.drawColor = "ffffcc00";
+Constants.drawColor = "ffefef00";
+Constants.invalidColor = "ff999999";
+
+Constants.white = "ffffffff";
 
 -------------------------------------------------------------------------
 

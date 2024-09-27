@@ -172,3 +172,20 @@ function API:GetMappedAddonSpecID(specID)
 
     return spec_id;
 end
+
+-------------------------------------------------------------------------
+-- Overrides
+
+API.roleBitmapOverrides = nil;
+local function InitializeRoleBitmapOverrides()
+    API.roleBitmapOverrides = {
+        [43] = Bitmap.roles.ranged_damager, -- Survival hunter
+    }
+end
+
+-------------------------------------------------------------------------
+-- Expansion API initializer
+
+function API:InitializeExpansion()
+    InitializeRoleBitmapOverrides();
+end

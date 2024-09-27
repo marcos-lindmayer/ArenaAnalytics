@@ -486,35 +486,41 @@ function ArenaMatch:AddPlayers(match, players)
     assert(players);
 
     for _,player in ipairs(players) do
-        ArenaMatch:AddPlayer(match, player.isEnemy, player.name, player.race, player.spec, player.role, player.kills, player.deaths, player.damage, player.healing);
+        ArenaMatch:AddPlayer(match, player);
     end
 
-    ArenaMatch:SortGroups(match);
     ArenaMatch:UpdateComps(match);
+    ArenaMatch:SortGroups(match);
 end
 
-function ArenaMatch:AddPlayer(match, isEnemyTeam, fullName, race_id, spec_id, role_bitmap, kills, deaths, damage, healing)
+function ArenaMatch:AddPlayer(match, player)
     assert(match);
 
-    if(fullName == nil) then
+    if(not player) then
+        return;
+    end
+
+    if(player.name == nil) then
         ArenaAnalytics:Log("Warning: Adding player to stored match without name!");
     end
 
-    local name, realm = ArenaAnalytics:GetNameAndRealm(fullName, true);
+    local name, realm = ArenaAnalytics:GetNameAndRealm(player.name, true);
 
     local newPlayer = {}
-    SetPlayerValue(match, newPlayer, "name", name);
-    SetPlayerValue(match, newPlayer, "realm", realm);
-    SetPlayerValue(match, newPlayer, "race", tonumber(race_id));
-    SetPlayerValue(match, newPlayer, "spec_id", tonumber(spec_id));
-    SetPlayerValue(match, newPlayer, "role", tonumber(role_bitmap));
-    SetPlayerValue(match, newPlayer, "kills", tonumber(kills));
-    SetPlayerValue(match, newPlayer, "deaths", tonumber(deaths));
-    SetPlayerValue(match, newPlayer, "damage", tonumber(damage));
-    SetPlayerValue(match, newPlayer, "healing", tonumber(healing));
-    SetPlayerValue(match, newPlayer, "wins", tonumber(wins));
+    newPlayer[playerKeys.name] = name;
+    newPlayer[playerKeys.realm] = realm;
+    newPlayer[playerKeys.race] = tonumber(player.race);
+    newPlayer[playerKeys.spec_id] = tonumber(player.spec);
+    newPlayer[playerKeys.role] = API:GetRoleBitmap(player.spec_id);
+    newPlayer[playerKeys.kills] = tonumber(player.kills);
+    newPlayer[playerKeys.deaths] = tonumber(player.deaths);
+    newPlayer[playerKeys.damage] = tonumber(player.damage);
+    newPlayer[playerKeys.healing] = tonumber(player.healing);
+    newPlayer[playerKeys.wins] = tonumber(player.wins);
+    newPlayer[playerKeys.is_self] = player.isSelf and 1 or nil;
+    newPlayer[playerKeys.is_first_death] = player.isFirstDeath and 1 or nil;
 
-    local teamKey = isEnemyTeam and matchKeys.enemy_team or matchKeys.team;
+    local teamKey = player.isEnemy and matchKeys.enemy_team or matchKeys.team;
     match[teamKey] = match[teamKey] or {}
     tinsert(match[teamKey], newPlayer);
 end
@@ -628,6 +634,13 @@ function ArenaMatch:GetPlayerInfo(player, existingTable)
     local race_id = ArenaMatch:GetPlayerValue(player, "race");
 
     local role_bitmap = ArenaMatch:GetPlayerValue(player, "role");
+
+    -- Temp fixing for missed data
+    if(spec_id) then
+        role_bitmap = API:GetRoleBitmap(spec_id);
+        player[playerKeys.role] = role_bitmap;
+        ArenaAnalytics:Log("Temp: Fixed role bitmap for player:", spec_id, role_bitmap)
+    end
 
     local playerInfo = existingTable or {};
     playerInfo.isSelf = (ArenaMatch:GetPlayerValue(player, "is_self") == 1);
@@ -957,12 +970,13 @@ function ArenaMatch:SetRounds(match, rounds)
         return;
     end
 
+    ArenaMatch:SortGroups(match);
+
     local enemyTeam = ArenaMatch:GetTeam(match, true);
     assert(enemyTeam and #enemyTeam > 0); -- Must already have players, to compact round data
 
     match[matchKeys.rounds] = {};
 
-    ArenaMatch:SortGroups(match);
 
     -- Cache values to help sort
     local myName = Helpers:GetPlayerName();
@@ -1009,7 +1023,7 @@ function ArenaMatch:SetRounds(match, rounds)
             end
         end
 
-        GroupSorter:SortIndexGroup(compactGroup, selfPlayerInfo, enemyTeam);
+        GroupSorter:SortIndexGroup(compactGroup, enemyTeam, selfPlayerInfo);
         local groupString = table.concat(compactGroup) or "";
         local comp = GetCompForSpecs(specs, requiredTeamSize);
 
@@ -1036,8 +1050,22 @@ function ArenaMatch:GetRounds(match)
     return match and match[matchKeys.rounds] or nil;
 end
 
-function ArenaMatch:GetRoundData(round)
+function ArenaMatch:GetRoundDataRaw(round)
     return round and round[roundKeys.data];
+end
+
+function ArenaMatch:GetRoundData(round)
+    local data = ArenaMatch:GetRoundDataRaw(round);
+    return ArenaMatch:SplitRoundData(data);
+end
+
+function ArenaMatch:SplitRoundData(data)
+    if(not data) then
+        return nil;
+    end
+
+    -- 4 values: team, enemy, death, duration
+    return strsplit("-", data);
 end
 
 function ArenaMatch:GetRoundComp(round)
@@ -1054,55 +1082,95 @@ end
 -- Smart resort, fixing indicies stored per round
 function ArenaMatch:ResortPlayers(match)
     -- If map is not solo shuffle, do standard sorting
-    if(ArenaMatch:GetMatchType() ~= "shuffle") then
+    if(ArenaMatch:GetBracket(match) ~= "shuffle") then
         ArenaMatch:SortGroups(match);
-        return
+        return;
     end
 
     -- Fill old index to player name mapping
     local enemyTeam = ArenaMatch:GetTeam(match, true);
     local oldNameOrder = {}
     for i,player in ipairs(enemyTeam) do
-        if(player and player.name) then
-            oldNameOrder[i] = player.name;
-        end
+        player.oldIndex = i;
     end
 
     -- Sort match enemies
 	local selfPlayerInfo = ArenaMatch:GetSelfInfo(match);
     GroupSorter:SortGroup(enemyTeam, selfPlayerInfo);
 
+    local rounds = ArenaMatch:GetRounds(match);
+
+    -- No rounds to fix
+    if(not rounds) then
+        return;
+    end
+
     -- Fill old index to new index mapping
     local indexMapping = {}
     for newIndex,player in ipairs(enemyTeam) do
-        if(player and player.name) then
-            for oldIndex,name in pairs(oldNameOrder) do
-                if(oldIndex and oldNameOrder[oldIndex] == player.name) then
-                    indexMapping[oldIndex] = newIndex;
-                    break;
-                end
-            end
+        local oldIndex = player and player.oldIndex;
+        if(oldIndex) then
+            indexMapping[oldIndex] = newIndex;
+            player.oldIndex = nil; -- Clear temporary tag
+        else
+            ArenaAnalytics:Log("ERROR: Failed to retrieve old index for player! Sorting is likely to have broken the match data!");
+            assert(false); -- Force the addon to crash, preventing it from saving the match wrongly
         end
     end
 
+    local function ConvertPlayerIndices(string, requireSort)
+        if(not string or string == "") then
+            return "";
+        end
+
+        string = tostring(string);
+
+        local values = {}
+        for i=1, #string do
+            local char = string:sub(i,i);
+            local oldIndex = tonumber(char);
+
+            local newValue = nil;
+
+            if(oldIndex == 0) then
+                newValue = 0;
+            else
+                newValue = oldIndex and indexMapping[oldIndex];
+                if(not newValue) then
+                    if(not tonumber(char)) then
+                        newValue = char;
+                    end
+                end
+            end
+
+            if(newValue) then
+                tinsert(values, newValue);
+            end
+        end
+
+        if(requireSort) then
+            GroupSorter:SortIndexGroup(values, enemyTeam, selfPlayerInfo);
+        end
+
+        return table.concat(values);
+    end
+
     -- Update round groups to new index
-    -- TODO: For each round
-        -- For each group in that round
-            -- Convert each index to new index
+    for _,round in ipairs(rounds) do
+        local team, enemy, death, duration = ArenaMatch:GetRoundData(round);
 
-    -- Sort both groups for each round
-    -- TODO: Add GroupSorter:SortIndexGroup(group, players), where group is compacted 
+        team = ConvertPlayerIndices(team, true);
+        enemy = ConvertPlayerIndices(enemy, true);
+        death = ConvertPlayerIndices(death);
 
-    -- Compress to index based format
-
-    -- Save
+        round[roundKeys.data] = team .. "-" .. enemy .. "-" .. death .. "-" .. (duration or "");
+    end
 end
-
 
 function ArenaMatch:SortGroups(match)
     assert(match);
 
-	local selfPlayerInfo = ArenaMatch:GetSelfInfo(match);
+	local selfPlayerInfo = ArenaMatch:GetSelfInfo(match, true);
 
     local team = ArenaMatch:GetTeam(match, false);
     GroupSorter:SortGroup(team, selfPlayerInfo);

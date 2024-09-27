@@ -157,7 +157,7 @@ function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
 		local name, realm = UnitFullName("player");
 		local race_id = Helpers:GetUnitRace("player");
 
-		local role_bitmap = Internal:GetRoleBitmap(spec_id);
+		local role_bitmap = API:GetRoleBitmap(spec_id);
 
 		ArenaAnalytics.localPlayerInfo = {
 			is_self = true,
@@ -287,7 +287,7 @@ function ArenaAnalytics:ResortGroupsInMatchHistory()
 	for i=1, #ArenaAnalyticsDB do
 		local match = ArenaAnalytics:GetMatch(i);
 		if(match) then
-			ArenaMatch:SortGroups(match);
+			ArenaMatch:ResortPlayers(match);
 		end
 	end
 end
@@ -661,15 +661,11 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 
 	-- Add players from both teams sorted, and assign comps.
 	ArenaMatch:AddPlayers(arenaData, newArena.players);
-	ArenaMatch:SetSelf(arenaData, (newArena.player or Helpers:GetPlayerName()));
-	
+
 	if(newArena.isShuffle) then
 		ArenaMatch:SetRounds(arenaData, newArena.rounds);
-	else
-		local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
-		ArenaMatch:SetFirstDeath(arenaData, firstDeath);
 	end
-	
+
 	-- Assign session
 	local session = ArenaAnalytics:GetLatestSession();
 	local lastMatch = ArenaAnalytics:GetLastMatch(nil, false);
@@ -700,7 +696,7 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 
 	-- Refresh and reset current arena
 	ArenaTracker:Reset();
-	
+
 	Filters:Refresh();
 
 	AAtable:TryStartSessionDurationTimer();

@@ -6,6 +6,7 @@ local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
+local Bitmap = ArenaAnalytics.Bitmap;
 
 -------------------------------------------------------------------------
 
@@ -186,4 +187,21 @@ function API:GetMappedAddonSpecID(specID)
     end
 
     return spec_id;
+end
+
+-------------------------------------------------------------------------
+-- Overrides
+
+API.roleBitmapOverrides = nil;
+local function InitializeRoleBitmapOverrides()
+    API.roleBitmapOverrides = {
+        [43] = Bitmap.roles.ranged_damager, -- Survival hunter
+    }
+end
+
+-------------------------------------------------------------------------
+-- Expansion API initializer
+
+function API:InitializeExpansion()
+    InitializeRoleBitmapOverrides();
 end

@@ -374,6 +374,8 @@ function ArenaTracker:HandleArenaEnd()
 	-- Figure out how to default to nil, without failing to count losses.
 	local myTeamIndex = nil;
 
+	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
+
 	for i=1, GetNumBattlefieldScores() do
 		local name, race_id, spec_id, teamIndex, kills, deaths, damage, healing = API:GetBattlefieldScore(i);
 
@@ -393,8 +395,13 @@ function ArenaTracker:HandleArenaEnd()
 		player.damage = damage;
 		player.healing = healing;
 
+		-- First Death
+		if(not currentArena.isShuffle and name == firstDeath) then
+			player.firstDeath = true;
+		end
+
 		if (name == currentArena.playerName) then
-			ArenaAnalytics:Log("My Team:", teamIndex);
+			player.isSelf = true;
 			myTeamIndex = teamIndex;
 		elseif(currentArena.isShuffle) then
 			player.isEnemy = true;
@@ -544,7 +551,6 @@ function ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, spec_id, k
 		["name"] = name,
 		["race"] = race_id,
 		["spec"] = spec_id,
-		["role"] = Internal:GetRoleBitmap(spec_id),
 		["kills"] = kills,
 		["deaths"] = deaths,
 		["damage"] = damage,

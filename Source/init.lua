@@ -417,6 +417,7 @@ function ArenaAnalytics:init()
 	ArenaAnalytics:TryFixLastMatchRating();
 
 	Bitmap:Initialize();
+	API:Initialize();
 	Internal:Initialize();
 	Options:Init();
 	FilterTables:Init();

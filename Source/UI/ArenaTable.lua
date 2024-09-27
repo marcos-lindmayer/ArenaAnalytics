@@ -24,9 +24,19 @@ local hasLoaded = false;
 
 function ArenaAnalytics:ColorText(text, color)
     text = text or "";
-    color = color or "ffffffff";
+
+    if(not color) then
+        return text;
+    end
 
     return "|c" .. color .. text .. "|r"
+end
+
+function ArenaAnalytics:SetFrameText(frame, text, color)
+    assert(frame and frame.SetText, "Invalid frame provided for SetText.");
+
+    text = ArenaAnalytics:ColorText(text, color);
+    frame:SetText(text);
 end
 
 -- Filtered stats
@@ -540,7 +550,7 @@ local function CombineStatsText(total, wins, losses, draws)
     local drawText = includeDraws and (" / " .. ArenaAnalytics:ColorText(draws, Constants.drawColor)) or "";
 
     local valueText = total .. " " .. GetArenaText(total) .. "   " .. winsText .. " / " .. lossesText .. drawText .. "  " .. winrateText .. "% Winrate";
-    return ArenaAnalytics:ColorText(valueText, Constants.valueColor);
+    return ArenaAnalytics:ColorText(valueText, Constants.statsColor);
 end
 
 -- Updates the displayed data for a new match
@@ -652,7 +662,7 @@ function AAtable:UpdateSelected()
         newSelectedText = CombineStatsText(total, wins, losses, draws);
         ArenaAnalyticsScrollFrame.clearSelected:Show();
     else
-        newSelectedText = ArenaAnalytics:ColorText("(click matches to select)", Constants.valueColor);
+        newSelectedText = ArenaAnalytics:ColorText("(click matches to select)", Constants.statsColor);
         ArenaAnalyticsScrollFrame.clearSelected:Hide();
     end
 
@@ -714,9 +724,9 @@ function AAtable:RefreshLayout()
             local duration = ArenaMatch:GetDuration(match);
             local bracket = ArenaMatch:GetBracket(match);
 
-            button.Date:SetText(ArenaAnalytics:ColorText(matchDate and date("%d/%m/%y %H:%M:%S", matchDate), Constants.valueColor));
-            button.Map:SetText(ArenaAnalytics:ColorText(map, Constants.valueColor));
-            button.Duration:SetText(ArenaAnalytics:ColorText(duration and SecondsToTime(duration), Constants.valueColor));
+            ArenaAnalytics:SetFrameText(button.Date, (matchDate and date("%d/%m/%y %H:%M:%S", matchDate)), Constants.valueColor);
+            ArenaAnalytics:SetFrameText(button.Map, map, Constants.valueColor);
+            ArenaAnalytics:SetFrameText(button.Duration, (duration and SecondsToTime(duration)), Constants.valueColor);
 
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
@@ -729,11 +739,11 @@ function AAtable:RefreshLayout()
             local outcome = ArenaMatch:GetMatchOutcome(match);
             local hex = nil;
             if(outcome == nil) then
-                hex = "ff999999";
+                hex = Constants.invalidColor;
             elseif(outcome == 2) then
-                hex = "ffffcc00";
+                hex = Constants.drawColor;
             else
-                hex = (outcome == 1) and "ff00cc66" or "ffff0000";
+                hex = (outcome == 1) and Constants.winColor or Constants.lossColor;
             end
 
             -- Party Rating & Delta
@@ -751,15 +761,14 @@ function AAtable:RefreshLayout()
             button.Rating:SetText("|c" .. hex .. (ratingText or "") .."|r");
             
             -- Party MMR
-            button.MMR:SetText(ArenaAnalytics:ColorText(ArenaMatch:GetPartyMMR(match) or "-", Constants.valueColor));
+            ArenaAnalytics:SetFrameText(button.MMR, (ArenaMatch:GetPartyMMR(match) or "-"), Constants.valueColor);
 
             -- Enemy Rating & Delta
             local enemyRating, enemyRatingDelta = ArenaMatch:GetEnemyRating(match), ArenaMatch:GetEnemyRatingDelta(match);
-            local enemyRatingText = ratingToText(enemyRating, enemyRatingDelta) or "-";
-            button.EnemyRating:SetText(ArenaAnalytics:ColorText(enemyRatingText, Constants.valueColor));
+            ArenaAnalytics:SetFrameText(button.EnemyRating, (ratingToText(enemyRating, enemyRatingDelta) or "-"), Constants.valueColor);
 
             -- Enemy team MMR
-            button.EnemyMMR:SetText(ArenaAnalytics:ColorText(ArenaMatch:GetEnemyMMR(match) or "-", Constants.valueColor));
+            ArenaAnalytics:SetFrameText(button.EnemyMMR, (ArenaMatch:GetEnemyMMR(match) or "-"), Constants.valueColor);
 
             local isSelected = Selection:isMatchSelected(matchIndex);
             button:SetAttribute("selected", isSelected);
@@ -848,7 +857,7 @@ local function setLatestSessionDurationText(expired, startTime, endTime)
 
     local text = expired and "Last Session Duration: " or "Session Duration: ";
     text = ArenaAnalytics:ColorText(text, Constants.prefixColor);
-    ArenaAnalyticsScrollFrame.sessionDuration:SetText(text .. formatSessionDuration(duration));
+    ArenaAnalytics:SetFrameText(ArenaAnalyticsScrollFrame.sessionDuration, text .. formatSessionDuration(duration), Constants.statsColor)
 end
 
 local function handleSessionDurationTimer()

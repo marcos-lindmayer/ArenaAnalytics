@@ -9,6 +9,7 @@ local Tooltips = ArenaAnalytics.Tooltips;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local Internal = ArenaAnalytics.Internal;
 local Options = ArenaAnalytics.Options;
+local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
@@ -34,7 +35,7 @@ local currentRounds = nil;
 
 local function CreateRoundEntryFrame(index, parent)
     -- Create a frame for the round entry
-    local frame = CreateFrame("Frame", nil, parent);
+    local newFrame = CreateFrame("Frame", nil, parent);
 
     local height = 30;
     local borderWidth = 3.5;
@@ -43,75 +44,70 @@ local function CreateRoundEntryFrame(index, parent)
     local yOffset = 10;
 
     -- Set the size and position for the row (width should match parent)
-    frame:SetSize(parent:GetWidth(), height)
-    frame:SetPoint("TOPLEFT", parent, "TOPLEFT", borderWidth, -(height * index + yOffset)) -- Stack vertically
+    newFrame:SetSize(parent:GetWidth(), height)
+    newFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", borderWidth, -(height * index + yOffset)) -- Stack vertically
 
     -- Create the left faction background texture
-    frame.bgLeft = frame:CreateTexture(nil, "BACKGROUND");
-    frame.bgLeft:SetTexture("Interface\\WorldStateFrame\\WorldStateFinalScore-Highlight");
-    frame.bgLeft:SetTexCoord(0, 0.9, 0, 1); -- Use part of the texture (you can tweak it)
-    frame.bgLeft:SetPoint("TOPLEFT", frame, "TOPLEFT");
-    frame.bgLeft:SetSize(width / 2, height);
+    newFrame.bgLeft = newFrame:CreateTexture(nil, "BACKGROUND");
+    newFrame.bgLeft:SetTexture("Interface\\WorldStateFrame\\WorldStateFinalScore-Highlight");
+    newFrame.bgLeft:SetTexCoord(0, 0.9, 0, 1); -- Use part of the texture (you can tweak it)
+    newFrame.bgLeft:SetPoint("TOPLEFT", newFrame, "TOPLEFT");
+    newFrame.bgLeft:SetSize(width / 2, height);
 
     -- Create the right faction background texture
-    frame.bgRight = frame:CreateTexture(nil, "BACKGROUND");
-    frame.bgRight:SetTexture("Interface\\WorldStateFrame\\WorldStateFinalScore-Highlight");
-    frame.bgRight:SetTexCoord(1, 0.1, 0, 1); -- Mirror the texture for the right side
-    frame.bgRight:SetPoint("TOPLEFT", frame.bgLeft, "TOPRIGHT");
-    frame.bgRight:SetSize(width / 2, height);
+    newFrame.bgRight = newFrame:CreateTexture(nil, "BACKGROUND");
+    newFrame.bgRight:SetTexture("Interface\\WorldStateFrame\\WorldStateFinalScore-Highlight");
+    newFrame.bgRight:SetTexCoord(1, 0.1, 0, 1); -- Mirror the texture for the right side
+    newFrame.bgRight:SetPoint("TOPLEFT", newFrame.bgLeft, "TOPRIGHT");
+    newFrame.bgRight:SetSize(width / 2, height);
 
     -- Add a label for the round number
-    frame.roundText = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
-    frame.roundText:SetPoint("LEFT", frame, "LEFT", 10, 0);
-    frame.roundText:SetText((index or "?") .. ":");
+    newFrame.roundText = newFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+    newFrame.roundText:SetPoint("LEFT", newFrame, "LEFT", 10, 0);
+    ArenaAnalytics:SetFrameText(newFrame.roundText, ((index or "?") .. ":"), Constants.valueColor)
 
     -- Duration
-    frame.duration = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
-    frame.duration:SetPoint("RIGHT", frame, "RIGHT", -15, 0);
-    frame.duration:SetText("2 Min 57 Sec");
+    newFrame.duration = newFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+    newFrame.duration:SetPoint("RIGHT", newFrame, "RIGHT", -15, 0);
 
     -- Separator
-    frame.separator = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
-    frame.separator:SetPoint("CENTER", frame, -40, 0);
-    frame.separator:SetText("  vs  ")
+    newFrame.separator = newFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+    newFrame.separator:SetPoint("CENTER", newFrame, -40, 0);
+    ArenaAnalytics:SetFrameText(newFrame.separator, "  vs  ", Constants.valueColor);
 
     -- Teams
-    frame.team = {};
-    frame.enemyTeam = {};
+    newFrame.team = {};
+    newFrame.enemyTeam = {};
 
     local playerPadding = 4;
     local separatorPadding = 15;
 
     -- Team
-    local lastFrame = frame.separator;
-    for i=1, 3 do
-        local iconFrame = ArenaIcon:Create(frame, 24);
+    local lastFrame = newFrame.separator;
+    for i=3, 1, -1 do
+        local iconFrame = ArenaIcon:Create(newFrame, 24);
 
-        iconFrame:SetPoint("RIGHT", lastFrame, "LEFT", 0, 0);
+        iconFrame:SetPoint("RIGHT", lastFrame, "LEFT", -2, 0);
         lastFrame = iconFrame;
 
-        frame.team[i] = iconFrame;
+        newFrame.team[i] = iconFrame;
     end
 
     -- Enemies
-    lastFrame = frame.separator;
+    lastFrame = newFrame.separator;
     for i=1, 3 do
-        local iconFrame = ArenaIcon:Create(frame, 22);
-        iconFrame:SetPoint("LEFT", lastFrame, "RIGHT", 0, 0);
+        local iconFrame = ArenaIcon:Create(newFrame, 22);
+        iconFrame:SetPoint("LEFT", lastFrame, "RIGHT", 2, 0);
         lastFrame = iconFrame;
 
-        tinsert(frame.enemyTeam, iconFrame);
+        tinsert(newFrame.enemyTeam, iconFrame);
     end
 
-    function frame:SetText(text)
-        frame.data:SetText(text);
-    end
-
-    function frame:SetData(data, team, enemy, firstDeath, duration, isWin, selfPlayer, players)
+    function newFrame:SetData(data, team, enemy, firstDeath, duration, isWin, selfPlayer, players)
         self:SetIsWin(isWin);
 
         duration = tonumber(duration);
-        self.duration:SetText(duration and SecondsToTime(duration) or "");
+        ArenaAnalytics:SetFrameText(self.duration, (duration and SecondsToTime(duration)), Constants.valueColor)
 
         for i=2, 0, -1 do
             local spec_id, isFirstDeath;
@@ -151,20 +147,20 @@ local function CreateRoundEntryFrame(index, parent)
     end
 
     -- Set background color based on round win or loss
-    function frame:SetIsWin(isWin)
+    function newFrame:SetIsWin(isWin)
         if(isWin == nil) then -- Grey for unknown
-            frame.bgLeft:SetVertexColor(0.7, 0.7, 0.7, 0.8);
-            frame.bgRight:SetVertexColor(0.7, 0.7, 0.7, 0.8);
+            newFrame.bgLeft:SetVertexColor(0.7, 0.7, 0.7, 0.8);
+            newFrame.bgRight:SetVertexColor(0.7, 0.7, 0.7, 0.8);
         elseif(isWin) then -- Green for win
-            frame.bgLeft:SetVertexColor(0.19, 0.57, 0.11, 0.8);
-            frame.bgRight:SetVertexColor(0.19, 0.57, 0.11, 0.8);
+            newFrame.bgLeft:SetVertexColor(0.19, 0.57, 0.11, 0.8);
+            newFrame.bgRight:SetVertexColor(0.19, 0.57, 0.11, 0.8);
         else -- Red for loss
-            frame.bgLeft:SetVertexColor(0.52, 0.075, 0.18, 0.8);
-            frame.bgRight:SetVertexColor(0.52, 0.075, 0.18, 0.8);
+            newFrame.bgLeft:SetVertexColor(0.52, 0.075, 0.18, 0.8);
+            newFrame.bgRight:SetVertexColor(0.52, 0.075, 0.18, 0.8);
         end
     end
 
-    return frame;
+    return newFrame;
 end
 
 -- Get existing shuffle tooltip, or create a new one
@@ -177,8 +173,8 @@ local function GetOrCreateSingleton()
         self.frame:SetFrameStrata("TOOLTIP");
 
         -- TODO: fill out the tooltip
-        self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, "|cffffcc00Solo Shuffle|r", 18);
-        self.winsText = ArenaAnalyticsCreateText(self.frame, "TOPRIGHT", self.frame, "TOPRIGHT", -10, -10, " ", 15);
+        self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, ArenaAnalytics:ColorText("Solo Shuffle", Constants.white), 18);
+        self.winsText = ArenaAnalyticsCreateText(self.frame, "TOPRIGHT", self.frame, "TOPRIGHT", -10, -10, "", 15);
 
         self.rounds = {}
 
@@ -228,29 +224,23 @@ function ShuffleTooltip:SetMatch(match)
         local roundFrame = self.rounds[i];
         assert(roundFrame, "ShuffleTooltip should always have 6 round frames!" .. (self.rounds and #self.rounds or "nil"));
 
-        local roundData = ArenaMatch:GetRoundData(currentRounds[i]);
+        local roundData = ArenaMatch:GetRoundDataRaw(currentRounds[i]);
         if(roundData) then
             newHeight = newHeight + roundFrame:GetHeight();
 
-            local team, enemy, firstDeath, duration = string.match(roundData, "([^%-]*)%-([^%-]*)%-([^%-]*)%-([^%-]*)");
+            local team, enemy, firstDeath, duration = ArenaMatch:SplitRoundData(roundData);
 
             local isWin;
             if(tonumber(firstDeath)) then
                 firstDeath = tonumber(firstDeath);
 
-                if(team and team:find(firstDeath)) then
+                if(firstDeath == 0 or (team and team:find(firstDeath))) then
                     isWin = false;
                 elseif(enemy and enemy:find(firstDeath)) then
                     isWin = true;
                 end
 
                 deaths[firstDeath] = (deaths[firstDeath] or 0) + 1;
-            elseif(type(firstDeath) == "string") then
-                if(firstDeath:upper() == "W") then
-                    isWin = true;
-                elseif(firstDeath:upper() == "L") then
-                    isWin = false;
-                end
             end
 
             roundFrame:SetData(roundData, team, enemy, firstDeath, duration, isWin, selfPlayer, players);
@@ -279,32 +269,33 @@ function ShuffleTooltip:SetMatch(match)
         local player = (bestIndex == 0) and selfPlayer or players[bestIndex];
         local fullName = ArenaMatch:GetPlayerFullName(player);
         local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
-
-        local color = Internal:GetClassColor(spec_id);
-
-        deathText = fullName and ("|c" .. color .. fullName .. "|r ") or "";
-        deathText = deathText .. ("|cffffffff" .. highestValue .. "|r");
+        
+        local classColor = Internal:GetClassColor(spec_id);
+        deathText = ArenaAnalytics:ColorText(fullName, classColor);
+        deathText = deathText .. " " .. ArenaAnalytics:ColorText(highestValue, Constants.white);
     end
 
-    local text = "|cff999999".. "Most Deaths: " .. "|r" .. deathText .. "|r";
+    -- Clear previous most deaths text
     if(self.mostDeaths) then
         self.mostDeaths:SetText("");
     end
+
+    local text = ArenaAnalytics:ColorText("Most Deaths: ", Constants.prefixColor) .. deathText;
     self.mostDeaths = ArenaAnalyticsCreateText(self.frame, "BOTTOMLEFT", self.frame, "BOTTOMLEFT", 10, 15, text, 12);
 
     -- Win color
-    local hex = "ff999999";
+    local hex = Constants.invalidColor;
     if(wins ~= nil) then
         if(wins == 3) then
-            hex = "ffffcc00";
+            hex = Constants.drawColor;
         else
-            hex = (wins > 3) and "ff00cc66" or "ffff0000";
+            hex = (wins > 3) and Constants.winColor or Constants.lossColor;
         end
     end
 
     -- Set total wins text
-    self.winsText:SetText("|c"..hex .. "Wins: " .. (wins or "") .. "|r");
-    
+    ArenaAnalytics:SetFrameText(self.winsText, "Wins: " .. wins, hex)
+
     -- Update dynamic background height
     self.frame:SetHeight(newHeight);
 end
