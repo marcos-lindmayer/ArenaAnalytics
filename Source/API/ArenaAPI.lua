@@ -4,6 +4,7 @@ local API = ArenaAnalytics.API;
 
 -- Local module aliases
 local Internal = ArenaAnalytics.Internal;
+local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
@@ -68,6 +69,19 @@ function API:GetRoleBitmap(spec_id)
     local bitmapOverride = API.roleBitmapOverrides and API.roleBitmapOverrides[spec_id];
 
     return bitmapOverride or Internal:GetRoleBitmap(spec_id);
+end
+
+
+function API:GetSpecIcon(spec_id)
+    spec_id = tonumber(spec_id);
+    if(not spec_id) then
+        return;
+    end
+
+    -- Check for override
+    local bitmapOverride = API.specIconOverrides and API.specIconOverrides[spec_id];
+
+    return bitmapOverride or Constants:GetBaseSpecIcon(spec_id);
 end
 
 -------------------------------------------------------------------------

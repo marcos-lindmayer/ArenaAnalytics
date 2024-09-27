@@ -6,6 +6,7 @@ ArenaIcon.__index = ArenaIcon
 local Constants = ArenaAnalytics.Constants;
 local Internal = ArenaAnalytics.Internal;
 local Helpers = ArenaAnalytics.Helpers;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -72,7 +73,7 @@ function ArenaIcon:Create(parent, size, skipDeath)
         end
 
         if(Helpers:IsSpecID(spec_id)) then
-            local specIconTexture = Constants:GetSpecIcon(spec_id);
+            local specIconTexture = API:GetSpecIcon(spec_id);
             newFrame.specOverlay.texture:SetTexture(specIconTexture or "");
         else
             newFrame.specOverlay.texture:SetTexture("");

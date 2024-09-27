@@ -224,12 +224,29 @@ end
 API.specIconOverrides = nil;
 local function InitializeSpecOverrides()
     API.specIconOverrides = {
-        []
-     }
+        -- Paladin
+        [12] = [[Interface\Icons\spell_holy_devotionaura]], -- Protection
+
+        -- Shaman
+        [23] = [[Interface\Icons\spell_shaman_improvedstormstrike]], -- Enhancement
+
+        -- Hunter
+        [41] = [[Interface\Icons\ability_hunter_bestialdiscipline]], -- Beast Mastery
+        [42] = [[Interface\Icons\ability_hunter_focusedaim]], -- Marksmanship
+        [43] = [[Interface\Icons\ability_hunter_camouflage]], -- Survival
+
+        -- Rogue
+        [62] = [[Interface\Icons\Ability_rogue_deadlybrew]], -- Assassination
+
+        -- Warrior
+        [82] = [[Interface\Icons\ability_warrior_savageblow]], -- Arms
+    }
 end
+
 -------------------------------------------------------------------------
 -- Expansion API initializer
 
 function API:InitializeExpansion()
     InitializeRoleBitmapOverrides();
+    InitializeSpecOverrides();
 end

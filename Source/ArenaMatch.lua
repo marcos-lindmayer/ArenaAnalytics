@@ -639,7 +639,6 @@ function ArenaMatch:GetPlayerInfo(player, existingTable)
     if(spec_id) then
         role_bitmap = API:GetRoleBitmap(spec_id);
         player[playerKeys.role] = role_bitmap;
-        ArenaAnalytics:Log("Temp: Fixed role bitmap for player:", spec_id, role_bitmap)
     end
 
     local playerInfo = existingTable or {};

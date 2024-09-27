@@ -290,7 +290,7 @@ local specIconTable = {
 }
 
 -- Returns spec icon path string
-function Constants:GetSpecIcon(spec_id)
+function Constants:GetBaseSpecIcon(spec_id)
     if(not spec_id or Helpers:IsClassID(spec_id)) then
         return "";
     end

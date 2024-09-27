@@ -52,8 +52,6 @@ function InitializeRoles()
         caster_healer = Bitmap:GetBitmapValue("caster", "healer"),
         caster_damager = Bitmap:GetBitmapValue("caster", "damager"),
     }
-
-    ArenaAnalytics.Helpers:DebugLogTable(Bitmap.roles);
 end
 
 -- Function to get the main role from the role_bitmap
