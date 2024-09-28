@@ -51,23 +51,27 @@ end
 local lastStatsUpdateTime = 0;
 local function HandleGlobalEvent(_, eventType, ...)
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
-		if(time() - lastStatsUpdateTime > 3) then
-			lastStatsUpdateTime = time();
-
-			ArenaAnalytics:TryFixLastMatchRating();
-			
-			-- This checks for IsInArena() and IsTrackingArena()
-			C_Timer.After(1, ArenaTracker.CheckRoundEnded);
+		if(time() - lastStatsUpdateTime < 3) then
+			return;
 		end
+
+		lastStatsUpdateTime = time();
+
+		ArenaAnalytics:TryFixLastMatchRating();
+		
+		-- This checks for IsInArena() and IsTrackingArena()
+		if(API:IsInArena()) then
+			ArenaTracker:HandleArenaEnter();
+			--C_Timer.After(1, ArenaTracker.CheckRoundEnded);
+			ArenaTracker:CheckRoundEnded();
+		end	
 	end
 
 	if (API:IsInArena()) then
 		if (not ArenaTracker:IsTrackingArena()) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-				ArenaTracker:HandleArenaEnter(...);
+				RequestRatedInfo(); -- Will trigger ArenaTracker:HandleArenaEnter(...)
 			end
-			
-			Events:RegisterArenaEvents();
 		end
 	else -- Not in arena
 		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then

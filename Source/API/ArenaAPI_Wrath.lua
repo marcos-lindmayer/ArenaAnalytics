@@ -34,7 +34,17 @@ end
 
 function API:GetBattlefieldStatus(battlefieldId)
     local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
-    return status, teamSize, isRated;
+    
+    local bracket = nil;
+    if(teamSize == 2) then
+        bracket = 1;
+    elseif(teamSize == 2) then
+        bracket = 2;
+    elseif(teamSize == 2) then
+        bracket = 3;
+    end
+
+    return status, bracket, teamSize, isRated;
 end
 
 function API:GetCurrentMapID()
@@ -61,7 +71,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
     return rating, seasonPlayed;
 end
 
-function API:GetBattlefieldScore(index)
+function API:GetPlayerScore(index)
     local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(index);
     name = Helpers:ToFullName(name);
 
@@ -69,7 +79,18 @@ function API:GetBattlefieldScore(index)
     local race_id = Localization:GetRaceID(race);
     local class_id = Internal:GetAddonClassID(classToken);
 
-    return name, race_id, class_id, teamIndex, kills, deaths, damage, healing;
+    local score = {
+        name = name,
+        race = race_id,
+        spec = class_id,
+        team = teamIndex,
+        kills = kills,
+        deaths = deaths,
+        damage = damage,
+        healing = healing,
+    }
+    
+    return score;
 end
 
 -- NOTE: Not updated to release data format (id and preg missing)

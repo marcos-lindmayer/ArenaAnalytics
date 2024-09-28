@@ -56,6 +56,9 @@ end
 -------------------------------------------------------------------------
 -- Character SavedVariables match history
 ArenaAnalyticsDB = ArenaAnalyticsDB or {}
+ArenaAnalyticsDB.Names = ArenaAnalyticsDB.Names or {}
+ArenaAnalyticsDB.Realms = ArenaAnalyticsDB.Realms or {}
+
 ArenaAnalyticsRealmsDB = ArenaAnalyticsRealmsDB or {}
 
 -------------------------------------------------------------------------
@@ -598,8 +601,8 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	if(newArena.isShuffle) then
 		newArena.duration = 0;
 
-		if(newArena.rounds) then
-			for _,round in ipairs(newArena.rounds) do
+		if(newArena.committedRounds) then
+			for _,round in ipairs(newArena.committedRounds) do
 				if(round) then
 					newArena.duration = newArena.duration + (tonumber(round.duration) or 0);
 				end
@@ -663,7 +666,7 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	ArenaMatch:AddPlayers(arenaData, newArena.players);
 
 	if(newArena.isShuffle) then
-		ArenaMatch:SetRounds(arenaData, newArena.rounds);
+		ArenaMatch:SetRounds(arenaData, newArena.committedRounds);
 	end
 
 	-- Assign session
@@ -687,15 +690,12 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	table.insert(ArenaAnalyticsDB, arenaData);
 
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
-	
+
 	if(Import.tryHide) then
 		Import:tryHide();
 	end
 
 	ArenaAnalytics:Print("Arena recorded!");
-
-	-- Refresh and reset current arena
-	ArenaTracker:Reset();
 
 	Filters:Refresh();
 

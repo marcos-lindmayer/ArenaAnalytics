@@ -173,7 +173,7 @@ local function GetOrCreateSingleton()
         self.frame:SetFrameStrata("TOOLTIP");
 
         -- TODO: fill out the tooltip
-        self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, ArenaAnalytics:ColorText("Solo Shuffle", Constants.white), 18);
+        self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, ArenaAnalytics:ColorText("Solo Shuffle", Constants.titleColor), 18);
         self.winsText = ArenaAnalyticsCreateText(self.frame, "TOPRIGHT", self.frame, "TOPRIGHT", -10, -10, "", 15);
 
         self.rounds = {}
@@ -195,8 +195,7 @@ end
 function ShuffleTooltip:SetMatch(match)
     local self = GetOrCreateSingleton();
 
-    local bracket = ArenaMatch:GetBracket(match);
-    if(bracket ~= "shuffle") then
+    if(not ArenaMatch:IsShuffle(match)) then
         ShuffleTooltip:Hide();
         return;
     end
@@ -272,7 +271,7 @@ function ShuffleTooltip:SetMatch(match)
         
         local classColor = Internal:GetClassColor(spec_id);
         deathText = ArenaAnalytics:ColorText(fullName, classColor);
-        deathText = deathText .. " " .. ArenaAnalytics:ColorText(highestValue, Constants.white);
+        deathText = deathText .. " " .. ArenaAnalytics:ColorText(highestValue, Constants.valueColor);
     end
 
     -- Clear previous most deaths text

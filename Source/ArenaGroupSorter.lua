@@ -237,10 +237,7 @@ function GroupSorter:SortIndexGroup(group, players, selfPlayerInfo)
         local playerInfoA = indexA and ArenaMatch:GetPlayerInfo(players[indexA]);
         local playerInfoB = indexB and ArenaMatch:GetPlayerInfo(players[indexB]);
 
-        ArenaAnalytics:Log(indexA, indexB, #players, ":", tempLog(playerInfoA), "///", tempLog(playerInfoB))
-
         local result = ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
-        ArenaAnalytics:Log("     ", result);
         return result;
     end);
 end

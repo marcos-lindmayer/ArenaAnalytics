@@ -8,6 +8,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local API = ArenaAnalytics.API;
 local ShuffleTooltip = ArenaAnalytics.ShuffleTooltip;
+local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
@@ -172,8 +173,8 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         return;
     end
 
-    local function ColorText(text)
-        return "|cff999999" .. text or "" .. "|r";
+    local function ColorPrefix(text)
+        return ArenaAnalytics:ColorText(text, Constants.prefixColor);
     end
 
     local function ColorClass(text, spec_id)
@@ -204,8 +205,8 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
                 end
             end
         end
-        
-        return "|cffffffff" .. value .. "|r";
+
+        return ArenaAnalytics:ColorText(value, Constants.statsColor);
     end
 
     local playerName = Helpers:GetNameFromPlayerInfo(playerInfo);
@@ -223,19 +224,19 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     GameTooltip:SetPoint("TOPRIGHT", playerFrame, "TOPLEFT");
     GameTooltip:ClearLines();
 
-    GameTooltip:AddLine(playerName);
+    GameTooltip:AddLine(ArenaAnalytics:ColorText(playerName, Constants.titleColor));
     GameTooltip:AddDoubleLine(ColorFaction(playerInfo.race, playerInfo.race_id), ColorClass(specialization, playerInfo.spec_id));
 
-    GameTooltip:AddDoubleLine(ColorText("Damage: ") .. FormatValue(playerInfo.damage), ColorText("Healing: ") .. FormatValue(playerInfo.healing));
+    GameTooltip:AddDoubleLine(ColorPrefix("Damage: ") .. FormatValue(playerInfo.damage), ColorPrefix("Healing: ") .. FormatValue(playerInfo.healing));
     
     local duration = ArenaMatch:GetDuration(playerFrame.match);
     if(duration and duration > 0) then
         local dps = playerInfo.damage and playerInfo.damage / duration or "-";
         local hps = playerInfo.healing and playerInfo.healing / duration or "-";
-        GameTooltip:AddDoubleLine(ColorText("DPS: ") .. FormatValue(dps), ColorText("HPS: ") .. FormatValue(hps));
+        GameTooltip:AddDoubleLine(ColorPrefix("DPS: ") .. FormatValue(dps), ColorPrefix("HPS: ") .. FormatValue(hps));
     end
-    
-    GameTooltip:AddDoubleLine(ColorText("Kills: ") .. FormatValue(playerInfo.kills), ColorText("Deaths: ") .. FormatValue(playerInfo.deaths));
+
+    GameTooltip:AddDoubleLine(ColorPrefix("Kills: ") .. FormatValue(playerInfo.kills), ColorPrefix("Deaths: ") .. FormatValue(playerInfo.deaths));
 
     -- Quick Search Shortcuts
     TryAddQuickSearchShortcutTips();

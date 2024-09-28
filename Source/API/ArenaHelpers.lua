@@ -42,12 +42,17 @@ function Helpers:DebugLogTable(table, level)
     level = level or 0;
     local indentation = string.rep(" ", 3*level);
 
+    if(type(table) ~= "table") then
+        ArenaAnalytics:Log(indentation, table);
+        return;
+    end
+
     for key,value in pairs(table) do
         if(type(value) == "table") then
-            ArenaAnalytics:Log(indentation .. key);
+            ArenaAnalytics:Log(indentation, key);
             Helpers:DebugLogTable(value, level+1);
         else
-            ArenaAnalytics:Log(indentation .. key, value);
+            ArenaAnalytics:Log(indentation, key, value);
         end
     end
 end

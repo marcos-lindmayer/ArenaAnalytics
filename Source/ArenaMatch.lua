@@ -262,6 +262,10 @@ function ArenaMatch:GetBracket(match)
     return ArenaAnalytics:GetBracket(bracketIndex);
 end
 
+function ArenaMatch:IsShuffle(match)
+    return match and ArenaMatch:GetBracketIndex(match) == 4;
+end
+
 function ArenaMatch:SetBracketIndex(match, index)
     assert(match);
 
@@ -489,7 +493,10 @@ function ArenaMatch:AddPlayers(match, players)
         ArenaMatch:AddPlayer(match, player);
     end
 
-    ArenaMatch:UpdateComps(match);
+    if(not ArenaMatch:IsShuffle(match)) then
+        ArenaMatch:UpdateComps(match);
+    end
+
     ArenaMatch:SortGroups(match);
 end
 
@@ -735,13 +742,12 @@ end
 
 local function GetCompForSpecs(teamSpecs, requiredSize)
     if(not teamSpecs or not requiredSize or requiredSize == 0) then
-        ArenaAnalytics:Log("GetCompForSpecs", teamSpecs and #teamSpecs, requiredSize);
-        Helpers:DebugLogTable(teamSpecs, 1);
+        ArenaAnalytics:Log("GetCompForSpecs: Invalid spec count:", teamSpecs and #teamSpecs, requiredSize);
         return nil;
     end
 
     if(#teamSpecs ~= requiredSize) then
-        ArenaAnalytics:Log("GetCompForSpecs Invalid team size.")
+        ArenaAnalytics:Log("GetCompForSpecs: Invalid team size.", #teamSpecs, requiredSize)
         return nil;
     end
 
@@ -964,7 +970,7 @@ function ArenaMatch:SetRounds(match, rounds)
     end
 
     -- Only solo shuffle supports multiple rounds
-    if(ArenaMatch:GetBracket(match) ~= "shuffle") then
+    if(not ArenaMatch:IsShuffle(match)) then
         ArenaAnalytics:Log("ArenaMatch:SetRounds skipping shuffle match type.", ArenaMatch:GetBracket(match));
         return;
     end
@@ -1081,7 +1087,7 @@ end
 -- Smart resort, fixing indicies stored per round
 function ArenaMatch:ResortPlayers(match)
     -- If map is not solo shuffle, do standard sorting
-    if(ArenaMatch:GetBracket(match) ~= "shuffle") then
+    if(not ArenaMatch:IsShuffle(match)) then
         ArenaMatch:SortGroups(match);
         return;
     end

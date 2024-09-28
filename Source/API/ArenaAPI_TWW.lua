@@ -50,8 +50,21 @@ end
 function API:GetBattlefieldStatus(battlefieldId)
     local status,_, teamSize = GetBattlefieldStatus(battlefieldId);
     local isRated = API:IsRatedArena();
+    local isShuffle = API:IsSoloShuffle();
 
-    return status, teamSize, isRated;
+    local bracket = nil;
+    if(isShuffle) then
+        teamSize = 3;
+        bracket = 4;
+    elseif(teamSize == 2) then
+        bracket = 1;
+    elseif(teamSize == 2) then
+        bracket = 2;
+    elseif(teamSize == 2) then
+        bracket = 3;
+    end
+
+    return status, bracket, teamSize, isRated, isShuffle;
 end
 
 function API:GetCurrentMapID()
@@ -79,23 +92,27 @@ function API:GetPersonalRatedInfo(bracketIndex)
 end
 
 -- TODO: Decide if we wanna get rating and MMR values from here
-function API:GetBattlefieldScore(index)
+function API:GetPlayerScore(index)
     local scoreInfo = C_PvP.GetScoreInfo(index);
-    name = Helpers:ToFullName(scoreInfo.name);
 
-    -- Convert localized values
-    local race_id = Localization:GetRaceID(scoreInfo.raceName);
     local spec_id = Localization:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
-
-    -- Fall back to class ID
     if(not spec_id) then
         spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
     end
 
-    --ArenaAnalytics:Log("Score:", name);
-    --Helpers:DebugLogTable(scoreInfo.stats);
+    -- Combine AA score info table
+    local score = {
+        name = Helpers:ToFullName(scoreInfo.name),
+        race = Localization:GetRaceID(scoreInfo.raceName),
+        spec = spec_id,
+        team = scoreInfo.faction,
+        kills = scoreInfo.killingBlows,
+        deaths = scoreInfo.deaths,
+        damage = scoreInfo.damageDone,
+        healing = scoreInfo.healingDone,
+    }
     
-    return name, race_id, spec_id, scoreInfo.faction, scoreInfo.killingBlows, scoreInfo.deaths, scoreInfo.damageDone, scoreInfo.healingDone;
+    return score;
 end
 
 -- Get local player current spec

@@ -730,7 +730,7 @@ function AAtable:RefreshLayout()
 
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
-            
+
             -- Setup player class frames
             setupTeamPlayerFrames(teamIconsFrames, match, matchIndex, false, button);
             setupTeamPlayerFrames(enemyTeamIconsFrames, match, matchIndex, true, button);
@@ -759,7 +759,7 @@ function AAtable:RefreshLayout()
             end
 
             button.Rating:SetText("|c" .. hex .. (ratingText or "") .."|r");
-            
+
             -- Party MMR
             ArenaAnalytics:SetFrameText(button.MMR, (ArenaMatch:GetPartyMMR(match) or "-"), Constants.valueColor);
 
@@ -783,7 +783,7 @@ function AAtable:RefreshLayout()
                 args:SetAttribute("hovered", true);
                 AAtable:ToggleSpecsAndDeathOverlay(args);
 
-                if(bracket == "shuffle") then
+                if(ArenaMatch:IsShuffle(match)) then
                     Tooltips:DrawShuffleTooltip(button, match);
                 else
                     Tooltips:HideShuffleTooltip();

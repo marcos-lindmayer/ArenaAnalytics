@@ -47,6 +47,9 @@ local Filters = ArenaAnalytics.Filters;
 local FilterTables = ArenaAnalytics.FilterTables;
 local API = ArenaAnalytics.API;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local AAtable = ArenaAnalytics.AAtable;
+local ArenaTracker = ArenaAnalytics.ArenaTracker;
+local Events = ArenaAnalytics.Events;
 
 -------------------------------------------------------------------------
 
@@ -71,15 +74,15 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print("|cff00cc66/aa total|r Prints total unfiltered matches.");
 		print(" ");
 	end,
-	
+
 	["version"] = function()
 		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (API:GetAddonVersion() or "Invalid Version") .. " (Early Access)|r");
 	end,
-	
+
 	["total"] = function()
 		ArenaAnalytics:Print("Total arenas stored: ", #ArenaAnalyticsDB);
 	end,
-	
+
 	["played"] = function()
 		local totalDurationInArenas = 0;
 		local currentSeasonTotalPlayed = 0;
@@ -193,6 +196,9 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
+		
+		ArenaAnalytics.Helpers:DebugLogTable(ArenaAnalyticsDB.currentArena);
+		ArenaAnalytics:Log(API:GetPersonalRatedInfo(bracketIndex))
 
 		print(" ");
 	end,	
@@ -378,6 +384,8 @@ end
 function ArenaAnalytics:init()
 	ArenaAnalytics:Log("Initializing..");
 
+	ArenaAnalytics.Helpers:DebugLogTable(ArenaAnalyticsDB.currentArena);
+
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
@@ -425,12 +433,12 @@ function ArenaAnalytics:init()
 
 	ArenaAnalytics:UpdateLastSession();
 
-	ArenaAnalytics.Events:RegisterGlobalEvents();
+	Events:RegisterGlobalEvents();
 
 	-- Update cached rating as soon as possible, through PVP_RATED_STATS_UPDATE event
 	RequestRatedInfo();
 	
-	ArenaAnalytics.AAtable:OnLoad();
+	AAtable:OnLoad();
 	
 	if(IsInInstance() or IsInGroup(1)) then
 		local channel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
@@ -440,9 +448,8 @@ function ArenaAnalytics:init()
 	createMinimapButton();
 
 	-- Already in an arena
-	if (API:IsInArena()) then
-		ArenaAnalytics.Events:RegisterArenaEvents();
-		ArenaAnalytics.ArenaTracker:HandleArenaEnter();
+	if (not API:IsInArena()) then
+		ArenaTracker:Clear();
 	end
 end
 
