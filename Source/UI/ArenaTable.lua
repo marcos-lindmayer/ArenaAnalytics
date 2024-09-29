@@ -132,15 +132,6 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.titleVersion:SetFont("Fonts\\FRIZQT__.TTF", 11, "");
     ArenaAnalyticsScrollFrame.titleVersion:SetText("|cff909090v" .. API:GetAddonVersion() .. "|r");
 
-    ArenaAnalyticsScrollFrame.teamBg = CreateFrame("Frame", nil, ArenaAnalyticsScrollFrame)
-    ArenaAnalyticsScrollFrame.teamBg:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame.TitleBg, "TOPLEFT", 335, -101);
-    ArenaAnalyticsScrollFrame.teamBg:SetWidth(295);
-    ArenaAnalyticsScrollFrame.teamBg:SetFrameStrata("LOW");
-
-    ArenaAnalyticsScrollFrame.teamBgT = ArenaAnalyticsScrollFrame:CreateTexture()
-    ArenaAnalyticsScrollFrame.teamBgT:SetAllPoints(ArenaAnalyticsScrollFrame.teamBg);
-    ArenaAnalyticsScrollFrame.teamBgT:SetColorTexture(0, 0, 0, 0.93);
-
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
     ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 35, -47);
     ArenaAnalyticsScrollFrame.searchBox:SetSize(225, 25);
@@ -815,14 +806,6 @@ function AAtable:RefreshLayout()
         else
             button:Hide();
         end
-    end
-
-    -- Adjust Team bg
-    if (ArenaAnalytics.filteredMatchCount < 15) then
-        local newHeight = (ArenaAnalytics.filteredMatchCount * 28) - 1;
-        ArenaAnalyticsScrollFrame.teamBg:SetHeight(newHeight);
-    else
-        ArenaAnalyticsScrollFrame.teamBg:SetHeight(391);
     end
 
     local buttonHeight = ArenaAnalyticsScrollFrame.ListScrollFrame.buttonHeight;

@@ -783,7 +783,6 @@ function ArenaTracker:ProcessUnitAuraEvent(...)
 			if(aura and aura.sourceUnit and aura.isFromPlayerOrPlayerPet) then
 				local sourceGUID = UnitGUID(aura.sourceUnit);
 
-				ArenaAnalytics:Log("New Aura!", aura.spellId, aura.name)
 				ArenaTracker:DetectSpec(sourceGUID, aura.spellId, aura.name);
 			end
 		end
@@ -809,7 +808,7 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	end
 
 	if (spec_id ~= nil) then
-		if(ArenaTracker:IsTrackingPlayer(playerID)) then
+		if(ArenaTracker:IsTrackingPlayer(sourceGUID)) then
 			ArenaTracker:OnSpecDetected(sourceGUID, spec_id);
 		end
 
