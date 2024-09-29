@@ -380,10 +380,12 @@ end
 local locked = nil;
 function Search:QuickSearch(playerFrame, mouseButton)
     if(not Options:Get("quickSearchEnabled")) then
+        ArenaAnalytics:Log("QuickSearch: Disabled");
         return;
     end
 
     if(not playerFrame or not playerFrame.playerInfo) then
+        ArenaAnalytics:Log("QuickSearch: invalid player frame");
         return;
     end
 
@@ -397,6 +399,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
     local tokens = GetQuickSearchTokens(playerFrame.playerInfo, team, mouseButton);
 
     if(not tokens or #tokens == 0) then
+        ArenaAnalytics:Log("QuickSearch: No tokens.");
         return;
     end
 

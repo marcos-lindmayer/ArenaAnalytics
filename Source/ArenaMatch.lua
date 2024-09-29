@@ -511,7 +511,7 @@ function ArenaMatch:AddPlayer(match, player)
         ArenaAnalytics:Log("Warning: Adding player to stored match without name!");
     end
 
-    local name, realm = ArenaAnalytics:GetNameAndRealm(player.name, true);
+    local name, realm = ArenaAnalytics:SplitFullName(player.name, true);
 
     local newPlayer = {}
     newPlayer[playerKeys.name] = name;
@@ -547,7 +547,7 @@ function ArenaMatch:SetTeamMemberValue(match, isEnemyTeam, playerName, key, valu
     key = key and playerKeys[key];
     assert(key);
 
-    local name, realm = ArenaAnalytics:GetNameAndRealm(playerName, true);
+    local name, realm = ArenaAnalytics:SplitFullName(playerName, true);
     if(not name) then
         ArenaAnalytics:Log("Attempting to set team member value: ", key, value, " for invalid player name.");
     end
@@ -636,8 +636,7 @@ function ArenaMatch:GetPlayerInfo(player, existingTable)
     local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
     local class, spec = Internal:GetClassAndSpec(spec_id);
 
-    local name = player[playerKeys.name];
-    local realm = ArenaAnalytics:GetRealm(player[playerKeys.realm]);
+    local name, realm = ArenaMatch:GetPlayerNameAndRealm(player, false);
     local race_id = ArenaMatch:GetPlayerValue(player, "race");
 
     local role_bitmap = ArenaMatch:GetPlayerValue(player, "role");
@@ -685,35 +684,75 @@ function ArenaMatch:GetPlayerValue(player, key)
     return playerKey and tonumber(player[playerKey]) or player[playerKey];
 end
 
-function ArenaMatch:GetComparisonValues(playerA, playerB, key)
-    assert(key);
-    local valueA = ArenaMatch:GetPlayerValue(playerA, key);
-    local valueB = ArenaMatch:GetPlayerValue(playerB, key);
-    return valueA, valueB;
-end
-
-function ArenaMatch:GetPlayerFullName(player, requireCompactRealm)
-    if(not player) then
-        return "";
+-- Conversion logic
+function ArenaMatch:CompressPlayerNames(match)
+    if(not match) then
+        return;
     end
 
-    local name, realm = ArenaMatch:GetPlayerNameAndRealm(player, requireCompactRealm);
-    return ArenaAnalytics:CombineNameAndRealm(name, realm);
+    for i,isEnemy in ipairs({false, true}) do
+        local team = ArenaMatch:GetTeam(match, isEnemy);
+        if(type(team) == "table") then
+            for i,player in ipairs(team) do
+                local name = player[playerKeys.name];
+                if(type(name) == "string") then
+                    player[playerKeys.name] = ArenaAnalytics:GetNameIndex(name);
+                end
+            end
+        end
+    end
 end
 
-function ArenaMatch:GetPlayerNameAndRealm(player, requireCompactRealm)
+function ArenaMatch:GetPlayerName(player, requireCompact)
     if(not player) then
-        return "";
+        return nil;
+    end
+
+    local name = player[playerKeys.name];
+
+    if(requireCompact) then
+        return name;
+    end
+
+    return ArenaAnalytics:GetName(name);
+end
+
+function ArenaMatch:GetPlayerRealm(player, requireCompact)
+    if(not player) then
+        return nil;
+    end
+
+    local realm = player[playerKeys.realm];
+
+    if(requireCompact) then
+        return realm;
+    end
+
+    return ArenaAnalytics:GetRealm(realm);
+end
+
+function ArenaMatch:GetPlayerNameAndRealm(player, requireCompact)
+    if(not player) then
+        return nil;
     end
 
     local name = player[playerKeys.name];
     local realm = player[playerKeys.realm];
 
-    if(requireCompactRealm) then
+    if(requireCompact) then
         return name, realm;
     end
 
-    return name, ArenaAnalytics:GetRealm(realm);
+    return ArenaAnalytics:GetName(name), ArenaAnalytics:GetRealm(realm);
+end
+
+function ArenaMatch:GetPlayerFullName(player, requireCompact)
+    if(not player) then
+        return nil;
+    end
+
+    local name, realm = ArenaMatch:GetPlayerNameAndRealm(player, requireCompact);
+    return ArenaAnalytics:CombineNameAndRealm(name, realm);
 end
 
 local function GetTeamSpecs(team, requiredSize)    
@@ -932,9 +971,9 @@ function ArenaMatch:CheckPlayerName(player, searchValue, isExact)
     end
 
     local valueHasDash = searchValue:find('-');
-    local playerName = valueHasDash and ArenaMatch:GetPlayerFullName(player) or player[playerKeys.name];
+    local playerName = valueHasDash and ArenaMatch:GetPlayerFullName(player) or ArenaMatch:GetPlayerName(player);
         
-    if(not playerName or playerName == "") then
+    if(not playerName) then
         return false;
     end
 

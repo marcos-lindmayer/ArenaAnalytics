@@ -23,6 +23,15 @@ end
 
 function Helpers:DeepCopy(original)
     local copy = {}
+
+    if(not original) then
+        return nil;
+    end
+
+    if(type(original) ~= "table") then
+        return original;
+    end
+
     for k, v in pairs(original) do
         if type(v) == "table" then
             copy[k] = Helpers:DeepCopy(v);
@@ -30,6 +39,7 @@ function Helpers:DeepCopy(original)
             copy[k] = v;
         end
     end
+
     return copy;
 end
 

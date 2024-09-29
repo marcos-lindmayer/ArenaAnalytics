@@ -54,37 +54,87 @@ function ArenaAnalytics:GetMatchType(index)
 end
 
 -------------------------------------------------------------------------
--- Character SavedVariables match history
-ArenaAnalyticsDB = ArenaAnalyticsDB or {}
-ArenaAnalyticsDB.Names = ArenaAnalyticsDB.Names or {}
-ArenaAnalyticsDB.Realms = ArenaAnalyticsDB.Realms or {}
 
-ArenaAnalyticsRealmsDB = ArenaAnalyticsRealmsDB or {}
+function ArenaAnalytics:PurgeArenaAnalyticsDB()
+	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
+	ArenaAnalyticsDB.names = {};
+	ArenaAnalyticsDB.realms = {};
+
+	ArenaAnalytics:Print("Match history purged!");
+end
+
+-- DEPRECATED
+--ArenaAnalyticsRealmsDB = ArenaAnalyticsRealmsDB or {}
 
 -------------------------------------------------------------------------
--- Realms logic
+-- Compressed name and realm logic
 
-local function GetRealmIndex(realm)
-	assert(realm);
+-- Name
+function ArenaAnalytics:GetNameIndex(name)
+	assert(name and type(name) == "string");
 
-	for i=1, #ArenaAnalyticsRealmsDB do
-		local existingRealm = ArenaAnalyticsRealmsDB[i];
+	-- Conversion from deprecated format
+	for i=1, #ArenaAnalyticsDB.names do
+		local existingName = ArenaAnalyticsDB.names[i];
+		if(existingName and name == existingName) then
+			return i;
+		end
+	end
+
+	tinsert(ArenaAnalyticsDB.names, name);
+	ArenaAnalytics:Log("Cached new name:", name, "at index:", #ArenaAnalyticsDB.names);
+	return #ArenaAnalyticsDB.names;
+end
+
+function ArenaAnalytics:GetName(nameIndex, errorIfMissing)
+	nameIndex = tonumber(nameIndex) or nameIndex;
+
+	if(type(nameIndex) == "string") then
+		return nameIndex;
+	end
+
+	if(not tonumber(nameIndex)) then
+		return nil;
+	end
+
+	local name = ArenaAnalyticsDB.names[nameIndex];
+	
+	if(errorIfMissing and not name) then
+		error("Name index: " .. nameIndex .. " found no names.")
+	end
+
+	return name;
+end
+
+-- Realm
+function ArenaAnalytics:GetRealmIndex(realm)
+	assert(realm and type(realm) == "string");
+
+	-- Conversion from deprecated format
+	for i=1, #ArenaAnalyticsDB.realms do
+		local existingRealm = ArenaAnalyticsDB.realms[i];
 		if(existingRealm and realm == existingRealm) then
 			return i;
 		end
 	end
 
-	tinsert(ArenaAnalyticsRealmsDB, realm);
-	ArenaAnalytics:Log("Cached new realm:", realm, "at index:", #ArenaAnalyticsRealmsDB);
-	return #ArenaAnalyticsRealmsDB;
+	tinsert(ArenaAnalyticsDB.realms, realm);
+	ArenaAnalytics:Log("Cached new realm:", realm, "at index:", #ArenaAnalyticsDB.realms);
+	return #ArenaAnalyticsDB.realms;
 end
 
 function ArenaAnalytics:GetRealm(realmIndex, errorIfMissing)
+	realmIndex = tonumber(realmIndex) or realmIndex;
+
+	if(type(realmIndex) == "string") then
+		return realmIndex;
+	end
+
 	if(not tonumber(realmIndex)) then
 		return nil;
 	end
 
-	local realm = ArenaAnalyticsRealmsDB[realmIndex];
+	local realm = ArenaAnalyticsDB.realms[realmIndex];
 	
 	if(errorIfMissing and not realm) then
 		error("Realm index: " .. realmIndex .. " found no realms.")
@@ -93,20 +143,29 @@ function ArenaAnalytics:GetRealm(realmIndex, errorIfMissing)
 	return realm;
 end
 
-function ArenaAnalytics:GetNameAndRealm(fullName, doCompressRealm)
+function ArenaAnalytics:SplitFullName(fullName, doCompress)
 	if(not fullName) then
 		return nil,nil;
 	end
 
 	-- Split name and realm
-	local name,realm = fullName:match("^(.-)%-(.+)$");
+	local name, realm = fullName:match("^(.-)%-(.+)$");
 	name = name or fullName;
 
 	-- Attempt name compression
-	if(doCompressRealm and realm and not tonumber(realm)) then
-		local realmIndex = GetRealmIndex(realm);
-		if(realmIndex and ArenaAnalyticsRealmsDB[realmIndex] == realm) then
-			realm = realmIndex;
+	if(doCompress) then
+		if(type(name) == "string") then
+			local nameIndex = ArenaAnalytics:GetNameIndex(name);
+			if(nameIndex and ArenaAnalyticsDB.names[nameIndex] == name) then
+				name = nameIndex;
+			end
+		end
+
+		if(type(realm) == "string") then
+			local realmIndex = ArenaAnalytics:GetRealmIndex(realm);
+			if(realmIndex and ArenaAnalyticsDB.realms[realmIndex] == realm) then
+				realm = realmIndex;
+			end
 		end
 	end
 
@@ -119,7 +178,7 @@ function ArenaAnalytics:CombineNameAndRealm(name, realm)
 	end
 
 	if(tonumber(realm)) then
-		realm = ArenaAnalyticsRealmsDB[tonumber(realm)];
+		realm = ArenaAnalyticsDB.realms[tonumber(realm)];
 		assert(realm, "Realm index had no realm stored!");
 	end
 

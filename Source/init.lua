@@ -169,10 +169,9 @@ ArenaAnalytics.commands = {
 		else -- Debug mode is enabled, allow debug clearing the DB
 			if (ArenaAnalytics:HasStoredMatches()) then
 				ArenaAnalytics:Log("Clearing ArenaAnalyticsDB.");
-				ArenaAnalyticsDB = {}
-				ArenaAnalyticsRealmsDB = {}
+				ArenaAnalytics:PurgeArenaAnalyticsDB();
 				ArenaAnalytics.AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
-				
+
 				ArenaAnalytics.Filters:Refresh();
 				ArenaAnalytics.unsavedArenaCount = 0;
 			end
@@ -185,7 +184,7 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print(" ================================================  ");
 		ArenaAnalytics:Print("  Known Realms:     (Current realm: " .. (ArenaAnalytics:GetLocalRealmIndex() or "").. ")");
 
-		for i,realm in ipairs(ArenaAnalyticsRealmsDB) do
+		for i,realm in ipairs(ArenaAnalyticsDB.realms) do
 			ArenaAnalytics:Print("     ", i, "   ", realm);
 		end
 		ArenaAnalytics:Print("  ================================================  ");
@@ -197,8 +196,12 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 		
-		ArenaAnalytics.Helpers:DebugLogTable(ArenaAnalyticsDB.currentArena);
-		ArenaAnalytics:Log(API:GetPersonalRatedInfo(bracketIndex))
+		local total, count = 0,0;
+		for i,name in ipairs(ArenaAnalyticsDB.names) do
+			total = total + #name;
+			count = count + 1;
+		end
+		ArenaAnalytics:Log(total / count)
 
 		print(" ");
 	end,	
@@ -293,10 +296,12 @@ function ArenaAnalytics:GetThemeColor()
 end
 
 function ArenaAnalytics:GetTitleColored(asSingleColor)
+	local hex = select(4, ArenaAnalytics:GetThemeColor());
+
 	if(asSingleColor) then
-		return "|cff"..select(4, ArenaAnalytics:GetThemeColor()).."ArenaAnalytics|r";
+		return "|cff".. hex .."ArenaAnalytics|r";
 	else
-		return "Arena|cff"..select(4, ArenaAnalytics:GetThemeColor()).."Analytics|r";
+		return "Arena|cff".. hex .."Analytics|r";
 	end
 end
 
@@ -384,7 +389,10 @@ end
 function ArenaAnalytics:init()
 	ArenaAnalytics:Log("Initializing..");
 
-	ArenaAnalytics.Helpers:DebugLogTable(ArenaAnalyticsDB.currentArena);
+	-- Initialize databases
+	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
+	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
+	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
 
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do
@@ -455,7 +463,9 @@ end
 
 -- Delay the init a frame, to allow all files to be loaded
 function ArenaAnalytics:delayedInit(event, name, ...)
-	if (name ~= "ArenaAnalytics") then return end
+	if (name ~= "ArenaAnalytics") then 
+		return;
+	end
 
 	C_Timer.After(1, function() ArenaAnalytics.init() end);
 end

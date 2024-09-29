@@ -101,6 +101,32 @@ function VersionManager:OnInit()
         ArenaAnalytics:ResortGroupsInMatchHistory();
         ArenaAnalytics:RecomputeSessionsForMatchHistory();
     end
+
+    if(#ArenaAnalyticsDB.realms == 0 and #ArenaAnalyticsDB.names) then
+        ArenaAnalyticsDB.names = ArenaAnalyticsDB.Names;
+        ArenaAnalyticsDB.realms = ArenaAnalyticsDB.Realms;
+
+        ArenaAnalyticsDB.Names = nil;
+        ArenaAnalyticsDB.Realms = nil;
+    end
+
+    -- Move realms DB
+    if(ArenaAnalyticsRealmsDB and #ArenaAnalyticsRealmsDB > 0 and #ArenaAnalyticsDB.realms == 0) then
+		ArenaAnalyticsDB.realms = Helpers:DeepCopy(ArenaAnalyticsRealmsDB) or {};
+		ArenaAnalyticsRealmsDB = nil;
+
+        -- Logging
+		ArenaAnalytics:Log("Converted ArenaAnalyticsRealmsDB:", #ArenaAnalyticsDB.realms);
+		Helpers:DebugLogTable(ArenaAnalyticsDB.realms);
+	end
+
+    -- Convert names to compact format
+    if(#ArenaAnalyticsDB.names == 0) then
+        for i=1, #ArenaAnalyticsDB do
+            local match = ArenaAnalyticsDB[i];
+            ArenaMatch:CompressPlayerNames(match);
+        end
+    end
 end
 
 local function convertFormatedDurationToSeconds(inDuration)
@@ -312,18 +338,16 @@ function VersionManager:renameMatchHistoryDBKeys()
 end
 
 function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
-    ArenaAnalyticsDB = ArenaAnalyticsDB or {};
-
     if(not MatchHistoryDB or #MatchHistoryDB == 0) then
         return;
     end
-
+    
     if(ArenaAnalyticsDB and #ArenaAnalyticsDB > 0) then
         ArenaAnalytics:Log("Version Control: Non-empty ArenaAnalyticsDB.");
         return;
     end
 
-    ArenaAnalyticsRealmsDB = {}
+    ArenaAnalytics:PurgeArenaAnalyticsDB();
 
     local function ConvertValues(race, class, spec)
         local race_id = Localization:GetRaceID(race);
