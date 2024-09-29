@@ -102,16 +102,16 @@ function VersionManager:OnInit()
         ArenaAnalytics:RecomputeSessionsForMatchHistory();
     end
 
-    if(#ArenaAnalyticsDB.realms == 0 and #ArenaAnalyticsDB.names) then
-        ArenaAnalyticsDB.names = ArenaAnalyticsDB.Names;
-        ArenaAnalyticsDB.realms = ArenaAnalyticsDB.Realms;
+    if(#ArenaAnalyticsDB.realms == 0 and #ArenaAnalyticsDB.names == 0) then
+        ArenaAnalyticsDB.names = Helpers:DeepCopy(ArenaAnalyticsDB.Names) or {};
+        ArenaAnalyticsDB.realms = Helpers:DeepCopy(ArenaAnalyticsDB.Realms) or {};
 
         ArenaAnalyticsDB.Names = nil;
         ArenaAnalyticsDB.Realms = nil;
     end
 
     -- Move realms DB
-    if(ArenaAnalyticsRealmsDB and #ArenaAnalyticsRealmsDB > 0 and #ArenaAnalyticsDB.realms == 0) then
+    if(ArenaAnalyticsRealmsDB and #ArenaAnalyticsRealmsDB > 0 and ArenaAnalyticsDB.realms or not #ArenaAnalyticsDB.realms == 0) then
 		ArenaAnalyticsDB.realms = Helpers:DeepCopy(ArenaAnalyticsRealmsDB) or {};
 		ArenaAnalyticsRealmsDB = nil;
 

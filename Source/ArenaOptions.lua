@@ -10,6 +10,36 @@ local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
+
+function Options:RegisterCategory(frame, name, parent)
+    assert(frame)
+
+    frame.name = name;
+
+    if parent and parent.category then
+        local parentcategory = Settings.GetCategory(parent)
+        frame.category = Settings.RegisterCanvasLayoutSubcategory(parent.category, frame, name);
+    else
+        frame.category = Settings.RegisterCanvasLayoutCategory(frame, name);
+        Settings.RegisterAddOnCategory(frame.category);
+    end
+end
+
+function Options:OpenCategory(frame)
+    if(not frame or not frame.category) then
+        ArenaAnalytics:Log("Options: Invalid options frame, cannot open.");
+        return;
+    end
+
+    Settings.OpenToCategory(frame.category.ID);
+end
+
+local ArenaAnalyticsOptionsFrame = nil;
+function Options:Open()
+    Options:OpenCategory(ArenaAnalyticsOptionsFrame);
+end
+
+-------------------------------------------------------------------------
 -- Standardized Updated Option Response Functions
 
 local function HandleSettingsChanged()
@@ -169,7 +199,6 @@ function Options:Reset(setting)
 end
 
 local exportOptionsFrame = nil;
-local ArenaAnalyticsOptionsFrame = nil;
 
 function Options:TriggerStateUpdates()
     if(exportOptionsFrame and exportOptionsFrame.importButton and exportOptionsFrame.importButton.stateFunc) then
@@ -187,13 +216,6 @@ local OptionsSpacing = 10;
 
 -- Offset to use while creating settings tabs
 local offsetY = 0;
-
-function Options:Open()
-    if(ArenaAnalyticsOptionsFrame) then
-        InterfaceOptionsFrame_OpenToCategory(ArenaAnalyticsOptionsFrame);
-        InterfaceOptionsFrame_OpenToCategory(ArenaAnalyticsOptionsFrame);
-    end
-end
 
 -------------------------------------------------------------------
 -- Helper Functions
@@ -265,7 +287,7 @@ local function CreateButton(setting, parent, x, width, text, func)
 
     SetupTooltip(button, nil);
 
-    offsetY = offsetY - button:GetHeight() - OptionsSpacing;
+    offsetY = offsetY - OptionsSpacing - button:GetHeight();
 
     return button;
 end
@@ -431,7 +453,7 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
     newDropdown.text:SetTextHeight(TextSize);
     newDropdown.text:SetText(text or "");
 
-    offsetY = offsetY - OptionsSpacing - newDropdown:GetHeight() + 7;
+    offsetY = offsetY - OptionsSpacing - newDropdown:GetHeight() + 10;
     return newDropdown;
 end
 
@@ -457,9 +479,7 @@ end
 -------------------------------------------------------------------
 function SetupTab_Filters()
     local filterOptionsFrame = CreateFrame("frame");
-    filterOptionsFrame.name = "Filters";
-    filterOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
-    InterfaceOptions_AddCategory(filterOptionsFrame);
+    Options:RegisterCategory(filterOptionsFrame, "Filters", ArenaAnalyticsOptionsFrame);
     
     -- Title
     InitializeTab(filterOptionsFrame);
@@ -526,9 +546,8 @@ end
 -------------------------------------------------------------------
 function SetupTab_Search()
     local filterOptionsFrame = CreateFrame("frame");
-    filterOptionsFrame.name = "Search";
-    filterOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
-    InterfaceOptions_AddCategory(filterOptionsFrame);
+    --filterOptionsFrame.name = "Search";
+    Options:RegisterCategory(filterOptionsFrame, "Search", ArenaAnalyticsOptionsFrame);
     
     -- Title
     InitializeTab(filterOptionsFrame);
@@ -578,9 +597,8 @@ end
 
 function SetupTab_QuickSearch()
     local filterOptionsFrame = CreateFrame("frame");
-    filterOptionsFrame.name = "Quick Search";
-    filterOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
-    InterfaceOptions_AddCategory(filterOptionsFrame);
+    --filterOptionsFrame.name = "Quick Search";
+    Options:RegisterCategory(filterOptionsFrame, "Quick Search", ArenaAnalyticsOptionsFrame);
 
     -- Title
     InitializeTab(filterOptionsFrame);
@@ -635,9 +653,7 @@ end
 -------------------------------------------------------------------
 function SetupTab_ImportExport()
     exportOptionsFrame = CreateFrame("frame");
-    exportOptionsFrame.name = "Import / Export";
-    exportOptionsFrame.parent = ArenaAnalyticsOptionsFrame.name;
-    InterfaceOptions_AddCategory(exportOptionsFrame);
+    Options:RegisterCategory(exportOptionsFrame, "Import / Export", ArenaAnalyticsOptionsFrame);
 
     InitializeTab(exportOptionsFrame);
     local parent = exportOptionsFrame;
@@ -676,10 +692,9 @@ end
 function Options:Init()
     Options:LoadSettings();
 
-    if not ArenaAnalyticsOptionsFrame and false then
+    if not ArenaAnalyticsOptionsFrame then
         ArenaAnalyticsOptionsFrame = CreateFrame("Frame");
-        ArenaAnalyticsOptionsFrame.name = "Arena|cff00ccffAnalytics|r";
-        InterfaceOptions_AddCategory(ArenaAnalyticsOptionsFrame);
+        Options:RegisterCategory(ArenaAnalyticsOptionsFrame, "Arena|cff00ccffAnalytics|r");
 
         -- Setup tabs
         SetupTab_General();
