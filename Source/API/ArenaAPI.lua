@@ -20,29 +20,6 @@ function API:GetAddonVersion()
     return C_AddOns and C_AddOns.GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
 end
 
-function API:GetMapToken(mapID)
-    assert(API.availableMaps);
-
-    mapID = tonumber(mapID);
-    if(not mapID) then
-        return nil;
-    end
-
-    for _,data in ipairs(API.availableMaps) do
-        if(data and data.id == mapID) then
-            assert(data.token);
-            return data.token;
-        end
-    end
-end
-
-function API:GetAddonMapID(map)
-    assert(API.availableMaps);
-
-    local token = tonumber(map) and API:GetMapToken(map) or map;
-    return Internal:GetAddonMapID(token);
-end
-
 function API:GetArenaPlayerSpec(index, isEnemy)
     if(isEnemy) then
         -- Depends on GotArenaOpponentSpec API to function    

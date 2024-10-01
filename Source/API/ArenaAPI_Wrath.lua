@@ -17,11 +17,11 @@ API.availableBrackets = {
 	{ name = "5v5", key = 3},
 };
 
-API.availableMaps = {
-    { id = 562,  token = "BladesEdgeArena" },
-    { id = 559,  token = "NagrandArena" },
-    { id = 572,  token = "RuinsOfLordaeron" },
-    { id = 617,  token = "DalaranArena" },
+API.availableMaps = { 
+    "BladesEdgeArena", 
+    "NagrandArena", 
+    "RuinsOfLordaeron", 
+    "DalaranArena" 
 };
 
 function API:IsInArena()

@@ -68,6 +68,9 @@ function ImportBox:Create(parent, frameName, width, height)
     self.frame:SetScript("OnHide", function(frame)
         -- Cleanup
         self:SetText("");
+
+        -- Reset import, unless it's currently importing.
+        Import:Reset();
     end);
 
     self.frame.owner = self;

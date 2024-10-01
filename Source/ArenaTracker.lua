@@ -213,7 +213,7 @@ function ArenaTracker:HasSpec(GUID)
 	return player and Helpers:IsSpecID(player.spec);
 end
 
-function ArenaTracker:GetShuffleWinner()
+function ArenaTracker:GetShuffleOutcome()
 	if(currentArena.committedRounds) then
 		local wins = 0;
 
@@ -477,7 +477,7 @@ function ArenaTracker:HandleArenaEnd()
 	
 	if(currentArena.isShuffle) then
 		-- Determine match outcome
-		currentArena.outcome = ArenaTracker:GetShuffleWinner()
+		currentArena.outcome = ArenaTracker:GetShuffleOutcome()
 	else
 		-- Assign isEnemy value
 		for _,player in ipairs(players) do

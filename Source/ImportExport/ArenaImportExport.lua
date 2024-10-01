@@ -53,7 +53,7 @@ local function RecomputeFirstAndLastStoredTimes()
 end
 
 local function CanImportMatchByRelativeTime(startTime)
-    local doesMatchPass = false;
+    local doesMatchPass = nil;
 
     if(existingArenaCount == 0) then
         doesMatchPass = true;
@@ -69,8 +69,8 @@ local function CanImportMatchByRelativeTime(startTime)
         ArenaAnalytics:Log("CanImportMatchByRelativeTime: ", startTime, earliestStartTime, latestStartTime);
     end
     
-    if(doesMatchPass == false) then
-        ArenaAnalytics:Log("Rejected startTime: ", date("%d/%m/%y %H:%M:%S", startTime));
+    if(not doesMatchPass) then
+        ArenaAnalytics:Log("Rejected startTime: ", startTime and date("%d/%m/%y %H:%M:%S", startTime));
         arenasSkippedByDate = arenasSkippedByDate + 1;
     end
 
@@ -149,15 +149,6 @@ function Import:reset()
     cachedValues = {};
     cachedArenas = {};
     isImporting = false;
-end
-
-function Import:tryHide()
-    if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil and ArenaAnalytics:HasStoredMatches()) then
-        ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText("");
-        ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
-        ArenaAnalyticsScrollFrame.importDialogFrame = nil;
-    end
 end
 
 ---------------------------------
@@ -272,7 +263,7 @@ function Import:parseRawData(data)
     
     if(not isImporting) then
         -- Hide the dialog if we have existing matches
-        Import:tryHide();
+        Import:TryHide();
     end
 end
 
@@ -770,7 +761,7 @@ end
 
 function Import:completeImport()
     Import:reset();
-    Import:tryHide();
+    Import:TryHide();
 
     
     table.sort(ArenaAnalyticsDB, function (k1,k2)

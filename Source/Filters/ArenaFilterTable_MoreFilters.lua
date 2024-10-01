@@ -95,12 +95,12 @@ local function GenerateDateEntries(dates)
     return dateTable;
 end
 
-local function GenerateMapEntries(maps)
-    assert(maps);
+local function GenerateMapEntries()
+    assert(API.availableMaps);
     
     local mapTable = {}
-    for _,data in ipairs(maps) do
-        local map_id = Internal:GetAddonMapID(data and data.token);
+    for _,token in ipairs(API.availableMaps) do
+        local map_id = Internal:GetAddonMapID(token);
         assert(map_id, "Invalid map token in availableMaps: " .. (data and data.token or "nil") .. ", with id: " .. (data and data.id or "nil"));
 
         tinsert(mapTable, {
@@ -156,7 +156,7 @@ function FilterTables:Init_MoreFilters()
                 label = "Maps",
                 alignment = "LEFT",
                 key = "Filter_Map",
-                nested = GenerateMapEntries(API.availableMaps),
+                nested = GenerateMapEntries(),
                 onClick = FilterTables.ResetFilterValue,
                 checked = FilterTables.IsFilterActive,
             },

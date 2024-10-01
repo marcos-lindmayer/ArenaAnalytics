@@ -474,7 +474,7 @@ function VersionManager:FinalizeConversionAttempts()
 	ArenaAnalytics:ResortGroupsInMatchHistory();
 	ArenaAnalytics:RecomputeSessionsForMatchHistory();
     
-    Import:tryHide();
+    Import:TryHide();
     Filters:Refresh();
     ArenaAnalyticsScrollFrame:Hide();
 end

@@ -22,22 +22,22 @@ API.availableBrackets = {
 
 -- Order defines the UI order of maps filter dropdown
 API.availableMaps = {
-    { id = 1505,  token = "NagrandArena" },
-    { id = 572,  token = "RuinsOfLordaeron" },
-    { id = 2167, token = "TheRobodrome" },
-    { id = 2563, token = "NokhudonProvingGrounds" },
-    { id = 1552,  token = "AshamanesFall" },
-    { id = 1672,  token = "BladesEdgeArena" },
-    { id = 1911,  token = "Mugambala" },
-    { id = 1504,  token = "BlackRookHoldArena" },
-    { id = 1825,  token = "HookPoint" },
-    { id = 2373, token = "EmpyreanDomain" },
-    { id = 617,  token = "DalaranArena" },
-    { id = 1134,  token = "TheTigersPeak" },
-    { id = 2547, token = "EnigmaCrucible" },
-    { id = 2509, token = "MaldraxxusColiseum" },
-    { id = 980,  token = "TolVironArena" },
-}
+    "NagrandArena",
+    "RuinsOfLordaeron",
+    "TheRobodrome",
+    "NokhudonProvingGrounds",
+    "AshamanesFall",
+    "BladesEdgeArena",
+    "Mugambala",
+    "BlackRookHoldArena",
+    "HookPoint",
+    "EmpyreanDomain",
+    "DalaranArena",
+    "TheTigersPeak",
+    "EnigmaCrucible",
+    "MaldraxxusColiseum",
+    "TolVironArena",
+};
 
 function API:IsInArena()
     return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl(); -- TODO: Add solo shuffle support

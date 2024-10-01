@@ -341,9 +341,16 @@ raceMapping = {
     },
 }
 
-function Localization:GetRaceID(race)
+function Localization:GetRaceID(race, factionIndex)
     if(not race) then
         return nil;
+    end
+
+    if(type(factionIndex) == "number") then
+        factionIndex = tonumber(factionIndex) % 2;
+    else
+        ArenaAnalytics:Log("Localization:GetRaceID called with invalid factionIndex. Value is ignored.", factionIndex);
+        factionIndex = nil;
     end
 
     race = Helpers:ToSafeLower(race);
@@ -352,13 +359,19 @@ function Localization:GetRaceID(race)
     for raceToken,localizations in pairs(raceMapping) do
         assert(raceToken and localizations);
 
+        raceToken = Helpers:ToSafeLower(raceToken);
+        if(race == raceToken) then
+            -- Convert token to Race ID
+            return Internal:GetAddonRaceIDByToken(raceToken, faction);
+        end
+
         for _,values in pairs(localizations) do
             assert(values);
 
             for _,localizedValue in ipairs(values) do
                 if(race == Helpers:ToSafeLower(localizedValue)) then
                     -- Convert token to Race ID
-                    return Internal:GetAddonRaceIDByToken(raceToken);
+                    return Internal:GetAddonRaceIDByToken(raceToken, faction);
                 end
             end
         end
@@ -370,7 +383,7 @@ function Localization:GetRaceID(race)
     for raceID = 1, API.maxRaceID do
         local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)        
         if(raceInfo and race == Helpers:ToSafeLower(raceInfo.raceName)) then
-            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString);
+            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString, faction);
             if addonRaceID then
                 return addonRaceID;
             else
@@ -382,4 +395,22 @@ function Localization:GetRaceID(race)
 
     ArenaAnalytics:Log("LocalizationTables: Failed to find raceID:", race);
     return nil;
+end
+
+function Localization:GetFactionIndex(faction)
+    if(not faction) then
+        return nil;
+    end
+
+    if(type(faction) == "string") then
+        -- TODO: Add localized checks?
+        if(Helpers:ToSafeLower(faction) == "horde") then
+            faction = 0;
+        elseif(Helpers:ToSafeLower(faction) == "alliance") then
+            faction = 1;
+        end
+    end
+
+    faction = tonumber(faction);
+    return faction % 2;
 end

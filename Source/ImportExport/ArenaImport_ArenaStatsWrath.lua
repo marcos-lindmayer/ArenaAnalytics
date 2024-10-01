@@ -6,8 +6,8 @@ local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
-local sourceKey = "ImportSource_ArenaStatsCata";
-local sourceName = "ArenaStats (Cata)";
+local sourceKey = "ImportSource_ArenaStatsWrath";
+local sourceName = "ArenaStats (Wrath)";
 
 local formatPrefix = "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,"..
     "winnerColor,teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5,"..
@@ -17,10 +17,9 @@ local formatPrefix = "isRanked,startTime,endTime,zoneId,duration,teamName,teamCo
     "enemyTeamName,enemyPlayerName1,enemyPlayerName2,enemyPlayerName3,enemyPlayerName4,"..
     "enemyPlayerName5,enemyPlayerClass1,enemyPlayerClass2,enemyPlayerClass3,enemyPlayerClass4,"..
     "enemyPlayerClass5,enemyPlayerRace1,enemyPlayerRace2,enemyPlayerRace3,enemyPlayerRace4,"..
-    "enemyPlayerRace5,enemyFaction,enemySpec1,enemySpec2,enemySpec3,enemySpec4,enemySpec5,"..
-    "teamSpec1,teamSpec2,teamSpec3,teamSpec4,teamSpec5,";
+    "enemyPlayerRace5,enemyFaction";
 
-local valuesPerArena = 58;
+local valuesPerArena = 48;
 
 -- Define the separator pattern that accounts for both ";" and "\n"
 local delimiter = "[,\n]";
@@ -59,7 +58,6 @@ local function ProcessPlayer(lastIndex, isEnemyTeam, playerIndex, factionIndex)
     local indexOffset = isEnemyTeam and 32 or 8;
 
     local valueIndex = lastIndex + indexOffset + playerIndex;
-    local specIndex = (isEnemyTeam and 53 or 48) + playerIndex;
 
     local name = Import.cachedValues[valueIndex];
     
@@ -74,13 +72,12 @@ local function ProcessPlayer(lastIndex, isEnemyTeam, playerIndex, factionIndex)
 
     local class = Import.cachedValues[valueIndex + 5];
     local race = Import.cachedValues[valueIndex + 10];
-    local spec = Import.cachedValues[specIndex];
 
     local player = {
         isEnemy = isEnemyTeam,
         isSelf = (name == UnitName("player")),
         name = name,
-        spec_id = Localization:GetSpecID(class, spec),
+        spec_id = Localization:GetClassID(class),
         race_id = Localization:GetRaceID(race, factionIndex),
     };
 

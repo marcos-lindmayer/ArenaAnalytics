@@ -6,6 +6,14 @@ local Export = ArenaAnalytics.Export;
 -------------------------------------------------------------------------
 -- ArenaAnalytics export
 
+-- TODO: Improve the export format
+--[[
+    1) \n separated matches
+    2) Semicolon separated value types
+    3) Comma separated values within a type (e.g., players in a team)
+    4) / separated specific values (e.g., player info)
+--]]
+
 local exportPrefix = "ArenaAnalytics_v2:" ..
 -- Match data
 "date,season,bracket,map,duration,won,isRated,rating,ratingDelta,mmr,enemyRating,enemyRatingDelta,enemyMMR,firstDeath,player,"..

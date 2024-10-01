@@ -233,7 +233,7 @@ function ArenaMatch:SetMap(match, value)
         return;
     end
 
-    local map_id = API:GetAddonMapID(value);
+    local map_id = Internal:GetAddonMapID(value);
     if(not map_id) then
         ArenaAnalytics:Log("Warning: ArenaMatch:SetMap failed to find map_id for value:", value);
     end

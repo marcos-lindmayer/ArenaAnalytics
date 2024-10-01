@@ -10,6 +10,33 @@ local API = ArenaAnalytics.API;
 -------------------------------------------------------------------------
 -- Maps
 
+local mapTokens = {
+    [559] = "NagrandArena",
+    [1505] = "NagrandArena",
+
+    [562] = "BladesEdgeArena",
+    [1672] = "BladesEdgeArena",
+
+    [572] = "RuinsOfLordaeron",
+    [2167] = "TheRobodrome",
+    [2563] = "NokhudonProvingGrounds",
+    [1552] = "AshamanesFall",
+    [1911] = "Mugambala",
+    [1504] = "BlackRookHoldArena",
+    [1825] = "HookPoint",
+    [2373] = "EmpyreanDomain",
+    [617] = "DalaranArena",
+    [1134] = "TheTigersPeak",
+    [2547] = "EnigmaCrucible",
+    [2509] = "MaldraxxusColiseum",
+    [980] = "TolVironArena"
+}
+
+function Internal:GetMapToken(mapID)
+    mapID = tonumber(mapID);
+    return mapID and mapTokens[mapID] or nil;
+end
+
 local addonMapIDs = {
     [1]  =  { token = "BladesEdgeArena", shortName = "BEA", name = "Blade's Edge Arena" },
     [2]  =  { token = "RuinsOfLordaeron", shortName = "RoL", name = "Ruins of Lordaeron" },
@@ -42,7 +69,7 @@ function Internal:GetAddonMapID(map)
     end
 
     if(tonumber(map)) then
-        map = API:GetMapToken(map);
+        map = Internal:GetMapToken(map);
     end
 
     map = Helpers:ToSafeLower(map);
@@ -123,6 +150,8 @@ function Internal:GetAddonRaceIDByToken(token, factionIndex)
         if(data and Helpers:ToSafeLower(data.token) == token) then
             if(not factionIndex or (id % 2 == factionIndex)) then
                 return id;
+            else
+                ArenaAnalytics:Log("Internal:GetAddonRaceIDByToken rejected faction for:", factionIndex);
             end
         end
     end

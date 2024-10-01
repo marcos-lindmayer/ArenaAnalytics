@@ -5,8 +5,8 @@ local Import = ArenaAnalytics.Import;
 
 -------------------------------------------------------------------------
 
-local importIdentifier = "ArenaAnalytics_v2:";
-local exportHeader = "ArenaAnalytics_v2:"..
+local importIdentifier = "ArenaAnalytics:";
+local formatPrefix = "ArenaAnalytics:"..
     -- Match data
     "date,season,bracket,map,duration,won,isRated,rating,ratingDelta,mmr,enemyRating,enemyRatingDelta,enemyMMR,firstDeath,player,"..
 

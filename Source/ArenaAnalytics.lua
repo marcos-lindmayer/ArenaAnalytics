@@ -750,8 +750,8 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 
 	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
 
-	if(Import.tryHide) then
-		Import:tryHide();
+	if(Import.TryHide) then
+		Import:TryHide();
 	end
 
 	ArenaAnalytics:Print("Arena recorded!");
