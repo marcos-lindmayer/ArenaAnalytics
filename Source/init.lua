@@ -195,13 +195,6 @@ ArenaAnalytics.commands = {
 	["test"] = function()
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-		
-		local total, count = 0,0;
-		for i,name in ipairs(ArenaAnalyticsDB.names) do
-			total = total + #name;
-			count = count + 1;
-		end
-		ArenaAnalytics:Log(total / count)
 
 		print(" ");
 	end,	
@@ -243,6 +236,8 @@ local function HandleSlashCommands(str)
 	end
 end
 
+-------------------------------------------------------------------------
+
 function ArenaAnalytics:Print(...)
     local hex = select(4, ArenaAnalytics:GetThemeColor());
     local prefix = string.format("|cff%s%s|r", hex:upper(), "ArenaAnalytics:");
@@ -269,9 +264,24 @@ function ArenaAnalytics:Log(...)
 	print(prefix, ...);
 end
 
-function ArenaAnalytics:NoFormatting(text)
-	return text and text:gsub("|", "||") or "";
+function ArenaAnalytics:LogEscaped(...)
+	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
+		return;
+	end
+
+    -- Process each argument and replace | with || in string values, to escape formatting
+	local args = {...}
+	for i = 1, #args do
+		if(type(args[i]) == "string") then
+			args[i] = args[i]:gsub("|", "||");
+		end
+	end
+
+	-- Use unpack to print the modified arguments
+	ArenaAnalytics:Log(unpack(args));
 end
+
+-------------------------------------------------------------------------
 
 -- Assert if debug is enabled. Returns value to allow wrapping within if statements.
 function ArenaAnalyticsDebugAssert(value, msg)
@@ -390,9 +400,7 @@ function ArenaAnalytics:init()
 	ArenaAnalytics:Log("Initializing..");
 
 	-- Initialize databases
-	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
-	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
-	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
+	ArenaAnalytics:InitializeArenaAnalyticsDB();
 
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do

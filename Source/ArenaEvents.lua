@@ -93,7 +93,7 @@ local function ParseArenaTimerMessages(msg, ...)
 	end
 
 	local localizedMessage = Constants.GetArenaTimer();
-	if(msg:find(localizedMessage)) then
+	if(msg:find(localizedMessage, 1, true)) then
 		ArenaTracker:HandleArenaStart();
 	end
 end

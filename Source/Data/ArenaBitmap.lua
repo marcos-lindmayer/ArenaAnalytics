@@ -8,10 +8,29 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 
-
 local bitmapTable = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 }
 
-function Bitmap:GetBitmapValue(...)
+function Bitmap:IndexToBitmap(index)
+    index = tonumber(index);
+    return index and bitmapTable[index];
+end
+
+-------------------------------------------------------------------------
+
+function Bitmap:GetPlayerFlags(bitmap)
+    local result = {}
+
+    for key,index in pairs(Constants.playerFlags) do
+        assert(key and tonumber(index), "Invalid flag in Constants.playerFlags");
+        result[key] = Bitmap:HasBitByIndex(bitmap, index)
+    end
+
+    return result;
+end
+
+-------------------------------------------------------------------------
+
+function Bitmap:GetRoleBitmapValue(...)
     local bitmap = 0;
     for _,value in ipairs({...}) do
         if(type(value) == "string") then
@@ -22,7 +41,7 @@ function Bitmap:GetBitmapValue(...)
                 end
             end
         end
-        
+
         local index = tonumber(value);
         if(index) then
             bitmap = bitmap + bitmapTable[index];
@@ -35,22 +54,22 @@ end
 
 function InitializeRoles()
     Bitmap.roles = {
-        tank = Bitmap:GetBitmapValue("tank"),
-        damager = Bitmap:GetBitmapValue("damager"),
-        healer = Bitmap:GetBitmapValue("healer"),
+        tank = Bitmap:GetRoleBitmapValue("tank"),
+        damager = Bitmap:GetRoleBitmapValue("damager"),
+        healer = Bitmap:GetRoleBitmapValue("healer"),
 
-        melee = Bitmap:GetBitmapValue("melee"),
-        ranged = Bitmap:GetBitmapValue("ranged"),
-        caster = Bitmap:GetBitmapValue("caster"),
+        melee = Bitmap:GetRoleBitmapValue("melee"),
+        ranged = Bitmap:GetRoleBitmapValue("ranged"),
+        caster = Bitmap:GetRoleBitmapValue("caster"),
 
-        melee_tank = Bitmap:GetBitmapValue("melee", "tank"),
-        melee_healer = Bitmap:GetBitmapValue("melee", "healer"),
-        melee_damager = Bitmap:GetBitmapValue("melee", "damager"),
+        melee_tank = Bitmap:GetRoleBitmapValue("melee", "tank"),
+        melee_healer = Bitmap:GetRoleBitmapValue("melee", "healer"),
+        melee_damager = Bitmap:GetRoleBitmapValue("melee", "damager"),
 
-        ranged_damager = Bitmap:GetBitmapValue("ranged", "damager"),
+        ranged_damager = Bitmap:GetRoleBitmapValue("ranged", "damager"),
 
-        caster_healer = Bitmap:GetBitmapValue("caster", "healer"),
-        caster_damager = Bitmap:GetBitmapValue("caster", "damager"),
+        caster_healer = Bitmap:GetRoleBitmapValue("caster", "healer"),
+        caster_damager = Bitmap:GetRoleBitmapValue("caster", "damager"),
     }
 end
 
@@ -84,6 +103,8 @@ function Bitmap:GetSubRole(role_bitmap)
     return nil;
 end
 
+-------------------------------------------------------------------------
+
 function Bitmap:BitmapHasAll(bitmap, value)
     bitmap = tonumber(bitmap);
     value = tonumber(value);
@@ -103,7 +124,7 @@ function Bitmap:BitmapHasAll(bitmap, value)
     return true;
 end
 
-function Bitmap:HasBitByIndex(bitmap, index, isSearch)
+function Bitmap:HasBitByIndex(bitmap, index)
     bitmap = tonumber(bitmap);
     index = tonumber(index);
 
@@ -111,7 +132,7 @@ function Bitmap:HasBitByIndex(bitmap, index, isSearch)
         return false;
     end
     
-    local value = Bitmap:GetBitmapValue(index);
+    local value = Bitmap:IndexToBitmap(index);
     local bit = value and floor(bitmap / value) % 2;
     return bit == 1;
 end

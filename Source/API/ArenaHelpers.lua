@@ -132,7 +132,7 @@ function Helpers:ToFullName(name)
         return nil;
     end
 
-    if(not name:find("-")) then
+    if(not name:find("-", 1, true)) then
         _,realm = UnitFullName("player"); -- Local player's realm
         name = realm and (name.."-"..realm) or name;
     end
@@ -142,16 +142,6 @@ end
 
 function Helpers:GetClassIcon(spec_id)
     return Internal:GetClassIcon(spec_id);
-end
-
--- Gets the name, and realm if not local realm from player info
-function Helpers:GetNameFromPlayerInfo(playerInfo)
-    if(not playerInfo) then
-        return "";
-    end
-
-    local isLocalRealm = ArenaAnalytics:IsLocalRealm(playerInfo.realm);
-    return isLocalRealm and playerInfo.name or playerInfo.fullName or "";
 end
 
 function Helpers:GetClassID(spec_id)

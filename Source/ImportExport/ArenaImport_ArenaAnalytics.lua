@@ -4,6 +4,10 @@ local Import = ArenaAnalytics.Import;
 -- Local module aliases
 
 -------------------------------------------------------------------------
+local sourceKey = "ImportSource_ArenaStatsCata";
+local sourceName = "ArenaStats (Cata)";
+
+local formatPrefix = "" --TODO Fill with new format
 
 local importIdentifier = "ArenaAnalytics:";
 local formatPrefix = "ArenaAnalytics:"..

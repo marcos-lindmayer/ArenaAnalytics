@@ -77,6 +77,8 @@ end
 
 -- Returns true if loading should convert data
 function VersionManager:OnInit()
+    ArenaAnalyticsDB.formatVersion = ArenaAnalyticsDB.formatVersion or 0;
+
     if(VersionManager:HasOldData() and #ArenaAnalyticsDB == 0) then
         -- Force early init, to ensure the internal tables are valid.
         Internal:Initialize();
@@ -102,54 +104,34 @@ function VersionManager:OnInit()
         ArenaAnalytics:RecomputeSessionsForMatchHistory();
     end
 
-    if(#ArenaAnalyticsDB.realms == 0 and #ArenaAnalyticsDB.names == 0) then
-        ArenaAnalyticsDB.names = Helpers:DeepCopy(ArenaAnalyticsDB.Names) or {};
-        ArenaAnalyticsDB.realms = Helpers:DeepCopy(ArenaAnalyticsDB.Realms) or {};
+    -- Reverts and reset index based name and realm (To improve order and streamline formatting across version)
+    VersionManager:RevertIndexBasedNameAndRealm();
 
-        ArenaAnalyticsDB.Names = nil;
-        ArenaAnalyticsDB.Realms = nil;
-    end
-
-    -- Move realms DB
-    if(ArenaAnalyticsRealmsDB and #ArenaAnalyticsRealmsDB > 0 and ArenaAnalyticsDB.realms or not #ArenaAnalyticsDB.realms == 0) then
-		ArenaAnalyticsDB.realms = Helpers:DeepCopy(ArenaAnalyticsRealmsDB) or {};
-		ArenaAnalyticsRealmsDB = nil;
-
-        -- Logging
-		ArenaAnalytics:Log("Converted ArenaAnalyticsRealmsDB:", #ArenaAnalyticsDB.realms);
-		Helpers:DebugLogTable(ArenaAnalyticsDB.realms);
-	end
-
-    -- Convert names to compact format
-    if(#ArenaAnalyticsDB.names == 0) then
-        for i=1, #ArenaAnalyticsDB do
-            local match = ArenaAnalyticsDB[i];
-            ArenaMatch:CompressPlayerNames(match);
-        end
-    end
+    -- Update round delimiter and compress player to compact string
+    VersionManager:ConvertRoundAndPlayerFormat();
 end
 
 local function convertFormatedDurationToSeconds(inDuration)
     if(tonumber(inDuration)) then
         return inDuration;
     end
-    
+
     if(inDuration ~= nil and inDuration ~= "") then
         -- Sanitize the formatted time string
         inDuration = inDuration:lower();
         inDuration = inDuration:gsub("%s+", "");
-        
+
         local minutes, seconds = 0,0
-        
-        if(string.find(inDuration, "|")) then
+
+        if(inDuration:find("|", 1, true)) then
             -- Get minutes before '|' and seconds between ';' and "sec"
             minutes = tonumber(inDuration:match("(.+)|")) or 0;
             seconds = tonumber(inDuration:match(";(.+)sec")) or 0;
-        elseif(inDuration:find("min") and inDuration:find("sec")) then
+        elseif(inDuration:find("min", 1, true) and inDuration:find("sec", 1, true)) then
             -- Get minutes before "min" and seconds between "min" and "sec
             minutes = tonumber(inDuration:match("(.*)min")) or 0;
             seconds = inDuration:match("min(.*)sec") or 0;
-        elseif(inDuration:find("sec")) then
+        elseif(inDuration:find("sec", 1, true)) then
             -- Get seconds before "sec
             seconds = tonumber(inDuration:match("(.*)sec")) or 0;
         else
@@ -232,14 +214,14 @@ local function getFullFirstDeathName(firstDeathName, team, enemyTeam)
 
     for _,player in ipairs(team) do
         local name = player and player["name"] or nil;
-        if(name and name:find(firstDeathName)) then
+        if(name and name:find(firstDeathName, 1, true)) then
             return name;
         end
     end
 
     for _,player in ipairs(enemyTeam) do
         local name = player and player["name"] or nil;
-        if(name and name:find(firstDeathName)) then
+        if(name and name:find(firstDeathName, 1, true)) then
             return name;
         end
     end
@@ -466,6 +448,92 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
             end
         end
     end
+end
+
+function VersionManager:RevertIndexBasedNameAndRealm()
+    if(ArenaAnalyticsDB.formatVersion ~= 0) then
+        return;
+    end
+
+    -- Confirm that there are only one realms DB with data at a time!
+    if(#ArenaAnalyticsDB.realms > 1) then
+        assert(not ArenaAnalyticsRealmsDB or #ArenaAnalyticsRealmsDB == 0);
+        assert(not ArenaAnalyticsDB.Realms or #ArenaAnalyticsDB.Realms == 0);
+    elseif(ArenaAnalyticsRealmsDB and #ArenaAnalyticsRealmsDB > 0) then
+        assert(not ArenaAnalyticsDB.Realms or #ArenaAnalyticsDB.Realms == 0);
+        assert(#ArenaAnalyticsDB.realms <= 1);
+    elseif(ArenaAnalyticsDB.Realms and #ArenaAnalyticsDB.Realms > 0) then
+        assert(not ArenaAnalyticsRealmsDB or #ArenaAnalyticsRealmsDB == 0);
+        assert(#ArenaAnalyticsDB.realms <= 1);
+    end
+
+    -- Confirm that there are only one names DB with data at a time!
+    if(#ArenaAnalyticsDB.names > 1) then
+        assert(not ArenaAnalyticsDB.Names or #ArenaAnalyticsDB.Names == 0);
+    elseif(ArenaAnalyticsDB.Names and #ArenaAnalyticsDB.Names > 0) then
+        assert(#ArenaAnalyticsDB.names <= 1);
+    end
+
+    -- Move 0.7.0 realms DB to ArenaAnalyticsDB.realms
+    if(ArenaAnalyticsRealmsDB and #ArenaAnalyticsRealmsDB > 0 and #ArenaAnalyticsDB.realms <= 1) then
+		ArenaAnalyticsDB.realms = Helpers:DeepCopy(ArenaAnalyticsRealmsDB) or {};
+		ArenaAnalyticsRealmsDB = nil;
+
+        -- Logging
+		ArenaAnalytics:Log("Converted ArenaAnalyticsRealmsDB:", #ArenaAnalyticsDB.realms);
+		Helpers:DebugLogTable(ArenaAnalyticsDB.realms);
+	end
+
+    -- Convert realms DB to final DB
+    if(#ArenaAnalyticsDB.realms == 1 and ArenaAnalyticsDB.Realms and #ArenaAnalyticsDB.Realms > 0) then
+        ArenaAnalytics:Log("Deep copying ArenaAnalyticsDB.Realms", #ArenaAnalyticsDB.Realms);
+        ArenaAnalyticsDB.realms = Helpers:DeepCopy(ArenaAnalyticsDB.Realms) or {};
+        ArenaAnalyticsDB.Realms = nil;
+    end
+
+    -- Convert names DB to final DB
+    if(#ArenaAnalyticsDB.names == 1 and ArenaAnalyticsDB.Names and #ArenaAnalyticsDB.Names > 0) then
+        ArenaAnalytics:Log("Deep copying ArenaAnalyticsDB.Names", #ArenaAnalyticsDB.Names);
+        ArenaAnalyticsDB.names = Helpers:DeepCopy(ArenaAnalyticsDB.Names) or {};
+        ArenaAnalyticsDB.Names = nil;
+    end
+
+    -- Revert index based naming, to prioritize self as index 1
+    for i=1, #ArenaAnalyticsDB do
+        local match = ArenaAnalyticsDB[i];
+        if(match) then
+            ArenaMatch:RevertPlayerNameAndRealmIndexing(match);
+        end
+    end
+
+    -- Reset names and realms lists
+    ArenaAnalyticsDB.names = nil;
+    ArenaAnalyticsDB.realms = nil;
+    ArenaAnalytics:InitializeArenaAnalyticsDB();
+
+    -- Set a format version, to prevent repeating formatting
+    ArenaAnalyticsDB.formatVersion = 1;
+end
+
+function VersionManager:ConvertRoundAndPlayerFormat()
+    assert(ArenaAnalyticsDB.names[1] == UnitNameUnmodified("player"), "Invalid or missing self as first name entry!");
+    
+    local _,realm = UnitFullName("player");
+    assert(realm and ArenaAnalyticsDB.realms[1] == realm, "Invalid or missing local realm as first realm entry!");
+
+    if(ArenaAnalyticsDB.formatVersion ~= 1) then
+        return;
+    end
+
+    for i=1, #ArenaAnalyticsDB do
+        local match = ArenaAnalyticsDB[i];
+        if(match) then
+            ArenaMatch:FixRoundFormat(match);
+            ArenaMatch:ConvertPlayerValues(match);
+        end
+    end
+
+    ArenaAnalyticsDB.formatVersion = 2;
 end
 
 function VersionManager:FinalizeConversionAttempts()

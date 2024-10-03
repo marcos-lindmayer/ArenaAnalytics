@@ -751,7 +751,7 @@ function ArenaTracker:ProcessCombatLogEvent(...)
 		tryRemoveFromDeaths(sourceGUID, spellName);
 	elseif(logEventType == "SPELL_AURA_APPLIED" or logEventType == "SPELL_AURA_REMOVED") then
 		ArenaTracker:DetectSpec(sourceGUID, spellID, spellName);
-	elseif(destGUID and destGUID:find("Player")) then
+	elseif(destGUID and destGUID:find("Player-", 1, true)) then
 		-- Player Death
 		if (logEventType == "UNIT_DIED") then
 			handlePlayerDeath(destGUID, false);
@@ -797,7 +797,7 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	end
 
 	-- Only players matter for spec detection
-	if (not string.find(sourceGUID, "Player-")) then
+	if (not string.find(sourceGUID, "Player-", 1, true)) then
 		return;
 	end
 

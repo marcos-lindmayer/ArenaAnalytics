@@ -464,7 +464,7 @@ function Filters:Refresh(onCompleteFunc)
     cachedRealSession = 0;
 
     local currentIndex = 1;
-    local batchDurationLimit = 0.05;
+    local batchDurationLimit = 0.01;
 
     local function Finalize()
         -- Assign session to filtered matches

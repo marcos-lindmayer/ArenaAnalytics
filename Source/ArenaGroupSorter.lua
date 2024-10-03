@@ -140,19 +140,19 @@ local function ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo)
     end
 
     -- Spec and Class Comparison
-    if(selfPlayerInfo.spec_id and playerInfoA.spec_id ~= playerInfoB.spec_id) then
-        if(playerInfoA.spec_id == selfPlayerInfo.spec_id) then
+    if(selfPlayerInfo.spec and playerInfoA.spec ~= playerInfoB.spec) then
+        if(playerInfoA.spec == selfPlayerInfo.spec) then
             return true;
-        elseif(playerInfoB.spec_id == selfPlayerInfo.spec_id) then
+        elseif(playerInfoB.spec == selfPlayerInfo.spec) then
             return false;
         end
 
-        local classA = Helpers:GetClassID(playerInfoA.spec_id);
-        local classB = Helpers:GetClassID(playerInfoB.spec_id);
-        
+        local classA = Helpers:GetClassID(playerInfoA.spec);
+        local classB = Helpers:GetClassID(playerInfoB.spec);
+
         if(classA ~= classB) then
-            local selfClassID = Helpers:GetClassID(selfPlayerInfo.spec_id);
-            
+            local selfClassID = Helpers:GetClassID(selfPlayerInfo.spec);
+
             if(classA == selfClassID) then
                 return true;
             elseif(classB == selfClassID) then
@@ -211,14 +211,6 @@ function GroupSorter:SortIndexGroup(group, players, selfPlayerInfo)
     if(not players or #players == 0) then
         ArenaAnalytics:Log("SortIndexGroup got invalid players table")
         return;
-    end
-
-    local function tempLog(playerInfo)
-        if(not playerInfo) then
-            return "nil info";
-        end
-
-        return playerInfo.role, playerInfo.role_main, playerInfo.role_sub, ArenaAnalytics.API:GetRoleBitmap(playerInfo.spec_id);
     end
 
     table.sort(group, function(indexA, indexB)

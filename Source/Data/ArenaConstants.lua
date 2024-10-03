@@ -83,6 +83,12 @@ Constants.roleIndexes = {
     { token = "melee", name = "Melee" },
 }
 
+Constants.playerFlags = {
+    isFirstDeath = 1,
+    isEnemy = 2,
+    isSelf = 3,
+}
+
 -------------------------------------------------------------------------
 
 -- Addon specific spec IDs { ID, "class|spec", "class", "spec", priority value } (ID must never change to preserve data validity, priority is a runtime check)

@@ -6,69 +6,12 @@ local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 -- Short Names
 
 local QuickSearchValueTable = {
-    ["class"] = {
-        ["death knight"] = "DK",
-        ["demon hunter"] = "DH",
-        ["druid"] = "Druid",
-        ["hunter"] = "Hunt",
-        ["mage"] = "Mage",
-        ["monk"] = "Monk",
-        ["paladin"] = "Pala",
-        ["priest"] = "Priest",
-        ["rogue"] = "Rog",
-        ["shaman"] = "Sham",
-        ["warlock"] = "Lock",
-        ["warrior"] = "Warrior"
-    },
-    ["spec"] = {
-        -- Druid
-        ["druid|restoration"] = "RDruid",
-        ["druid|feral"] = "Feral",
-        ["druid|balance"] = "Balance",
-        -- Paladin
-        ["paladin|holy"] = "HPala",
-        ["paladin|protection"] = "Prot Pala",
-        ["paladin|preg"] = "Preg",
-        ["paladin|retribution"] = "Ret",
-        -- Shaman
-        ["shaman|restoration"] = "RSham",
-        ["shaman|elemental"] = "Ele",
-        ["shaman|enhancement"] = "Enh",
-        -- Death Knight
-        ["death knight|unholy"] = "UH",
-        ["death knight|frost"] = "Frost DK",
-        ["death knight|blood"] = "Blood",
-        -- Hunter
-        ["hunter|beast mastery"] = "BM",
-        ["hunter|marksmanship"] = "MM",
-        ["hunter|survival"] = "Surv",
-        -- Mage
-        ["mage|frost"] = "Frost Mage",
-        ["mage|fire"] = "Fire",
-        ["mage|arcane"] = "Arcane",
-        -- Rogue
-        ["rogue|subtlety"] = "Sub",
-        ["rogue|assassination"] = "Assa",
-        ["rogue|combat"] = "Combat",
-        ["rogue|outlaw"] = "Outlaw",
-        -- Warlock
-        ["warlock|affliction"] = "Affli",
-        ["warlock|destruction"] = "Destro",
-        ["warlock|demonology"] = "Demo",
-        -- Warrior
-        ["warrior|protection"] = "Prot War",
-        ["warrior|arms"] = "Arms",
-        ["warrior|fury"] = "Fury",
-        -- Priest
-        ["priest|discipline"] = "Disc",
-        ["priest|holy"] = "HPriest",
-        ["priest|shadow"] = "Shadow"
-    },
     ["race"] = {
         ["blood elf"] = "Belf",
         ["draenei"] = "Draenei",
@@ -97,21 +40,8 @@ local QuickSearchValueTable = {
 }
 
 function Search:GetShortQuickSearch(typeKey, longValue)
-    assert(QuickSearchValueTable[typeKey]);
-    longValue = longValue or "";
-    return QuickSearchValueTable[typeKey][longValue:lower()] or longValue;
-end
-
-function Search:GetShortQuickSearchSpec(class, spec)
-    local shortName = nil;
-    if(spec and spec ~= "") then
-        local specKey = class .. "|" .. spec;
-        shortName = QuickSearchValueTable["spec"][specKey:lower()];
-    elseif(class and class ~= "") then
-        shortName = QuickSearchValueTable["class"][class:lower()];
-    end
-
-    return shortName;
+    assert(typeKey and QuickSearchValueTable[typeKey]);
+    return longValue and QuickSearchValueTable[typeKey][longValue:lower()] or longValue;
 end
 
 ---------------------------------
@@ -155,13 +85,13 @@ local function CheckShortcut(shortcut, btn)
 end
 
 local function GetPlayerName(playerInfo)
-    name = playerInfo.fullName or "";
-    if(name:find('-')) then
+    name = ArenaAnalytics:GetFullName(playerInfo.name);
+    if(name:find('-', 1, true)) then
         local includeRealmSetting = Options:Get("quickSearchIncludeRealm");
         local includeRealm = true;
-        
+
         local _, realm = UnitFullName("player");
-        local isMyRealm = realm and name:find(realm);
+        local isMyRealm = realm and name:find(realm, 1, true);
 
         if(includeRealmSetting == "All") then
             includeRealm = true;
@@ -177,7 +107,7 @@ local function GetPlayerName(playerInfo)
             name = name:match("(.*)-") or name;
         end
     end
-    
+
     return name;
 end
 
@@ -213,25 +143,33 @@ local function AddValueByType(tokens, playerInfo, explicitType)
     end
 
     local newToken = nil;
-    
+    local value = nil;
+
     if(explicitType == "name") then
-        newToken = Search:CreateToken(GetPlayerName(playerInfo));
-    elseif(explicitType == "race") then
-        local race = Search:GetShortQuickSearch(explicitType, playerInfo.race);
-        newToken = Search:CreateToken(race);
+        value = GetPlayerName(playerInfo);
     elseif(explicitType == "spec" and playerInfo.spec) then
-        local value = Search:GetShortQuickSearchSpec(playerInfo.class, playerInfo.spec);
-        newToken = Search:CreateToken(value);
+        value = playerInfo.spec;
     elseif(explicitType == "class") then
-        local value = Search:GetShortQuickSearchSpec(playerInfo.class, nil);
-        newToken = Search:CreateToken(value);
+        value = Helpers:GetClassID(playerInfo.spec);
+    elseif(explicitType == "race") then
+        value = playerInfo.race;
     elseif(explicitType == "faction") then
-        local value = Search:GetShortQuickSearch(explicitType, playerInfo.faction);
-        newToken = Search:CreateToken(value);
+        value = Internal:GetRaceFaction(playerInfo.race);
     end
-    
-    if(newToken) then
-        tinsert(tokens, newToken);
+
+    if(value) then
+        local fakeToken = {
+            value = Helpers:ToSafeLower(value),
+            explicitType = explicitType,
+            exact = true,
+        };
+
+        local _, _, _, shortValue = Search:FindSearchValueDataForToken(fakeToken);
+        newToken = Search:CreateToken(shortValue or value);
+
+        if(newToken) then
+            tinsert(tokens, newToken);
+        end
     end
 end
 
@@ -252,6 +190,7 @@ local function GetQuickSearchTokens(playerInfo, team, btn)
     -- Team
     local newSimpleTeamToken = nil;
     if(CheckShortcut(Options:Get("quickSearchAction_ClickedTeam"), btn)) then
+        ArenaAnalytics:Log("Team of clicked player!", team);
         newSimpleTeamToken = Search:CreateToken(Helpers:ToSafeLower(team));
     elseif(CheckShortcut(Options:Get("quickSearchAction_Team"), btn)) then
         newSimpleTeamToken = Search:CreateToken("team");
@@ -312,7 +251,7 @@ local function DoesTokenMatchName(existingToken, newName)
     end
 
     if(not existingToken.exact) then
-        local isPartialMatch = newName:find(existingName) ~= nil;
+        local isPartialMatch = newName:find(existingName, 1, true) ~= nil;
         return isPartialMatch, false;
     end
 

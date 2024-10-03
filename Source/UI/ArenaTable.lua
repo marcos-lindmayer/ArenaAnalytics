@@ -401,16 +401,16 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
         playerFrame:Show();
 
         local player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
-        local playerInfo = ArenaMatch:GetPlayerInfo(player, playerFrame.playerInfo);
-        if (playerInfo) then
-            playerFrame.playerInfo = playerInfo;
+        playerFrame.playerInfo = ArenaMatch:GetPlayerInfo(player, playerFrame.playerInfo);
+        if (playerFrame.playerInfo) then
+            local playerInfo = playerFrame.playerInfo;
             playerFrame.match = match;
 
             if(not playerFrame.icon) then
                 playerFrame.icon = ArenaIcon:Create(playerFrame, 25);
             end
 
-            playerFrame.icon:SetSpec(playerInfo.spec_id);
+            playerFrame.icon:SetSpec(playerInfo.spec);
             playerFrame.icon:SetIsFirstDeath(playerInfo.isFirstDeath, Options:Get("alwaysShowDeathOverlay"));
 
             if (not Options:Get("alwaysShowSpecOverlay")) then

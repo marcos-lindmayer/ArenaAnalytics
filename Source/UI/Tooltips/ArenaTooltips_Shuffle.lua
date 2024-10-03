@@ -115,8 +115,9 @@ local function CreateRoundEntryFrame(index, parent)
             if(team ~= nil) then
                 local playerIndex = (i == 0) and 0 or tonumber(team:sub(i,i));
                 if(playerIndex) then
-                    local player = (playerIndex==0) and selfPlayer or players[playerIndex];
-                    spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
+                    local player = (playerIndex == 0) and selfPlayer or players[playerIndex];
+                    local playerInfo = ArenaMatch:GetPlayerInfo(player);
+                    spec_id = playerInfo and playerInfo.spec;
                     isFirstDeath = (playerIndex == tonumber(firstDeath));
                 end
             end
@@ -133,7 +134,9 @@ local function CreateRoundEntryFrame(index, parent)
                 local playerIndex = tonumber(enemy:sub(i,i));
                 if(playerIndex) then
                     local player = players[playerIndex];
-                    spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
+                    local playerInfo = ArenaMatch:GetPlayerInfo(player);
+                    spec_id = playerInfo and playerInfo.spec;
+                    
                     isFirstDeath = (playerIndex == tonumber(firstDeath));
                 end
             end
@@ -233,9 +236,9 @@ function ShuffleTooltip:SetMatch(match)
             if(tonumber(firstDeath)) then
                 firstDeath = tonumber(firstDeath);
 
-                if(firstDeath == 0 or (team and team:find(firstDeath))) then
+                if(firstDeath == 0 or (team and team:find(firstDeath, 1, true))) then
                     isWin = false;
-                elseif(enemy and enemy:find(firstDeath)) then
+                elseif(enemy and enemy:find(firstDeath, 1, true)) then
                     isWin = true;
                 end
 
@@ -266,12 +269,12 @@ function ShuffleTooltip:SetMatch(match)
     local deathText = "";
     if(bestIndex and highestValue) then
         local player = (bestIndex == 0) and selfPlayer or players[bestIndex];
-        local fullName = ArenaMatch:GetPlayerFullName(player);
-        local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
-        
-        local classColor = Internal:GetClassColor(spec_id);
-        deathText = ArenaAnalytics:ColorText(fullName, classColor);
-        deathText = deathText .. " " .. ArenaAnalytics:ColorText(highestValue, Constants.valueColor);
+        local playerInfo = ArenaMatch:GetPlayerInfo(player);
+        if(playerInfo) then
+            local classColor = Internal:GetClassColor(playerInfo.spec);
+            deathText = ArenaAnalytics:ColorText(playerInfo.name, classColor);
+            deathText = deathText .. " " .. ArenaAnalytics:ColorText(highestValue, Constants.valueColor);
+        end
     end
 
     -- Clear previous most deaths text

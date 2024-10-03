@@ -113,7 +113,9 @@ end
 
 function Import:ProcessCachedValues()
     local lastIndex = 0;
-    batchDurationLimit = 0.05;
+    local batchDurationLimit = 0.05;
+    local batchLimit = 2500;
+
     Import.isImporting = true;
 
     local skippedArenaCount = 0;
@@ -142,6 +144,7 @@ function Import:ProcessCachedValues()
 
     local function ProcessBatch()
         local batchEndTime = GetTime() + batchDurationLimit;
+        local batchIndexLimit = lastIndex + batchLimit;
 
         while lastIndex < #Import.cachedValues do
             local arena, index = ProcessMatchIndex(currentIndex);
@@ -149,7 +152,7 @@ function Import:ProcessCachedValues()
 
             Import:SaveArena(arena);
 
-            if(batchEndTime < GetTime()) then
+            if(batchEndTime < GetTime() or batchIndexLimit < lastIndex) then
                 C_Timer.After(0, ProcessBatch);
                 return;
             end

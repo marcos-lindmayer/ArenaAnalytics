@@ -64,10 +64,10 @@ function Search:CreateToken(raw, isExact)
 
     if(newToken.explicitType == "alts") then
         -- Alt searches without a slash is just a simple name type
-        if(newToken.value:find('/') ~= nil) then
+        if(newToken.value:find('/', 1, true) ~= nil) then
             newToken.explicitType = "name";
         end
-    elseif(newToken.value:find('/') ~= nil) then -- TODO: Add support for / as a generic 'or' for values?
+    elseif(newToken.value:find('/', 1, true) ~= nil) then -- TODO: Add support for / as a generic 'or' for values?
         newToken.explicitType = "alts";
     elseif(newToken.explicitType ~= "name") then
         -- Check for keywords
@@ -76,7 +76,7 @@ function Search:CreateToken(raw, isExact)
             newToken.noSpace = noSpace;
             newToken.explicitType = typeKey;
             newToken.value = valueKey;
-        elseif(not newToken.explicitType and not newToken.value:find(' ')) then
+        elseif(not newToken.explicitType and not newToken.value:find(' ', 1, true)) then
             -- Tokens without spaces fall back to name type
             newToken.explicitType = "name";
             newToken.noSpace = true;
@@ -99,10 +99,10 @@ function Search:CreateToken(raw, isExact)
     end
     
     -- Valid if it has a keyword or no spaces
-    newToken.isValid = newToken.value and not newToken.noSpace or type(newToken.value) == "number" or not newToken.value:find(' ');
+    newToken.isValid = newToken.value and not newToken.noSpace or type(newToken.value) == "number" or not newToken.value:find(' ', 1, true);
 
     if(type(newToken.value) == "string") then
-        newToken.value = newToken.value:gsub("-", "%%-"):lower();
+        newToken.value = newToken.value:lower();
     end
 
     --ArenaAnalytics:Log("Created Token: ", newToken.explicitType, newToken.value, newToken.raw)

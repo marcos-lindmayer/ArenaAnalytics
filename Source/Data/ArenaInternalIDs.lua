@@ -168,6 +168,7 @@ function Internal:GetRace(race_id)
 end
 
 function Internal:GetRaceFaction(race_id)
+    race_id = tonumber(race_id);
     if(not race_id) then
         return nil;
     end
@@ -176,6 +177,7 @@ function Internal:GetRaceFaction(race_id)
 end
 
 function Internal:GetRaceFactionColor(race_id)
+    race_id = tonumber(race_id);
     if(not race_id) then
         return "ffffffff";
     end

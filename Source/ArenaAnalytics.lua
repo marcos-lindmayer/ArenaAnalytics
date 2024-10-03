@@ -55,23 +55,41 @@ end
 
 -------------------------------------------------------------------------
 
-function ArenaAnalytics:PurgeArenaAnalyticsDB()
+function ArenaAnalytics:InitializeArenaAnalyticsDB()
 	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
-	ArenaAnalyticsDB.names = {};
-	ArenaAnalyticsDB.realms = {};
+	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
+	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
+
+	local name = UnitNameUnmodified("player");
+	local _, realm = UnitFullName("player");
+	ArenaAnalyticsDebugAssert(name and realm);
+
+	if(#ArenaAnalyticsDB.names == 0) then
+		ArenaAnalyticsDB.names[1] = name;
+	end
+
+	if(#ArenaAnalyticsDB.realms == 0) then
+		ArenaAnalyticsDB.realms[1] = realm;
+	end
+end
+
+function ArenaAnalytics:PurgeArenaAnalyticsDB()
+	ArenaAnalyticsDB = {};
+	ArenaAnalytics:InitializeArenaAnalyticsDB()
 
 	ArenaAnalytics:Print("Match history purged!");
 end
-
--- DEPRECATED
---ArenaAnalyticsRealmsDB = ArenaAnalyticsRealmsDB or {}
 
 -------------------------------------------------------------------------
 -- Compressed name and realm logic
 
 -- Name
 function ArenaAnalytics:GetNameIndex(name)
-	assert(name and type(name) == "string");
+	assert(type(name) == "string");
+
+	if(name == "") then
+		return nil;
+	end
 
 	-- Conversion from deprecated format
 	for i=1, #ArenaAnalyticsDB.names do
@@ -87,13 +105,8 @@ function ArenaAnalytics:GetNameIndex(name)
 end
 
 function ArenaAnalytics:GetName(nameIndex, errorIfMissing)
-	nameIndex = tonumber(nameIndex) or nameIndex;
-
-	if(type(nameIndex) == "string") then
-		return nameIndex;
-	end
-
-	if(not tonumber(nameIndex)) then
+	nameIndex = tonumber(nameIndex);
+	if(not nameIndex) then
 		return nil;
 	end
 
@@ -108,7 +121,11 @@ end
 
 -- Realm
 function ArenaAnalytics:GetRealmIndex(realm)
-	assert(realm and type(realm) == "string");
+	assert(type(realm) == "string");
+
+	if(realm == "") then
+		return nil;
+	end
 
 	-- Conversion from deprecated format
 	for i=1, #ArenaAnalyticsDB.realms do
@@ -124,13 +141,8 @@ function ArenaAnalytics:GetRealmIndex(realm)
 end
 
 function ArenaAnalytics:GetRealm(realmIndex, errorIfMissing)
-	realmIndex = tonumber(realmIndex) or realmIndex;
-
-	if(type(realmIndex) == "string") then
-		return realmIndex;
-	end
-
-	if(not tonumber(realmIndex)) then
+	realmIndex = tonumber(realmIndex);
+	if(not realmIndex) then
 		return nil;
 	end
 
@@ -143,7 +155,45 @@ function ArenaAnalytics:GetRealm(realmIndex, errorIfMissing)
 	return realm;
 end
 
-function ArenaAnalytics:SplitFullName(fullName, doCompress)
+function ArenaAnalytics:GetIndexedFullName(fullName, hideLocalRealm)
+	if(not fullName) then
+		return nil;
+	end
+
+	local name, realm = strsplit('-', fullName, 2);
+	name = ArenaAnalytics:GetNameIndex(name);
+
+	if(hideLocalRealm and ArenaAnalytics:IsLocalRealm(realm)) then
+		return name;
+	end
+
+	-- Combine expanded realm suffix
+	realm = ArenaAnalytics:GetRealmIndex(realm);
+	realm = realm and ('-' .. realm);
+
+	return (name or "") .. (realm or "");
+end
+
+function ArenaAnalytics:GetFullName(fullName, hideLocalRealm)
+	if(not fullName) then
+		return nil;
+	end
+
+	local name, realm = strsplit('-', fullName, 2);
+	name = ArenaAnalytics:GetName(name) or name;
+
+	if(hideLocalRealm and ArenaAnalytics:IsLocalRealm(realm)) then
+		return name;
+	end
+
+	-- Combine expanded realm suffix
+	realm = ArenaAnalytics:GetRealm(realm, true) or realm;
+	realm = realm and ('-' .. realm);
+
+	return (name or "") .. (realm or "");
+end
+
+function ArenaAnalytics:SplitFullName(fullName, requireCompact)
 	if(not fullName) then
 		return nil,nil;
 	end
@@ -152,8 +202,11 @@ function ArenaAnalytics:SplitFullName(fullName, doCompress)
 	local name, realm = fullName:match("^(.-)%-(.+)$");
 	name = name or fullName;
 
+	name = tonumber(name) or name;
+	realm = tonumber(realm) or realm;
+
 	-- Attempt name compression
-	if(doCompress) then
+	if(requireCompact) then -- Index format
 		if(type(name) == "string") then
 			local nameIndex = ArenaAnalytics:GetNameIndex(name);
 			if(nameIndex and ArenaAnalyticsDB.names[nameIndex] == name) then
@@ -167,6 +220,16 @@ function ArenaAnalytics:SplitFullName(fullName, doCompress)
 				realm = realmIndex;
 			end
 		end
+	else -- String format
+		if(type(name) == "number") then
+			name = ArenaAnalyticsDB.names[tonumber(name)];
+			assert(name, "Name index had no name stored:", name);
+		end
+
+		if(type(realm) == "number") then
+			realm = ArenaAnalyticsDB.realms[tonumber(realm)];
+			assert(realm, "Realm index had no realm stored:", realm);
+		end
 	end
 
 	return name, realm;
@@ -177,9 +240,14 @@ function ArenaAnalytics:CombineNameAndRealm(name, realm)
 		return nil;
 	end
 
+	if(tonumber(name)) then
+		name = ArenaAnalyticsDB.names[tonumber(name)];
+		assert(name, "Name index had no name stored:", name);
+	end
+
 	if(tonumber(realm)) then
 		realm = ArenaAnalyticsDB.realms[tonumber(realm)];
-		assert(realm, "Realm index had no realm stored!");
+		assert(realm, "Realm index had no realm stored:", realm);
 	end
 
 	realm = realm and ("-" .. realm) or "";
@@ -195,7 +263,7 @@ function ArenaAnalytics:GetLocalRealmIndex()
 
 	local _, realm = UnitFullName("player");
 	assert(realm);
-	return GetRealmIndex(realm);
+	return ArenaAnalytics:GetRealmIndex(realm);
 end
 
 function ArenaAnalytics:IsLocalRealm(realm)
@@ -203,11 +271,13 @@ function ArenaAnalytics:IsLocalRealm(realm)
 		return;
 	end
 
-	if(tonumber(realm)) then
-		return tonumber(realm) == ArenaAnalytics:GetLocalRealmIndex();
-	end
-	
 	local _, localRealm = UnitFullName("player");
+
+	if(tonumber(realm)) then
+		assert(ArenaAnalyticsDB.realms[1] == localRealm, "Local realm not found at index 1!");
+		return tonumber(realm) == 1;
+	end
+
 	return realm == localRealm;
 end
 
@@ -408,16 +478,19 @@ function ArenaAnalytics:IsMatchesSameSession(arena1, arena2)
 	return true;
 end
 
-function ArenaAnalytics:TeamContainsPlayer(team, name, realm)
-	if(not team or not name) then
+function ArenaAnalytics:TeamContainsPlayer(team, player)
+	if(not team or not player) then
 		return nil;
 	end
 
+	local fullName = ArenaMatch:GetPlayerFullName(player);
 	for _,player in ipairs(team) do
-		if (ArenaMatch:IsSamePlayer(player, name, realm)) then
+		if (ArenaMatch:IsSamePlayer(player, fullName)) then
 			return true;
 		end
 	end
+
+	return false;
 end
 
 -- Checks if 2 arenas have the same party members
@@ -442,8 +515,7 @@ function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
 	local largerTeam = teamOneIsSmaller and team2 or team1;
 
 	for _,player in ipairs(smallerTeam) do
-		local name, realm = ArenaMatch:GetPlayerNameAndRealm(player, true);
-		if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, name, realm)) then
+		if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, player)) then
 			return false;
 		end
 	end

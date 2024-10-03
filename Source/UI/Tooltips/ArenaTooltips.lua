@@ -209,14 +209,15 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         return ArenaAnalytics:ColorText(value, Constants.statsColor);
     end
 
-    local playerName = Helpers:GetNameFromPlayerInfo(playerInfo);
-    local race = playerInfo.race or " ";
+    local playerName = ArenaAnalytics:GetFullName(playerInfo.name, true);
+    local race = Internal:GetRace(playerInfo.race) or " ";
     
     local specialization = nil;
-    if(playerInfo.class and playerInfo.spec) then
-        specialization = playerInfo.spec .. " " .. playerInfo.class;
+    local class, spec = Internal:GetClassAndSpec(playerInfo.spec);
+    if(class and spec) then
+        specialization = spec .. " " .. class;
     else
-        specialization = playerInfo.spec or playerInfo.class or " ";
+        specialization = spec or class or " ";
     end
 
     -- Create the tooltip
@@ -225,7 +226,7 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     GameTooltip:ClearLines();
 
     GameTooltip:AddLine(ArenaAnalytics:ColorText(playerName, Constants.titleColor));
-    GameTooltip:AddDoubleLine(ColorFaction(playerInfo.race, playerInfo.race_id), ColorClass(specialization, playerInfo.spec_id));
+    GameTooltip:AddDoubleLine(ColorFaction(race, playerInfo.race), ColorClass(specialization, playerInfo.spec));
 
     GameTooltip:AddDoubleLine(ColorPrefix("Damage: ") .. FormatValue(playerInfo.damage), ColorPrefix("Healing: ") .. FormatValue(playerInfo.healing));
     

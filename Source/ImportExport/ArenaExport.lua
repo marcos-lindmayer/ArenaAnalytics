@@ -8,11 +8,64 @@ local Export = ArenaAnalytics.Export;
 
 -- TODO: Improve the export format
 --[[
-    1) \n separated matches
-    2) Semicolon separated value types
-    3) Comma separated values within a type (e.g., players in a team)
-    4) / separated specific values (e.g., player info)
+    Semicolon (;) for separating matches.
+    Comma (,) for separating value types (Date,Bracket,Teams,etc).
+    Slash (/) for separating player entries (Player1/Player2/... etc).
+    Pipe (|) for separating specific player values (Zeetrax-Ravencrest|NightElf|91|... etc).
+
+    NOTE: Assume any value may be nil, when unknown or non-applicable!
+
+    Format:
+        Date
+        Season
+        Session
+        Map             (English Token?)
+        Bracket         ("2s", "3s", "5s", "shuffle")
+        MatchType       ("rated", "skirm", "wg")
+        Duration        (Number)
+        Outcome         ("W", "L", "D")
+        Team            (Team structure)
+        EnemyTeam       (Team structure)
+        RatedInfo       (RatedInfo structure)
+        Rounds          (List of Round structures)
+
+    Structures:
+        Teams:  List of / separated players
+            Player: (| separated values)
+                FullName    (name-realm)
+                bitmask     (1=isFirstDeath, 2=isEnemy, 4=isSelf)
+                Race        (English Token)
+                SpecID      (Addon spec_id, see addonSpecializationIDs table in Data/ArenaInternalIDs.lua)
+                RoleBitmap  (1=tank, 2=dps, 4=healer, 8=melee, 16=ranged, 32=caster)
+                Kills       (Number)
+                Deaths      (Number)
+                Damage      (Number)
+                Healing     (Number)
+                Wins        (Number)
+                Rating      (Number)
+                RatingDelta (Number)
+                Mmr         (Number)
+                MmrDelta    (Number)
+        RatedInfo:  List of / separated rating values   [Rated only!]
+            Rating
+            RatingDelta
+            Mmr
+            EnemyRating
+            EnemyRatingDelta
+            EnemyMMR
+        Rounds  List of / separated round structures    [Shuffles only!]
+            Round:  (| separated round values)
+                Team        (Index string, e.g., "35" = enemy index 3 and 5 are on your team. Self is implicit.)
+                Enemy       (Index string, e.g., "124" = enemy index 1, 2 and 4 are on your team.)
+                FirstDeath  (Enemy index of the first death. 0 = self)
+                Duration    (Number)
+                isWin       (1 = true, 0=loss, nil=unknown)
+            
 --]]
+
+local exportPrefix = "date,season,map,bracket,matchType,duration,outcome,"
+
+
 
 local exportPrefix = "ArenaAnalytics_v2:" ..
 -- Match data
