@@ -154,8 +154,6 @@ function ArenaMatch:ConvertPlayerValues(match, matchIndex)
             return player;
         end
 
-        ArenaAnalytics:LogSpacer();
-
         local player = {
             name = player[oldPlayerKeys.name],
             realm = player[oldPlayerKeys.realm],
@@ -170,8 +168,6 @@ function ArenaMatch:ConvertPlayerValues(match, matchIndex)
             damage = player[oldPlayerKeys.damage],
             healing = player[oldPlayerKeys.healing],
         };
-        ArenaAnalytics:Log("Converting player:", player.name, player.realm);
-        Helpers:DebugLogTable(player);
 
         return ArenaMatch:MakeCompactPlayerData(player);
     end

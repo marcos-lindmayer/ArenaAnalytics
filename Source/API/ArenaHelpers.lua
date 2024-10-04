@@ -43,30 +43,6 @@ function Helpers:DeepCopy(original)
     return copy;
 end
 
-function Helpers:DebugLogTable(table, level)
-    if(not table) then
-        ArenaAnalytics:Log("DebugLogTable: Nil table");
-        return;
-    end
-
-    level = level or 0;
-    local indentation = string.rep(" ", 3*level);
-
-    if(type(table) ~= "table") then
-        ArenaAnalytics:Log(indentation, table);
-        return;
-    end
-
-    for key,value in pairs(table) do
-        if(type(value) == "table") then
-            ArenaAnalytics:Log(indentation, key);
-            Helpers:DebugLogTable(value, level+1);
-        else
-            ArenaAnalytics:Log(indentation, key, value);
-        end
-    end
-end
-
 function Helpers:GetPlayerName(skipRealm)
     local name, realm = UnitFullName("player");
 	if(name and realm and not skipRealm) then
@@ -157,4 +133,44 @@ end
 function Helpers:IsSpecID(spec_id)
     spec_id = tonumber(spec_id);
     return spec_id and (spec_id % 10 > 0);
+end
+
+-------------------------------------------------------------------------
+-- Debugging
+
+function Helpers:DebugLogTable(table, level)
+    if(not table) then
+        ArenaAnalytics:Log("DebugLogTable: Nil table");
+        return;
+    end
+
+    level = level or 0;
+    local indentation = string.rep(" ", 3*level);
+
+    if(type(table) ~= "table") then
+        ArenaAnalytics:Log(indentation, table);
+        return;
+    end
+
+    for key,value in pairs(table) do
+        if(type(value) == "table") then
+            ArenaAnalytics:Log(indentation, key);
+            Helpers:DebugLogTable(value, level+1);
+        else
+            ArenaAnalytics:Log(indentation, key, value);
+        end
+    end
+end
+
+function Helpers:DebugLogFrameTime(context)
+	if(not Options:Get("debuggingEnabled")) then
+        return;
+    end
+
+    debugprofilestart();
+
+    C_Timer.After(0, function()
+        local elapsed = debugprofilestop();
+        ArenaAnalytics:Log("DebugLogFrameTime:", elapsed, "Context:", context);
+    end);
 end

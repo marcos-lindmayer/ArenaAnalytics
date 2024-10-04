@@ -5,6 +5,7 @@ local Search = ArenaAnalytics.Search;
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
 local Helpers = ArenaAnalytics.Helpers;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 -- Search Lookup Tables
@@ -98,10 +99,11 @@ local ambiguousSpecMappings = {
 };
 
 -- Get a shared id for ambiguous
-function Search:CheckSpecMatch(searchSpec, playerSpec)
+function Search:CheckSpecMatch(searchSpec, player)
+    playerSpec = ArenaMatch:GetPlayerSpec(player);
     searchSpec = tonumber(searchSpec);
-    playerSpec = tonumber(playerSpec);
 
+    ArenaAnalytics:Log(searchSpec, playerSpec)
     if(not searchSpec or not playerSpec) then
         return false;
     end

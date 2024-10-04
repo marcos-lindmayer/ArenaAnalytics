@@ -253,7 +253,7 @@ local function CheckTypeForPlayer(searchType, token, player)
     if(searchType == "class" or searchType == "spec") then
         return Search:CheckSpecMatch(token.value, player);
     elseif (searchType == "faction") then
-        local race = ArenaMatch:GetPlayerSpec(player);
+        local race = ArenaMatch:GetPlayerRace(player);
         return race and token.value == (race % 2);
     elseif(searchType == "role") then
         local role = ArenaMatch:GetPlayerRole(player);
@@ -264,7 +264,7 @@ local function CheckTypeForPlayer(searchType, token, player)
         end
     elseif(searchType == "race") then
         -- Overrides to treat neutral races as same ID
-        local race = ArenaMatch:GetPlayerSpec(player);
+        local race = ArenaMatch:GetPlayerRace(player);
         return tonumber(token.value) == Search:GetNormalizedRace(race);
     end
 
