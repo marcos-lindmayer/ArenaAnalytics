@@ -216,18 +216,6 @@ API.specMappingTable = {
     [1467] = 123, -- Devastation Evoker
 }
 
-function API:GetMappedAddonSpecID(specID)
-    specID = tonumber(specID);
-
-    local spec_id = specID and API.specMappingTable[specID];
-    if(not spec_id) then
-        ArenaAnalytics:Log("Failed to find spec_id for:", specID, type(specID));
-        return nil;
-    end
-
-    return spec_id;
-end
-
 -------------------------------------------------------------------------
 -- Overrides
 

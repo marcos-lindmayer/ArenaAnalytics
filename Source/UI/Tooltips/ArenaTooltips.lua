@@ -163,14 +163,13 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     Tooltips:HideAll();
-    
-    if(playerFrame ~= lastPlayerFrame) then
-        BindPlayerFrameModifierChanged(playerFrame);
+
+    if(not playerFrame.player) then
+        return;
     end
 
-    local playerInfo = playerFrame.playerInfo;
-    if(not playerInfo) then
-        return;
+    if(playerFrame ~= lastPlayerFrame) then
+        BindPlayerFrameModifierChanged(playerFrame);
     end
 
     local function ColorPrefix(text)
@@ -209,16 +208,24 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         return ArenaAnalytics:ColorText(value, Constants.statsColor);
     end
 
-    local playerName = ArenaAnalytics:GetFullName(playerInfo.name, true);
-    local race = Internal:GetRace(playerInfo.race) or " ";
-    
+    -- Name
+    local playerName = ArenaMatch:GetPlayerFullName(playerFrame.player, true);
+
+    -- Race
+    local race_id = ArenaMatch:GetPlayerRace(playerFrame.player);
+    local race = Internal:GetRace(race_id) or " ";
+
     local specialization = nil;
-    local class, spec = Internal:GetClassAndSpec(playerInfo.spec);
+    local spec_id = ArenaMatch:GetPlayerSpec(playerFrame.player)
+    local class, spec = Internal:GetClassAndSpec(spec_id);
     if(class and spec) then
         specialization = spec .. " " .. class;
     else
         specialization = spec or class or " ";
     end
+
+    -- Stats
+    local kills, deaths, damage, healing, wins, rating, ratingDelta, mmr, mmrDelta = ArenaMatch:GetPlayerStats(playerFrame.player);
 
     -- Create the tooltip
     GameTooltip:SetOwner(playerFrame, "ANCHOR_NONE");
@@ -226,18 +233,18 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     GameTooltip:ClearLines();
 
     GameTooltip:AddLine(ArenaAnalytics:ColorText(playerName, Constants.titleColor));
-    GameTooltip:AddDoubleLine(ColorFaction(race, playerInfo.race), ColorClass(specialization, playerInfo.spec));
+    GameTooltip:AddDoubleLine(ColorFaction(race, race_id), ColorClass(specialization, spec_id));
 
-    GameTooltip:AddDoubleLine(ColorPrefix("Damage: ") .. FormatValue(playerInfo.damage), ColorPrefix("Healing: ") .. FormatValue(playerInfo.healing));
+    GameTooltip:AddDoubleLine(ColorPrefix("Damage: ") .. FormatValue(damage), ColorPrefix("Healing: ") .. FormatValue(healing));
     
     local duration = ArenaMatch:GetDuration(playerFrame.match);
     if(duration and duration > 0) then
-        local dps = playerInfo.damage and playerInfo.damage / duration or "-";
-        local hps = playerInfo.healing and playerInfo.healing / duration or "-";
+        local dps = damage and damage / duration or "-";
+        local hps = healing and healing / duration or "-";
         GameTooltip:AddDoubleLine(ColorPrefix("DPS: ") .. FormatValue(dps), ColorPrefix("HPS: ") .. FormatValue(hps));
     end
 
-    GameTooltip:AddDoubleLine(ColorPrefix("Kills: ") .. FormatValue(playerInfo.kills), ColorPrefix("Deaths: ") .. FormatValue(playerInfo.deaths));
+    GameTooltip:AddDoubleLine(ColorPrefix("Kills: ") .. FormatValue(kills), ColorPrefix("Deaths: ") .. FormatValue(deaths));
 
     -- Quick Search Shortcuts
     TryAddQuickSearchShortcutTips();

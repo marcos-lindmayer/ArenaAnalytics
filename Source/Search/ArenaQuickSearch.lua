@@ -84,8 +84,9 @@ local function CheckShortcut(shortcut, btn)
     return false;
 end
 
-local function GetPlayerName(playerInfo)
-    name = ArenaAnalytics:GetFullName(playerInfo.name);
+local function GetPlayerName(player)
+    name = ArenaMatch:GetPlayerFullName(player);
+
     if(name:find('-', 1, true)) then
         local includeRealmSetting = Options:Get("quickSearchIncludeRealm");
         local includeRealm = true;
@@ -136,8 +137,8 @@ local function GetAppendRule(btn)
     return Options:Get("quickSearchDefaultAppendRule");
 end
 
-local function AddValueByType(tokens, playerInfo, explicitType)
-    assert(playerInfo);
+local function AddValueByType(tokens, player, explicitType)
+    assert(player);
     if(not explicitType) then
         return;
     end
@@ -146,15 +147,20 @@ local function AddValueByType(tokens, playerInfo, explicitType)
     local value = nil;
 
     if(explicitType == "name") then
-        value = GetPlayerName(playerInfo);
-    elseif(explicitType == "spec" and playerInfo.spec) then
-        value = playerInfo.spec;
+        value = GetPlayerName(player);
+    elseif(explicitType == "spec") then
+        value = ArenaMatch:GetPlayerSpec(player);
+        if(Helpers:IsClassID(value)) then
+            explicitType = "class";
+        end
     elseif(explicitType == "class") then
-        value = Helpers:GetClassID(playerInfo.spec);
+        local spec_id = ArenaMatch:GetPlayerSpec(player);
+        value = Helpers:GetClassID(spec_id);
     elseif(explicitType == "race") then
-        value = playerInfo.race;
+        value = ArenaMatch:GetPlayerRace(player);
     elseif(explicitType == "faction") then
-        value = Internal:GetRaceFaction(playerInfo.race);
+        local race = ArenaMatch:GetPlayerRace(player);
+        value = Internal:GetRaceFaction(race);
     end
 
     if(value) then
@@ -173,8 +179,8 @@ local function AddValueByType(tokens, playerInfo, explicitType)
     end
 end
 
-local function GetQuickSearchTokens(playerInfo, team, btn)
-    assert(playerInfo);
+local function GetQuickSearchTokens(player, team, btn)
+    assert(player);
     local tokens = {};
     local hasValue = false;
 
@@ -205,34 +211,34 @@ local function GetQuickSearchTokens(playerInfo, team, btn)
     -- Name
     shortcut = Options:Get("quickSearchAction_Name");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, playerInfo, "name");
+        AddValueByType(tokens, player, "name");
         hasValue = true;
     end
 
     -- Spec
     shortcut = Options:Get("quickSearchAction_Spec");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, playerInfo, "spec");
+        AddValueByType(tokens, player, "spec");
         hasValue = true;
     end
 
     -- Race
     shortcut = Options:Get("quickSearchAction_Race");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, playerInfo, "race");
+        AddValueByType(tokens, player, "race");
         hasValue = true;
     end
     
     -- Faction
     shortcut = Options:Get("quickSearchAction_Faction");
     if(CheckShortcut(shortcut, btn)) then
-        AddValueByType(tokens, playerInfo, "faction");
+        AddValueByType(tokens, player, "faction");
         hasValue = true;
     end
 
     if(not hasValue) then
         local explicitType = Options:Get("quickSearchDefaultValue");
-        AddValueByType(tokens, playerInfo, Helpers:ToSafeLower(explicitType));
+        AddValueByType(tokens, player, Helpers:ToSafeLower(explicitType));
     end
 
     return tokens;
@@ -323,7 +329,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
         return;
     end
 
-    if(not playerFrame or not playerFrame.playerInfo) then
+    if(not playerFrame or not playerFrame.player) then
         ArenaAnalytics:Log("QuickSearch: invalid player frame");
         return;
     end
@@ -335,7 +341,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
 
     team = isEnemyTeam and "enemy" or "team";
     local appendRule = GetAppendRule(mouseButton);
-    local tokens = GetQuickSearchTokens(playerFrame.playerInfo, team, mouseButton);
+    local tokens = GetQuickSearchTokens(playerFrame.player, team, mouseButton);
 
     if(not tokens or #tokens == 0) then
         ArenaAnalytics:Log("QuickSearch: No tokens.");

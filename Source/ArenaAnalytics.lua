@@ -155,42 +155,45 @@ function ArenaAnalytics:GetRealm(realmIndex, errorIfMissing)
 	return realm;
 end
 
-function ArenaAnalytics:GetIndexedFullName(fullName, hideLocalRealm)
+function ArenaAnalytics:GetIndexedFullName(fullName)
 	if(not fullName) then
 		return nil;
 	end
 
+	-- Assume realm is only given when name is not full
 	local name, realm = strsplit('-', fullName, 2);
-	name = ArenaAnalytics:GetNameIndex(name);
-
-	if(hideLocalRealm and ArenaAnalytics:IsLocalRealm(realm)) then
-		return name;
-	end
+	name = ArenaAnalytics:GetNameIndex(name) or "";
 
 	-- Combine expanded realm suffix
-	realm = ArenaAnalytics:GetRealmIndex(realm);
-	realm = realm and ('-' .. realm);
+	if(realm) then
+		realm = ArenaAnalytics:GetRealmIndex(realm);
+		realm = realm and ('-' .. realm);
+	end
 
-	return (name or "") .. (realm or "");
+    local fullNameFormat = "%s-%s";
+    return string.format(fullNameFormat, name, (realm or ""));
 end
 
-function ArenaAnalytics:GetFullName(fullName, hideLocalRealm)
-	if(not fullName) then
+function ArenaAnalytics:GetFullName(playerInfo, hideLocalRealm)
+	if(not playerInfo.name) then
 		return nil;
 	end
 
-	local name, realm = strsplit('-', fullName, 2);
+	local name = playerInfo.name;
 	name = ArenaAnalytics:GetName(name) or name;
 
-	if(hideLocalRealm and ArenaAnalytics:IsLocalRealm(realm)) then
+	if(hideLocalRealm and ArenaAnalytics:IsLocalRealm(playerInfo.realm)) then
 		return name;
 	end
 
 	-- Combine expanded realm suffix
-	realm = ArenaAnalytics:GetRealm(realm, true) or realm;
-	realm = realm and ('-' .. realm);
+	local realm = ArenaAnalytics:GetRealm(playerInfo.realm) or playerInfo.realm;
+	if(not realm or realm == "") then
+		return name;
+	end
 
-	return (name or "") .. (realm or "");
+	local fullNameFormat = "%s-%s";
+	return string.format(fullNameFormat, name, realm)
 end
 
 function ArenaAnalytics:SplitFullName(fullName, requireCompact)
@@ -483,7 +486,7 @@ function ArenaAnalytics:TeamContainsPlayer(team, player)
 		return nil;
 	end
 
-	local fullName = ArenaMatch:GetPlayerFullName(player);
+	local fullName = ArenaMatch:GetPlayerFullName(player, false, true);
 	for _,player in ipairs(team) do
 		if (ArenaMatch:IsSamePlayer(player, fullName)) then
 			return true;

@@ -116,8 +116,7 @@ local function CreateRoundEntryFrame(index, parent)
                 local playerIndex = (i == 0) and 0 or tonumber(team:sub(i,i));
                 if(playerIndex) then
                     local player = (playerIndex == 0) and selfPlayer or players[playerIndex];
-                    local playerInfo = ArenaMatch:GetPlayerInfo(player);
-                    spec_id = playerInfo and playerInfo.spec;
+                    spec_id = ArenaMatch:GetPlayerSpec(player);
                     isFirstDeath = (playerIndex == tonumber(firstDeath));
                 end
             end
@@ -134,9 +133,7 @@ local function CreateRoundEntryFrame(index, parent)
                 local playerIndex = tonumber(enemy:sub(i,i));
                 if(playerIndex) then
                     local player = players[playerIndex];
-                    local playerInfo = ArenaMatch:GetPlayerInfo(player);
-                    spec_id = playerInfo and playerInfo.spec;
-                    
+                    spec_id = ArenaMatch:GetPlayerSpec(player);                    
                     isFirstDeath = (playerIndex == tonumber(firstDeath));
                 end
             end
@@ -145,8 +142,6 @@ local function CreateRoundEntryFrame(index, parent)
             playerIcon:SetSpec(spec_id);
             playerIcon:SetIsFirstDeath(isFirstDeath, true);
         end
-
-        return isWin;
     end
 
     -- Set background color based on round win or loss
@@ -269,10 +264,12 @@ function ShuffleTooltip:SetMatch(match)
     local deathText = "";
     if(bestIndex and highestValue) then
         local player = (bestIndex == 0) and selfPlayer or players[bestIndex];
-        local playerInfo = ArenaMatch:GetPlayerInfo(player);
-        if(playerInfo) then
-            local classColor = Internal:GetClassColor(playerInfo.spec);
-            deathText = ArenaAnalytics:ColorText(playerInfo.name, classColor);
+        if(player) then
+            local spec_id = ArenaMatch:GetPlayerSpec(player);
+            local name = ArenaMatch:GetPlayerFullName(player, true);
+
+            local classColor = Internal:GetClassColor(spec_id);
+            deathText = ArenaAnalytics:ColorText(name, classColor);
             deathText = deathText .. " " .. ArenaAnalytics:ColorText(highestValue, Constants.valueColor);
         end
     end

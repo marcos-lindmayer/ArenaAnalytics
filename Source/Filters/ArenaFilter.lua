@@ -466,6 +466,8 @@ function Filters:Refresh(onCompleteFunc)
     local currentIndex = 1;
     local batchDurationLimit = 0.01;
 
+    local startTime = GetTime();
+
     local function Finalize()
         -- Assign session to filtered matches
         FinalizeCompDataTables();
@@ -480,6 +482,12 @@ function Filters:Refresh(onCompleteFunc)
         if(onCompleteFunc) then
             onCompleteFunc();
         end
+
+        C_Timer.After(0, function() 
+			local newTime = GetTime();
+			local elapsed = newTime - startTime;
+			ArenaAnalytics:Log("Refreshed filters in:", elapsed, "seconds.");
+		end);
 
         Filters.isRefreshing = nil;
     end

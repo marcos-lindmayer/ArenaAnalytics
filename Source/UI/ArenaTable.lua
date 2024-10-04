@@ -400,18 +400,20 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
         assert(playerFrame);
         playerFrame:Show();
 
-        local player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
-        playerFrame.playerInfo = ArenaMatch:GetPlayerInfo(player, playerFrame.playerInfo);
-        if (playerFrame.playerInfo) then
-            local playerInfo = playerFrame.playerInfo;
+        playerFrame.player = ArenaMatch:GetPlayer(match, isEnemyTeam, i);
+        if (playerFrame.player) then
             playerFrame.match = match;
+            playerFrame.matchIndex = matchIndex;
 
             if(not playerFrame.icon) then
                 playerFrame.icon = ArenaIcon:Create(playerFrame, 25);
             end
 
-            playerFrame.icon:SetSpec(playerInfo.spec);
-            playerFrame.icon:SetIsFirstDeath(playerInfo.isFirstDeath, Options:Get("alwaysShowDeathOverlay"));
+            local spec_id = ArenaMatch:GetPlayerSpec(playerFrame.player);
+            local isFirstDeath = ArenaMatch:IsPlayerFirstDeath(playerFrame.player);
+
+            playerFrame.icon:SetSpec(spec_id);
+            playerFrame.icon:SetIsFirstDeath(isFirstDeath, Options:Get("alwaysShowDeathOverlay"));
 
             if (not Options:Get("alwaysShowSpecOverlay")) then
                 playerFrame.icon:SetSpecVisibility(false);

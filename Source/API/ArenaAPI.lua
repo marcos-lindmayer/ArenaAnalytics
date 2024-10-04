@@ -48,6 +48,22 @@ function API:GetRoleBitmap(spec_id)
     return bitmapOverride or Internal:GetRoleBitmap(spec_id);
 end
 
+function API:GetMappedAddonSpecID(specID)
+    if(not API.specMappingTable) then
+        ArenaAnalytics:Log("GetMappedAddonSpecID: Failed to find specMappingTable. Ignoring spec:", specID);
+        return nil;
+    end
+
+    specID = tonumber(specID);
+
+    local spec_id = specID and API.specMappingTable[specID];
+    if(not spec_id) then
+        ArenaAnalytics:Log("Failed to find spec_id for:", specID, type(specID));
+        return nil;
+    end
+
+    return spec_id;
+end
 
 function API:GetSpecIcon(spec_id)
     spec_id = tonumber(spec_id);

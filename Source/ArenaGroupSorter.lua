@@ -179,8 +179,8 @@ local function ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo)
         return selfComparisonResult;
     end
 
-    local specPriorityA = GroupSorter:GetSpecPriority(playerInfoA.spec_id);
-    local specPriorityB = GroupSorter:GetSpecPriority(playerInfoB.spec_id);
+    local specPriorityA = GroupSorter:GetSpecPriority(playerInfoA.spec);
+    local specPriorityB = GroupSorter:GetSpecPriority(playerInfoB.spec);
     if(specPriorityA ~= specPriorityB) then
         return specPriorityA < specPriorityB;
     end

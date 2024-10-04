@@ -182,18 +182,6 @@ API.specMappingTable = {
     [795] = 93, -- Shadow Priest
 }
 
-function API:GetMappedAddonSpecID(specID)
-    specID = tonumber(specID);
-
-    local spec_id = specID and API.specMappingTable[specID];
-    if(not spec_id) then
-        ArenaAnalytics:Log("Failed to find spec_id for:", specID, type(specID));
-        return nil;
-    end
-
-    return spec_id;
-end
-
 -------------------------------------------------------------------------
 -- Overrides
 

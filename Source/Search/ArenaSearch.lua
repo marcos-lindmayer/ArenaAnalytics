@@ -8,6 +8,7 @@ local Constants = ArenaAnalytics.Constants;
 local Bitmap = ArenaAnalytics.Bitmap;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
@@ -196,56 +197,36 @@ end
 -- Search matching logic
 ---------------------------------
 
-local function CheckPlayerName(fullName, searchValue, isExact)
-    if(not fullName or fullName == "" or not searchValue or true) then
+-- Current player values
+local currentName, currentRealm, currentBitmask, currentRace, currentSpec, currentRole;
+
+-- Smart player name check
+local function CheckPlayerName(player, searchValue, isExact)
+    local playerName, playerRealm = ArenaMatch:GetPlayerNameAndRealm(player);
+    if(not playerName) then
         return false;
     end
 
-    local name, realm = strsplit('-', fullName, 2);
-    
-    -- Convert to string based name
-    name = Helpers:ToSafeLower(ArenaAnalytics:GetName(name));
-    
-    if(not name) then
-        return false;
-    end
-    
-    local searchName, searchRealm = strsplit('-', searchValue, 2);
-    
-    if(isExact) then
-        if(searchName ~= name) then
-            return false;
-        end
-    elseif(not name:find(searchName, 1, true)) then
-        return false;
-    end
-    
-    if(searchRealm) then
-        -- Convert to string based realm
-        realm = Helpers:ToSafeLower(ArenaAnalytics:GetRealm(realm));
-        ArenaAnalytics:Log("   ", realm);
-
-        if(not realm) then
-            return false;
-        end
-
-        if(isExact) then
-            if(searchRealm ~= realm) then
-                return false;
-            end
-        elseif(not realm:find(searchRealm, 1, true)) then
-            return false;
-        end
+    if(playerRealm and searchValue:find('-', 1, true)) then
+        local fullNameFormat = "%s-%s";
+        playerName = string.format(fullNameFormat, playerName, playerRealm);
     end
 
-    return true;
+    playerName = playerName:lower();
+
+    if(searchValue == playerName) then
+        return true;
+    end
+
+    -- Check partial match
+    return not isExact and playerName:find(searchValue, 1, true) ~= nil;
 end
 
 -- NOTE: This is the main part to modify to handle actual token matching logic
 -- Returns true if a given type on a player matches the given value
-local function CheckTypeForPlayer(searchType, token, playerInfo)
+local function CheckTypeForPlayer(searchType, token, player)
     assert(token and token.value and token.value ~= "", "Invalid token reached search! Token raw: " .. (token and token.raw or "nil"));
-    assert(playerInfo ~= nil);
+    assert(player ~= nil);
 
     if(searchType == nil) then
         ArenaAnalytics:Log("Invalid type reached CheckTypeForPlayer for search.");
@@ -257,11 +238,11 @@ local function CheckTypeForPlayer(searchType, token, playerInfo)
         if(token.value:find('/', 1, true)) then
             -- Split value into table
             for value in token.value:gmatch("([^/]+)") do
-                if(CheckPlayerName(playerInfo.name, value, token.exact)) then
+                if(CheckPlayerName(player, value, token.exact)) then
                     return true;
                 end
             end
-        elseif(CheckPlayerName(playerInfo.name, token.value, token.exact)) then
+        elseif(CheckPlayerName(player, token.value, token.exact)) then
             return true;
         end
 
@@ -270,18 +251,21 @@ local function CheckTypeForPlayer(searchType, token, playerInfo)
     end
 
     if(searchType == "class" or searchType == "spec") then
-        return Search:CheckSpecMatch(token.value, playerInfo.spec);
+        return Search:CheckSpecMatch(token.value, player);
     elseif (searchType == "faction") then
-        return playerInfo.race and token.value == (playerInfo.race % 2);
+        local race = ArenaMatch:GetPlayerSpec(player);
+        return race and token.value == (race % 2);
     elseif(searchType == "role") then
-        return Bitmap:HasBitByIndex(playerInfo.role, roleIndex);
+        local role = ArenaMatch:GetPlayerRole(player);
+        return Bitmap:HasBitByIndex(role, token.value);
     elseif(searchType == "logical") then
         if(token.value == "self") then
             return ArenaMatch:IsPlayerSelf(playerInfo);
         end
     elseif(searchType == "race") then
         -- Overrides to treat neutral races as same ID
-        return tonumber(token.value) == Search:GetNormalizedRace(playerInfo.race);
+        local race = ArenaMatch:GetPlayerSpec(player);
+        return tonumber(token.value) == Search:GetNormalizedRace(race);
     end
 
     local playerValue = playerInfo[searchType];
@@ -317,16 +301,16 @@ local function CheckTokenForPlayer(token, playerInfo)
     return false;
 end
 
-local function CheckSegmentForPlayer(segment, playerInfo)
-    assert(segment and playerInfo);
+local function CheckSegmentForPlayer(segment, player)
+    assert(segment and player);
 
-    if(not playerInfo.name) then
+    if(not player) then
         return false;
     end
 
     for i,token in ipairs(segment.tokens) do
         local successValue = not token.negated;
-        if(CheckTokenForPlayer(token, playerInfo) ~= successValue) then
+        if(CheckTokenForPlayer(token, player) ~= successValue) then
             return false;
         end
     end
@@ -348,20 +332,17 @@ local function CheckSegmentForMatch(segment, match, alreadyMatchedPlayers)
     local teams = segment.isEnemyTeam ~= nil and {segment.isEnemyTeam} or {false, true};
     local foundConflictMatch = false;
 
-    local playerInfo = nil;
-
     for _,isEnemyTeam in ipairs(teams) do
         local team = ArenaMatch:GetTeam(match, isEnemyTeam);
         for _, player in ipairs(team) do
-            playerInfo = ArenaMatch:GetPlayerInfo(player, playerInfo);
-            if(CheckSegmentForPlayer(segment, playerInfo)) then
-                ArenaAnalyticsDebugAssert(playerInfo.name, "Player passed search with invalid full name.");
-
-                if(not alreadyMatchedPlayers or segment.inversed or not playerInfo.name) then
+            local result = CheckSegmentForPlayer(segment, player);
+            if(result) then
+                local fullName = ArenaMatch:GetPlayerFullName(player);
+                if(not alreadyMatchedPlayers or segment.inversed or not fullName) then
                     -- Skip conflict handling
                     return true;
-                elseif(alreadyMatchedPlayers[playerInfo.name] == nil) then
-                    alreadyMatchedPlayers[playerInfo.name] = true;
+                elseif(alreadyMatchedPlayers[fullName] == nil) then
+                    alreadyMatchedPlayers[fullName] = true;
                     return true;
                 else
                     foundConflictMatch = true;
@@ -498,8 +479,6 @@ local function CheckAdvancedPass(match)
     local matchedTables = {}
     local currentIndex = 1;
 
-    local playerInfo = nil;
-
     -- Fill matched tables
     for segmentIndex, segment in ipairs(activeSearchData.segments) do
         local teams = segment.isEnemyTeam ~= nil and {segment.isEnemyTeam} or {false, true};
@@ -507,10 +486,7 @@ local function CheckAdvancedPass(match)
         for _,isEnemyTeam in ipairs(teams) do
             local team = ArenaMatch:GetTeam(match, isEnemyTeam);
             for playerIndex, player in ipairs(team) do
-                playerInfo = ArenaMatch:GetPlayerInfo(player, playerInfo);
-
-                local segmentResult = CheckSegmentForPlayer(segment, playerInfo);
-                if(segmentResult) then
+                if(CheckSegmentForPlayer(segment, player)) then
                     if(segment.inversed) then
                         -- Inverse segments fail the pass if they match
                         return false;

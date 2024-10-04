@@ -529,7 +529,7 @@ function VersionManager:ConvertRoundAndPlayerFormat()
         local match = ArenaAnalyticsDB[i];
         if(match) then
             ArenaMatch:FixRoundFormat(match);
-            ArenaMatch:ConvertPlayerValues(match);
+            ArenaMatch:ConvertPlayerValues(match, i);
         end
     end
 
