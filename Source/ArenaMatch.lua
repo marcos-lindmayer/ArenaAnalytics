@@ -794,7 +794,7 @@ function ArenaMatch:IsSamePlayer(player, otherFullName)
 
     local name = player[playerKeys.name];
     local realm = player[playerKeys.realm];
-    local otherName, otherRealm = ArenaAnalytics:SplitFullName(otherFullName);
+    local otherName, otherRealm = ArenaAnalytics:SplitFullName(otherFullName, true);
 
     if(not name or name ~= otherName) then
         return false;
@@ -932,12 +932,12 @@ function ArenaMatch:GetPlayerRatedInfo(player)
         return nil;
     end
 
-    local stats = player[playerKeys.rated_info];
-    if(not stats) then
+    local ratedInfo = player[playerKeys.rated_info];
+    if(not ratedInfo) then
         return nil;
     end
 
-    local rating, ratingDelta, mmr, mmrDelta = strsplit('|', stats, 5);
+    local rating, ratingDelta, mmr, mmrDelta = strsplit('|', ratedInfo, 5);
     return tonumber(rating), tonumber(ratingDelta), tonumber(mmr), tonumber(mmrDelta);
 end
 

@@ -124,6 +124,10 @@ function ArenaTracker:UpdateRoundTeam()
 end
 
 function ArenaTracker:RoundTeamContainsPlayer(playerName)
+	if(not currentArena.isShuffle) then
+		return;
+	end
+
 	if(not playerName) then
 		return nil;
 	end
@@ -155,6 +159,10 @@ function ArenaTracker:IsSameRoundTeam()
 end
 
 function ArenaTracker:CommitCurrentRound(force)
+	if(not currentArena.isShuffle) then
+		return;
+	end
+
 	if(not currentArena.round.hasStarted) then
 		return;
 	end
@@ -463,7 +471,7 @@ end
 
 -- Solo Shuffle specific round end
 function ArenaTracker:HandleRoundEnd(force)
-	if(not API:IsInArena()) then
+	if(not API:IsInArena() or not currentArena.isShuffle) then
 		return;
 	end
 
@@ -525,7 +533,7 @@ function ArenaTracker:HandleArenaEnd()
 		if(player.name) then
 			-- First Death
 			if(not currentArena.isShuffle and player.name == firstDeath) then
-				player.firstDeath = true;
+				player.isFirstDeath = true;
 			end
 
 			if (player.name == currentArena.playerName) then
@@ -775,8 +783,6 @@ function ArenaTracker:HandleOpponentUpdate()
 				end
 			end
 		end
-	else
-		ArenaAnalytics:Log("GetArenaOpponentSpec was nil.");
 	end
 end
 
@@ -890,7 +896,7 @@ function ArenaTracker:OnSpecDetected(playerID, spec_id)
 	end
 
 	local player = ArenaTracker:GetPlayer(playerID);
-	if(not player) then
+	if(not player or Helpers:IsSpecID(player.spec)) then
 		return;
 	end
 

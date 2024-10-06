@@ -276,7 +276,9 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     -- Player Rating Info
     if(ArenaMatch:IsRated(playerFrame.match)) then
         local rating, ratingDelta, mmr, mmrDelta = ArenaMatch:GetPlayerRatedInfo(playerFrame.player);
-        GameTooltip:AddDoubleLine(ColorPrefix("Rating: ") .. FormatRating(rating, ratingDelta), ColorPrefix("MMR: ") .. FormatRating(mmr, mmrDelta));
+        if(rating or API.showPerPlayerRatedInfo) then
+            GameTooltip:AddDoubleLine(ColorPrefix("Rating: ") .. FormatRating(rating, ratingDelta), ColorPrefix("MMR: ") .. FormatRating(mmr, mmrDelta));
+        end
     end
 
     if(ArenaMatch:IsShuffle(playerFrame.match)) then
