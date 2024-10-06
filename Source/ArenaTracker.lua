@@ -11,6 +11,7 @@ local Internal = ArenaAnalytics.Internal;
 local Localization = ArenaAnalytics.Localization;
 local Inspection = ArenaAnalytics.Inspection;
 local Events = ArenaAnalytics.Events;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
@@ -326,15 +327,12 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 	currentArena.isShuffle = isShuffle;
 	currentArena.size = teamSize;
 
-	ArenaAnalytics:Log("TeamSize:", teamSize, currentArena.size, currentArena.isShuffle)
+	ArenaAnalytics:Log("TeamSize:", teamSize, currentArena.size, "Bracket:", currentArena.bracketIndex);
 
 	if(isRated) then
 		local oldRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
 		if(GetBattlefieldWinner()) then
-			-- Get last rating, since we already found the winner here.
-			local season = GetCurrentArenaSeason();
-			currentArena.oldRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex, season, (seasonPlayed and seasonPlayed - 1));
-			currentArena.seasonPlayed = seasonPlayed - 1; -- Season Played during the match
+			currentArena.seasonPlayed = seasonPlayed and seasonPlayed - 1; -- Season Played during the match
 		else
 			currentArena.oldRating = oldRating;
 			currentArena.seasonPlayed = seasonPlayed;
@@ -454,6 +452,17 @@ function ArenaTracker:HandleArenaEnd()
 		player.damage = score.damage;
 		player.healing = score.healing;
 
+		if(currentArena.isRated) then
+			player.rating = score.rating;
+			player.ratingDelta = score.ratingDelta;
+			player.mmr = score.mmr;
+			player.mmrDelta = score.mmrDelta;
+		end
+
+		if(currentArena.isShuffle) then
+			player.wins = score.wins;
+		end
+
 		if(player.name) then
 			-- First Death
 			if(not currentArena.isShuffle and player.name == firstDeath) then
@@ -472,6 +481,8 @@ function ArenaTracker:HandleArenaEnd()
 			ArenaAnalytics:Log("Tracker: Invalid player name, player will not be stored!");
 			Helpers:DebugLogTable(player);
 		end
+
+		TablePool:Release(score);
 	end
 
 	
@@ -535,7 +546,7 @@ function ArenaTracker:HandleArenaExit()
 		if(newRating and seasonPlayed) then
 			local oldRating = currentArena.oldRating;
 			if(not oldRating) then
-				local season = GetCurrentArenaSeason() or 0;
+				local season = GetCurrentArenaSeason();
 				oldRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex, season, (seasonPlayed - 1));
 			end
 
@@ -550,7 +561,7 @@ function ArenaTracker:HandleArenaExit()
 				-- Rating has updated, no longer needed to store transient Season Played for fixup.
 				currentArena.requireRatingFix = true;
 			else
-				ArenaAnalytics:Log("Tracker: Invalid up to date seasonPlayed.", seasonPlayed, currentArena.seasonPlayed);
+				ArenaAnalytics:Log("Tracker: Invalid or up to date seasonPlayed.", seasonPlayed, currentArena.seasonPlayed);
 			end
 		else
 			ArenaAnalytics:Log("Tracker: No season played stored on currentArena");

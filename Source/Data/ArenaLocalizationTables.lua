@@ -346,12 +346,7 @@ function Localization:GetRaceID(race, factionIndex)
         return nil;
     end
 
-    if(type(factionIndex) == "number") then
-        factionIndex = tonumber(factionIndex) % 2;
-    else
-        ArenaAnalytics:Log("Localization:GetRaceID called with invalid factionIndex. Value is ignored.", factionIndex);
-        factionIndex = nil;
-    end
+    factionIndex = tonumber(factionIndex) and tonumber(factionIndex) % 2;
 
     race = Helpers:ToSafeLower(race);
 

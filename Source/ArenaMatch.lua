@@ -41,26 +41,15 @@ local matchKeys = {
 local playerKeys = {
     name = 0,
     realm = -1,
-    race = -3,
-    spec = -4,
-    role = -5,
-    is_self = -6,
-    is_first_death = -7,
-    is_enemy = -8,
-    stats = -9,
+    race = -2,
+    spec = -3,
+    role = -4,
+    is_self = -5,
+    is_first_death = -6,
+    rated_info = -7,
+    stats = -8,
+    variable_stats = -9, -- Game mode specific stats (Wins for shuffle)
 };
-
-local statsKeys = {
-    kills = 1,
-    deaths = 2,
-    damage = 3,
-    healing = 4,
-    wins = 5,
-    rating = 6,
-    ratingDelta = 7,
-    mmr = 8,
-    mmrDelta = 9,
-}
 
 local roundKeys = {
     data = 0,
@@ -68,7 +57,7 @@ local roundKeys = {
     enemy_comp = -2,
 }
 
--- DEPRECATED
+-- DEPRECATED (USed for conversion still)
 local oldPlayerKeys = {
     name = 0,
     realm = -1,
@@ -120,24 +109,24 @@ function ArenaMatch:RevertPlayerNameAndRealmIndexing(match)
             for i,player in ipairs(team) do
                 local name = player[oldPlayerKeys.name];
                 local realm = player[oldPlayerKeys.realm];
-                assert(name, "Missing name from existing data!");
-
+                
                 -- If either name or realm requires reverting
                 if(type(name) == "number" or type(realm) == "number") then
                     ArenaAnalytics:Log("Reverting player names:", name, realm);
-
+                    
                     if(type(name) == "number") then
                         name = ArenaAnalytics:GetName(name, true);
                     end
-
+                    
                     if(type(realm) == "number") then
                         realm = ArenaAnalytics:GetRealm(realm, true);
                     end
-
+                    
                     ArenaAnalytics:Log("   Reverted player names:", name, realm);
-                    player[oldPlayerKeys.name] = name;
-                    player[oldPlayerKeys.realm] = realm;
                 end
+                
+                player[oldPlayerKeys.name] = name;
+                player[oldPlayerKeys.realm] = realm;
             end
         end
     end
@@ -263,6 +252,10 @@ function ArenaMatch:SetTransientSeasonPlayed(match, value)
     assert(match);
     ArenaAnalytics:Log("Assigning transient season played value:", value, "from:", match[matchKeys.transient_seasonPlayed]);
     match[matchKeys.transient_seasonPlayed] = tonumber(value);
+end
+
+function ArenaMatch:GetSeasonPlayed(match)
+    return match and match[matchKeys.transient_seasonPlayed]
 end
 
 function ArenaMatch:SetRequireRatingFix(match, value)
@@ -435,10 +428,13 @@ function ArenaMatch:GetMatchType(match)
     if(not match) then 
         return nil 
     end;
-    
-    local key = matchKeys.match_type;
-    local typeIndex = match and tonumber(match[key]);
+
+    local typeIndex = match and tonumber(match[matchKeys.match_type]);
     return ArenaAnalytics:GetMatchType(typeIndex);
+end
+
+function ArenaMatch:IsRated(match)
+    return match and tonumber(match[matchKeys.match_type]) == 1;
 end
 
 function ArenaMatch:SetMatchType(match, value)
@@ -670,48 +666,11 @@ function ArenaMatch:AddPlayer(match, player)
     tinsert(match[teamKey], newPlayer);
 end
 
-function ArenaMatch:MakeCompactPlayerData(player)
-    if(not player) then
-        return nil;
-    end
-
-    local name = ArenaAnalytics:GetNameIndex(player.name);
-    local realm = player.realm and ArenaAnalytics:GetRealmIndex(player.realm);
-
-    if(not player.name and not player.realm) then
-        ArenaAnalytics:LogSpacer();
-        ArenaAnalytics:Log("Invalid player, conversion skipped!");
-        Helpers:DebugLogTable(player);
-        return nil;
-    end
-
-    local newPlayer = {
-        [playerKeys.name] = tonumber(name),
-        [playerKeys.realm] = tonumber(realm),
-        [playerKeys.race] = tonumber(player.race),
-        [playerKeys.spec] = tonumber(player.spec),
-        [playerKeys.role] = tonumber(player.role),
-        [playerKeys.is_self] = player.isSelf and 1 or nil,
-        [playerKeys.is_first_death] = player.isFirstDeath and 1 or nil,
-        [playerKeys.is_enemy] = player.isEnemy and 1 or nil,
-    };
-
-    local compactStatsOrder = {
-        "kills",
-        "deaths",
-        "damage",
-        "healing",
-        "wins",
-        "rating",
-        "ratingDelta",
-        "mmr",
-        "mmrDelta",
-    };
-
+local function CompressPlayerKeys(player, keys)
     local values = {}
     local emptyCount = 0;
 
-    for i,key in ipairs(compactStatsOrder) do
+    for _,key in ipairs(keys) do
         if(tonumber(player[key])) then
             if(emptyCount > 0) then
                 -- One separator will be added at concat time. Add all but one of the missing ones here.                
@@ -727,9 +686,54 @@ function ArenaMatch:MakeCompactPlayerData(player)
     end
 
     -- Add the stats, if we found any
-    if(values and #values > 0) then
-        newPlayer[playerKeys.stats] = table.concat(values, '|');
+    if(#values == 0) then
+        return nil;
     end
+
+    return table.concat(values, '|');
+end
+
+function ArenaMatch:MakeCompactPlayerData(player)
+    if(not player) then
+        return nil;
+    end
+
+    local name = player.name and ArenaAnalytics:GetNameIndex(player.name);
+    local realm = player.realm and ArenaAnalytics:GetRealmIndex(player.realm);
+
+    if(not player.name and not player.realm) then
+        --return nil;
+    end
+
+    local newPlayer = {
+        [playerKeys.name] = tonumber(name),
+        [playerKeys.realm] = tonumber(realm),
+        [playerKeys.race] = tonumber(player.race),
+        [playerKeys.spec] = tonumber(player.spec),
+        [playerKeys.role] = tonumber(player.role),
+        [playerKeys.is_self] = player.isSelf and 1 or nil,
+        [playerKeys.is_first_death] = player.isFirstDeath and 1 or nil,
+    };
+
+    local ratedInfoKeys = {
+        "rating",
+        "ratingDelta",
+        "mmr",
+        "mmrDelta",
+    }
+
+    local statsKeys = {
+        "kills",
+        "deaths",
+        "damage",
+        "healing",
+    };
+
+    newPlayer[playerKeys.rated_info] = CompressPlayerKeys(player, ratedInfoKeys);
+    newPlayer[playerKeys.stats] = CompressPlayerKeys(player, statsKeys);
+
+    -- Add support for compact bg variable stats values? (Arena/BG mode specific order)
+    newPlayer[playerKeys.variable_stats] = player.wins;
 
     return newPlayer;
 end
@@ -837,17 +841,13 @@ function ArenaMatch:GetPlayer(match, isEnemyTeam, index)
     return team[index];
 end
 
-function ArenaMatch:GetPlayerInfo(player, existingTable, searchableOnly)
-    if(not player or type(player) == "table") then
+function ArenaMatch:GetPlayerInfo(player)
+    if(not player) then
         return nil;
     end
 
-    -- Split the player data string by '|'
-    local valueCount = searchableOnly and 7 or nil;
-    local playerData = { strsplit('|', player, valueCount) }
-
     -- Initialize or update an existing table for player info
-    local playerInfo = existingTable or TablePool:Acquire();
+    local playerInfo = TablePool:Acquire();
 
     playerInfo.name = player[playerKeys.name];
     playerInfo.realm = player[playerKeys.realm];
@@ -894,7 +894,22 @@ function ArenaMatch:GetPlayerRole(player)
     return player and tonumber(player[playerKeys.role]);
 end
 
--- Kills, Deaths, Damage, Healing, Wins, Rating, RatingDelta, Mmr, MmrDelta
+-- Rating, RatingDelta, Mmr, MmrDelta
+function ArenaMatch:GetPlayerRatedInfo(player)
+    if(not player) then
+        return nil;
+    end
+
+    local stats = player[playerKeys.rated_info];
+    if(not stats) then
+        return nil;
+    end
+
+    local rating, ratingDelta, mmr, mmrDelta = strsplit('|', stats, 5);
+    return tonumber(rating), tonumber(ratingDelta), tonumber(mmr), tonumber(mmrDelta);
+end
+
+-- Kills, Deaths, Damage, Healing
 function ArenaMatch:GetPlayerStats(player)
     if(not player) then
         return nil;
@@ -905,7 +920,23 @@ function ArenaMatch:GetPlayerStats(player)
         return nil;
     end
 
-    return strsplit('|', stats);
+    local kills, deaths, damage, healing = strsplit('|', stats, 5);
+    return tonumber(kills), tonumber(deaths), tonumber(damage), tonumber(healing);
+end
+
+-- NOTE: If Add data and formatting to determine mode to use when parsing the compact var stats
+function ArenaMatch:GetPlayerVariableStats(player)
+    if(not player) then
+        return nil;
+    end
+
+    local variableStats = player[playerKeys.variable_stats];
+    if(not variableStats) then
+        return nil;
+    end
+
+    -- Single number or compact '|' separated string
+    return tonumber(variableStats) or variableStats;
 end
 
 function ArenaMatch:GetPlayerName(player, requireCompact)
@@ -1118,7 +1149,30 @@ end
 -------------------------------------------------------------------------
 -- Player Value Search Checks
 
+-- Smart player name check
+function ArenaMatch:CheckPlayerName(player, searchValue, isExact)
+    local fullName;
+    if(searchValue:find('-', 1, true)) then
+        local name = ArenaAnalytics:GetName(player[playerKeys.name]);
+        local realm = ArenaAnalytics:GetRealm(player[playerKeys.realm]);
+        fullName = (name or "") .. '-' .. (realm or "");
+    else
+        fullName = ArenaAnalytics:GetName(player[playerKeys.name]);
+    end
 
+    if(not fullName) then
+        return false;
+    end
+
+    fullName = fullName:lower();
+
+    if(searchValue == fullName) then
+        return true;
+    end
+
+    -- Check partial match
+    return not isExact and fullName:find(searchValue, 1, true) ~= nil;
+end
 
 -------------------------------------------------------------------------
 -- Solo Shuffle

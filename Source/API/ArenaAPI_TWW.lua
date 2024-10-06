@@ -7,6 +7,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
@@ -58,9 +59,9 @@ function API:GetBattlefieldStatus(battlefieldId)
         bracket = 4;
     elseif(teamSize == 2) then
         bracket = 1;
-    elseif(teamSize == 2) then
+    elseif(teamSize == 3) then
         bracket = 2;
-    elseif(teamSize == 2) then
+    elseif(teamSize == 5) then
         bracket = 3;
     end
 
@@ -95,23 +96,44 @@ end
 function API:GetPlayerScore(index)
     local scoreInfo = C_PvP.GetScoreInfo(index);
 
+    local score = TablePool:Acquire();
+    if(not scoreInfo) then
+        return score;
+    end
+
+    Helpers:DebugLogTable(scoreInfo);
+
     local spec_id = Localization:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
     if(not spec_id) then
         spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
     end
 
-    -- Combine AA score info table
-    local score = {
-        name = Helpers:ToFullName(scoreInfo.name),
-        race = Localization:GetRaceID(scoreInfo.raceName),
-        spec = spec_id,
-        team = scoreInfo.faction,
-        kills = scoreInfo.killingBlows,
-        deaths = scoreInfo.deaths,
-        damage = scoreInfo.damageDone,
-        healing = scoreInfo.healingDone,
-    }
+    score.name = Helpers:ToFullName(scoreInfo.name);
+    score.race = Localization:GetRaceID(scoreInfo.raceName);
+    score.spec = spec_id;
+    score.team = scoreInfo.faction;
+    score.kills = scoreInfo.killingBlows;
+    score.deaths = scoreInfo.deaths;
+    score.damage = scoreInfo.damageDone;
+    score.healing = scoreInfo.healingDone;
+    score.rating = scoreInfo.rating;
+    score.ratingDelta = scoreInfo.ratingChange;
     
+    if(API:IsSoloShuffle()) then
+        -- Assume shuffle only has one stat (ID changes randomly)
+        local firstStat = scoreInfo.stats and scoreInfo.stats[1];
+        if(firstStat) then
+            score.wins = firstStat.pvpStatValue;
+            ArenaAnalytics:Log("Shuffle stat:", firstStat.pvpStatID, firstStat.name, score.wins);
+        end
+    end
+
+    -- MMR
+    if(scoreInfo.prematchMMR and scoreInfo.prematchMMR) then
+        score.mmr = scoreInfo.prematchMMR;
+        score.mmrDelta = scoreInfo.postmatchMMR - scoreInfo.prematchMMR;
+    end
+
     return score;
 end
 

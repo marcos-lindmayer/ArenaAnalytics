@@ -137,6 +137,9 @@ local function TryAddQuickSearchShortcutTips()
     GameTooltip:AddDoubleLine(ColorTips("Race: ", raceShortcut), ColorTips("Faction: ", factionShortcut));
 end
 
+-------------------------------------------------------------------------
+-- Player Tooltip
+
 local lastPlayerFrame = nil;
 function Tooltips:UnbindPlayerFrameModifierChanged()
     if(lastPlayerFrame) then
@@ -157,6 +160,48 @@ local function BindPlayerFrameModifierChanged(playerFrame)
     lastPlayerFrame = playerFrame;
 end
 
+local function ColorPrefix(text)
+    return ArenaAnalytics:ColorText(text, Constants.prefixColor);
+end
+
+local function ColorClass(text, spec_id)
+    local color = Internal:GetClassColor(spec_id);
+    if(color) then
+        return "|c" .. color .. text .."|r";
+    end
+    return text;
+end
+
+local function ColorFaction(text, race_id)
+    local color = Internal:GetRaceFactionColor(race_id) or "ffffffff";
+    return text and ("|c" .. color .. text .. "|r") or " ";
+end
+
+local function FormatValue(value)
+    value = tonumber(value) or "-";
+
+    if (type(value) == "number") then
+        -- TODO: Add option to shorten large numbers by suffix
+
+        value = math.floor(value);
+
+        while true do  
+            value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2')
+            if (k==0) then
+                break;
+            end
+        end
+    end
+
+    return ArenaAnalytics:ColorText(value, Constants.statsColor);
+end
+
+local function AddVariableStats_Shuffle(player)
+    local wins = ArenaMatch:GetPlayerVariableStats(player) or "";
+
+    GameTooltip:AddLine(ColorPrefix("Wins: ") .. FormatValue(wins));
+end
+
 function Tooltips:DrawPlayerTooltip(playerFrame)
     if(not playerFrame) then
         return;
@@ -172,40 +217,22 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
         BindPlayerFrameModifierChanged(playerFrame);
     end
 
-    local function ColorPrefix(text)
-        return ArenaAnalytics:ColorText(text, Constants.prefixColor);
-    end
-
-    local function ColorClass(text, spec_id)
-        local color = Internal:GetClassColor(spec_id);
-        if(color) then
-            return "|c" .. color .. text .."|r";
-        end
-        return text;
-    end
-
-    local function ColorFaction(text, race_id)
-        local color = Internal:GetRaceFactionColor(race_id) or "ffffffff";
-        return text and ("|c" .. color .. text .. "|r") or " ";
-    end
-
-    local function FormatValue(value)
-        value = tonumber(value) or "-";
-
-        if (type(value) == "number") then
-            -- TODO: Add option to shorten large numbers by suffix
-
-            value = math.floor(value);
-
-            while true do  
-                value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2')
-                if (k==0) then
-                    break;
-                end
+    local function FormatRating(value, delta)
+        local text = ArenaAnalytics:ColorText(tonumber(value) or "-", Constants.statsColor);
+        
+        delta = tonumber(delta);
+        if(delta) then
+            local hex = nil;
+            if(delta > 0) then
+                delta = "+"..delta;
+                hex = Constants.winColor;
+            else
+                hex = (delta < 0) and Constants.lossColor or Constants.drawColor;
             end
+            text = text .. ArenaAnalytics:ColorText(" ("..delta..")", hex);
         end
 
-        return ArenaAnalytics:ColorText(value, Constants.statsColor);
+        return text;
     end
 
     -- Name
@@ -225,7 +252,7 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     -- Stats
-    local kills, deaths, damage, healing, wins, rating, ratingDelta, mmr, mmrDelta = ArenaMatch:GetPlayerStats(playerFrame.player);
+    local kills, deaths, damage, healing = ArenaMatch:GetPlayerStats(playerFrame.player);
 
     -- Create the tooltip
     GameTooltip:SetOwner(playerFrame, "ANCHOR_NONE");
@@ -245,6 +272,16 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     GameTooltip:AddDoubleLine(ColorPrefix("Kills: ") .. FormatValue(kills), ColorPrefix("Deaths: ") .. FormatValue(deaths));
+
+    -- Player Rating Info
+    if(ArenaMatch:IsRated(playerFrame.match)) then
+        local rating, ratingDelta, mmr, mmrDelta = ArenaMatch:GetPlayerRatedInfo(playerFrame.player);
+        GameTooltip:AddDoubleLine(ColorPrefix("Rating: ") .. FormatRating(rating, ratingDelta), ColorPrefix("MMR: ") .. FormatRating(mmr, mmrDelta));
+    end
+
+    if(ArenaMatch:IsShuffle(playerFrame.match)) then
+        AddVariableStats_Shuffle(playerFrame.player);
+    end
 
     -- Quick Search Shortcuts
     TryAddQuickSearchShortcutTips();

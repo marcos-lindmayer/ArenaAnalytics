@@ -85,7 +85,7 @@ end
 
 -- Name
 function ArenaAnalytics:GetNameIndex(name)
-	assert(type(name) == "string");
+	assert(type(name) == "string", "GetNameIndex invalid name provided. " .. type(name) .. " " .. (name or ""));
 
 	if(name == "") then
 		return nil;
@@ -121,7 +121,7 @@ end
 
 -- Realm
 function ArenaAnalytics:GetRealmIndex(realm)
-	assert(type(realm) == "string");
+	assert(type(realm) == "string", "GetRealmIndex invalid realm provided. " .. type(realm) .. " " .. (realm or ""));
 
 	if(realm == "") then
 		return nil;
@@ -419,12 +419,16 @@ function ArenaAnalytics:RecomputeSessionsForMatchHistory()
 end
 
 function ArenaAnalytics:ResortGroupsInMatchHistory()
+    debugprofilestart();
+
 	for i=1, #ArenaAnalyticsDB do
 		local match = ArenaAnalytics:GetMatch(i);
 		if(match) then
 			ArenaMatch:ResortPlayers(match);
 		end
 	end
+
+	ArenaAnalytics:Log("ArenaAnalytics:ResortGroupsInMatchHistory", debugprofilestop())
 end
 
 local eventTracker = {

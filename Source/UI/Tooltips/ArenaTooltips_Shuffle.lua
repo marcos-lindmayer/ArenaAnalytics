@@ -10,6 +10,7 @@ local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local Internal = ArenaAnalytics.Internal;
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
@@ -41,7 +42,7 @@ local function CreateRoundEntryFrame(index, parent)
     local borderWidth = 3.5;
     local width = parent:GetWidth() - 2 * borderWidth;
 
-    local yOffset = 10;
+    local yOffset = 2;
 
     -- Set the size and position for the row (width should match parent)
     newFrame:SetSize(parent:GetWidth(), height)
@@ -180,7 +181,7 @@ local function GetOrCreateSingleton()
             self.rounds[i] = CreateRoundEntryFrame(i, self.frame);
         end
 
-        self.mostDeaths = nil; -- NOTE: For now, it'll be recreated any time it changes anyways (To fix russian names)
+        self.bottomStatTexts = {}
 
         ArenaAnalytics:Log("Created new Shuffle Tooltip singleton!", #self.rounds);
         tooltipSingleton = self;
@@ -188,6 +189,50 @@ local function GetOrCreateSingleton()
 
     assert(tooltipSingleton);
     return tooltipSingleton;
+end
+
+local function ClearBottomStats()
+    local self = GetOrCreateSingleton(); -- Tooltip singleton
+
+    for i=1, #self.bottomStatTexts do
+        self.bottomStatTexts[i]:SetText("");
+        self.bottomStatTexts[i] = nil;
+    end
+
+    TablePool:Release(self.bottomStatTexts);
+    self.bottomStatTexts = TablePool:Acquire();
+end
+
+local function AddBottomStat(prefix, name, value, spec_id)
+    if(not prefix or not value) then
+        return;
+    end
+
+    local self = GetOrCreateSingleton(); -- Tooltip singleton
+
+    prefix = ArenaAnalytics:ColorText(prefix, Constants.prefixColor);
+    value = ArenaAnalytics:ColorText(value, Constants.valueColor);
+
+    -- Player Name
+    if(name) then
+        local classColor = Internal:GetClassColor(spec_id);
+        name = ArenaAnalytics:ColorText(name, classColor);
+    end
+
+    local yOffset = #self.bottomStatTexts * 15 + 10;
+    local textFormat = name and "%s %d  %s" or "%s: %d";
+    text = string.format(textFormat, prefix, value, name);
+    
+    local fontString = ArenaAnalyticsCreateText(self.frame, "BOTTOMLEFT", self.frame, "BOTTOMLEFT", 10, yOffset, text, 12);
+    tinsert(self.bottomStatTexts, fontString);
+end
+
+local function SetText(frame, text, yOffset)
+    if(frame) then
+        frame:SetText("");
+    end
+
+    frame = ArenaAnalyticsCreateText(self.frame, "BOTTOMLEFT", self.frame, "BOTTOMLEFT", 10, yOffset, text, 12);
 end
 
 function ShuffleTooltip:SetMatch(match)
@@ -208,7 +253,7 @@ function ShuffleTooltip:SetMatch(match)
         return;
     end
 
-    local newHeight = 75;
+    local newHeight = 32;
 
     local wins = 0;
 
@@ -252,35 +297,50 @@ function ShuffleTooltip:SetMatch(match)
         end
     end
 
+    -- Combine top score text
+    local function GetTopScore(values)
+        local bestIndex, highestCount;
+        for playerIndex, deaths in pairs(values) do
+            if(not bestIndex or highestCount and highestCount < deaths) then
+                bestIndex = playerIndex;
+                highestCount = deaths;
+            end
+        end
+
+        if(bestIndex and highestCount) then
+            local player = (bestIndex == 0) and selfPlayer or players[bestIndex];
+            if(player) then
+                local spec_id = ArenaMatch:GetPlayerSpec(player);
+                local name = ArenaMatch:GetPlayerFullName(player, true);
+                return name, highestCount, spec_id;
+            end
+        end
+
+        return nil;
+    end
+
+    ClearBottomStats();
+
     -- Most Deaths
-    local bestIndex, highestValue;
-    for playerIndex, deaths in pairs(deaths) do
-        if(not bestIndex or highestValue and highestValue < deaths) then
-            bestIndex = playerIndex;
-            highestValue = deaths;
+    local name, value, spec_id = GetTopScore(deaths);
+    AddBottomStat("Most Deaths:", name, value, spec_id);
+
+    -- Most Wins
+    local winsTable = {}
+    local function AddWins(player, playerIndex)
+        local wins = player and ArenaMatch:GetPlayerVariableStats(player);
+        if(wins) then
+            winsTable[playerIndex] = wins;
         end
     end
 
-    local deathText = "";
-    if(bestIndex and highestValue) then
-        local player = (bestIndex == 0) and selfPlayer or players[bestIndex];
-        if(player) then
-            local spec_id = ArenaMatch:GetPlayerSpec(player);
-            local name = ArenaMatch:GetPlayerFullName(player, true);
-
-            local classColor = Internal:GetClassColor(spec_id);
-            deathText = ArenaAnalytics:ColorText(name, classColor);
-            deathText = deathText .. " " .. ArenaAnalytics:ColorText(highestValue, Constants.valueColor);
-        end
+    AddWins(selfPlayer, 0);
+    for i,player in ipairs(players) do
+        AddWins(player, i);
     end
 
-    -- Clear previous most deaths text
-    if(self.mostDeaths) then
-        self.mostDeaths:SetText("");
-    end
-
-    local text = ArenaAnalytics:ColorText("Most Deaths: ", Constants.prefixColor) .. deathText;
-    self.mostDeaths = ArenaAnalyticsCreateText(self.frame, "BOTTOMLEFT", self.frame, "BOTTOMLEFT", 10, 15, text, 12);
+    name, value, spec_id = GetTopScore(winsTable);
+    AddBottomStat("Most Wins:", name, value, spec_id);
 
     -- Win color
     local hex = Constants.invalidColor;
@@ -293,7 +353,9 @@ function ShuffleTooltip:SetMatch(match)
     end
 
     -- Set total wins text
-    ArenaAnalytics:SetFrameText(self.winsText, "Wins: " .. wins, hex)
+    ArenaAnalytics:SetFrameText(self.winsText, "Wins: " .. wins, hex);
+
+    local newHeight = newHeight + #self.bottomStatTexts * 15 + 10;
 
     -- Update dynamic background height
     self.frame:SetHeight(newHeight);

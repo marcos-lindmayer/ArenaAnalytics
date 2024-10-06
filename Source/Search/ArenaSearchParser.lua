@@ -64,7 +64,7 @@ function Search:CreateToken(raw, isExact)
 
     if(newToken.explicitType == "alts") then
         -- Alt searches without a slash is just a simple name type
-        if(newToken.value:find('/', 1, true) ~= nil) then
+        if(not newToken.value:find('/', 1, true)) then
             newToken.explicitType = "name";
         end
     elseif(newToken.value:find('/', 1, true) ~= nil) then -- TODO: Add support for / as a generic 'or' for values?
@@ -101,6 +101,7 @@ function Search:CreateToken(raw, isExact)
     -- Valid if it has a keyword or no spaces
     newToken.isValid = newToken.value and not newToken.noSpace or type(newToken.value) == "number" or not newToken.value:find(' ', 1, true);
 
+    newToken.value = tonumber(newToken.value) or newToken.value;
     if(type(newToken.value) == "string") then
         newToken.value = newToken.value:lower();
     end

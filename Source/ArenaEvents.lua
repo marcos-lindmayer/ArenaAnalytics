@@ -110,7 +110,7 @@ local function HandleArenaEvent(_, eventType, ...)
 	if (ArenaTracker:IsTrackingArena()) then
 		if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
 			ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
-			ArenaTracker:HandleArenaEnd();
+			C_Timer.After(0, ArenaTracker.HandleArenaEnd);
 			Events:UnregisterArenaEvents();
 		elseif (eventType == "UNIT_AURA") then
 			ArenaTracker:ProcessUnitAuraEvent(...);

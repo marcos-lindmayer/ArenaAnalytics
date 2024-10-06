@@ -18,7 +18,6 @@ local TablePool = ArenaAnalytics.TablePool;
 
 -- Alts
 --  altone/alttwo/altthree // name:ltone/alttwo/altthree // n:ltone/alttwo/altthree
---  Consider support for space separated alts?
 
 -- Class
 --  Death Knight // DK // class:Death Knight // class:DeathKnight // class:DK // c:DK // etc
@@ -43,6 +42,8 @@ local TablePool = ArenaAnalytics.TablePool;
 -- Exact Search:
 --  Wrap one or more terms in quotation marks to require an exact match
 --  Decide what to do when exact search start and end among different players
+
+-------------------------------------------------------------------------
 
 
 function Search:GetEmptySegment()
@@ -200,75 +201,46 @@ end
 -- Current player values
 local currentName, currentRealm, currentBitmask, currentRace, currentSpec, currentRole;
 
--- Smart player name check
-local function CheckPlayerName(player, searchValue, isExact)
-    local playerName, playerRealm = ArenaMatch:GetPlayerNameAndRealm(player);
-    if(not playerName) then
-        return false;
-    end
-
-    if(playerRealm and searchValue:find('-', 1, true)) then
-        local fullNameFormat = "%s-%s";
-        playerName = string.format(fullNameFormat, playerName, playerRealm);
-    end
-
-    playerName = playerName:lower();
-
-    if(searchValue == playerName) then
-        return true;
-    end
-
-    -- Check partial match
-    return not isExact and playerName:find(searchValue, 1, true) ~= nil;
-end
-
 -- NOTE: This is the main part to modify to handle actual token matching logic
 -- Returns true if a given type on a player matches the given value
 local function CheckTypeForPlayer(searchType, token, player)
-    assert(token and token.value and token.value ~= "", "Invalid token reached search! Token raw: " .. (token and token.raw or "nil"));
-    assert(player ~= nil);
-
-    if(searchType == nil) then
-        ArenaAnalytics:Log("Invalid type reached CheckTypeForPlayer for search.");
-        return;
-    end
-
-    -- Names
-    if(searchType == "alts" or searchType == "name") then
+    if(tonumber(token.value)) then
+        if(searchType == "class" or searchType == "spec") then
+            return Search:CheckSpecMatch(token.value, player);
+        elseif(searchType == "race") then
+            -- Overrides to treat neutral races as same ID
+            local race = ArenaMatch:GetPlayerRace(player);
+            return token.value == Search:GetNormalizedRace(race);
+        elseif (searchType == "faction") then
+            local race = ArenaMatch:GetPlayerRace(player);
+            return race and token.value == (race % 2);
+        elseif(searchType == "role") then
+            local role = ArenaMatch:GetPlayerRole(player);
+            return Bitmap:HasBitByIndex(role, token.value);
+        end
+    elseif(searchType == "name") then
+        if(ArenaMatch:CheckPlayerName(player, token.value, token.exact)) then
+            return true;
+        end
+    elseif(searchType == "alts") then
         if(token.value:find('/', 1, true)) then
             -- Split value into table
             for value in token.value:gmatch("([^/]+)") do
-                if(CheckPlayerName(player, value, token.exact)) then
+                if(ArenaMatch:CheckPlayerName(player, value, token.exact)) then
                     return true;
                 end
             end
-        elseif(CheckPlayerName(player, token.value, token.exact)) then
-            return true;
+            return false;
+        else
+            ArenaAnalytics:Log("Alts search without /");
         end
-
-        -- We already checked all name cases
-        return false;
-    end
-
-    if(searchType == "class" or searchType == "spec") then
-        return Search:CheckSpecMatch(token.value, player);
-    elseif (searchType == "faction") then
-        local race = ArenaMatch:GetPlayerRace(player);
-        return race and token.value == (race % 2);
-    elseif(searchType == "role") then
-        local role = ArenaMatch:GetPlayerRole(player);
-        return Bitmap:HasBitByIndex(role, token.value);
     elseif(searchType == "logical") then
         if(token.value == "self") then
-            return ArenaMatch:IsPlayerSelf(playerInfo);
+            return ArenaMatch:IsPlayerSelf(player);
         end
-    elseif(searchType == "race") then
-        -- Overrides to treat neutral races as same ID
-        local race = ArenaMatch:GetPlayerRace(player);
-        return tonumber(token.value) == Search:GetNormalizedRace(race);
     end
 
-    local playerValue = playerInfo[searchType];
+    local playerValue = ArenaMatch:GetPlayerValue(player, searchType);
     if(not playerValue or playerValue == "") then
         return false;
     end
@@ -474,6 +446,7 @@ local function recursivelyMatchSegments(segmentMatches, segmentIndex, alreadyMat
 end
 
 local function CheckAdvancedPass(match)
+    ArenaAnalytics:Log("Search: Checking advanced pass..")
     local segmentMatches, playerMatches = {}, {}
 
     local matchedTables = {}
@@ -530,8 +503,7 @@ end
 -- Check Match for Search
 ---------------------------------
 
--- Main Matching Function to Check Feasibility
-function Search:DoesMatchPassSearch(match)
+local function CheckSearchPassInternal(match)
     if(#activeSearchData.segments == 0) then
         return true;
     end
@@ -559,4 +531,22 @@ function Search:DoesMatchPassSearch(match)
     end
 
     return true;
+end
+
+-- Main Matching Function to Check Feasibility
+function Search:DoesMatchPassSearch(match)
+    --debugprofilestart();
+
+    local result = CheckSearchPassInternal(match);
+
+    --ArenaAnalytics:Log("Search pass elapsed:", debugprofilestop());
+
+    return result;
+end
+
+-------------------------------------------------------------------------
+-- Initialize
+
+function Search:Initialize()
+
 end

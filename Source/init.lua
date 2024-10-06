@@ -51,6 +51,8 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local AAtable = ArenaAnalytics.AAtable;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local Events = ArenaAnalytics.Events;
+local Search = ArenaAnalytics.Search;
+local VersionManager = ArenaAnalytics.VersionManager;
 
 -------------------------------------------------------------------------
 
@@ -118,10 +120,7 @@ ArenaAnalytics.commands = {
 	["convert"] = function()
 		ArenaAnalytics:Print("Forcing data version conversion..");
 		if(not ArenaAnalyticsDB or #ArenaAnalyticsDB == 0) then
-			ArenaAnalytics.VersionManager:convertArenaAnalyticsDBToMatchHistoryDB(); -- 0.3.0
-			ArenaAnalytics.VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
-			ArenaAnalytics.VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(); -- 0.7.0
-			ArenaAnalytics.VersionManager:FinalizeConversionAttempts();
+			VersionManager:OnInit();
 		end
         ArenaAnalyticsScrollFrame:Hide();
 	end,
@@ -197,68 +196,7 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 
-		local Helpers = ArenaAnalytics.Helpers;
-		local TablePool = ArenaAnalytics.TablePool;
-
-		local function FormatValue(value)
-			value = tonumber(value) or "-";
-	
-			if (type(value) == "number") then
-				-- TODO: Add option to shorten large numbers by suffix
-	
-				value = math.floor(value);
-	
-				while true do  
-					value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2')
-					if (k==0) then
-						break;
-					end
-				end
-			end
-	
-			return ArenaAnalytics:ColorText(value, Constants.statsColor);
-		end
-
-		local player = "9956|3|3|1|51|10|0|0|463437|84854||||";
-		local startTime = GetTime();
-
-		local param1, param2 = ...;
-
-
-		local iterations = param1 or 1000000;
-		local splitCount = param2 or 6;
-
-		local test = {};
-
-		local name, realm, bitmask, race, spec, role, kills, deaths, damage, healing, wins, rating, ratingDelta, mmr, mmrDelta;
-		for i=1, iterations do
-			--local table = ArenaAnalytics.TablePool:Acquire(strsplit('|', player, 2))
-			--name, bitmask, race, spec, role, kills, deaths, damage, healing, wins, rating, ratingDelta, mmr, mmrDelta = strsplit('-|', player, splitCount);
-			--name, realm = strsplit('-', (name or ""), 2);
-			--realm = ArenaAnalytics.Helpers:ToSafeLower(ArenaAnalytics:GetRealm(realm));
-			--ArenaAnalytics:Log(i, name, bitmask, race, spec, role, kills, deaths, damage, healing, wins, rating, ratingDelta, mmr, mmrDelta);
-
-			-- Pattern to match six numeric fields separated by '|'
-			--name, bitmask, race, spec, role, kills = player:match("^(%d+)|(%d+)|(%d+)|(%d+)|(%d+)|(%d+)");
-    
-			-- Convert matched strings to numbers
-
-			--test = tonumber(name) and ArenaAnalyticsDB.names[tonumber(name)]:lower();
-
-			--test = tonumber(realm) and ArenaAnalyticsDB.realms[tonumber(realm)]:lower();
-			
-			TablePool:Release(test);
-			test = TablePool:SplitPlayer(player);
-		end
-
-		ArenaAnalytics:Log("Types:", type(test), test and #test);
-		Helpers:DebugLogTable(player);
-
-		C_Timer.After(0, function() 
-			local newTime = GetTime();
-			local elapsed = newTime - startTime;
-			ArenaAnalytics:Log("Split", FormatValue(iterations), "strings in", splitCount .. ".   Time elapsed:", elapsed, "(Start:", startTime, "End:", newTime .. ")");
-		end);
+		ArenaAnalytics.Helpers:PrintScoreboardStats(...);
 
 		print(" ");
 	end,	
@@ -496,7 +434,7 @@ function ArenaAnalytics:init()
 	-- Version Control
 	---------------------------------
 
-	ArenaAnalytics.VersionManager:OnInit();
+	VersionManager:OnInit();
 
 	---------------------------------
 	-- Initialize modules
@@ -504,6 +442,7 @@ function ArenaAnalytics:init()
 
 	ArenaAnalytics:TryFixLastMatchRating();
 
+	Search:Initialize();
 	Bitmap:Initialize();
 	API:Initialize();
 	Internal:Initialize();

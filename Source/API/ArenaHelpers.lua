@@ -9,6 +9,7 @@ local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 local Internal = ArenaAnalytics.Internal;
 local Localization = ArenaAnalytics.Localization;
+local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 -- General Helpers
@@ -51,15 +52,21 @@ function Helpers:GetPlayerName(skipRealm)
     return name;
 end
 
--- Used to draw a solid box texture over a frame for testing
-function Helpers:DrawDebugBackground(frame, r, g, b, a)
-	if(Options:Get("debuggingEnabled")) then
-		-- TEMP testing
-		frame.background = frame:CreateTexture();
-		frame.background:SetPoint("CENTER")
-		frame.background:SetSize(frame:GetWidth(), frame:GetHeight());
-		frame.background:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
-	end
+function Helpers:RatingToText(rating, delta)
+    rating = tonumber(rating);
+    delta = tonumber(delta);
+    if(rating ~= nil) then
+        if(delta) then
+            if(delta > 0) then
+                delta = "+"..delta;
+            end
+            delta = " ("..delta..")";
+        else
+            delta = "";
+        end
+        return rating .. delta;
+    end
+    return "-";
 end
 
 -------------------------------------------------------------------------
@@ -173,4 +180,54 @@ function Helpers:DebugLogFrameTime(context)
         local elapsed = debugprofilestop();
         ArenaAnalytics:Log("DebugLogFrameTime:", elapsed, "Context:", context);
     end);
+end
+
+-- Used to draw a solid box texture over a frame for testing
+function Helpers:DrawDebugBackground(frame, r, g, b, a)
+	if(Options:Get("debuggingEnabled")) then
+		-- TEMP testing
+		frame.background = frame:CreateTexture();
+		frame.background:SetPoint("CENTER")
+		frame.background:SetSize(frame:GetWidth(), frame:GetHeight());
+		frame.background:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
+	end
+end
+
+-- TEMP debugging
+
+local statIDs = {}
+local statNames = {}
+
+function Helpers:PrintScoreboardStats(numPlayers)
+    numPlayers = numPlayers or 1;
+
+    for playerIndex=1, numPlayers do
+        ArenaAnalytics:LogSpacer();
+
+        local scoreInfo = C_PvP.GetScoreInfo(playerIndex);
+        if(scoreInfo and scoreInfo.stats) then
+            for i=1, #scoreInfo.stats do
+                local stat = scoreInfo.stats[i];
+                ArenaAnalytics:Log("Stat:", stat.pvpStatID, stat.pvpStatValue, stat.name);
+
+                if(stat.pvpStatID) then
+                    if(statIDs[stat.pvpStatID] and statIDs[stat.pvpStatID] ~= stat.name) then
+                        ArenaAnalytics:Log("New stat name for ID!", stat.pvpStatID, stat.name);
+                    end
+                    statIDs[stat.pvpStatID] = stat.name;
+                end
+                
+                if(stat.name) then
+                    if(statIDs[stat.name] and statIDs[stat.name] ~= stat.pvpStatID) then
+                        ArenaAnalytics:Log("New stat ID for name!", stat.pvpStatID, stat.name);
+                    end
+                    statNames[stat.name] = stat.pvpStatID;
+                end
+            end
+
+            Helpers:DebugLogTable(scoreInfo and scoreInfo.stats);
+        else
+            ArenaAnalytics:Log("No current stats found!");
+        end
+    end
 end

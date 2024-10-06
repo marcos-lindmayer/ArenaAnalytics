@@ -138,6 +138,7 @@ function Bitmap:HasBitByIndex(bitmap, index)
 end
 
 -------------------------------------------------------------------------
+-- Initialization
 
 local hasInitialized = nil;
 function Bitmap:Initialize()

@@ -39,9 +39,9 @@ function API:GetBattlefieldStatus(battlefieldId)
     local bracket = nil;
     if(teamSize == 2) then
         bracket = 1;
-    elseif(teamSize == 2) then
+    elseif(teamSize == 3) then
         bracket = 2;
-    elseif(teamSize == 2) then
+    elseif(teamSize == 5) then
         bracket = 3;
     end
 

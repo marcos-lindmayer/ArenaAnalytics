@@ -83,12 +83,7 @@ local neutralRaceRedirects = {
 };
 
 function Search:GetNormalizedRace(race_id)
-    race_id = tonumber(race_id);
-    if(not race_id) then
-        return nil;
-    end
-
-    return neutralRaceRedirects[race_id] or race_id;
+    return race_id and neutralRaceRedirects[race_id] or race_id;
 end
 
 local ambiguousSpecMappings = {
@@ -103,7 +98,6 @@ function Search:CheckSpecMatch(searchSpec, player)
     playerSpec = ArenaMatch:GetPlayerSpec(player);
     searchSpec = tonumber(searchSpec);
 
-    ArenaAnalytics:Log(searchSpec, playerSpec)
     if(not searchSpec or not playerSpec) then
         return false;
     end

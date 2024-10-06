@@ -485,8 +485,8 @@ function Filters:Refresh(onCompleteFunc)
 
         C_Timer.After(0, function() 
 			local newTime = GetTime();
-			local elapsed = newTime - startTime;
-			ArenaAnalytics:Log("Refreshed filters in:", elapsed, "seconds.");
+			local elapsed = 1000 * (newTime - startTime);
+			ArenaAnalytics:Log("Refreshed filters in:", elapsed, "ms.");
 		end);
 
         Filters.isRefreshing = nil;

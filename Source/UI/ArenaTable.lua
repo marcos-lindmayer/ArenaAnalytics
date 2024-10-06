@@ -17,6 +17,7 @@ local Internal = ArenaAnalytics.Internal;
 local Constants = ArenaAnalytics.Constants;
 local ImportBox = ArenaAnalytics.ImportBox;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 
@@ -663,23 +664,6 @@ function AAtable:UpdateSelected()
     ArenaAnalyticsScrollFrame.selectedStats:SetText(selectedPrefixText .. newSelectedText)
 end
 
-local function ratingToText(rating, delta)
-    rating = tonumber(rating);
-    delta = tonumber(delta);
-    if(rating ~= nil) then
-        if(delta) then
-            if(delta > 0) then
-                delta = "+"..delta;
-            end
-            delta = " ("..delta..")";
-        else
-            delta = "";
-        end
-        return rating .. delta;
-    end
-    return nil;
-end
-
 -- Refreshes matches table
 function AAtable:RefreshLayout()
     if(not hasLoaded) then
@@ -744,7 +728,7 @@ function AAtable:RefreshLayout()
             local matchType = ArenaMatch:GetMatchType(match);
             if(matchType == "rated") then
                 local rating, ratingDelta = ArenaMatch:GetPartyRating(match), ArenaMatch:GetPartyRatingDelta(match);
-                ratingText = ratingToText(rating, ratingDelta) or "-";
+                ratingText = Helpers:RatingToText(rating, ratingDelta) or "-";
             elseif(matchType == "skirmish") then
                 ratingText = "SKIRMISH";
             elseif(matchType == "wargame") then
@@ -758,7 +742,7 @@ function AAtable:RefreshLayout()
 
             -- Enemy Rating & Delta
             local enemyRating, enemyRatingDelta = ArenaMatch:GetEnemyRating(match), ArenaMatch:GetEnemyRatingDelta(match);
-            ArenaAnalytics:SetFrameText(button.EnemyRating, (ratingToText(enemyRating, enemyRatingDelta) or "-"), Constants.valueColor);
+            ArenaAnalytics:SetFrameText(button.EnemyRating, (Helpers:RatingToText(enemyRating, enemyRatingDelta) or "-"), Constants.valueColor);
 
             -- Enemy team MMR
             ArenaAnalytics:SetFrameText(button.EnemyMMR, (ArenaMatch:GetEnemyMMR(match) or "-"), Constants.valueColor);
