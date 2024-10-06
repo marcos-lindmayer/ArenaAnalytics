@@ -600,7 +600,7 @@ function AAtable:HandleArenaCountChanged()
 
     -- Update the overall stats
     local hasActiveFilters = Filters:GetActiveFilterCount() > 0;
-    local text = hasActiveFilters and "Filtered total: " or ("Total " .. GetArenaText(#ArenaAnalyticsDB) .. ":");
+    local text = hasActiveFilters and "Filtered total: " or ("Total " .. GetArenaText(#ArenaAnalyticsDB) .. ": ");
 
     -- Color the text
     text = ArenaAnalytics:ColorText(text, Constants.prefixColor);
