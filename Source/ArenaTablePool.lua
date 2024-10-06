@@ -12,7 +12,7 @@ function TablePool:Release(tbl)
     if tbl then
         -- Clear all data
         for k in pairs(tbl) do
-            tbl[k] = nil
+            tbl[k] = nil;
         end
 
         -- Only add the table if the pool hasn't reached max size
@@ -24,37 +24,41 @@ function TablePool:Release(tbl)
     end
 end
 
+function TablePool:ReleaseNested(tbl)
+    if tbl then
+        -- Clear all data
+        for k,v in pairs(tbl) do
+            if(type(v) == "table") then
+                self:Release(v);
+            end
+            tbl[k] = nil;
+        end
+
+        -- Only add the table if the pool hasn't reached max size
+        if #self < MAX_POOL_SIZE then
+            table.insert(self, tbl);
+        else
+            ArenaAnalytics:Log("TablePool: Max Pool Size reached! Discarding released table.");
+        end
+    end
+end
+
+function TablePool:Clear(tbl)
+    if(tbl) then
+        for k,v in pairs(tbl) do
+            if(type(v) == "table") then
+                self:ReleaseNested(v);
+            end
+            tbl[k] = nil;
+        end
+    end
+end
+
 -- Acquire a table from the pool or create a new one
-function TablePool:Acquire(...)
+function TablePool:Acquire()
     if #self > 0 then
         return table.remove(self)
     else
         return {}
     end
-end
-
-local function GetNameLower(index)
-    if(not tonumber(index)) then
-        ArenaAnalytics:Log("GetNameLower", type(index), index);
-        return nil;
-    end
-
-    if(not ArenaAnalyticsDB.names[tonumber(index)]) then
-        ArenaAnalytics:Log("GetNameLower", type(index), index, #ArenaAnalyticsDB.names);
-        return nil;
-    end
-
-    return ArenaAnalyticsDB.names[tonumber(index)]:lower();
-end
-
-local function GetRealmLower(index)
-    if(not tonumber(index)) then
-        return nil;
-    end
-
-    if(not ArenaAnalyticsDB.realms[tonumber(index)]) then
-        return nil;
-    end
-
-    return ArenaAnalyticsDB.realms[tonumber(index)]:lower();
 end

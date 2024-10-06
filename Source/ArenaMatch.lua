@@ -195,6 +195,32 @@ function ArenaMatch:ConvertPlayerValues(match, matchIndex)
     end
 end
 
+function ArenaMatch:AddWinsToRoundData(match)
+    local rounds = match and match[matchKeys.rounds];
+    if(not rounds or #rounds == 0) then
+        return;
+    end
+
+    for i,round in ipairs(rounds) do
+        local data = round and round[roundKeys.data];
+        local team, enemy, firstDeath, duration, outcome = ArenaMatch:SplitRoundData(data);
+
+        if(firstDeath and not outcome) then
+            if(firstDeath == 0 or (team and team:find(firstDeath, 1, true))) then
+                outcome = 0;
+            elseif(enemy and enemy:find(firstDeath, 1, true)) then
+                outcome = 1;
+            end
+
+            if(outcome ~= nil) then
+                -- Update round data
+                round[roundKeys.data] = ArenaMatch:MakeRoundData(team, enemy, firstDeath, duration, outcome);
+                ArenaAnalytics:LogEscaped("Converting data:", data, "To:", round[roundKeys.data]);
+            end
+        end
+    end
+end
+
 -------------------------------------------------------------------------
 -- Helper functions
 
@@ -710,7 +736,7 @@ function ArenaMatch:MakeCompactPlayerData(player)
         [playerKeys.realm] = tonumber(realm),
         [playerKeys.race] = tonumber(player.race),
         [playerKeys.spec] = tonumber(player.spec),
-        [playerKeys.role] = tonumber(player.role),
+        [playerKeys.role] = Internal:GetRoleBitmap(player.spec),
         [playerKeys.is_self] = player.isSelf and 1 or nil,
         [playerKeys.is_first_death] = player.isFirstDeath and 1 or nil,
     };
@@ -855,6 +881,12 @@ function ArenaMatch:GetPlayerInfo(player)
     playerInfo.race = ArenaMatch:GetPlayerRace(player);
     playerInfo.spec = ArenaMatch:GetPlayerSpec(player);
     playerInfo.role = ArenaMatch:GetPlayerRole(player);
+
+    -- Fix role in case it's missing
+    if(not playerInfo.role and playerInfo.spec) then
+        player[playerKeys.role] = Internal:GetRoleBitmap(playerInfo.spec);
+        playerInfo.role = player[playerKeys.role];
+    end
 
     -- Expand role
     playerInfo.role_main = Bitmap:GetMainRole(playerInfo.role);
@@ -1011,12 +1043,13 @@ local function GetTeamSpecs(team, requiredSize)
         return nil;
     end
 
-    local teamSpecs = {}
+    local teamSpecs = TablePool:Acquire();
 
     -- Gather all team specs, bailing out if any are missing
     for i,player in ipairs(team) do
         local spec_id = ArenaMatch:GetPlayerSpec(player);
         if(not playerInfo or not Helpers:IsSpecID(spec_id)) then
+            TablePool:Release(teamSpecs);
             return nil;
         end
 
@@ -1051,6 +1084,69 @@ function ArenaMatch:GetComp(match, isEnemyTeam)
     return match[key];
 end
 
+function ArenaMatch:HasComp(match, comp, isEnemyTeam)
+    if(not match or not comp) then
+        return false;
+    end
+
+    if(ArenaMatch:IsShuffle(match)) then
+        local rounds = match[matchKeys.rounds];
+        if(not rounds) then
+            return nil;
+        end
+
+        for i,round in ipairs(rounds) do
+            if(isEnemyTeam) then
+                if(comp == round[roundKeys.enemy_comp]) then
+                    return true;
+                end
+            elseif(comp == round[roundKeys.comp]) then
+                return true;
+            end
+        end
+
+        return false;
+    else
+        if(isEnemyTeam) then
+            return comp == match[matchKeys.enemy_comp];
+        else
+            return comp == match[matchKeys.comp];
+        end
+    end
+
+    return nil;
+end
+
+-- Returns the comp, outcome and mmr values for the match or round 
+function ArenaMatch:GetCompInfo(match, isEnemyTeam, roundIndex)
+    if(not match) then
+        return nil;
+    end
+
+    local mmr = ArenaMatch:GetPartyMMR(match);
+
+    if(ArenaMatch:IsShuffle(match)) then
+        if(not roundIndex) then
+            ArenaAnalytics:Log("ArenaMatch:GetCompInfo called for a shuffle without provided round index!");
+            return;
+        end
+
+        local rounds = match[matchKeys.rounds];
+        local round = rounds and rounds[roundIndex];
+        if(not round) then
+            return nil;
+        end
+
+        local comp = isEnemyTeam and round[roundKeys.enemy_comp] or round[roundKeys.comp];
+        local _,_,_,_,outcome = ArenaMatch:GetRoundData(round);
+        return comp, outcome, mmr;
+    else
+        local comp = isEnemyTeam and match[matchKeys.enemy_comp] or match[matchKeys.comp];
+        local outcome = ArenaMatch:GetMatchOutcome(match);
+        return comp, outcome, mmr;
+    end
+end
+
 function ArenaMatch:UpdateComps(match)
     assert(match);
 
@@ -1068,6 +1164,8 @@ function ArenaMatch:UpdateComp(match, isEnemyTeam)
 
     local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
     match[key] = GetCompForSpecs(teamSpecs, requiredTeamSize);
+
+    TablePool:Release(teamSpecs);
 end
 
 -------------------------------------------------------------------------
@@ -1223,8 +1321,8 @@ function ArenaMatch:SetRounds(match, rounds)
             return nil;
         end
 
-        local compactGroup = {}
-        local specs = {}
+        local compactGroup = TablePool:Acquire();
+        local specs = TablePool:Acquire();
 
         for _,member in ipairs(group) do
             local spec_id = nil;
@@ -1239,7 +1337,7 @@ function ArenaMatch:SetRounds(match, rounds)
             end
 
             -- Add spec for comp
-            local spec_id = ArenaMatch:GetPlayerValue(player, "spec_id");
+            local spec_id = ArenaMatch:GetPlayerSpec(player);
             if(Helpers:IsSpecID(spec_id)) then
                 tinsert(specs, spec_id);
             end
@@ -1248,6 +1346,9 @@ function ArenaMatch:SetRounds(match, rounds)
         GroupSorter:SortIndexGroup(compactGroup, enemyTeam, selfPlayerInfo);
         local groupString = table.concat(compactGroup) or "";
         local comp = GetCompForSpecs(specs, requiredTeamSize);
+
+        TablePool:Release(compactGroup);
+        TablePool:Release(specs);
 
         return groupString, comp;
     end
@@ -1259,13 +1360,17 @@ function ArenaMatch:SetRounds(match, rounds)
 
         -- Insert the round to the match (team-enemy-death-duration)
         local compactRound = {
-            [roundKeys.data] = (team or "") .. '|' .. (enemy or "") .. '|' .. (death or "") .. '|' .. (round.duration or ""),
+            [roundKeys.data] = ArenaMatch:MakeRoundData(team, enemy, death, round.duration, round.outcome),
             [roundKeys.comp] = comp,
             [roundKeys.enemy_comp] = enemyComp,
         };
 
         tinsert(match[matchKeys.rounds], compactRound);
     end
+end
+
+function ArenaMatch:MakeRoundData(team, enemy, death, duration, outcome)
+    return (team or "") .. '|' .. (enemy or "") .. '|' .. (death or "") .. '|' .. (duration or "") .. "|" .. (outcome or "");
 end
 
 function ArenaMatch:GetRounds(match)
@@ -1286,8 +1391,9 @@ function ArenaMatch:SplitRoundData(data)
         return nil;
     end
 
-    -- 4 values: team, enemy, death, duration
-    return strsplit('|', data);
+    -- 5 values: team, enemy, death, duration, outcome
+    local team, enemy, death, duration, outcome = strsplit('|', data);
+    return team, enemy, tonumber(death), tonumber(duration), tonumber(outcome);
 end
 
 function ArenaMatch:GetRoundComp(round)
@@ -1379,13 +1485,13 @@ function ArenaMatch:ResortPlayers(match)
 
     -- Update round groups to new index
     for _,round in ipairs(rounds) do
-        local team, enemy, death, duration = ArenaMatch:GetRoundData(round);
+        local team, enemy, death, duration, outcome = ArenaMatch:GetRoundData(round);
 
         team = ConvertPlayerIndices(team, true);
         enemy = ConvertPlayerIndices(enemy, true);
         death = ConvertPlayerIndices(death);
 
-        round[roundKeys.data] = team .. '|' .. enemy .. '|' .. death .. '|' .. (duration or "");
+        round[roundKeys.data] = ArenaMatch:MakeRoundData(team, enemy, death, duration, outcome);
     end
 end
 

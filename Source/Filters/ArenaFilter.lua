@@ -7,6 +7,7 @@ local Search = ArenaAnalytics.Search;
 local Selection = ArenaAnalytics.Selection;
 local AAtable = ArenaAnalytics.AAtable;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
@@ -221,19 +222,21 @@ end
 
 -- check comp filters (comp / enemy comp)
 local function doesMatchPassFilter_Comp(match, isEnemyComp)
-    if match == nil then return false end;
+    if match == nil then 
+        return false;
+    end
 
     -- Skip comp filter when no bracket is selected
     if(currentFilters["Filter_Bracket"] == "All") then
         return true;
     end
-    
+
     local compFilterKey = isEnemyComp and "Filter_EnemyComp" or "Filter_Comp";
     if(currentFilters[compFilterKey] == "All") then
         return true;
     end
-    
-    return ArenaMatch:GetComp(match, isEnemyComp) == currentFilters[compFilterKey];
+
+    return ArenaMatch:HasComp(match, currentFilters[compFilterKey], isEnemyComp)
 end
 
 function Filters:doesMatchPassGameSettings(match)
@@ -316,13 +319,15 @@ local function LogTableContents(tbl, indent)
     end
 end
 
-local transientCompData = {}
+local transientCompData = TablePool:Acquire();
 
 local function ResetTransientCompData()
+    TablePool:ReleaseNested(transientCompData);
+
     transientCompData = {
         Filter_Comp = { ["All"] = {} },
         Filter_EnemyComp = { ["All"] = {} },
-    }
+    };
 end
 
 local function SafeIncrement(table, key, delta)
@@ -331,13 +336,15 @@ end
 
 local function findOrAddCompValues(compsTable, comp, isWin, mmr)
     assert(compsTable);
-    if comp == nil then return end
+    if comp == nil then 
+        return;
+    end
 
-    compsTable[comp] = compsTable[comp] or {};
-    
+    compsTable[comp] = compsTable[comp] or TablePool:Acquire();
+
     -- Played
     SafeIncrement(compsTable[comp], "played");
-    
+
     -- Win count
     if isWin then
         SafeIncrement(compsTable[comp], "wins");
@@ -354,17 +361,30 @@ local function AddToCompData(match, isEnemyTeam)
     assert(match);
     local compKey = isEnemyTeam and "Filter_EnemyComp" or "Filter_Comp";
     assert(transientCompData[compKey]);
-    
-    local isWin = ArenaMatch:IsVictory(match);
-    local mmr = ArenaMatch:GetPartyMMR(match);
-    
-    -- Add to "All" data
-    findOrAddCompValues(transientCompData[compKey], "All", isWin, mmr);
-    
-    -- Add comp specific data
-    local comp = ArenaMatch:GetComp(match, isEnemyTeam);
-    if(comp ~= nil) then
-        findOrAddCompValues(transientCompData[compKey], comp, isWin, mmr);
+
+    local function AddData(comp, outcome, mmr)
+        local isWin = (outcome == 1);
+
+        -- Add to "All" data
+        findOrAddCompValues(transientCompData[compKey], "All", isWin, mmr);
+
+        -- Add comp specific data
+        if(comp ~= nil) then
+            findOrAddCompValues(transientCompData[compKey], comp, isWin, mmr);
+        end
+    end
+
+    if(ArenaMatch:IsShuffle(match)) then
+        local rounds = ArenaMatch:GetRounds(match);
+        local roundCount = rounds and #rounds or 0;
+
+        for roundIndex=1, roundCount do
+            local comp, outcome, mmr = ArenaMatch:GetCompInfo(match, isEnemyTeam, roundIndex);
+            AddData(comp, outcome, mmr);
+        end
+    else
+        local comp, outcome, mmr = ArenaMatch:GetCompInfo(match, isEnemyTeam);
+        AddData(comp, outcome, mmr);
     end
 end
 

@@ -6,6 +6,8 @@ local Helpers = ArenaAnalytics.Helpers;
 local Constants = ArenaAnalytics.Constants;
 local Internal = ArenaAnalytics.Internal;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local TablePool = ArenaAnalytics.TablePool;
+local Bitmap = ArenaAnalytics.Bitmap;
 
 -------------------------------------------------------------------------
 
@@ -185,7 +187,7 @@ local function ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo)
         return specPriorityA < specPriorityB;
     end
 
-    return playerInfoA.fullName < playerInfoB.fullName;
+    return playerInfoA.fullName and playerInfoA.fullName < playerInfoB.fullName;
 end
 
 function GroupSorter:SortGroup(group, selfPlayerInfo)
@@ -197,7 +199,12 @@ function GroupSorter:SortGroup(group, selfPlayerInfo)
         local playerInfoA = ArenaMatch:GetPlayerInfo(playerA);
         local playerInfoB = ArenaMatch:GetPlayerInfo(playerB);
 
-        return ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
+        local result = ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
+
+        TablePool:Release(playerInfoA);
+        TablePool:Release(playerInfoB);
+
+        return result;
     end);
 end
 
@@ -229,6 +236,43 @@ function GroupSorter:SortIndexGroup(group, players, selfPlayerInfo)
         local playerInfoA = indexA and ArenaMatch:GetPlayerInfo(players[indexA]);
         local playerInfoB = indexB and ArenaMatch:GetPlayerInfo(players[indexB]);
 
-        return ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
+        local result = ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
+
+        TablePool:Release(playerInfoA);
+        TablePool:Release(playerInfoB);
+
+        return result;
+    end);
+end
+
+local function MakeSpecPlayerInfo(spec_id)
+    spec_id = tonumber(spec_id);
+    if(not spec_id) then
+        return nil;
+    end
+
+    local playerInfo = TablePool:Acquire();
+    playerInfo.spec = spec_id;    
+    playerInfo.role = Internal:GetRoleBitmap(spec_id);
+    playerInfo.role_main = Bitmap:GetMainRole(playerInfo.role);
+    playerInfo.role_sub = Bitmap:GetSubRole(playerInfo.role);
+    return playerInfo;
+end
+
+function GroupSorter:SortSpecs(specs, selfPlayerInfo)
+    if(not specs or #specs == 0) then
+        return;
+    end
+
+    table.sort(specs, function(specA, specB)
+        local playerInfoA = MakeSpecPlayerInfo(specA);
+        local playerInfoB = MakeSpecPlayerInfo(specB);
+
+        local result = ComparePlayers(playerInfoA, playerInfoB, selfPlayerInfo);
+
+        TablePool:Release(playerInfoA);
+        TablePool:Release(playerInfoB);
+
+        return result;
     end);
 end

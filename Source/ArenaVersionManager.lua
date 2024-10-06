@@ -105,10 +105,22 @@ function VersionManager:OnInit()
     end
 
     -- Reverts and reset index based name and realm (To improve order and streamline formatting across version)
-    VersionManager:RevertIndexBasedNameAndRealm();
+    if(ArenaAnalyticsDB.formatVersion == 0) then
+        VersionManager:RevertIndexBasedNameAndRealm();
+    end
 
     -- Update round delimiter and compress player to compact string
-    VersionManager:ConvertRoundAndPlayerFormat();
+    if(ArenaAnalyticsDB.formatVersion == 1) then
+        VersionManager:ConvertRoundAndPlayerFormat();
+    end
+
+    if(ArenaAnalyticsDB.formatVersion == 2) then
+        for i,match in ipairs(ArenaAnalyticsDB) do
+            ArenaMatch:AddWinsToRoundData(match);
+        end
+
+        ArenaAnalyticsDB.formatVersion = 3;
+    end
 end
 
 local function convertFormatedDurationToSeconds(inDuration)

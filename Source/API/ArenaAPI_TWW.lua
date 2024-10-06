@@ -101,8 +101,6 @@ function API:GetPlayerScore(index)
         return score;
     end
 
-    Helpers:DebugLogTable(scoreInfo);
-
     local spec_id = Localization:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
     if(not spec_id) then
         spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
@@ -124,7 +122,6 @@ function API:GetPlayerScore(index)
         local firstStat = scoreInfo.stats and scoreInfo.stats[1];
         if(firstStat) then
             score.wins = firstStat.pvpStatValue;
-            ArenaAnalytics:Log("Shuffle stat:", firstStat.pvpStatID, firstStat.name, score.wins);
         end
     end
 

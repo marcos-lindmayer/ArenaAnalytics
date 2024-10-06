@@ -104,11 +104,10 @@ local function CreateRoundEntryFrame(index, parent)
         tinsert(newFrame.enemyTeam, iconFrame);
     end
 
-    function newFrame:SetData(data, team, enemy, firstDeath, duration, isWin, selfPlayer, players)
-        self:SetIsWin(isWin);
+    function newFrame:SetData(team, enemy, firstDeath, duration, outcome, selfPlayer, players)
+        self:SetOutcomeColor(outcome);
 
-        duration = tonumber(duration);
-        ArenaAnalytics:SetFrameText(self.duration, (duration and SecondsToTime(duration)), Constants.valueColor)
+        ArenaAnalytics:SetFrameText(self.duration, (duration and SecondsToTime(duration)), Constants.valueColor);
 
         for i=2, 0, -1 do
             local spec_id, isFirstDeath;
@@ -118,7 +117,7 @@ local function CreateRoundEntryFrame(index, parent)
                 if(playerIndex) then
                     local player = (playerIndex == 0) and selfPlayer or players[playerIndex];
                     spec_id = ArenaMatch:GetPlayerSpec(player);
-                    isFirstDeath = (playerIndex == tonumber(firstDeath));
+                    isFirstDeath = (playerIndex == firstDeath);
                 end
             end
 
@@ -135,7 +134,7 @@ local function CreateRoundEntryFrame(index, parent)
                 if(playerIndex) then
                     local player = players[playerIndex];
                     spec_id = ArenaMatch:GetPlayerSpec(player);                    
-                    isFirstDeath = (playerIndex == tonumber(firstDeath));
+                    isFirstDeath = (playerIndex == firstDeath);
                 end
             end
 
@@ -146,13 +145,16 @@ local function CreateRoundEntryFrame(index, parent)
     end
 
     -- Set background color based on round win or loss
-    function newFrame:SetIsWin(isWin)
-        if(isWin == nil) then -- Grey for unknown
+    function newFrame:SetOutcomeColor(outcome)
+        if(outcome == nil) then -- Grey for unknown
             newFrame.bgLeft:SetVertexColor(0.7, 0.7, 0.7, 0.8);
             newFrame.bgRight:SetVertexColor(0.7, 0.7, 0.7, 0.8);
-        elseif(isWin) then -- Green for win
+        elseif(outcome == 1) then -- Green for win
             newFrame.bgLeft:SetVertexColor(0.19, 0.57, 0.11, 0.8);
             newFrame.bgRight:SetVertexColor(0.19, 0.57, 0.11, 0.8);
+        elseif(outcome == 2) then -- Yellow for draw
+            newFrame.bgLeft:SetVertexColor(0.8, 0.67, 0.1, 0.8);
+            newFrame.bgRight:SetVertexColor(0.8, 0.67, 0.1, 0.8);
         else -- Red for loss
             newFrame.bgLeft:SetVertexColor(0.52, 0.075, 0.18, 0.8);
             newFrame.bgRight:SetVertexColor(0.52, 0.075, 0.18, 0.8);
@@ -170,6 +172,7 @@ local function GetOrCreateSingleton()
         self.frame = CreateFrame("Frame", self.name, ArenaAnalyticsScrollFrame, "TooltipBackdropTemplate");
         self.frame:SetSize(320, 100);
         self.frame:SetFrameStrata("TOOLTIP");
+        self.frame:SetBackdropColor(0,0,0,1);
 
         -- TODO: fill out the tooltip
         self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, ArenaAnalytics:ColorText("Solo Shuffle", Constants.titleColor), 18);
@@ -220,8 +223,15 @@ local function AddBottomStat(prefix, name, value, spec_id)
     end
 
     local yOffset = #self.bottomStatTexts * 15 + 10;
-    local textFormat = name and "%s %d  %s" or "%s: %d";
-    text = string.format(textFormat, prefix, value, name);
+    
+    local text = nil;
+    if(name) then
+        local textFormat = "%s %s  %d";
+        text = string.format(textFormat, prefix, name, value);
+    else
+        local textFormat = "%s: %d";
+        text = string.format(textFormat, prefix, value);
+    end
     
     local fontString = ArenaAnalyticsCreateText(self.frame, "BOTTOMLEFT", self.frame, "BOTTOMLEFT", 10, yOffset, text, 12);
     tinsert(self.bottomStatTexts, fontString);
@@ -253,7 +263,7 @@ function ShuffleTooltip:SetMatch(match)
         return;
     end
 
-    local newHeight = 32;
+    local newHeight = 35;
 
     local wins = 0;
 
@@ -270,24 +280,15 @@ function ShuffleTooltip:SetMatch(match)
         if(roundData) then
             newHeight = newHeight + roundFrame:GetHeight();
 
-            local team, enemy, firstDeath, duration = ArenaMatch:SplitRoundData(roundData);
+            local team, enemy, firstDeath, duration, outcome = ArenaMatch:SplitRoundData(roundData);
 
-            local isWin;
-            if(tonumber(firstDeath)) then
-                firstDeath = tonumber(firstDeath);
-
-                if(firstDeath == 0 or (team and team:find(firstDeath, 1, true))) then
-                    isWin = false;
-                elseif(enemy and enemy:find(firstDeath, 1, true)) then
-                    isWin = true;
-                end
-
+            if(firstDeath) then
                 deaths[firstDeath] = (deaths[firstDeath] or 0) + 1;
             end
 
-            roundFrame:SetData(roundData, team, enemy, firstDeath, duration, isWin, selfPlayer, players);
+            roundFrame:SetData(team, enemy, firstDeath, duration, outcome, selfPlayer, players);
 
-            if(isWin) then
+            if(outcome == 1) then
                 wins = wins + 1;
             end
 

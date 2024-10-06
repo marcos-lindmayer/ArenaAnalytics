@@ -32,9 +32,8 @@ function List:Create(parent, level, listInfo)
 
     self.backdrop = CreateFrame("Frame", self.name, parent:GetOwner(), "TooltipBackdropTemplate");
     self.backdrop:SetSize(1, 1);
-    self.backdrop:SetFrameStrata("TOOLTIP")
-
-    self:SetBackdropAlpha(0.85);
+    self.backdrop:SetFrameStrata("TOOLTIP");
+    self.backdrop:SetBackdropColor(0,0,0,1);
     
     -- Setup scroll frame, in case we got too many entries to show
     self.scrollFrame = CreateFrame("scrollFrame", self.name .. "_ScrollFrame", self.backdrop, "UIPanelScrollFrameTemplate");

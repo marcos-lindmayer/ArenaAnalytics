@@ -285,8 +285,12 @@ function ArenaAnalytics:IsLocalRealm(realm)
 end
 
 ArenaAnalytics.localPlayerInfo = nil;
-
+local lastLocalPlayerUpdate = 0;
 function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
+	if(lastLocalPlayerUpdate < time()) then
+		forceUpdate = true;
+	end
+
 	if(not ArenaAnalytics.localPlayerInfo or forceUpdate) then
 		local spec_id = API:GetMySpec();	
 		local name, realm = UnitFullName("player");
@@ -307,6 +311,8 @@ function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
 			role_main = Bitmap:GetMainRole(role_bitmap),
 			role_sub = Bitmap:GetSubRole(role_bitmap),
 		};
+
+		lastLocalPlayerUpdate = time();
 	end
 
 	return ArenaAnalytics.localPlayerInfo;

@@ -266,6 +266,16 @@ function ArenaAnalytics:Log(...)
 	print(prefix, ...);
 end
 
+function ArenaAnalytics:LogGreen(...)
+	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
+		return;
+	end
+
+    local hex = "1EFFA7";
+    local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Debug):");
+	print(prefix, ...);
+end
+
 function ArenaAnalytics:LogEscaped(...)
 	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
 		return;
@@ -401,7 +411,9 @@ end
 function ArenaAnalytics:init()
 	ArenaAnalytics:Log("Initializing..");
 
-	-- Initialize databases
+	-- Initialize data
+	Bitmap:Initialize();
+	Internal:Initialize();
 	ArenaAnalytics:InitializeArenaAnalyticsDB();
 
 	-- allows using left and right buttons to move through chat 'edit' box
@@ -443,9 +455,7 @@ function ArenaAnalytics:init()
 	ArenaAnalytics:TryFixLastMatchRating();
 
 	Search:Initialize();
-	Bitmap:Initialize();
 	API:Initialize();
-	Internal:Initialize();
 	Options:Init();
 	FilterTables:Init();
 	Filters:Init();

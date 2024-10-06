@@ -79,6 +79,28 @@ function ArenaTracker:Clear()
 end
 
 -------------------------------------------------------------------------
+-- Solo Shuffle
+
+-- Get current player wins and all players summed wins
+function ArenaTracker:GetCurrentWins()
+	if(not currentArena.isShuffle) then
+		return;
+	end
+
+	local myWins, totalWins = 0,0;
+	for i=1, GetNumBattlefieldScores() do
+		local score = API:GetPlayerScore(i);
+		if(score and score.wins) then
+			if(score.name == currentArena.playerName) then
+				myWins = score.wins;
+			end
+
+			totalWins = totalWins + score.wins;
+		end
+	end
+
+	return myWins, totalWins;
+end
 
 function ArenaTracker:UpdateRoundTeam()
 	if(not currentArena.isShuffle) then
@@ -86,17 +108,19 @@ function ArenaTracker:UpdateRoundTeam()
 	end
 
 	if(ArenaTracker:IsSameRoundTeam()) then
+		ArenaAnalytics:Log("Still same team, round team update delayed.");
 		return;
 	end
 
-	currentArena.round.team = {};
+	TablePool:Release(currentArena.round.team)
+	currentArena.round.team = TablePool:Acquire();
 	for i=1, 2 do
 		local name = Helpers:GetUnitFullName("party"..i);
 		tinsert(currentArena.round.team, name);
 		ArenaAnalytics:Log("Adding team player:", name, #currentArena.round.team);
 	end
 
-	ArenaAnalytics:Log("UpdateRoundTeam", #currentArena.round.team)
+	ArenaAnalytics:Log("UpdateRoundTeam", #currentArena.round.team);
 end
 
 function ArenaTracker:RoundTeamContainsPlayer(playerName)
@@ -130,8 +154,16 @@ function ArenaTracker:IsSameRoundTeam()
 	return true;
 end
 
-function ArenaTracker:CommitCurrentRound()
+function ArenaTracker:CommitCurrentRound(force)
 	if(not currentArena.round.hasStarted) then
+		return;
+	end
+
+	ArenaAnalytics:LogGreen("CommitCurrentRound triggered!")
+
+	-- Delay commit until team has changed, unless match ended.
+	if(not force and ArenaTracker:IsSameRoundTeam() and not GetBattlefieldWinner()) then
+		ArenaAnalytics:LogGreen("Delaying round commit. Team has not yet changed.");
 		return;
 	end
 
@@ -142,6 +174,17 @@ function ArenaTracker:CommitCurrentRound()
 		enemy = {},
 	};
 
+	-- Get the total wins after current round
+	local myWins, totalWins = ArenaTracker:GetCurrentWins();
+	if(myWins == currentArena.round.wins and totalWins == currentArena.round.totalWins) then
+		ArenaAnalytics:LogGreen("Neither wins changed since last round. Assuming draw.");
+		roundData.outcome = 2;
+	else
+		local isWin = (myWins > currentArena.round.wins);
+		roundData.outcome = isWin and 1 or 0;
+		ArenaAnalytics:LogGreen("Outcome determined:", roundData.outcome, "New wins:", myWins, totalWins, "Old wins:", currentArena.round.wins, currentArena.round.totalWins, "Rounds played:", #currentArena.committedRounds);
+	end
+
 	-- Fill round teams
 	for _,player in ipairs(currentArena.players) do
 		if(player and player.name) then
@@ -150,7 +193,7 @@ function ArenaTracker:CommitCurrentRound()
 		end
 	end
 
-	ArenaAnalytics:Log("Adding round to currentArena.committedRounds!", roundData.duration, roundData.firstDeath, #roundData.team, #roundData.enemy, #currentArena.players);
+	ArenaAnalytics:LogGreen("Committed round:!", roundData.duration, roundData.firstDeath, #roundData.team, #roundData.enemy, #currentArena.players);
 	tinsert(currentArena.committedRounds, roundData);
 
 	-- Reset currentArena round data
@@ -160,6 +203,15 @@ function ArenaTracker:CommitCurrentRound()
 	currentArena.round.team = {};
 	currentArena.round.startTime = nil;
 	currentArena.round.hasStarted = false;
+
+	currentArena.round.wins = myWins;
+	currentArena.round.totalWins = totalWins;
+
+	-- Make sure we update the team, if we're not done playing.
+	if(not GetBattlefieldWinner()) then
+		ArenaAnalytics:LogGreen("Round commit forcing team update!");
+		ArenaTracker:UpdateRoundTeam();
+	end
 end
 
 -------------------------------------------------------------------------
@@ -368,12 +420,17 @@ function ArenaTracker:HandleArenaStart(...)
 	currentArena.startTime = time();
 	currentArena.hasRealStartTime = true; -- The start time has been set by gates opened
 
-	currentArena.round.startTime = time();
-	currentArena.round.hasStarted = true;
+	local myWins, totalWins = ArenaTracker:GetCurrentWins();
+	currentArena.round.wins = myWins;
+	currentArena.round.totalWins = totalWins;
+	ArenaAnalytics:LogGreen("Assigned round wins:", myWins, totalWins);
 
 	ArenaTracker:FillMissingPlayers();
 	ArenaTracker:HandleOpponentUpdate();
 	ArenaTracker:UpdateRoundTeam();
+
+	currentArena.round.startTime = time();
+	currentArena.round.hasStarted = true;
 
 	ArenaAnalytics:Log("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
 end
@@ -405,15 +462,14 @@ function ArenaTracker:CheckRoundEnded()
 end
 
 -- Solo Shuffle specific round end
-function ArenaTracker:HandleRoundEnd()
+function ArenaTracker:HandleRoundEnd(force)
 	if(not API:IsInArena()) then
 		return;
 	end
 
 	ArenaAnalytics:Log("HandleRoundEnd!", #currentArena.players);
 
-	ArenaTracker:CommitCurrentRound();
-	ArenaTracker:UpdateRoundTeam();
+	ArenaTracker:CommitCurrentRound(force);
 end
 
 -- Gets arena information when it ends and the scoreboard is shown
@@ -423,6 +479,9 @@ function ArenaTracker:HandleArenaEnd()
 	currentArena.ended = true;
 
 	ArenaAnalytics:Log("HandleArenaEnd!", #currentArena.players);
+
+	-- Solo Shuffle
+	ArenaTracker:HandleRoundEnd(true);
 
 	local winner = GetBattlefieldWinner();
 	local players = {};
@@ -485,7 +544,6 @@ function ArenaTracker:HandleArenaEnd()
 		TablePool:Release(score);
 	end
 
-	
 	if(currentArena.isShuffle) then
 		-- Determine match outcome
 		currentArena.outcome = ArenaTracker:GetShuffleOutcome()
@@ -505,8 +563,6 @@ function ArenaTracker:HandleArenaEnd()
 		end
 	end
 
-	ArenaAnalytics:Log("My faction: ", myTeamIndex, "(Winner:", winner, currentArena.outcome, ")")
-
 	-- Process ranked information
 	if (currentArena.isRated and myTeamIndex) then
 		local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
@@ -517,7 +573,7 @@ function ArenaTracker:HandleArenaEnd()
 
 	currentArena.players = players;
 
-	ArenaAnalytics:Log("Match ended!", currentArena.mapId, GetZoneText(), #currentArena.players);
+	ArenaAnalytics:Log("Match ended!", #currentArena.players, "players tracked.");
 end
 
 -- Player left an arena (Zone changed to non-arena with valid arena data)
@@ -530,7 +586,7 @@ function ArenaTracker:HandleArenaExit()
 	end
 
 	-- Solo Shuffle
-	ArenaTracker:HandleRoundEnd();
+	ArenaTracker:HandleRoundEnd(true);
 
 	if(not currentArena.endedProperly) then
 		currentArena.ended = true;

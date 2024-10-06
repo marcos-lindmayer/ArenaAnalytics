@@ -9,6 +9,8 @@ Display.__index = Display
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
+local TablePool = ArenaAnalytics.TablePool;
+local GroupSorter = ArenaAnalytics.GroupSorter;
 
 -------------------------------------------------------------------------
 
@@ -206,8 +208,20 @@ function Display.SetComp(dropdownContext, display)
         lastFrame = containerFrame.played;
         totalWidth = totalWidth + containerFrame.played:GetWidth() + padding;
 
+        local specs = TablePool:Acquire();
+
         -- Add each player spec icon
         for spec_id in comp:gmatch("([^|]+)") do
+            if(tonumber(spec_id)) then
+                tinsert(specs, tonumber(spec_id));
+            end
+        end
+
+        local playerInfo = ArenaAnalytics:GetLocalPlayerInfo();
+        GroupSorter:SortSpecs(specs, playerInfo);
+
+        -- Display specs
+        for i,spec_id in ipairs(specs) do
             local iconFrame = ArenaIcon:Create(containerFrame, 25, true);
             iconFrame:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0);
             iconFrame:SetSpec(spec_id);
