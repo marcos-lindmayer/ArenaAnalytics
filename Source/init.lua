@@ -425,11 +425,11 @@ function ArenaAnalytics:init()
 	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffAAAAAA" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
-
+	
 	if(Options:Get("debuggingEnabled")) then
 		ArenaAnalytics:Log("Debugging Enabled! |cffBBBBBB/aa debug to disable.|r ");
 	end
-	
+
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
 	if(not successfulRequest) then
 		ArenaAnalytics:Log("Failed to register Addon Message Prefix: 'ArenaAnalytics'!")
@@ -477,7 +477,7 @@ function ArenaAnalytics:init()
 	createMinimapButton();
 
 	-- Already in an arena
-	if (not API:IsInArena()) then
+	if (not API:IsInArena() and ArenaAnalyticsDB.currentArena) then
 		ArenaTracker:Clear();
 	end
 end
@@ -488,6 +488,7 @@ function ArenaAnalytics:delayedInit(event, name, ...)
 		return;
 	end
 
+	ArenaAnalyticsScrollFrame:Hide();
 	C_Timer.After(1, function() ArenaAnalytics.init() end);
 end
 
