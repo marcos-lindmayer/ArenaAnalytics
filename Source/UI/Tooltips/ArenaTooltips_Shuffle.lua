@@ -48,14 +48,14 @@ local function CreateRoundEntryFrame(index, parent)
     newFrame:SetSize(parent:GetWidth(), height)
     newFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", borderWidth, -(height * index + yOffset)) -- Stack vertically
 
-    -- Create the left faction background texture
+    -- Create the left round background texture
     newFrame.bgLeft = newFrame:CreateTexture(nil, "BACKGROUND");
     newFrame.bgLeft:SetTexture("Interface\\WorldStateFrame\\WorldStateFinalScore-Highlight");
     newFrame.bgLeft:SetTexCoord(0, 0.9, 0, 1); -- Use part of the texture (you can tweak it)
     newFrame.bgLeft:SetPoint("TOPLEFT", newFrame, "TOPLEFT");
     newFrame.bgLeft:SetSize(width / 2, height);
 
-    -- Create the right faction background texture
+    -- Create the right round background texture
     newFrame.bgRight = newFrame:CreateTexture(nil, "BACKGROUND");
     newFrame.bgRight:SetTexture("Interface\\WorldStateFrame\\WorldStateFinalScore-Highlight");
     newFrame.bgRight:SetTexCoord(1, 0.1, 0, 1); -- Mirror the texture for the right side
@@ -174,7 +174,6 @@ local function GetOrCreateSingleton()
         self.frame:SetFrameStrata("TOOLTIP");
         self.frame:SetBackdropColor(0,0,0,1);
 
-        -- TODO: fill out the tooltip
         self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, ArenaAnalytics:ColorText("Solo Shuffle", Constants.titleColor), 18);
         self.winsText = ArenaAnalyticsCreateText(self.frame, "TOPRIGHT", self.frame, "TOPRIGHT", -10, -10, "", 15);
 
@@ -255,28 +254,20 @@ function ShuffleTooltip:SetMatch(match)
 
     Tooltips:HideAll();
 
-    currentRounds = ArenaMatch:GetRounds(match);
-
-    if(not currentRounds or #currentRounds == 0) then
-        -- TODO: Custom visual informing user that currentRounds are missing
-        ShuffleTooltip:Hide(); -- TEMP
-        return;
-    end
-
+    
     local newHeight = 35;
-
     local wins = 0;
-
-    local deaths = {}
+    local deaths = TablePool:Acquire();
 
     local selfPlayer = ArenaMatch:GetSelf(match);
     local players = ArenaMatch:GetTeam(match, true);
 
+    currentRounds = ArenaMatch:GetRounds(match);
     for i=1, 6 do
         local roundFrame = self.rounds[i];
         assert(roundFrame, "ShuffleTooltip should always have 6 round frames!" .. (self.rounds and #self.rounds or "nil"));
 
-        local roundData = ArenaMatch:GetRoundDataRaw(currentRounds[i]);
+        local roundData = currentRounds and ArenaMatch:GetRoundDataRaw(currentRounds[i]);
         if(roundData) then
             newHeight = newHeight + roundFrame:GetHeight();
 
@@ -342,6 +333,9 @@ function ShuffleTooltip:SetMatch(match)
 
     name, value, spec_id = GetTopScore(winsTable);
     AddBottomStat("Most Wins:", name, value, spec_id);
+
+    TablePool:Release(deaths);
+    TablePool:Release(winsTable);
 
     -- Win color
     local hex = Constants.invalidColor;

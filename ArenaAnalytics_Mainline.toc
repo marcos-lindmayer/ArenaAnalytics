@@ -31,6 +31,7 @@ Source/UI/ArenaMatchSelection.lua
 Source/UI/ArenaIcon.lua
 
 Source/UI/Tooltips/ArenaTooltips.lua
+Source/UI/Tooltips/ArenaTooltips_Player.lua
 Source/UI/Tooltips/ArenaTooltips_Shuffle.lua
 
 Source/Data/ArenaInternalIDs.lua

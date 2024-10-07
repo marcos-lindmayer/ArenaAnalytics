@@ -30,6 +30,10 @@ function ArenaAnalytics:ColorText(text, color)
         return text;
     end
 
+    if(#color == 6) then
+        color = "ff" .. color;
+    end
+
     return "|c" .. color .. text .. "|r"
 end
 
@@ -387,7 +391,7 @@ function AAtable:CreateExportDialogFrame()
             ArenaAnalytics:Log("Garbage Collection forced by export frame.");
 		end);
 	end
-    
+
     ArenaAnalyticsScrollFrame.exportDialogFrame:Show();
 end
 
@@ -405,6 +409,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
         if (playerFrame.player) then
             playerFrame.match = match;
             playerFrame.matchIndex = matchIndex;
+            playerFrame.isEnemyTeam = isEnemyTeam;
 
             if(not playerFrame.icon) then
                 playerFrame.icon = ArenaIcon:Create(playerFrame, 25);

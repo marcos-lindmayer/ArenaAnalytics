@@ -69,6 +69,25 @@ function Helpers:RatingToText(rating, delta)
     return "-";
 end
 
+function Helpers:FormatNumber(value)
+    value = tonumber(value) or "-";
+
+    if (type(value) == "number") then
+        -- TODO: Add option to shorten large numbers by suffix
+
+        value = math.floor(value);
+
+        while true do  
+            value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2')
+            if (k==0) then
+                break;
+            end
+        end
+    end
+
+    return ArenaAnalytics:ColorText(value, Constants.statsColor);
+end
+
 -------------------------------------------------------------------------
 -- Data Helpers
 

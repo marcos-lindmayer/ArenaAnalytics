@@ -339,7 +339,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
     end
     locked = true;
 
-    team = isEnemyTeam and "enemy" or "team";
+    team = playerFrame.isEnemyTeam and "enemy" or "team";
     local appendRule = GetAppendRule(mouseButton);
     local tokens = GetQuickSearchTokens(playerFrame.player, team, mouseButton);
 

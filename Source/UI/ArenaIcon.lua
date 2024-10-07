@@ -35,7 +35,7 @@ function ArenaIcon:Create(parent, size, skipDeath)
 
     local halfSize = floor(size/2);
     newFrame.specOverlay = CreateFrame("Frame", nil, newFrame);
-    newFrame.specOverlay:SetPoint("BOTTOMRIGHT", newFrame.classTexture, -1, 2);
+    newFrame.specOverlay:SetPoint("BOTTOMRIGHT", newFrame.classTexture, -1, 1);
     newFrame.specOverlay:SetSize(halfSize, halfSize);
     newFrame.specOverlay:SetFrameLevel(baseFrameLevel + 10);
 

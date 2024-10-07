@@ -9,6 +9,7 @@ local Internal = ArenaAnalytics.Internal;
 local API = ArenaAnalytics.API;
 local ShuffleTooltip = ArenaAnalytics.ShuffleTooltip;
 local Constants = ArenaAnalytics.Constants;
+local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
 
 -------------------------------------------------------------------------
 
@@ -177,29 +178,10 @@ local function ColorFaction(text, race_id)
     return text and ("|c" .. color .. text .. "|r") or " ";
 end
 
-local function FormatValue(value)
-    value = tonumber(value) or "-";
-
-    if (type(value) == "number") then
-        -- TODO: Add option to shorten large numbers by suffix
-
-        value = math.floor(value);
-
-        while true do  
-            value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2')
-            if (k==0) then
-                break;
-            end
-        end
-    end
-
-    return ArenaAnalytics:ColorText(value, Constants.statsColor);
-end
-
 local function AddVariableStats_Shuffle(player)
     local wins = ArenaMatch:GetPlayerVariableStats(player) or "";
 
-    GameTooltip:AddLine(ColorPrefix("Wins: ") .. FormatValue(wins));
+    GameTooltip:AddLine(ColorPrefix("Wins: ") .. Helpers:FormatNumber(wins));
 end
 
 function Tooltips:DrawPlayerTooltip(playerFrame)
@@ -208,6 +190,8 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     end
 
     Tooltips:HideAll();
+
+    PlayerTooltip:SetPlayerFrame(playerFrame);
 
     if(not playerFrame.player) then
         return;
@@ -262,16 +246,16 @@ function Tooltips:DrawPlayerTooltip(playerFrame)
     GameTooltip:AddLine(ArenaAnalytics:ColorText(playerName, Constants.titleColor));
     GameTooltip:AddDoubleLine(ColorFaction(race, race_id), ColorClass(specialization, spec_id));
 
-    GameTooltip:AddDoubleLine(ColorPrefix("Damage: ") .. FormatValue(damage), ColorPrefix("Healing: ") .. FormatValue(healing));
+    GameTooltip:AddDoubleLine(ColorPrefix("Damage: ") .. Helpers:FormatNumber(damage), ColorPrefix("Healing: ") .. Helpers:FormatNumber(healing));
     
     local duration = ArenaMatch:GetDuration(playerFrame.match);
     if(duration and duration > 0) then
         local dps = damage and damage / duration or "-";
         local hps = healing and healing / duration or "-";
-        GameTooltip:AddDoubleLine(ColorPrefix("DPS: ") .. FormatValue(dps), ColorPrefix("HPS: ") .. FormatValue(hps));
+        GameTooltip:AddDoubleLine(ColorPrefix("DPS: ") .. Helpers:FormatNumber(dps), ColorPrefix("HPS: ") .. Helpers:FormatNumber(hps));
     end
 
-    GameTooltip:AddDoubleLine(ColorPrefix("Kills: ") .. FormatValue(kills), ColorPrefix("Deaths: ") .. FormatValue(deaths));
+    GameTooltip:AddDoubleLine(ColorPrefix("Kills: ") .. Helpers:FormatNumber(kills), ColorPrefix("Deaths: ") .. Helpers:FormatNumber(deaths));
 
     -- Player Rating Info
     if(ArenaMatch:IsRated(playerFrame.match)) then

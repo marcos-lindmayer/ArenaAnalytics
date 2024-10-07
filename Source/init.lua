@@ -17,6 +17,7 @@ ArenaAnalytics.Selection = {};
 ArenaAnalytics.ArenaIcon = {};
 ArenaAnalytics.Tooltips = {};
 ArenaAnalytics.ShuffleTooltip = {};
+ArenaAnalytics.PlayerTooltip = {};
 
 ArenaAnalytics.Dropdown = {};
 ArenaAnalytics.Dropdown.List = {};
