@@ -131,13 +131,13 @@ function AAtable:OnLoad()
 
     -- Add the addon title to the main frame
     ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
-    ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, -2);
+    ArenaAnalyticsScrollFrame.title:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 0, 0);
     ArenaAnalyticsScrollFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
     ArenaAnalyticsScrollFrame.title:SetText("Arena Analytics");
 
     -- Add the version to the main frame header
     ArenaAnalyticsScrollFrame.titleVersion = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
-    ArenaAnalyticsScrollFrame.titleVersion:SetPoint("CENTER", ArenaAnalyticsScrollFrame.TitleBg, "CENTER", 75, -2);
+    ArenaAnalyticsScrollFrame.titleVersion:SetPoint("LEFT", ArenaAnalyticsScrollFrame.title, "RIGHT", 10, -1);
     ArenaAnalyticsScrollFrame.titleVersion:SetFont("Fonts\\FRIZQT__.TTF", 11, "");
     ArenaAnalyticsScrollFrame.titleVersion:SetText("|cff909090v" .. API:GetAddonVersion() .. "|r");
 
@@ -209,14 +209,13 @@ function AAtable:OnLoad()
 
     -- Table headers
     ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "BOTTOMLEFT", -5, -10, ArenaAnalytics:ColorText("Date", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 145, 0, ArenaAnalytics:ColorText("Map", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 131, 0, ArenaAnalytics:ColorText("Map", Constants.headerColor));
     ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 55, 0, ArenaAnalytics:ColorText("Duration", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 105, 0, ArenaAnalytics:ColorText("Team", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 144, 0, ArenaAnalytics:ColorText("Rating", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 88, 0, ArenaAnalytics:ColorText("MMR", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 64, 0, ArenaAnalytics:ColorText("Enemy Team", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 144, 0, ArenaAnalytics:ColorText("Enemy MMR", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.enemyRatingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyMmrTitle, "TOPLEFT", 100, 0, ArenaAnalytics:ColorText("Enemy Rating", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 106, 0, ArenaAnalytics:ColorText("Team", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 141, 0, ArenaAnalytics:ColorText("Rating", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 91, 0, ArenaAnalytics:ColorText("MMR", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 62, 0, ArenaAnalytics:ColorText("Enemy Team", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 153, 0, ArenaAnalytics:ColorText("Enemy MMR", Constants.headerColor));
 
     -- Recorded arena number and winrate
     ArenaAnalyticsScrollFrame.sessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 27, "");
@@ -716,11 +715,11 @@ function AAtable:RefreshLayout()
             setColorForSession(button, filteredSession, matchIndex);
 
             local matchDate = ArenaMatch:GetDate(match);
-            local map = ArenaMatch:GetMap(match);
+            local map = ArenaMatch:GetMap(match, true);
             local duration = ArenaMatch:GetDuration(match);
             local bracket = ArenaMatch:GetBracket(match);
 
-            ArenaAnalytics:SetFrameText(button.Date, (matchDate and date("%d/%m/%y %H:%M:%S", matchDate)), Constants.valueColor);
+            ArenaAnalytics:SetFrameText(button.Date, Helpers:FormatDate(matchDate), Constants.valueColor);
             ArenaAnalytics:SetFrameText(button.Map, map, Constants.valueColor);
             ArenaAnalytics:SetFrameText(button.Duration, (duration and SecondsToTime(duration)), Constants.valueColor);
 
@@ -758,10 +757,6 @@ function AAtable:RefreshLayout()
 
             -- Party MMR
             ArenaAnalytics:SetFrameText(button.MMR, (ArenaMatch:GetPartyMMR(match) or "-"), Constants.valueColor);
-
-            -- Enemy Rating & Delta
-            local enemyRating, enemyRatingDelta = ArenaMatch:GetEnemyRating(match), ArenaMatch:GetEnemyRatingDelta(match);
-            ArenaAnalytics:SetFrameText(button.EnemyRating, (Helpers:RatingToText(enemyRating, enemyRatingDelta) or "-"), Constants.valueColor);
 
             -- Enemy team MMR
             ArenaAnalytics:SetFrameText(button.EnemyMMR, (ArenaMatch:GetEnemyMMR(match) or "-"), Constants.valueColor);

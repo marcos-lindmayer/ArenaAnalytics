@@ -147,8 +147,7 @@ ArenaAnalytics.commands = {
 					ArenaAnalytics:Log("Updated season at index: ", i, " to season: ", season);
 					ArenaMatch:SetSeason(match, season);
 				else
-					local formattedDate = tonumber(matchDate) and date("%d/%m/%y %H:%M:%S", matchDate);
-					ArenaAnalytics:Log("Updating seasons got nil season for date: ", formattedDate, " (", matchDate, ")");
+					ArenaAnalytics:Log("Updating seasons got nil season for date: ", Helpers:FormatDate(matchDate), " (", matchDate, ")");
 				end
 			end
 		end

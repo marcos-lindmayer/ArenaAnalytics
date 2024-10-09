@@ -388,9 +388,22 @@ function ArenaMatch:GetMapID(match)
     return match and tonumber(match[key]);
 end
 
-function ArenaMatch:GetMap(match)
+function ArenaMatch:GetMap(match, useShortName)
     local map_id = ArenaMatch:GetMapID(match);
-    return Internal:GetShortMapName(map_id);
+    if(not map_id) then
+        return nil;
+    end
+
+    if(useShortName) then
+        local map = Internal:GetShortMapName(map_id);
+        if(map) then
+            return map;
+        end
+
+        ArenaAnalytics:Log("ArenaMatch failed to get short name for map_id:", map_id);
+    end
+
+    return Internal:GetMapName(map_id);
 end
 
 function ArenaMatch:SetMap(match, value)

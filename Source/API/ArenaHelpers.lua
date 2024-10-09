@@ -89,6 +89,10 @@ function Helpers:FormatNumber(value)
     return ArenaAnalytics:ColorText(value, Constants.statsColor);
 end
 
+function Helpers:FormatDate(value)
+    return value and date("%d/%m/%y  %H:%M", value);
+end
+
 -- Create two layers of backdrop, for an extra low transparency
 function Helpers:CreateDoubleBackdrop(parent, name, strata, level)
     local frame = CreateFrame("Frame", name, parent, "TooltipBackdropTemplate");

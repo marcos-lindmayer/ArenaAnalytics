@@ -70,7 +70,7 @@ local function CanImportMatchByRelativeTime(startTime)
     end
     
     if(not doesMatchPass) then
-        ArenaAnalytics:Log("Rejected startTime: ", startTime and date("%d/%m/%y %H:%M:%S", startTime));
+        ArenaAnalytics:Log("Rejected startTime: ", Helpers:FormatDate(startTime));
         arenasSkippedByDate = arenasSkippedByDate + 1;
     end
 

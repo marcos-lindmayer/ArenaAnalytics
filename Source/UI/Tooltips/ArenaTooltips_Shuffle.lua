@@ -223,13 +223,13 @@ local function AddBottomStat(prefix, name, value, spec_id)
     
     local text = nil;
     if(name) then
-        local textFormat = "%s %s  %d";
+        local textFormat = "%s %s  %s";
         text = string.format(textFormat, prefix, name, value);
     else
-        local textFormat = "%s: %d";
+        local textFormat = "%s: %s";
         text = string.format(textFormat, prefix, value);
     end
-    
+
     local fontString = ArenaAnalyticsCreateText(self.frame, "BOTTOMLEFT", self.frame, "BOTTOMLEFT", 10, yOffset, text, 12);
     tinsert(self.bottomStatTexts, fontString);
 end

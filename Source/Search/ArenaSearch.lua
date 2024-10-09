@@ -198,9 +198,6 @@ end
 -- Search matching logic
 ---------------------------------
 
--- Current player values
-local currentName, currentRealm, currentBitmask, currentRace, currentSpec, currentRole;
-
 -- NOTE: This is the main part to modify to handle actual token matching logic
 -- Returns true if a given type on a player matches the given value
 local function CheckTypeForPlayer(searchType, token, player)
@@ -219,9 +216,7 @@ local function CheckTypeForPlayer(searchType, token, player)
             return Bitmap:HasBitByIndex(role, token.value);
         end
     elseif(searchType == "name") then
-        if(ArenaMatch:CheckPlayerName(player, token.value, token.exact)) then
-            return true;
-        end
+        return ArenaMatch:CheckPlayerName(player, token.value, token.exact);
     elseif(searchType == "alts") then
         if(token.value:find('/', 1, true)) then
             -- Split value into table
@@ -233,6 +228,7 @@ local function CheckTypeForPlayer(searchType, token, player)
             return false;
         else
             ArenaAnalytics:Log("Alts search without /");
+            return ArenaMatch:CheckPlayerName(player, token.value, token.exact);
         end
     elseif(searchType == "logical") then
         if(token.value == "self") then

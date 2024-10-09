@@ -318,6 +318,7 @@ function Search:FindSearchValueDataForToken(token)
     assert(token);
 
     if(token.value == nil or type(token.value) == "string" and #token.value < 2) then
+        ArenaAnalytics:Log("FindSearchValueDataForToken bailing out early!", token.value and #token.value)
         return;
     end
 

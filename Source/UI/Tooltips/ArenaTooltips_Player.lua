@@ -64,8 +64,8 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
     local isLeft = true;
 
     -- Assign minimum widths
-    container.leftColumn.widestField = baseWidth/2;
-    container.rightColumn.widestField = 0;
+    container.leftColumn.desiredWidth = baseWidth/2;
+    container.rightColumn.desiredWidth = 0;
 
     local maxIndex = max(#values, #container.frames)
     for i = 1, maxIndex do
@@ -106,8 +106,8 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
             frame:SetPoint("TOPLEFT", column, "TOPLEFT", 0, -yOffset);
 
             -- Check for increased required size
-            if(frame:GetWidth() > column.widestField) then
-                column.widestField = frame:GetWidth();
+            if(frame:GetWidth() > column.desiredWidth) then
+                column.desiredWidth = frame:GetWidth();
             end
 
             -- Update line offset
@@ -119,8 +119,8 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
         end
     end
 
-    container.leftColumn:SetSize(container.leftColumn.widestField, yOffset);
-    container.rightColumn:SetSize(container.rightColumn.widestField + padding, yOffset);
+    container.leftColumn:SetSize(container.leftColumn.desiredWidth, yOffset);
+    container.rightColumn:SetSize(container.rightColumn.desiredWidth + padding, yOffset);
 
     local width = (2 * padding) + container.leftColumn:GetWidth() + container.rightColumn:GetWidth();
     container:SetSize(width, yOffset);
@@ -217,6 +217,7 @@ function PlayerTooltip:UpdateQuickSearchTips()
 
     local inverseShortcut = Options:Get("quickSearchAction_Inverse");
 
+    local clickedTeamShortcut = Options:Get("quickSearchAction_ClickedTeam");
     local teamShortcut = Options:Get("quickSearchAction_Team");
     local enemyShortcut = Options:Get("quickSearchAction_Enemy");
 
@@ -240,8 +241,8 @@ function PlayerTooltip:UpdateQuickSearchTips()
         end
     end
 
-    TryInsertShortcut("Default Rule: ", defaultAppendRule);
-    TryInsertShortcut("Default Value: ", defaultValue);
+    TryInsertShortcut("Rule: ", defaultAppendRule);
+    TryInsertShortcut("Value: ", defaultValue);
 
     TryInsertShortcut("New Search: ", newSearchRuleShortcut);
     TryInsertShortcut("New Segment: ", newSegmentRuleShortcut);
@@ -250,6 +251,9 @@ function PlayerTooltip:UpdateQuickSearchTips()
 
     -- Spacer
     tinsert(entries, statsRowHeight);
+
+    TryInsertShortcut("Clicked Team: ", clickedTeamShortcut, true);
+    tinsert(entries, 0);
 
     TryInsertShortcut("Team: ", teamShortcut, true);
     TryInsertShortcut("Enemy: ", enemyShortcut, true);
@@ -274,22 +278,23 @@ function PlayerTooltip:UpdateQuickSearchTips()
 end
 
 function PlayerTooltip:UpdateQuickSearchVisibility()
-    local shouldShow = false;
+    local self = GetOrCreateSingleton(); -- Tooltip singleton
+
+    self.shouldShowShortcuts = false;
     if(Options:Get("quickSearchEnabled") and Options:Get("searchShowTooltipQuickSearch")) then
         if(IsShiftKeyDown()) then
-            shouldShow = true;
+            self.shouldShowShortcuts = true;
         end
     end
 
-    local self = GetOrCreateSingleton(); -- Tooltip singleton
     local container = self.quickSearchContainer;
 
     local isShown = container:IsShown() and container:GetHeight() > 0;
-    if(shouldShow == isShown) then
+    if(self.shouldShowShortcuts == isShown) then
         return;
     end
 
-    if(shouldShow) then
+    if(self.shouldShowShortcuts) then
         container:SetHeight(container.desiredHeight);
         container:Show();
     else
@@ -510,7 +515,35 @@ function PlayerTooltip:AddShuffleStats(frame)
     PlayerTooltip:AddStatistic("Wins: ", wins);
 end
 
+local function GetLeftColumnWidth(container)
+    if(not container or not container.leftColumn) then
+        return 0;
+    end
+
+    return container.leftColumn:GetWidth();
+end
+
 function PlayerTooltip:RecomputeSize()
+    if(not PlayerTooltip:IsValid()) then
+        PlayerTooltip:Hide();
+        return;
+    end
+
+    local self = GetOrCreateSingleton(); -- Tooltip singleton
+
+    -- Update left column widths
+    if(self.quickSearchContainer) then
+        local bestWidth = max(GetLeftColumnWidth(self.statsContainer), GetLeftColumnWidth(self.quickSearchContainer));
+
+        if(self.statsContainer.leftColumn) then
+            self.statsContainer.leftColumn:SetWidth(bestWidth);
+        end
+
+        if(self.quickSearchContainer.leftColumn) then
+            self.quickSearchContainer.leftColumn:SetWidth(bestWidth);
+        end
+    end
+
     local width, height = PlayerTooltip:GetRequiredSize();
     PlayerTooltip:SetSize(width+7, height);
 end
@@ -522,9 +555,6 @@ end
 
 function PlayerTooltip:GetRequiredSize()
     local self = GetOrCreateSingleton(); -- Tooltip singleton
-    if(not PlayerTooltip:IsValid()) then
-        return 0,0;
-    end
 
     -- Header
     local headerHeight = 25 + self.icon:GetHeight();
