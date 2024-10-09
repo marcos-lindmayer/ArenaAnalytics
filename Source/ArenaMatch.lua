@@ -1034,31 +1034,6 @@ function ArenaMatch:GetPlayerFullName(player, hideLocalRealm, requireCompact)
     return string.format(fullNameFormat, name, realm);
 end
 
-local function GetTeamSpecs(team, requiredSize)    
-    if(not team or not requiredSize or requiredSize == 0) then
-        return nil;
-    end
-
-    if(#team ~= requiredSize) then
-        return nil;
-    end
-
-    local teamSpecs = TablePool:Acquire();
-
-    -- Gather all team specs, bailing out if any are missing
-    for i,player in ipairs(team) do
-        local spec_id = ArenaMatch:GetPlayerSpec(player);
-        if(not playerInfo or not Helpers:IsSpecID(spec_id)) then
-            TablePool:Release(teamSpecs);
-            return nil;
-        end
-
-        tinsert(teamSpecs, spec_id);
-    end
-
-    return teamSpecs;
-end
-
 local function GetCompForSpecs(teamSpecs, requiredSize)
     if(not teamSpecs or not requiredSize or requiredSize == 0) then
         ArenaAnalytics:Log("GetCompForSpecs: Invalid spec count:", teamSpecs and #teamSpecs, requiredSize);
@@ -1160,12 +1135,42 @@ function ArenaMatch:UpdateComp(match, isEnemyTeam)
     local team = ArenaMatch:GetTeam(match, isEnemyTeam);
     local requiredTeamSize = ArenaMatch:GetTeamSize(match);
 
-    local teamSpecs = GetTeamSpecs(team, requiredTeamSize);
+    local teamSpecs = ArenaMatch:GetTeamSpecs(team, requiredTeamSize);
 
     local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
+    local oldComp = match[key];
     match[key] = GetCompForSpecs(teamSpecs, requiredTeamSize);
 
+    if(oldComp ~= match[key]) then
+        ArenaAnalytics:Log("Assigned comp to match:", match[key], "Old Comp:", oldComp, "IsEnemy:", isEnemyTeam);
+    end
+
     TablePool:Release(teamSpecs);
+end
+
+function ArenaMatch:GetTeamSpecs(team, requiredSize)
+    if(not team or not requiredSize or requiredSize == 0) then
+        return nil;
+    end
+
+    if(#team ~= requiredSize) then
+        return nil;
+    end
+
+    local teamSpecs = TablePool:Acquire();
+
+    -- Gather all team specs, bailing out if any are missing
+    for i,player in ipairs(team) do
+        local spec_id = ArenaMatch:GetPlayerSpec(player);
+        if(not Helpers:IsSpecID(spec_id)) then
+            TablePool:Release(teamSpecs);
+            return nil;
+        end
+
+        tinsert(teamSpecs, spec_id);
+    end
+
+    return teamSpecs;
 end
 
 -------------------------------------------------------------------------

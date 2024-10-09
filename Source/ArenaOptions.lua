@@ -8,6 +8,7 @@ local Tooltips = ArenaAnalytics.Tooltips;
 local Dropdown = ArenaAnalytics.Dropdown;
 local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
+local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
 
 -------------------------------------------------------------------------
 
@@ -43,8 +44,9 @@ end
 -- Standardized Updated Option Response Functions
 
 local function HandleSettingsChanged()
-    ArenaAnalytics:Log("Settings changed..")
+    ArenaAnalytics:Log("Settings changed..");
     Filters:ResetAll(false);
+    PlayerTooltip:OnSettingsChanged();
 end
 
 -------------------------------------------------------------------------
@@ -123,9 +125,9 @@ function Options:LoadSettings()
 
     AddSetting("quickSearchAction_Inverse", "Alt");
 
-    AddSetting("quickSearchAction_Team", "LMB");
+    AddSetting("quickSearchAction_Team", "None");
     AddSetting("quickSearchAction_Enemy", "RMB");
-    AddSetting("quickSearchAction_ClickedTeam", "None");
+    AddSetting("quickSearchAction_ClickedTeam", "LMB");
 
     AddSetting("quickSearchAction_Name", "None");
     AddSetting("quickSearchAction_Spec", "Ctrl");

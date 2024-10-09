@@ -11,13 +11,14 @@ local Dropdown = ArenaAnalytics.Dropdown;
 local Selection = ArenaAnalytics.Selection;
 local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
-local Tooltips = ArenaAnalytics.Tooltips;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Constants = ArenaAnalytics.Constants;
 local ImportBox = ArenaAnalytics.ImportBox;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local Helpers = ArenaAnalytics.Helpers;
+local Tooltips = ArenaAnalytics.Tooltips;
+local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
 
 -------------------------------------------------------------------------
 
@@ -57,6 +58,7 @@ function ArenaAnalytics:Toggle()
         end);
 
         Dropdown:CloseAll();
+        Tooltips:HideAll();
 
         ArenaAnalyticsScrollFrame:Show();
     else
@@ -90,7 +92,7 @@ end
 
 -- Returns string frame
 function ArenaAnalyticsCreateText(parent, anchor, relativeFrame, relPoint, xOff, yOff, text, fontSize)
-    local fontString = parent:CreateFontString(nil, "OVERLAY", "GameFontWhiteSmall");
+    local fontString = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal");
     fontString:SetPoint(anchor, relativeFrame, relPoint, xOff, yOff);
     fontString:SetText(text);
     fontString:SetFont(fontString:GetFont(), tonumber(fontSize) or 12, "");
@@ -114,6 +116,8 @@ end
 
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
+    ArenaAnalyticsScrollFrame:SetFrameStrata("HIGH");
+
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
 
     ArenaAnalyticsScrollFrame.filterCompsDropdown = {}
@@ -429,14 +433,24 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
                 playerFrame.icon:SetDeathVisibility(false);
             end
 
-            playerFrame:SetScript("OnEnter", function(self) Tooltips:DrawPlayerTooltip(self) end);
-            playerFrame:SetScript("OnLeave", Tooltips.HideAll);
-
             -- Quick Search
             playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
             playerFrame:SetScript("OnClick", function(self, btn)
                 Search:QuickSearch(self, btn);
             end);
+
+            -- Mouseover events
+            playerFrame:SetScript("OnEnter", function(self) PlayerTooltip:SetPlayerFrame(self) end);
+            playerFrame:SetScript("OnLeave", function(self)
+                self.isShowingTooltip = nil;
+                Tooltips:HideAll();
+            end);
+
+            -- Update tooltip to match new values
+            if(playerFrame.isShowingTooltip) then
+                PlayerTooltip:SetPlayerFrame(playerFrame);
+                --PlayerTooltip:SetPoint("TOPRIGHT", playerFrame, "TOPLEFT");
+            end
 
             playerFrame:Show()
         else
@@ -766,6 +780,7 @@ function AAtable:RefreshLayout()
                 AAtable:ToggleSpecsAndDeathOverlay(args);
 
                 if(ArenaMatch:IsShuffle(match)) then
+                    button.isShowingTooltip = true;
                     Tooltips:DrawShuffleTooltip(button, match);
                 else
                     Tooltips:HideShuffleTooltip();
@@ -774,10 +789,16 @@ function AAtable:RefreshLayout()
 
             button:SetScript("OnLeave", function(args) 
                 args:SetAttribute("hovered", false);
+                button.isShowingTooltip = nil;
                 AAtable:ToggleSpecsAndDeathOverlay(args);
-
                 Tooltips:HideShuffleTooltip();
             end);
+
+            -- Update tooltip to match new values
+            if(button.isShowingTooltip) then
+                Tooltips:DrawShuffleTooltip(button, match);
+                --PlayerTooltip:SetPoint("TOPRIGHT", playerFrame, "TOPLEFT");
+            end
             
             button:RegisterForClicks("LeftButtonDown", "RightButtonDown", "LeftButtonUp", "RightButtonUp");
             button:SetScript("OnClick", function(args, key, down)

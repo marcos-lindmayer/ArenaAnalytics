@@ -6,7 +6,7 @@ local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 
-local MAX_POOL_SIZE = 100;  -- Set a reasonable limit for your case
+local MAX_POOL_SIZE = 25;  -- Set a reasonable limit for your case
 
 function TablePool:Release(tbl)
     if tbl then
@@ -18,8 +18,6 @@ function TablePool:Release(tbl)
         -- Only add the table if the pool hasn't reached max size
         if #self < MAX_POOL_SIZE then
             table.insert(self, tbl);
-        else
-            ArenaAnalytics:Log("TablePool: Max Pool Size reached! Discarding released table.");
         end
     end
 end
@@ -37,8 +35,6 @@ function TablePool:ReleaseNested(tbl)
         -- Only add the table if the pool hasn't reached max size
         if #self < MAX_POOL_SIZE then
             table.insert(self, tbl);
-        else
-            ArenaAnalytics:Log("TablePool: Max Pool Size reached! Discarding released table.");
         end
     end
 end

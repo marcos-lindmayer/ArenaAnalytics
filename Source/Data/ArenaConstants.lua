@@ -10,9 +10,9 @@ local Internal = ArenaAnalytics.Internal;
 -- Text colors
 Constants.titleColor = "ffffffff";
 Constants.headerColor = "ffd0d0d0";
-Constants.prefixColor = "FFBBBBBB";
-Constants.valueColor = nil; -- f9f9f9 for white?
+Constants.prefixColor = "FFAAAAAA";
 Constants.statsColor = "ffffffff";
+Constants.valueColor = nil; -- f9f9f9 for white?
 Constants.infoColor = "ffbbbbbb";
 
 -- Outcome colors
@@ -21,7 +21,9 @@ Constants.lossColor = "ffff0000";
 Constants.drawColor = "ffefef00";
 Constants.invalidColor = "ff999999";
 
-Constants.white = "ffffffff";
+-- Faction colors
+Constants.allianceColor = "FF009DEC";
+Constants.hordeColor = "ffE00A05";
 
 -------------------------------------------------------------------------
 

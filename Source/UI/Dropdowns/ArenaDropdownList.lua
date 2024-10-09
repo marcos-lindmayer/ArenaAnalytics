@@ -6,6 +6,7 @@ local List = Dropdown.List;
 List.__index = List;
 
 -- Local module aliases
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 
@@ -30,11 +31,8 @@ function List:Create(parent, level, listInfo)
 
     self.entries = listInfo.entries;
 
-    self.backdrop = CreateFrame("Frame", self.name, parent:GetOwner(), "TooltipBackdropTemplate");
-    self.backdrop:SetSize(1, 1);
-    self.backdrop:SetFrameStrata("TOOLTIP");
-    self.backdrop:SetBackdropColor(0,0,0,1);
-    
+    self.backdrop = Helpers:CreateDoubleBackdrop(parent:GetOwner(), self.name, "DIALOG");
+
     -- Setup scroll frame, in case we got too many entries to show
     self.scrollFrame = CreateFrame("scrollFrame", self.name .. "_ScrollFrame", self.backdrop, "UIPanelScrollFrameTemplate");
     self.scrollFrame:SetPoint("TOP", self.backdrop, "TOP", 0, -5);
@@ -68,7 +66,7 @@ function List:Refresh()
     -- Get most recent entries list, in case of a dynamic function
     local entries = Dropdown:RetrieveValue(self.entries, self);
     assert(entries, "Assert failed: Nil entries for type: " .. type(self.entries) .. " on dropdown list: " .. self:GetName());
-    
+
     -- Clear old entries
     for i=#self.entryFrames, 1, -1 do
         if(self.entryFrames[i]) then

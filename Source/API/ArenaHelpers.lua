@@ -10,6 +10,7 @@ local API = ArenaAnalytics.API;
 local Internal = ArenaAnalytics.Internal;
 local Localization = ArenaAnalytics.Localization;
 local Options = ArenaAnalytics.Options;
+local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 -- General Helpers
@@ -88,6 +89,28 @@ function Helpers:FormatNumber(value)
     return ArenaAnalytics:ColorText(value, Constants.statsColor);
 end
 
+-- Create two layers of backdrop, for an extra low transparency
+function Helpers:CreateDoubleBackdrop(parent, name, strata, level)
+    local frame = CreateFrame("Frame", name, parent, "TooltipBackdropTemplate");
+    frame:SetSize(1, 1);
+    frame:SetBackdropColor(0,0,0,1);
+
+    if(strata) then
+        frame:SetFrameStrata(strata);
+    end
+
+    if(level) then
+        frame:SetFrameLevel(level);
+    end
+
+    frame.bg2 = CreateFrame("Frame", (name and name .. "Bg"), frame, "TooltipBackdropTemplate");
+    frame.bg2:SetAllPoints(frame:GetPoint());
+    frame.bg2:SetFrameLevel(frame:GetFrameLevel() - 1);
+    frame.bg2:SetBackdropColor(0,0,0,1);
+
+    return frame;
+end
+
 -------------------------------------------------------------------------
 -- Data Helpers
 
@@ -140,10 +163,6 @@ function Helpers:ToFullName(name)
     end
 
     return name;
-end
-
-function Helpers:GetClassIcon(spec_id)
-    return Internal:GetClassIcon(spec_id);
 end
 
 function Helpers:GetClassID(spec_id)
@@ -205,10 +224,12 @@ end
 function Helpers:DrawDebugBackground(frame, r, g, b, a)
 	if(Options:Get("debuggingEnabled")) then
 		-- TEMP testing
-		frame.background = frame:CreateTexture();
-		frame.background:SetPoint("CENTER")
-		frame.background:SetSize(frame:GetWidth(), frame:GetHeight());
-		frame.background:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
+        if(not frame.debugBackground) then
+		    frame.debugBackground = frame:CreateTexture();
+        end
+
+		frame.debugBackground:SetAllPoints(frame);
+		frame.debugBackground:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
 	end
 end
 

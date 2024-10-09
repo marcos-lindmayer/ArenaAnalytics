@@ -121,6 +121,14 @@ function VersionManager:OnInit()
 
         ArenaAnalyticsDB.formatVersion = 3;
     end
+
+    if(ArenaAnalyticsDB.formatVersion == 3) then
+        for i,match in ipairs(ArenaAnalyticsDB) do
+            ArenaMatch:UpdateComps(match);
+        end
+
+        ArenaAnalyticsDB.formatVersion = 4;
+    end
 end
 
 local function convertFormatedDurationToSeconds(inDuration)
@@ -133,7 +141,7 @@ local function convertFormatedDurationToSeconds(inDuration)
         inDuration = inDuration:lower();
         inDuration = inDuration:gsub("%s+", "");
 
-        local minutes, seconds = 0,0
+        local minutes, seconds = 0,0;
 
         if(inDuration:find("|", 1, true)) then
             -- Get minutes before '|' and seconds between ';' and "sec"

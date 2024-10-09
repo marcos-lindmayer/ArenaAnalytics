@@ -122,7 +122,7 @@ local function CreateRoundEntryFrame(index, parent)
             end
 
             local playerIcon = self.team[i+1];
-            playerIcon:SetSpec(spec_id);
+            playerIcon:SetSpec(spec_id, true);
             playerIcon:SetIsFirstDeath(isFirstDeath, true);
         end
 
@@ -139,7 +139,7 @@ local function CreateRoundEntryFrame(index, parent)
             end
 
             local playerIcon = self.enemyTeam[i];
-            playerIcon:SetSpec(spec_id);
+            playerIcon:SetSpec(spec_id, true);
             playerIcon:SetIsFirstDeath(isFirstDeath, true);
         end
     end
@@ -168,13 +168,12 @@ end
 local function GetOrCreateSingleton()
     if(not tooltipSingleton) then
         local self = setmetatable({}, ShuffleTooltip);
+        tooltipSingleton = self;
 
-        self.frame = CreateFrame("Frame", self.name, ArenaAnalyticsScrollFrame, "TooltipBackdropTemplate");
-        self.frame:SetSize(320, 100);
-        self.frame:SetFrameStrata("TOOLTIP");
-        self.frame:SetBackdropColor(0,0,0,1);
+        self.frame = Helpers:CreateDoubleBackdrop(ArenaAnalyticsScrollFrame, self.name, "TOOLTIP")
+        self.frame:SetSize(320, 1);
 
-        self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, ArenaAnalytics:ColorText("Solo Shuffle", Constants.titleColor), 18);
+        self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, ArenaAnalytics:ColorText("Solo Shuffle", Constants.valueColor), 18);
         self.winsText = ArenaAnalyticsCreateText(self.frame, "TOPRIGHT", self.frame, "TOPRIGHT", -10, -10, "", 15);
 
         self.rounds = {}
@@ -185,8 +184,7 @@ local function GetOrCreateSingleton()
 
         self.bottomStatTexts = {}
 
-        ArenaAnalytics:Log("Created new Shuffle Tooltip singleton!", #self.rounds);
-        tooltipSingleton = self;
+        ArenaAnalytics:Log("Created new Shuffle Tooltip singleton!");
     end
 
     assert(tooltipSingleton);
@@ -213,7 +211,7 @@ local function AddBottomStat(prefix, name, value, spec_id)
     local self = GetOrCreateSingleton(); -- Tooltip singleton
 
     prefix = ArenaAnalytics:ColorText(prefix, Constants.prefixColor);
-    value = ArenaAnalytics:ColorText(value, Constants.valueColor);
+    value = ArenaAnalytics:ColorText(value, Constants.statsColor);
 
     -- Player Name
     if(name) then
@@ -377,11 +375,20 @@ end
 
 function ShuffleTooltip:Show()
     local self = GetOrCreateSingleton();
+
+    if(self.parent) then
+        self.parent.isShowingTooltip = true;
+    end
+
     self.frame:Show();
 end
 
 function ShuffleTooltip:Hide()
     local self = GetOrCreateSingleton();
+    
+    if(self.parent) then
+        self.parent.isShowingTooltip = nil;
+    end
+
     self.frame:Hide();
 end
-

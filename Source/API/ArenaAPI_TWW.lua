@@ -19,7 +19,7 @@ API.availableBrackets = {
     { name = "Solo", key = 4},
 	{ name = "2v2", key = 1},
 	{ name = "3v3", key = 2},
-	{ name = "5v5", key = 3},
+	{ name = "5v5", key = 3, requireMatches = true },    -- TODO: Implement requireMatches logic
 }
 
 -- Order defines the UI order of maps filter dropdown

@@ -240,7 +240,7 @@ end
 function Internal:GetClassIcon(spec_id)
     class_id = Helpers:GetClassID(spec_id);
     if(not class_id) then
-        return 134400; -- Question Mark
+        return nil;
     end
 
     -- Death Knight
@@ -250,7 +250,7 @@ function Internal:GetClassIcon(spec_id)
 
     local classInfo = addonClassIDs[class_id];
     local classToken = classInfo and classInfo.token;
-    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or 134400;
+    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or nil;
 end
 
 -------------------------------------------------------------------------

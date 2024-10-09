@@ -26,7 +26,7 @@ function ArenaIcon:Create(parent, size, skipDeath)
     if(not skipDeath) then
         newFrame.deathOverlay = CreateFrame("Frame", nil, newFrame);
         newFrame.deathOverlay:SetAllPoints(newFrame.classTexture);
-        newFrame.deathOverlay:SetFrameLevel(baseFrameLevel + 5);
+        newFrame.deathOverlay:SetFrameLevel(baseFrameLevel + 1);
 
         newFrame.deathOverlay.texture = newFrame.deathOverlay:CreateTexture();
         newFrame.deathOverlay.texture:SetAllPoints(newFrame.deathOverlay);
@@ -37,7 +37,7 @@ function ArenaIcon:Create(parent, size, skipDeath)
     newFrame.specOverlay = CreateFrame("Frame", nil, newFrame);
     newFrame.specOverlay:SetPoint("BOTTOMRIGHT", newFrame.classTexture, -1, 1);
     newFrame.specOverlay:SetSize(halfSize, halfSize);
-    newFrame.specOverlay:SetFrameLevel(baseFrameLevel + 10);
+    newFrame.specOverlay:SetFrameLevel(baseFrameLevel + 2);
 
     newFrame.specOverlay.texture = newFrame.specOverlay:CreateTexture();
     newFrame.specOverlay.texture:SetAllPoints(newFrame.specOverlay);
@@ -63,14 +63,14 @@ function ArenaIcon:Create(parent, size, skipDeath)
         end
     end
 
-    function newFrame:SetSpec(spec_id)
-        spec_id = tonumber(spec_id);
-        if(spec_id) then
-            local classIconTexture = Internal:GetClassIcon(spec_id);
-            newFrame.classTexture:SetTexture(classIconTexture or 134400);
-        else
-            newFrame.classTexture:SetTexture("");
+    function newFrame:SetSpec(spec_id, hideInvalid)
+        -- Class icon (Fallback to red question mark)
+        local classIconTexture = Internal:GetClassIcon(spec_id);
+        if(not classIconTexture and hideInvalid) then
+            classIconTexture = "";
         end
+
+        newFrame.classTexture:SetTexture(classIconTexture or 134400);
 
         if(Helpers:IsSpecID(spec_id)) then
             local specIconTexture = API:GetSpecIcon(spec_id);

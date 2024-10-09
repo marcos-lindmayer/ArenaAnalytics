@@ -236,7 +236,7 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
         return true;
     end
 
-    return ArenaMatch:HasComp(match, currentFilters[compFilterKey], isEnemyComp)
+    return ArenaMatch:HasComp(match, currentFilters[compFilterKey], isEnemyComp);
 end
 
 function Filters:doesMatchPassGameSettings(match)
