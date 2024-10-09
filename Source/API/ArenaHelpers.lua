@@ -103,10 +103,18 @@ function Helpers:CreateDoubleBackdrop(parent, name, strata, level)
         frame:SetFrameLevel(level);
     end
 
-    frame.bg2 = CreateFrame("Frame", (name and name .. "Bg"), frame, "TooltipBackdropTemplate");
-    frame.bg2:SetAllPoints(frame:GetPoint());
-    frame.bg2:SetFrameLevel(frame:GetFrameLevel() - 1);
-    frame.bg2:SetBackdropColor(0,0,0,1);
+    local function AddBackgroundLayer(index)
+        frame["bg"..index] = CreateFrame("Frame", (name and name .. "Bg" .. index), frame, "TooltipBackdropTemplate");
+        frame["bg"..index]:SetAllPoints(frame:GetPoint());
+        frame["bg"..index]:SetFrameLevel(frame:GetFrameLevel() - 1);
+        frame["bg"..index]:SetBackdropColor(0,0,0,1);
+    end
+
+    AddBackgroundLayer(1);
+
+    if(API.useThirdTooltipBackdrop) then
+        AddBackgroundLayer(2);
+    end
 
     return frame;
 end

@@ -13,6 +13,7 @@ local TablePool = ArenaAnalytics.TablePool;
 
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
 API.showPerPlayerRatedInfo = true;
+API.useThirdTooltipBackdrop = true;
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {
