@@ -3,6 +3,7 @@ local Dropdown = ArenaAnalytics.Dropdown;
 Dropdown.__index = Dropdown;
 
 -- Local module aliases
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 -- TODO: Add dropdown table format
@@ -93,17 +94,6 @@ function Dropdown:RefreshAll()
             Dropdown.dropdownLevelFrames[i]:Refresh();
         end
     end
-end
-
-function Dropdown:MakeListInfoTable(info, dropdownContext)
-    dropdownContext = dropdownContext or self;
-    local retrievedInfo = Dropdown:RetrieveValue(info, dropdownContext);
-
-    local listInfo = {};
-    listInfo.meta = retrievedInfo.meta or {};
-    listInfo.entries = retrievedInfo.entries or retrievedInfo or {};
-
-    return listInfo;
 end
 
 ---------------------------------
@@ -238,11 +228,11 @@ end
 
 function Dropdown:Show()
     if(not self:IsShown()) then
-        local listInfo = self:MakeListInfoTable(self.entries);
+        local listInfo = self:RetrieveValue(self.entries, self);
 
         -- Update meta data, if any was explicitly provided
-        listInfo.meta.width = self.width or self.listInfo.width;
-        listInfo.meta.height = self.entryHeight or self.height or self.listInfo.height;
+        listInfo.width = self.width or listInfo.width;
+        listInfo.height = self.entryHeight or self.height or listInfo.height;
 
         self.list = Dropdown.List:Create(self, 1, listInfo);
         self.list:SetPoint("TOP", self.selected:GetFrame(), "BOTTOM");

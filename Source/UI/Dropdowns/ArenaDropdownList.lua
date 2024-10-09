@@ -7,6 +7,8 @@ List.__index = List;
 
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
+local TablePool = ArenaAnalytics.TablePool;
+local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 
@@ -15,7 +17,7 @@ List.horizontalPadding = 3;
 List.maxVisibleEntries = 10;
 
 function List:Create(parent, level, listInfo)
-    assert(listInfo ~= nil and listInfo.entries, "Assertion failed: Invalid list info.");
+    assert(listInfo ~= nil, "Assertion failed: Invalid list info.");
 
     local self = setmetatable({}, List);
 
@@ -24,12 +26,14 @@ function List:Create(parent, level, listInfo)
     self.level = level;
 
     -- nil width calculates desired width dynamically
-    self.explicitWidth = listInfo.meta.width or nil; 
+    self.explicitWidth = listInfo.width or nil; 
 
-    self.entryHeight = listInfo.meta.entryHeight or listInfo.meta.height or 20;
-    self.maxHeight = self.entryHeight * List.maxVisibleEntries + List.verticalPadding * 2;
+    self.entryHeight = listInfo.entryHeight or listInfo.height or 20;
 
-    self.entries = listInfo.entries;
+    local maxVisibleEntries = (listInfo.maxVisibleEntries or List.maxVisibleEntries);
+    self.maxHeight = 10 + self.entryHeight * maxVisibleEntries + List.verticalPadding * 2;
+
+    self.listInfo = listInfo;
 
     self.backdrop = Helpers:CreateDoubleBackdrop(parent:GetOwner(), self.name, "DIALOG");
 
@@ -44,7 +48,7 @@ function List:Create(parent, level, listInfo)
     self.scrollFrame.content = CreateFrame("Frame", self.name .. "_Content", self.scrollFrame);
     self.scrollFrame.content:SetPoint("TOP", self.scrollFrame);
     self.scrollFrame.content:SetSize(1, 1);
-    
+
     -- Assign the scroll child
     self.scrollFrame:SetScrollChild(self.scrollFrame.content);
 
@@ -64,7 +68,7 @@ end
 
 function List:Refresh()
     -- Get most recent entries list, in case of a dynamic function
-    local entries = Dropdown:RetrieveValue(self.entries, self);
+    local entries = Dropdown:RetrieveValue(self.listInfo, self);
     assert(entries, "Assert failed: Nil entries for type: " .. type(self.entries) .. " on dropdown list: " .. self:GetName());
 
     -- Clear old entries
@@ -75,7 +79,7 @@ function List:Refresh()
         end
     end
     
-    self.entryFrames = {}
+    self.entryFrames = TablePool:Acquire();
 
     -- Add new entries
     self:AddEntries(entries);
@@ -131,6 +135,7 @@ function List:SetupScrollbar()
     scrollbar:ClearAllPoints();
     scrollbar:SetPoint("TOPLEFT", self.scrollFrame, "TOPRIGHT", -3, 3);
     scrollbar:SetPoint("BOTTOMLEFT", self.scrollFrame, "BOTTOMRIGHT", -3, -4);
+    scrollbar.scrollStep = self.entryHeight * (Options:Get("dropdownScrollStep") or 1);
 
     local viewHeight = self.scrollFrame:GetHeight()
     local contentHeight = self.scrollFrame.content:GetHeight();

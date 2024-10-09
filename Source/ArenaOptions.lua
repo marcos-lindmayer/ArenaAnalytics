@@ -63,6 +63,7 @@ local function AddSetting(setting, default)
 
     if(ArenaAnalyticsSharedSettingsDB[setting] == nil) then
         ArenaAnalyticsSharedSettingsDB[setting] = default;
+        ArenaAnalytics:Log("Added setting:", setting, default);
     end
     assert(ArenaAnalyticsSharedSettingsDB[setting] ~= nil);
 
@@ -95,12 +96,13 @@ function Options:LoadSettings()
 
     AddSetting("showCompDropdownInfoText", true);
 
-    AddSetting("sortCompFilterByTotalPlayed", false);
+    AddSetting("sortCompFilterByTotalPlayed", true);
     AddSetting("compDisplayAverageMmr", true);
     AddSetting("showSelectedCompStats", false);
 
-    AddSetting("outliers", 0); -- Minimum games to appear on comp dropdowns
-    AddSetting("dropdownVisibileLimit", 10);
+    AddSetting("minimumCompsPlayed", 0); -- Minimum games to appear on comp dropdowns
+    AddSetting("compDropdownVisibileLimit", 10);
+    AddSetting("dropdownScrollStep", 1);
     
     -- Selection (NYI)
     AddSetting("selectionControlModInversed", false);
@@ -539,8 +541,9 @@ function SetupTab_Filters()
         end
     end);
 
-    parent.unsavedWarning = CreateInputBox("outliers", parent, offsetX, "Minimum games required to appear on comp filter.");
-    parent.unsavedWarning = CreateInputBox("dropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
+    parent.minimumCompsPlayed = CreateInputBox("minimumCompsPlayed", parent, offsetX, "Minimum games required to appear on comp filter.");
+    parent.compDropdownVisibileLimit = CreateInputBox("compDropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
+    parent.dropdownScrollStep = CreateInputBox("dropdownScrollStep", parent, offsetX, "Dropdown entries to scroll past per through per step.");
 end
 
 -------------------------------------------------------------------

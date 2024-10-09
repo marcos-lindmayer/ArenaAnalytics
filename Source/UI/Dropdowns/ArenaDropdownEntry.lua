@@ -119,7 +119,7 @@ function EntryFrame:CreateNestedList()
     if(self.nested ~= nil) then
         local parent = self.parent;
 
-        local listInfo = Dropdown:MakeListInfoTable(self.nested, self);
+        local listInfo = Dropdown:RetrieveValue(self.nested, self);
         local newDropdown = Dropdown.List:Create(self, parent.level + 1, listInfo);
         newDropdown:SetPoint("TOPLEFT", self:GetFrame(), "TOPRIGHT", -2.5, 5 + Dropdown.List.verticalPadding);
         newDropdown:Show();

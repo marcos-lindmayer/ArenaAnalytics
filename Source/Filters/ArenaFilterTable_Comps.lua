@@ -4,6 +4,8 @@ local FilterTables = ArenaAnalytics.FilterTables;
 -- Local module aliases
 local API = ArenaAnalytics.API;
 local Filters = ArenaAnalytics.Filters;
+local TablePool = ArenaAnalytics.TablePool;
+local Options = ArenaAnalytics.Options;
 
 local Dropdown = ArenaAnalytics.Dropdown;
 local Display = Dropdown.Display;
@@ -43,11 +45,15 @@ end
 
 local function GenerateCompEntries(key)
     assert(key == "Filter_Comp" or key == "Filter_EnemyComp");
-    local entryTable = {}
-    
+    local entryTable = TablePool:Acquire();
+    entryTable.maxVisibleEntries = Options:Get("compDropdownVisibileLimit");
+
+    local requiredPlayedCount = Options:Get("minimumCompsPlayed") or 0;
     local comps = ArenaAnalytics:GetCurrentCompDataSorted(key);
     for _,compData in ipairs(comps) do
-        AddEntry(entryTable, compData.comp, key);
+        if(not compData.played or compData.played >= requiredPlayedCount) then
+            AddEntry(entryTable, compData.comp, key);
+        end
     end
 
     return entryTable;
