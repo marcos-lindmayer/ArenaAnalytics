@@ -10,6 +10,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local AAtable = ArenaAnalytics.AAtable;
 local AAmatch = ArenaAnalytics.AAmatch;
 local Internal = ArenaAnalytics.Internal;
+local Sessions = ArenaAnalytics.Sessions;
 
 -------------------------------------------------------------------------
 
@@ -495,7 +496,7 @@ function Import:addCachedArenasToMatchHistory_ArenaStats(nextIndex)
         local arena = {
             ["isRated"] = arena["isRated"],
             ["date"] = unixDate,
-            ["season"] = ArenaAnalytics:computeSeasonFromMatchDate(unixDate),
+            ["season"] = nil,
             ["map"] = Internal:GetMapID(tonumber(arena["zoneId"])),
             ["bracket"] = bracket,
             ["duration"] = tonumber(arena["duration"]) or 0,
@@ -754,7 +755,7 @@ function Import:addCachedArenasToMatchHistory_ArenaAnalytics(nextIndex)
         end        
     end
 
-    ArenaAnalytics:RecomputeSessionsForMatchHistory();
+    Sessions:RecomputeSessionsForMatchHistory();
 
     Import:completeImport();
 end
@@ -770,8 +771,7 @@ function Import:completeImport()
         end
     end);
     
-    ArenaAnalytics:RecomputeSessionsForMatchHistory();
-    ArenaAnalytics:UpdateLastSession();
+    Sessions:RecomputeSessionsForMatchHistory();
 	ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
     
     Filters:Refresh();
@@ -873,7 +873,7 @@ function Export:addMatchesToExport(exportTable, nextIndex)
         
         -- Add match data
         local matchCSV = match["date"] .. ","
-        .. (match["season"] or ArenaAnalytics:computeSeasonFromMatchDate(match["date"]) or "") .. ","
+        .. (match["season"] or "") .. ","
         .. (match["bracket"] or "") .. ","
         .. (match["map"] or "") .. ","
         .. (match["duration"] or "") .. ","

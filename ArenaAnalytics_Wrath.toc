@@ -16,6 +16,7 @@ Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
 Source/ArenaEvents.lua
 Source/ArenaTracker.lua
+Source/ArenaSessions.lua
 Source/ArenaVersionManager.lua
 Source/ArenaTablePool.lua
 

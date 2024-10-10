@@ -14,39 +14,39 @@
             </Layer>
             <Layer level="ARTWORK">
                 <FontString parentKey="Date" inherits="GameFontNormal" justifyH="LEFT">
-                    <Size x="120"/>
+                    <Size x="140"/>
                     <Anchors>
-                        <Anchor point="LEFT"  x="20" y="0"/>
+                        <Anchor point="LEFT" x="20" y="0"/>
                     </Anchors>
                 </FontString>
                 <FontString parentKey="Map" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="40"/>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.Date" relativePoint="RIGHT" x="10" y="0"/>
+                        <Anchor point="LEFT" x="150" y="0"/>
                     </Anchors>
                 </FontString>
                 <FontString parentKey="Duration" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="108"/>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.Map" relativePoint="RIGHT" x="15" y="0"/>
+                        <Anchor point="LEFT" x="200" y="0"/>
                     </Anchors>
                 </FontString>
                 <FontString parentKey="Rating" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="85"/>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.Duration" relativePoint="RIGHT" x="140" y="0"/>
+                        <Anchor point="LEFT" x="480" y="0"/>
                     </Anchors>
                 </FontString>
                 <FontString parentKey="MMR" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="70"/>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.Rating" relativePoint="RIGHT" x="5" y="0"/>
+                        <Anchor point="LEFT" x="590" y="0"/>
                     </Anchors>
                 </FontString>
                 <FontString parentKey="EnemyMMR" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="101"/>
                     <Anchors>
-                        <Anchor point="LEFT" relativeKey="$parent.MMR" relativePoint="RIGHT" x="145" y="0"/>
+                        <Anchor point="LEFT" x="820" y="0"/>
                     </Anchors>
                 </FontString>
             </Layer>
@@ -65,7 +65,7 @@
             <Button parentKey="Team1">
                 <Size x="24" y="24"/>
                 <Anchors>
-                    <Anchor point="LEFT" relativeKey="$parent.Duration" relativePoint="RIGHT" x="0" y="-0.5"/>
+                    <Anchor point="LEFT" x="320" y="0"/>
                 </Anchors>
             </Button>
             <Button parentKey="Team2">
@@ -95,7 +95,7 @@
             <Button parentKey="EnemyTeam1">
                 <Size x="24" y="24"/>
                 <Anchors>
-                    <Anchor point="LEFT" relativeKey="$parent.MMR" relativePoint="RIGHT" x="-5" y="-0.5"/>
+                    <Anchor point="LEFT" x="660" y="0"/>
                 </Anchors>
             </Button>
             <Button parentKey="EnemyTeam2">

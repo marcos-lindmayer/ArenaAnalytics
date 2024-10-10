@@ -86,7 +86,9 @@ function Options:LoadSettings()
     AddSetting("unsavedWarningThreshold", 10);
     AddSetting("alwaysShowDeathOverlay", false);
     AddSetting("alwaysShowSpecOverlay", false);
-    
+
+    AddSetting("ignoreGroupForSkirmishSession", true);
+
     -- Filters
     AddSetting("defaultCurrentSeasonFilter", false);
     AddSetting("defaultCurrentSessionFilter", false);
@@ -464,6 +466,7 @@ end
 -------------------------------------------------------------------
 -- General Tab
 -------------------------------------------------------------------
+
 function SetupTab_General()
     -- Title
     InitializeTab(ArenaAnalyticsOptionsFrame);
@@ -476,11 +479,16 @@ function SetupTab_General()
     parent.showDeathOverlay = CreateCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
     parent.showDeathOverlay = CreateCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
     parent.unsavedWarning = CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
+
+    CreateSpace();
+
+    parent.ignoreGroupForSkirmishSession = CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
 end
 
 -------------------------------------------------------------------
 -- Filter Tab
 -------------------------------------------------------------------
+
 function SetupTab_Filters()
     local filterOptionsFrame = CreateFrame("frame");
     Options:RegisterCategory(filterOptionsFrame, "Filters", ArenaAnalyticsOptionsFrame);

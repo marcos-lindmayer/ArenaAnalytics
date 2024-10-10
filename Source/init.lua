@@ -28,7 +28,8 @@ ArenaAnalytics.Dropdown.Display = {};
 ArenaAnalytics.Options = {};
 ArenaAnalytics.AAmatch = {};
 ArenaAnalytics.Events = {};
-ArenaAnalytics.ArenaTracker = {}
+ArenaAnalytics.ArenaTracker = {};
+ArenaAnalytics.Sessions = {};
 ArenaAnalytics.ArenaMatch = {};
 ArenaAnalytics.GroupSorter = {};
 
@@ -49,8 +50,9 @@ local Filters = ArenaAnalytics.Filters;
 local FilterTables = ArenaAnalytics.FilterTables;
 local API = ArenaAnalytics.API;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local AAtable = ArenaAnalytics.AAtable;
+local Sessions = ArenaAnalytics.Sessions;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
+local AAtable = ArenaAnalytics.AAtable;
 local Events = ArenaAnalytics.Events;
 local Search = ArenaAnalytics.Search;
 local VersionManager = ArenaAnalytics.VersionManager;
@@ -128,29 +130,7 @@ ArenaAnalytics.commands = {
 
 	["updatesessions"] = function()
 		ArenaAnalytics:Print("Updating sessions in ArenaAnalyticsDB.");
-		ArenaAnalytics:RecomputeSessionsForMatchHistory();
-
-        ArenaAnalyticsScrollFrame:Hide();
-	end,
-
-	["updateseasons"] = function()
-		ArenaAnalytics:Print("Updating seasons in ArenaAnalyticsDB.");
-
-		for i=1, #ArenaAnalyticsDB do
-			local match = ArenaAnalyticsDB[i];
-			local season = ArenaMatch:GetSeason(match);
-			local matchDate = ArenaMatch:GetDate(match);
-
-			if(not season or season == 0) then
-				season = ArenaAnalytics:computeSeasonFromMatchDate(matchDate);
-				if(season) then
-					ArenaAnalytics:Log("Updated season at index: ", i, " to season: ", season);
-					ArenaMatch:SetSeason(match, season);
-				else
-					ArenaAnalytics:Log("Updating seasons got nil season for date: ", Helpers:FormatDate(matchDate), " (", matchDate, ")");
-				end
-			end
-		end
+		Sessions:RecomputeSessionsForMatchHistory();
 
         ArenaAnalyticsScrollFrame:Hide();
 	end,
@@ -196,7 +176,8 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 
-		ArenaAnalytics.Helpers:PrintScoreboardStats(...);
+		ArenaAnalytics:Log(Sessions:GetLatestSession())
+		ArenaAnalytics:Log(ArenaAnalytics:GetLastMatch())
 
 		print(" ");
 	end,	
@@ -459,8 +440,6 @@ function ArenaAnalytics:init()
 	Options:Init();
 	FilterTables:Init();
 	Filters:Init();
-
-	ArenaAnalytics:UpdateLastSession();
 
 	Events:RegisterGlobalEvents();
 

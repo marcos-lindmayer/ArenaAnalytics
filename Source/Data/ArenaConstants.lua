@@ -12,7 +12,7 @@ Constants.titleColor = "ffffffff";
 Constants.headerColor = "ffd0d0d0";
 Constants.prefixColor = "FFAAAAAA";
 Constants.statsColor = "ffffffff";
-Constants.valueColor = nil; -- f9f9f9 for white?
+Constants.valueColor = nil; -- f5f5f5 for white?
 Constants.infoColor = "ffbbbbbb";
 
 -- Outcome colors
@@ -24,51 +24,6 @@ Constants.invalidColor = "ff999999";
 -- Faction colors
 Constants.allianceColor = "FF009DEC";
 Constants.hordeColor = "ffE00A05";
-
--------------------------------------------------------------------------
-
-Constants.currentSeasonStartInt = 1687219201;
-
--- (Assumes timestamp of 00:00:01 GMT and no difference between regions for now)
-local seasonStartAndEndTimes = {
-    {1623801601, 1630972801}, -- season 1 (June 16, 2021 - Sept. 7, 2021)
-    {1631577601, 1641776401}, -- season 2 (Sept. 14, 2021 - Jan. 10, 2022)
-    {1642381201, 1651536001}, -- season 3 (Jan. 17, 2022 - May 3, 2022)
-    {1652313601, 1661731201}, -- season 4 (May 12, 2022 - Aug. 29, 2022)
-    {1664841601, 1673226001}, -- season 5 (Oct. 4, 2022 - Jan. 9, 2023)
-    {1673917201, 1685318401}, -- season 6 (Jan. 17, 2023 - May 29, 2023)
-    {1687219201, 1696363200}, -- season 7 (June 20, 2023 - Oct 3, 2023)
-    {nil, nil}, -- season 8 (Unknown start)
-}
-
--- Attempts to get the Classic season by timestamp. Returns season and boolean for isPostSeason
-function ArenaAnalytics:computeSeasonFromMatchDate(unixDate)
-    local matchTime = tonumber(unixDate);
-    if(matchTime) then
-        -- before season 1 (Generally bugged matches)
-        if(matchTime < seasonStartAndEndTimes[1][1]) then
-            return -1;
-        end
-
-        for season = 1, #seasonStartAndEndTimes do
-            local startTime = seasonStartAndEndTimes[season][1];
-            local endTime = seasonStartAndEndTimes[season][2];
-
-            if(startTime and matchTime > startTime) then
-                if(not endTime or matchTime < endTime) then
-                    return season, false;
-                end
-                
-                local nextSeasonStart = seasonStartAndEndTimes[season+1][1]
-                if (not nextSeasonStart or matchTime < nextSeasonStart) then
-                    return season, true;
-                end
-            end
-        end
-    end
-
-    return nil;
-end
 
 -------------------------------------------------------------------------
 

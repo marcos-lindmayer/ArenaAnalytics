@@ -13,6 +13,7 @@ local Options = ArenaAnalytics.Options;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
+local Sessions = ArenaAnalytics.Sessions;
 
 -------------------------------------------------------------------------
 
@@ -156,7 +157,7 @@ function ArenaAnalytics:GetRealm(realmIndex, errorIfMissing)
 end
 
 function ArenaAnalytics:GetIndexedFullName(fullName)
-	if(not fullName) then
+	if(type(fullName) ~= "string") then
 		return nil;
 	end
 
@@ -399,31 +400,6 @@ function ArenaAnalytics:GetFilteredMatch(index)
 	return filteredMatch, filteredMatchInfo.filteredSession;
 end
 
-ArenaAnalytics.lastSession = 1;
-
-function ArenaAnalytics:UpdateLastSession()
-	ArenaAnalytics.lastSession = ArenaAnalytics:GetLatestSession();
-end
-
-function ArenaAnalytics:RecomputeSessionsForMatchHistory()
-	-- Assign session to filtered matches
-	local session = 1
-	for i = 1, #ArenaAnalyticsDB do
-		local current = ArenaAnalytics:GetMatch(i);
-		local prev = ArenaAnalytics:GetMatch(i - 1);
-
-		if(current) then
-			if(prev and not ArenaAnalytics:IsMatchesSameSession(prev, current)) then
-				session = session + 1;
-			end
-
-			ArenaMatch:SetSession(current, session);
-		end
-	end
-
-	ArenaAnalytics:UpdateLastSession();
-end
-
 function ArenaAnalytics:ResortGroupsInMatchHistory()
     debugprofilestart();
 
@@ -466,77 +442,7 @@ function ArenaAnalytics:HasStoredMatches()
 	return (ArenaAnalyticsDB ~= nil and #ArenaAnalyticsDB > 0);
 end
 
--- Check if 2 arenas are in the same session
-function ArenaAnalytics:IsMatchesSameSession(arena1, arena2)
-	if(not arena1 or not arena2) then
-		return false;
-	end
-
-	local date1 = ArenaMatch:GetDate(arena1) or 0;
-	local date2 = ArenaMatch:GetDate(arena2) or 0;
-
-	if(date2 - date1 > 3600) then
-		return false;
-	end
-	
-	local matchType1 = ArenaMatch:GetMatchType(arena1);
-	local matchType2 = ArenaMatch:GetMatchType(arena2);
-
-	if(matchType1 ~= "skirmish" or matchType2 ~= "skirmish") then	
-		if(not ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)) then
-			return false;
-		end
-	end
-
-	return true;
-end
-
-function ArenaAnalytics:TeamContainsPlayer(team, player)
-	if(not team or not player) then
-		return nil;
-	end
-
-	local fullName = ArenaMatch:GetPlayerFullName(player, false, true);
-	for _,player in ipairs(team) do
-		if (ArenaMatch:IsSamePlayer(player, fullName)) then
-			return true;
-		end
-	end
-
-	return false;
-end
-
--- Checks if 2 arenas have the same party members
-function ArenaAnalytics:ArenasHaveSameParty(arena1, arena2)
-    if(not arena1 or not arena2) then
-        return false;
-    end
-
-	local team1, team2 = ArenaMatch:GetTeam(arena1), ArenaMatch:GetTeam(arena2);
-	if(not team1 or not team2) then
-		return false;
-	end
-
-	local bracket1, bracket2 = ArenaMatch:GetBracketIndex(arena1), ArenaMatch:GetBracketIndex(arena2);
-	if(bracket1 ~= bracket2) then
-		return false;
-	end
-
-	-- In case one team is smaller, make sure we loop through that one.
-	local teamOneIsSmaller = (#team1 < #team2);
-	local smallerTeam = teamOneIsSmaller and team1 or team2;
-	local largerTeam = teamOneIsSmaller and team2 or team1;
-
-	for _,player in ipairs(smallerTeam) do
-		if(not ArenaAnalytics:TeamContainsPlayer(largerTeam, player)) then
-			return false;
-		end
-	end
-
-    return true;
-end
-
-function ArenaAnalytics:GetLastMatch(bracketIndex, ignoreInvalidDate)
+function ArenaAnalytics:GetLastMatch(ignoreInvalidDate, explicitBracketIndex)
 	if(not ArenaAnalytics:HasStoredMatches()) then
 		return nil;
 	end
@@ -544,7 +450,7 @@ function ArenaAnalytics:GetLastMatch(bracketIndex, ignoreInvalidDate)
 	if(not ignoreInvalidDate) then
 		for i=#ArenaAnalyticsDB, 1, -1 do
 			local match = ArenaAnalytics:GetMatch(i);
-			if(not bracketIndex or bracketIndex == ArenaMatch:GetBracketIndex(match)) then
+			if(not explicitBracketIndex or explicitBracketIndex == ArenaMatch:GetBracketIndex(match)) then
 				local date = ArenaMatch:GetDate(match);
 				if(date and date > 0) then
 					return match;
@@ -555,95 +461,6 @@ function ArenaAnalytics:GetLastMatch(bracketIndex, ignoreInvalidDate)
 
 	-- Get the last match
 	return ArenaAnalytics:GetMatch(#ArenaAnalyticsDB);
-end
-
-function ArenaAnalytics:ShouldSkipMatchForSessions(match)
-	-- Invalid match Check
-	if(match == nil) then
-		return true;
-	end
-
-	-- Invalid session Check
-	if(ArenaMatch:GetSession(match) == nil) then
-		return true;
-	end
-
-	-- Invalid date Check
-	local date = ArenaMatch:GetDate(match);
-	if(not date or date == 0) then
-		return true;
-	end
-
-	-- Invalid comp check (Missing players)
-	local team = ArenaMatch:GetTeam(match);
-	local requiredTeamSize = ArenaMatch:GetTeamSize(match) or 0;
-	if(not team or #team < requiredTeamSize) then
-		return true;
-	end
-
-	-- Don't skip
-	return false; 
-end
-
-function ArenaAnalytics:HasMatchSessionExpired(match)
-	if(not match) then
-		return nil;
-	end
-
-	local date = ArenaMatch:GetDate(match);
-	local duration = ArenaMatch:GetDuration(match) or 0;
-
-	local endTime = date and date + duration;
-	if(not endTime) then
-		return true;
-	end
-
-	return (time() - endTime) > 3600;
-end
-
--- Returns the whether last session and whether it has expired by time
-function ArenaAnalytics:GetLatestSession()
-	for i=#ArenaAnalyticsDB, 1, -1 do
-		local match = ArenaAnalytics:GetMatch(i);
-		if(not ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
-			local session = ArenaMatch:GetSession(match);
-			local expired = ArenaAnalytics:HasMatchSessionExpired(match);
-			return session, expired;
-		end
-	end
-	return 0, false;
-end
-
--- Returns the start and end times of the last session
-function ArenaAnalytics:GetLatestSessionStartAndEndTime()
-	local lastSession, expired, bestStartTime, endTime = nil,true;
-
-	for i=#ArenaAnalyticsDB, 1, -1 do
-		local match = ArenaAnalytics:GetMatch(i);
-
-		if(not ArenaAnalytics:ShouldSkipMatchForSessions(match)) then
-			local date = ArenaMatch:GetDate(match);
-			local session = ArenaMatch:GetSession(match);
-
-			if(lastSession == nil) then
-				lastSession = session;
-
-				local duration = ArenaMatch:GetDuration(match);
-				local testEndTime = duration and date + duration or date;
-
-				expired = not testEndTime or (time() - testEndTime) > 3600;
-				endTime = expired and testEndTime or time();
-			end
-
-			if(lastSession == session) then
-				bestStartTime = date;
-			else
-				break;
-			end
-		end
-	end
-
-	return lastSession, expired, bestStartTime, endTime;
 end
 
 -- Returns last saved rating on selected bracket (teamSize)
@@ -684,14 +501,14 @@ function ArenaAnalytics:GetLatestRating(bracketIndex, explicitSeason, explicitSe
 end
 
 function ArenaAnalytics:TryFixLastMatchRating()
-	local lastMatch = ArenaAnalytics:GetLastMatch(nil, true);
+	local lastMatch = ArenaAnalytics:GetLastMatch(true);
 	if(ArenaMatch:DoesRequireRatingFix(lastMatch)) then
 		ArenaMatch:TryFixLastRating(lastMatch);
 	end
 end
 
 function ArenaAnalytics:ClearLastMatchTransientValues(bracketIndex)
-	local lastMatch = ArenaAnalytics:GetLastMatch(bracketIndex, true);
+	local lastMatch = ArenaAnalytics:GetLastMatch(true, bracketIndex);
 	if(lastMatch) then
 		ArenaMatch:ClearTransientValues(lastMatch);
 	end
@@ -814,13 +631,7 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	end
 
 	-- Assign session
-	local session = ArenaAnalytics:GetLatestSession();
-	local lastMatch = ArenaAnalytics:GetLastMatch(nil, false);
-	if (not ArenaAnalytics:IsMatchesSameSession(lastMatch, arenaData)) then
-		session = session + 1;
-	end
-	ArenaMatch:SetSession(arenaData, session);
-	ArenaAnalytics.lastSession = session;
+	Sessions:AssignSession(arenaData);
 	ArenaAnalytics:Log("session:", session);
 
 	-- Transient data
@@ -843,5 +654,5 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 
 	Filters:Refresh();
 
-	AAtable:TryStartSessionDurationTimer();
+	Sessions:TryStartSessionDurationTimer();
 end

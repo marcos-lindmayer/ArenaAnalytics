@@ -2,6 +2,7 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Import = ArenaAnalytics.Import;
 
 -- Local module aliases
+local Sessions = ArenaAnalytics.Sessions;
 
 -------------------------------------------------------------------------
 
@@ -132,8 +133,7 @@ function Import:ProcessCachedValues()
             end
         end);
 
-        ArenaAnalytics:RecomputeSessionsForMatchHistory();
-        ArenaAnalytics:UpdateLastSession();
+        Sessions:RecomputeSessionsForMatchHistory();
         ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
 
         Filters:Refresh();
@@ -204,14 +204,12 @@ function Import:SaveArena(arena)
 	end
 
 	-- Assign session
-	local session = ArenaAnalytics:GetLatestSession();
-	local lastMatch = ArenaAnalytics:GetLastMatch(nil, false);
-	if (not ArenaAnalytics:IsMatchesSameSession(lastMatch, newArena)) then
+	local session = Sessions:GetLatestSession();
+	local lastMatch = ArenaAnalytics:GetLastMatch();
+	if (not Sessions:IsMatchesSameSession(lastMatch, newArena)) then
 		session = session + 1;
 	end
 	ArenaMatch:SetSession(newArena, session);
-
-	ArenaAnalytics.lastSession = session;
 
 	-- Insert arena data as a new ArenaAnalyticsDB entry
 	table.insert(ArenaAnalyticsDB, arenaData);

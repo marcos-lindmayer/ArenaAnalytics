@@ -19,6 +19,7 @@ local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local Helpers = ArenaAnalytics.Helpers;
 local Tooltips = ArenaAnalytics.Tooltips;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
+local Sessions = ArenaAnalytics.Sessions;
 
 -------------------------------------------------------------------------
 
@@ -208,14 +209,15 @@ function AAtable:OnLoad()
     end);
 
     -- Table headers
-    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.searchBox, "BOTTOMLEFT", -5, -10, ArenaAnalytics:ColorText("Date", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.dateTitle, "TOPLEFT", 131, 0, ArenaAnalytics:ColorText("Map", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mapTitle, "TOPLEFT", 55, 0, ArenaAnalytics:ColorText("Duration", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.durationTitle, "TOPLEFT", 106, 0, ArenaAnalytics:ColorText("Team", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.teamTitle, "TOPLEFT", 141, 0, ArenaAnalytics:ColorText("Rating", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.ratingTitle, "TOPLEFT", 91, 0, ArenaAnalytics:ColorText("MMR", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.mmrTitle, "TOPLEFT", 62, 0, ArenaAnalytics:ColorText("Enemy Team", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "TOPLEFT", ArenaAnalyticsScrollFrame.enemyTeamTitle, "TOPLEFT", 153, 0, ArenaAnalytics:ColorText("Enemy MMR", Constants.headerColor));
+    local verticalPadding = -93;
+    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, verticalPadding, ArenaAnalytics:ColorText("Date", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 160, verticalPadding, ArenaAnalytics:ColorText("Map", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 210, verticalPadding, ArenaAnalytics:ColorText("Duration", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 320, verticalPadding, ArenaAnalytics:ColorText("Team", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 490, verticalPadding, ArenaAnalytics:ColorText("Rating", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 600, verticalPadding, ArenaAnalytics:ColorText("MMR", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 670, verticalPadding, ArenaAnalytics:ColorText("Enemy Team", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 830, verticalPadding, ArenaAnalytics:ColorText("Enemy MMR", Constants.headerColor));
 
     -- Recorded arena number and winrate
     ArenaAnalyticsScrollFrame.sessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 27, "");
@@ -228,7 +230,7 @@ function AAtable:OnLoad()
     local selectedPrefixText = ArenaAnalytics:ColorText("Selected: ", Constants.prefixColor);
     ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 10, selectedPrefixText .. " (click matches to select)");
 
-    AAtable:TryStartSessionDurationTimer();
+    Sessions:TryStartSessionDurationTimer();
 
     ArenaAnalyticsScrollFrame.clearSelected = AAtable:CreateButton("BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -30, 8, "Clear Selected", AAtable:GetDropdownTemplate());
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(110)
@@ -609,7 +611,7 @@ function AAtable:HandleArenaCountChanged()
     end
 
     -- Update displayed session stats text
-    local _, expired = ArenaAnalytics:GetLatestSession();
+    local _, expired = Sessions:GetLatestSession();
     local sessionText = expired and "Last session: " or "Current session: ";
     sessionText = ArenaAnalytics:ColorText(sessionText, Constants.prefixColor);
 
@@ -826,7 +828,8 @@ end
 
 local isSessionTimerActive = false;
 local function formatSessionDuration(duration)
-    if(tonumber(duration) == nil) then
+    duration = tonumber(duration);
+    if(duration == nil) then
         return "";
     end
 
@@ -841,41 +844,11 @@ local function formatSessionDuration(duration)
     end
 end
 
-local function setLatestSessionDurationText(expired, startTime, endTime)
+function AAtable:SetLatestSessionDurationText(expired, startTime, endTime)
     endTime = expired and endTime or time();
     local duration = startTime and endTime - startTime or nil;
 
     local text = expired and "Last Session Duration: " or "Session Duration: ";
     text = ArenaAnalytics:ColorText(text, Constants.prefixColor);
     ArenaAnalytics:SetFrameText(ArenaAnalyticsScrollFrame.sessionDuration, text .. formatSessionDuration(duration), Constants.statsColor)
-end
-
-local function handleSessionDurationTimer()
-    local _,expired, startTime, endTime = ArenaAnalytics:GetLatestSessionStartAndEndTime();
-
-    isSessionTimerActive = false;
-    
-    -- Update text
-    setLatestSessionDurationText(expired, startTime, endTime);
-
-    if (startTime and not expired and not isSessionTimerActive) then
-        local duration = endTime - startTime;
-        local desiredInterval = (duration > 3600) and 60 or 1;
-        isSessionTimerActive = true;
-        C_Timer.After(desiredInterval, function() handleSessionDurationTimer() end);
-    end
-end
-
-function AAtable:TryStartSessionDurationTimer()
-    local _,expired, startTime, endTime = ArenaAnalytics:GetLatestSessionStartAndEndTime();
-    -- Update text
-    setLatestSessionDurationText(expired, startTime, endTime);
-    
-    if (startTime and not expired and not isSessionTimerActive) then
-        local duration = time() - startTime;
-        local desiredInterval = (duration > 3600) and 60 or 1;
-        local firstInterval = desiredInterval - duration % desiredInterval;
-        isSessionTimerActive = true;
-        C_Timer.After(firstInterval, function() handleSessionDurationTimer() end);
-    end
 end

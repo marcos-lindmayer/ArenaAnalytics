@@ -361,10 +361,10 @@ end
 -- Duration (2)
 
 function ArenaMatch:GetDuration(match)
-    if(not match) then 
-        return nil 
-    end;
-    
+    if(not match) then
+        return nil;
+    end
+
     local key = matchKeys.duration;
     return match and tonumber(match[key]);
 end
@@ -778,36 +778,41 @@ function ArenaMatch:MakeCompactPlayerData(player)
 end
 
 -- Returns true if a value is set
-function ArenaMatch:SetTeamMemberValue(match, isEnemyTeam, playerName, key, value)
+function ArenaMatch:SetTeamMemberValue(match, isEnemyTeam, indexedFullName, key, value)
     assert(match and playerName);
 
     key = key and playerKeys[key];
     assert(key, "SetTeamMemberValue: Invalid playerKey provided.");
+
+    if(not indexedFullName) then
+        return;
+    end
 
     local team = ArenaMatch:GetTeam(match, isEnemyTeam);
     if(not team) then
         return;
     end
 
-    local fullName = ArenaAnalytics:GetIndexedFullName(playerName);
-    if(not fullName) then
-        return;
-    end
-
     for i,player in ipairs(team) do
-        if(ArenaMatch:IsSamePlayer(player, fullName)) then
+        if(ArenaMatch:IsSamePlayer(player, indexedFullName)) then
             player[key] = value;
             return true;
         end
     end
 end
 
-function ArenaMatch:IsSamePlayer(player, otherFullName)
-    assert(player and otherFullName);
+function ArenaMatch:IsSamePlayer(player, indexedFullName)
+    assert(player and indexedFullName);
 
     local name = player[playerKeys.name];
     local realm = player[playerKeys.realm];
-    local otherName, otherRealm = ArenaAnalytics:SplitFullName(otherFullName, true);
+
+    local otherName, otherRealm;
+    if(type(indexedFullName) == "string") then
+        otherName, otherRealm = ArenaAnalytics:SplitFullName(indexedFullName, true);
+    else
+        otherName = tonumber(indexedFullName);
+    end
 
     if(not name or name ~= otherName) then
         return false;
@@ -828,20 +833,24 @@ function ArenaMatch:IsLocalPlayer(player)
 end
 
 function ArenaMatch:GetTeam(match, isEnemyTeam)
-    if(not match) then 
+    if(not match) then
         return nil;
-    end;
+    end
 
     local key = isEnemyTeam and matchKeys.enemy_team or matchKeys.team;
     return key and match[key] or {};
 end
 
-function ArenaMatch:GetTeamSize(match)
-    if(not match) then 
-        return nil 
-    end;
+function ArenaMatch:GetTeamSize(match, isSessionTeamCheck)
+    if(not match) then
+        return nil;
+    end
 
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
+    if(isSessionTeamCheck and bracketIndex == 4) then
+        return 1; -- Session checks only care of the stored team size being 1 for shuffles
+    end
+
     return ArenaAnalytics:getTeamSizeFromBracketIndex(bracketIndex);
 end
 
@@ -1145,6 +1154,10 @@ end
 function ArenaMatch:UpdateComp(match, isEnemyTeam)
     assert(match);
 
+    if(ArenaMatch:IsShuffle(match)) then
+        return;
+    end
+
     local team = ArenaMatch:GetTeam(match, isEnemyTeam);
     local requiredTeamSize = ArenaMatch:GetTeamSize(match);
 
@@ -1252,12 +1265,13 @@ end
 
 function ArenaMatch:SetSelf(match, fullName)
     assert(match);
-    assert(not fullName or type(fullName) == "string");
-
     if(not fullName) then
         return;
     end
 
+    assert(type(fullName) == "string", "Provided fullName must be a string.");
+
+    local fullName = ArenaAnalytics:GetIndexedFullName(fullName);
     local result = ArenaMatch:SetTeamMemberValue(match, false, fullName, "is_self", 1);
     return result;
 end

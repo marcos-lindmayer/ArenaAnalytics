@@ -11,6 +11,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Localization = ArenaAnalytics.Localization;
+local Sessions = ArenaAnalytics.Sessions;
 
 -------------------------------------------------------------------------
 
@@ -101,7 +102,7 @@ function VersionManager:OnInit()
         MatchHistoryDB = nil;
 
         ArenaAnalytics:ResortGroupsInMatchHistory();
-        ArenaAnalytics:RecomputeSessionsForMatchHistory();
+        Sessions:RecomputeSessionsForMatchHistory();
     end
 
     -- Reverts and reset index based name and realm (To improve order and streamline formatting across version)
@@ -168,9 +169,9 @@ local function convertFormatedDurationToSeconds(inDuration)
     return 0;
 end
 
-local function computeSeasonWhenMissing(season, unixDate)
+local function SanitizeSeason(season, unixDate)
     if(season == nil or season == 0) then
-        return ArenaAnalytics:computeSeasonFromMatchDate(unixDate);
+        return nil;
     end
 
     return season;
@@ -264,7 +265,6 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         ArenaAnalytics:Log("Non-empty MatchHistoryDB.");
         return;
     end
-    
 
     local brackets = { "2v2", "3v3", "5v5" }
     for _, bracket in ipairs(brackets) do
@@ -276,7 +276,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                 local updatedArenaData = {
                     ["isRated"] = arena["isRanked"],
                     ["date"] = arena["dateInt"],
-                    ["season"] = computeSeasonWhenMissing(arena["season"], arena["dateInt"]),
+                    ["season"] = SanitizeSeason(arena["season"], arena["dateInt"]),
                     ["map"] = arena["map"], 
                     ["bracket"] = bracket,
                     ["duration"] = convertFormatedDurationToSeconds(tonumber(arena["duration"]) or 0),
@@ -560,7 +560,7 @@ function VersionManager:FinalizeConversionAttempts()
 	ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
     
 	ArenaAnalytics:ResortGroupsInMatchHistory();
-	ArenaAnalytics:RecomputeSessionsForMatchHistory();
+	Sessions:RecomputeSessionsForMatchHistory();
     
     Import:TryHide();
     Filters:Refresh();

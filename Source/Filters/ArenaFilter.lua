@@ -8,6 +8,7 @@ local Selection = ArenaAnalytics.Selection;
 local AAtable = ArenaAnalytics.AAtable;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local TablePool = ArenaAnalytics.TablePool;
+local Sessions = ArenaAnalytics.Sessions;
 
 -------------------------------------------------------------------------
 
@@ -185,7 +186,7 @@ local function doesMatchPassFilter_Date(match)
     if(value == "all time" or value == "") then
         return true;
     elseif(value == "current session") then        
-        return ArenaMatch:GetSession(match) == ArenaAnalytics:GetLatestSession();
+        return ArenaMatch:GetSession(match) == Sessions:GetLatestSession();
     elseif(value == "last day") then
         seconds = 86400;
     elseif(value == "last week") then
