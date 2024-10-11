@@ -29,7 +29,6 @@ function Sessions:RecomputeSessionsForMatchHistory()
 		local prev = ArenaAnalytics:GetMatch(i - 1);
 
 		if(current) then
-            ArenaAnalytics:Log("Match:", i);
 			if(prev and not Sessions:IsMatchesSameSession(prev, current)) then
 				session = session + 1;
 			end

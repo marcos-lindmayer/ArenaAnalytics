@@ -17,6 +17,7 @@ local Sessions = ArenaAnalytics.Sessions;
 
 -- True if data sync was detected with a later version.
 VersionManager.newDetectedVersion = false;
+VersionManager.latestFormatVersion = 4;
 
 -- Compare two version strings. Returns -1 if version is lower, 0 if equal, 1 if higher.
 function VersionManager:compareVersions(version, otherVersion)
@@ -130,6 +131,8 @@ function VersionManager:OnInit()
 
         ArenaAnalyticsDB.formatVersion = 4;
     end
+
+    ArenaAnalyticsDB.formatVersion = VersionManager.latestFormatVersion;
 end
 
 local function convertFormatedDurationToSeconds(inDuration)
@@ -537,7 +540,7 @@ end
 
 function VersionManager:ConvertRoundAndPlayerFormat()
     assert(ArenaAnalyticsDB.names[1] == UnitNameUnmodified("player"), "Invalid or missing self as first name entry!");
-    
+
     local _,realm = UnitFullName("player");
     assert(realm and ArenaAnalyticsDB.realms[1] == realm, "Invalid or missing local realm as first realm entry!");
 
@@ -558,10 +561,10 @@ end
 
 function VersionManager:FinalizeConversionAttempts()
 	ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
-    
+
 	ArenaAnalytics:ResortGroupsInMatchHistory();
 	Sessions:RecomputeSessionsForMatchHistory();
-    
+
     Import:TryHide();
     Filters:Refresh();
     ArenaAnalyticsScrollFrame:Hide();

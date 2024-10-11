@@ -22,7 +22,7 @@ local formatPrefix = "isRanked,startTime,endTime,zoneId,duration,teamName,teamCo
 local valuesPerArena = 48;
 
 -- Define the separator pattern that accounts for both ";" and "\n"
-local delimiter = "[,\n]";
+local delimiter = "\n";
 
 function Import:CheckDataSource_ArenaStatsWotlk(outImportData)
     if(not Import.raw or Import.raw == "") then
@@ -42,6 +42,7 @@ function Import:CheckDataSource_ArenaStatsWotlk(outImportData)
     end
 
     -- Get arena count
+    outImportData.isValid = true;
     outImportData.count = valueCount / valuesPerArena;
     outImportData.sourceKey = sourceKey;
     outImportData.sourceName = sourceName;

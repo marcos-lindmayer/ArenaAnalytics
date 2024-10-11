@@ -125,9 +125,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = {}
 
     HybridScrollFrame_SetDoNotHideScrollBar(ArenaAnalyticsScrollFrame.ListScrollFrame, true);
-    ArenaAnalyticsScrollFrame.Bg:SetTexture(nil);
     ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.8);
-
     ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8);
 
     -- Add the addon title to the main frame
@@ -211,9 +209,9 @@ function AAtable:OnLoad()
     -- Table headers
     local verticalPadding = -93;
     ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, verticalPadding, ArenaAnalytics:ColorText("Date", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 160, verticalPadding, ArenaAnalytics:ColorText("Map", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 150, verticalPadding, ArenaAnalytics:ColorText("Map", Constants.headerColor));
     ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 210, verticalPadding, ArenaAnalytics:ColorText("Duration", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 320, verticalPadding, ArenaAnalytics:ColorText("Team", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 330, verticalPadding, ArenaAnalytics:ColorText("Team", Constants.headerColor));
     ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 490, verticalPadding, ArenaAnalytics:ColorText("Rating", Constants.headerColor));
     ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 600, verticalPadding, ArenaAnalytics:ColorText("MMR", Constants.headerColor));
     ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 670, verticalPadding, ArenaAnalytics:ColorText("Enemy Team", Constants.headerColor));
@@ -236,7 +234,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.clearSelected:SetWidth(110)
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function() Selection:ClearSelectedMatches() end);
-    
+
     ArenaAnalyticsScrollFrame.unsavedWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -160, 13, unsavedWarningText);
     ArenaAnalyticsScrollFrame.unsavedWarning:Hide();
     ArenaAnalyticsScrollFrame.unsavedWarning:Show();
@@ -267,7 +265,7 @@ function AAtable:OnLoad()
 
     ArenaAnalyticsScrollFrame.moreFiltersDrodown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", "MoreFilters", FilterTables.moreFilters, 90, 35, 25);
     ArenaAnalyticsScrollFrame.moreFiltersDrodown:SetPoint("LEFT", ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame(), "RIGHT", 10, 0);
-    
+
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters = AAtable:CreateButton("LEFT", ArenaAnalyticsScrollFrame.moreFiltersDrodown:GetFrame(), "RIGHT", 10, 0, "Clear", AAtable:GetDropdownTemplate());
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetWidth(50);
 
@@ -276,7 +274,7 @@ function AAtable:OnLoad()
         ArenaAnalytics:Log("Clearing filters..");
         Filters:ResetAll(IsShiftKeyDown());
     end);
-    
+
     -- Active Filters text count
     ArenaAnalyticsScrollFrame.activeFilterCountText = ArenaAnalyticsScrollFrame.moreFiltersDrodown:GetFrame():CreateFontString(nil, "OVERLAY")
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
@@ -293,10 +291,6 @@ function AAtable:OnLoad()
 end
 
 function AAtable:TryShowimportDialogFrame(parent)
-    if(true) then -- TODO: Implement updated import/export
-        return;
-    end
-
     if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
         ArenaAnalyticsScrollFrame.importDialogFrame = CreateFrame("Frame", "ArenaAnalyticsImportFrame", parent or UIParent, "BasicFrameTemplateWithInset")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetPoint("CENTER")
@@ -306,21 +300,21 @@ function AAtable:TryShowimportDialogFrame(parent)
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", -10, -5);
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetText("Import");
-        ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, "Paste the ArenaStats or ArenaAnalytics export on the text box below.");
+        ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, "|cffffffffPaste the ArenaStats or ArenaAnalytics export on the text box below.|r");
         ArenaAnalyticsScrollFrame.importDialogFrame.Text2 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -65, "|cffCCCCCCNote:|r |cff888888Matches with missing specs detected won't show on comp filters.|r");
-            
+
         ArenaAnalyticsScrollFrame.importDialogFrame.button = AAtable:CreateButton("TOPRIGHT", ArenaAnalyticsScrollFrame.importDialogFrame, "TOPRIGHT", -45, -80, "Import");
         ArenaAnalyticsScrollFrame.importDialogFrame.button:SetSize(115, 25);
-        
-        -- Import Edit Box
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox = ImportBox:Create(parent, "ImportDialogBox", 255, 55);
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetPoint("RIGHT", ArenaAnalyticsScrollFrame.importDialogFrame.button, "LEFT", -10, 0);
 
-        ArenaAnalyticsScrollFrame.importDataText3 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "BOTTOM", 0, 25, "|cffff0000Do this NOW|r You won't be able to do this while you have stored arenas!");
+        -- Import Edit Box
+        ArenaAnalyticsScrollFrame.importDialogFrame.importBox = ImportBox:Create(ArenaAnalyticsScrollFrame.importDialogFrame, "ImportDialogBox", 255, 55);
+        ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetPoint("RIGHT", ArenaAnalyticsScrollFrame.importDialogFrame.button, "LEFT", -10, 0);
+
+        ArenaAnalyticsScrollFrame.importDataText3 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "BOTTOM", 0, 25, "|cffff0000Do this NOW|r |cffffffffYou won't be able to do this while you have stored arenas!|r");
 
         ArenaAnalyticsScrollFrame.importDialogFrame.button:SetScript("OnClick", function (i)
             ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
-            Import:parseRawData(ArenaImportPasteStringTable);
+            Import:ParseRawData(ArenaImportPasteStringTable);
             ArenaImportPasteStringTable = {};
         end);
     end
@@ -333,7 +327,7 @@ end
 
 -- Creates the Export DB frame
 function AAtable:CreateExportDialogFrame()
-    if (not ArenaAnalytics:HasStoredMatches() or true) then -- TODO: Implement updated import/export
+    if (not ArenaAnalytics:HasStoredMatches()) then
         return;
     end
 
@@ -363,14 +357,14 @@ function AAtable:CreateExportDialogFrame()
 		ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
 		ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetMultiLine(false);
 		ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
-		
+
 		ArenaAnalyticsScrollFrame.exportDialogFrame.WarningText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"BOTTOM", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "TOP", 13, 0, "|cffff0000Warning:|r Pasting long string here will crash WoW!");
 		ArenaAnalyticsScrollFrame.exportDialogFrame.totalText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPLEFT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMLEFT", -3, 0, "Total arenas: " .. #ArenaAnalyticsDB);
 		ArenaAnalyticsScrollFrame.exportDialogFrame.lengthText = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.exportDialogFrame,"TOPRIGHT", ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame, "BOTTOMRIGHT", -3, 0, "Export length: 0");
 
 		ArenaAnalyticsScrollFrame.exportDialogFrame.selectBtn = AAtable:CreateButton("BOTTOM", ArenaAnalyticsScrollFrame.exportDialogFrame, "BOTTOM", 0, 17, "Select All");
 		ArenaAnalyticsScrollFrame.exportDialogFrame.selectBtn:SetScript("OnClick", function() ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:HighlightText() end);
-		
+
 		-- Escape to close
 		ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetScript("OnEscapePressed", function(self)
 			ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:ClearFocus();

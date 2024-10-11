@@ -22,7 +22,7 @@
                 <FontString parentKey="Map" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="40"/>
                     <Anchors>
-                        <Anchor point="LEFT" x="150" y="0"/>
+                        <Anchor point="LEFT" x="140" y="0"/>
                     </Anchors>
                 </FontString>
                 <FontString parentKey="Duration" inherits="GameFontNormal" justifyH="LEFT">

@@ -56,27 +56,46 @@ end
 
 -------------------------------------------------------------------------
 
+local function ShouldAttemptVersionControl()
+	if(not ArenaAnalyticsDB or #ArenaAnalyticsDB > 0) then
+		return true;
+	end
+
+	if(MatchHistoryDB) then
+		return true;
+	end
+
+	if(ArenaAnalyticsDB["2v2"] or ArenaAnalyticsDB["3v3"] or ArenaAnalyticsDB["5v5"]) then
+		return true;
+	end
+
+	return false;
+end
+
 function ArenaAnalytics:InitializeArenaAnalyticsDB()
 	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
 	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
 	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
 
-	local name = UnitNameUnmodified("player");
-	local _, realm = UnitFullName("player");
-	ArenaAnalyticsDebugAssert(name and realm);
+	if(not ShouldAttemptVersionControl()) then
+		-- No data to update, assign latest version
+		ArenaAnalyticsDB.formatVersion = ArenaAnalytics.VersionManager.latestFormatVersion;
+	end
 
 	if(#ArenaAnalyticsDB.names == 0) then
+		local name = UnitNameUnmodified("player");
 		ArenaAnalyticsDB.names[1] = name;
 	end
 
 	if(#ArenaAnalyticsDB.realms == 0) then
+		local _, realm = UnitFullName("player");
 		ArenaAnalyticsDB.realms[1] = realm;
 	end
 end
 
 function ArenaAnalytics:PurgeArenaAnalyticsDB()
 	ArenaAnalyticsDB = {};
-	ArenaAnalytics:InitializeArenaAnalyticsDB()
+	ArenaAnalytics:InitializeArenaAnalyticsDB();
 
 	ArenaAnalytics:Print("Match history purged!");
 end
@@ -400,6 +419,21 @@ function ArenaAnalytics:GetFilteredMatch(index)
 	return filteredMatch, filteredMatchInfo.filteredSession;
 end
 
+function ArenaAnalytics:ResortMatchHistory()
+	table.sort(ArenaAnalyticsDB, function (arena1,arena2)
+		local date1 = ArenaMatch:GetDate(arena1);
+		local date2 = ArenaMatch:GetDate(arena2);
+
+		if(not arena2) then
+			return true;
+		elseif(not arena1) then
+			return false;
+		end
+
+		return date1 < date2;
+	end);
+end
+
 function ArenaAnalytics:ResortGroupsInMatchHistory()
     debugprofilestart();
 
@@ -556,8 +590,10 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	local hasStartTime = tonumber(newArena.startTime) and newArena.startTime > 0;
 	if(not hasStartTime) then
 		-- At least get an estimate for the time of the match this way.
+		newArena.startTime = time();
+		ArenaAnalytics:Log("Warning: Start time overridden upon inserting arena.");
 	end
-	
+
 	-- Calculate arena duration
 	if(newArena.isShuffle) then
 		newArena.duration = 0;
@@ -573,13 +609,12 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 		ArenaAnalytics:Log("Shuffle combined duration:", newArena.duration);
 	else
 		if (hasStartTime) then
-			newArena.endTime = time();
+			newArena.endTime = newArena.endTime or time();
 			local duration = (newArena.endTime - newArena.startTime);
 			duration = duration < 0 and 0 or duration;
 			newArena.duration = duration;
 		else
 			ArenaAnalytics:Log("Force fixed start time at match end.");
-			newArena.startTime = time();
 			newArena.duration = 0;
 		end
 	end

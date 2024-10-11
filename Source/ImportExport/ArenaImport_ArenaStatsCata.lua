@@ -23,9 +23,9 @@ local formatPrefix = "isRanked,startTime,endTime,zoneId,duration,teamName,teamCo
 local valuesPerArena = 58;
 
 -- Define the separator pattern that accounts for both ";" and "\n"
-local delimiter = "[,\n]";
+local delimiter = ",\\n";
 
-function Import:CheckDataSource_ArenaStatsWotlk(outImportData)
+function Import:CheckDataSource_ArenaStatsCata(outImportData)
     if(not Import.raw or Import.raw == "") then
         return false;
     end
@@ -43,12 +43,13 @@ function Import:CheckDataSource_ArenaStatsWotlk(outImportData)
     end
 
     -- Get arena count
+    outImportData.isValid = true;
     outImportData.count = valueCount / valuesPerArena;
     outImportData.sourceKey = sourceKey;
     outImportData.sourceName = sourceName;
     outImportData.delimiter = delimiter;
     outImportData.prefixLength = #formatPrefix;
-    outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsWotlk;
+    outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsCata;
     return true;
 end
 
@@ -87,7 +88,7 @@ local function ProcessPlayer(lastIndex, isEnemyTeam, playerIndex, factionIndex)
     return player;
 end
 
-function Import:ProcessNextMatch_ArenaStatsWotlk(lastIndex)
+function Import:ProcessNextMatch_ArenaStatsCata(lastIndex)
     assert(Import.cachedValues);
 
     -- Create a new arena match table in a standardized format

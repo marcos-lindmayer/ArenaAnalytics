@@ -3,6 +3,10 @@ local Import = ArenaAnalytics.Import;
 
 -- Local module aliases
 local Sessions = ArenaAnalytics.Sessions;
+local TablePool = ArenaAnalytics.TablePool;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Filters = ArenaAnalytics.Filters;
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 
@@ -23,18 +27,30 @@ local Sessions = ArenaAnalytics.Sessions;
     mmrDelta
 --]]
 
+--[[
+    Current Import structure:
+        count
+        sourceName
+        processorFunc
+--]]
 -------------------------------------------------------------------------
 
 Import.raw = nil;
 Import.isImporting = false;
 
 Import.current = nil;
-Import.cachedValues = nil;
 
 Import.cachedArenas = nil;
 
 function Import:IsLocked()
     return not Import.isImporting;
+end
+
+function Import:GetSourceName()
+    if(Import.current and Import.current.isValid) then
+        return Import.current.sourceName or "[Missing Name]";
+    end
+    return "Invalid";
 end
 
 function Import:Reset()
@@ -44,14 +60,13 @@ function Import:Reset()
 
     Import.raw = nil;
     Import.current = nil;
-    Import.cachedValues = nil;
     Import.cachedArenas = nil;
 end
 
 function Import:TryHide()
     if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil and ArenaAnalytics:HasStoredMatches()) then
         ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
-        ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText("");
+        ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetText("");
         ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
         ArenaAnalyticsScrollFrame.importDialogFrame = nil;
     end
@@ -73,7 +88,7 @@ function Import:ProcessImportSource()
         isValid = true;
     elseif(Import:CheckDataSource_ArenaStatsWotlk(newImportData)) then
         isValid = true;
-    elseif(Import:CheckDataSource_REFlex(newImportData)) then
+    elseif(Import:CheckDataSource_ReflexArenas(newImportData)) then
         isValid = true;
     else
         Import.current = nil;
@@ -92,30 +107,30 @@ end
 
 function Import:ParseRawData()
     if(not Import.raw or Import.raw == "") then
+        Import:Reset();
         return;
     end
 
-    if(not Import.current or not Import.current.processorFunc) then
+    if(not Import.current  or not Import.current.isValid or not Import.current.processorFunc) then
         ArenaAnalytics:Log("Invalid data for import attempt.. Bailing out immediately..");
+        Import:Reset();
         return;
     end
 
     -- Reset cached values
-    Import.cachedValues = {};
-    
-    -- TODO: Validate this
-    local delimiter = Import.current.delimiter;
-    Import.raw:sub(Import.current.prefixLength):gsub("([^"..delimiter.."]*)"..delimiter, function(c)
-        table.insert(Import.cachedValues, c);
-    end);
+    TablePool:Release(Import.cachedArenas);
+    Import.cachedArenas = {strsplit("\n", Import.raw)};
 
-    ArenaAnalytics:Log("Importing", Import.current.sourceKey, Import.current.sourceName, import.current.count, #Import.cachedValues);
+    ArenaAnalytics:Log("Importing", Import.current.sourceName, #Import.cachedArenas);
+    Import:ProcessCachedValues();
 end
 
 function Import:ProcessCachedValues()
-    local lastIndex = 0;
-    local batchDurationLimit = 0.05;
-    local batchLimit = 2500;
+    local index = 2;
+    local batchLimit = 1;
+
+    -- TEMP (To help testing)
+    ArenaAnalytics:PurgeArenaAnalyticsDB();
 
     Import.isImporting = true;
 
@@ -127,11 +142,7 @@ function Import:ProcessCachedValues()
         Import:Reset();
         Import:TryHide();
 
-        table.sort(ArenaAnalyticsDB, function (k1,k2)
-            if (k1.date and k2.date) then
-                return k1.date < k2.date;
-            end
-        end);
+        ArenaAnalytics:ResortMatchHistory();
 
         Sessions:RecomputeSessionsForMatchHistory();
         ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
@@ -143,16 +154,21 @@ function Import:ProcessCachedValues()
     end
 
     local function ProcessBatch()
-        local batchEndTime = GetTime() + batchDurationLimit;
-        local batchIndexLimit = lastIndex + batchLimit;
+        local batchIndexLimit = index + batchLimit;
 
-        while lastIndex < #Import.cachedValues do
-            local arena, index = ProcessMatchIndex(currentIndex);
-            lastIndex = index; -- Last processed value index
+        while index < #Import.cachedArenas do
+            if(not Import.current.processorFunc) then
+                ArenaAnalytics:Log("Import: Processor func missing, bailing out at index:", lastIndex + 1);
+                break;
+            end
 
-            Import:SaveArena(arena);
+            local arena = Import.current.processorFunc(index);
+            if(arena) then
+                Import:SaveArena(arena);
+            end
 
-            if(batchEndTime < GetTime() or batchIndexLimit < lastIndex) then
+            index = index + 1;
+            if(batchIndexLimit < index) then
                 C_Timer.After(0, ProcessBatch);
                 return;
             end
@@ -160,6 +176,8 @@ function Import:ProcessCachedValues()
 
         Finalize();
     end
+
+    C_Timer.After(0, ProcessBatch);
 end
 
 function Import:SaveArena(arena)
@@ -209,10 +227,11 @@ function Import:SaveArena(arena)
 	if (not Sessions:IsMatchesSameSession(lastMatch, newArena)) then
 		session = session + 1;
 	end
+
 	ArenaMatch:SetSession(newArena, session);
 
 	-- Insert arena data as a new ArenaAnalyticsDB entry
-	table.insert(ArenaAnalyticsDB, arenaData);
+	table.insert(ArenaAnalyticsDB, newArena);
 end
 
 -------------------------------------------------------------------------

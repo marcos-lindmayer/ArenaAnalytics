@@ -176,8 +176,7 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 
-		ArenaAnalytics:Log(Sessions:GetLatestSession())
-		ArenaAnalytics:Log(ArenaAnalytics:GetLastMatch())
+		ArenaAnalytics:ResortMatchHistory();
 
 		print(" ");
 	end,	
@@ -254,6 +253,16 @@ function ArenaAnalytics:LogGreen(...)
 
     local hex = "1EFFA7";
     local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Debug):");
+	print(prefix, ...);
+end
+
+function ArenaAnalytics:LogError(...)
+	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
+		return;
+	end
+
+    local hex = "ff1111";
+    local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Error):");
 	print(prefix, ...);
 end
 

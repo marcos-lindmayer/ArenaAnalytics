@@ -144,7 +144,7 @@ end
 
 function Import:reset()
     ArenaAnalyticsScrollFrame.importDialogFrame.button:Enable();
-    ArenaAnalyticsScrollFrame.importDialogFrame.editbox:SetText("");
+    ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetText("");
     AAtable:RefreshLayout(true);
 
     cachedValues = {};

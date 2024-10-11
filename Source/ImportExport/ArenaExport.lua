@@ -8,9 +8,9 @@ local Export = ArenaAnalytics.Export;
 
 -- TODO: Improve the export format
 --[[
-    Semicolon (;) for separating matches.
-    Comma (,) for separating value types (Date,Bracket,Teams,etc).
-    Slash (/) for separating player entries (Player1/Player2/... etc).
+    New line (\n) for separating matches.
+    Comma (;) for separating value types (Date,Bracket,Teams,etc).
+    Slash (,) for separating player entries (Player1/Player2/... etc).
     Pipe (|) for separating specific player values (Zeetrax-Ravencrest|NightElf|91|... etc).
 
     NOTE: Assume any value may be nil, when unknown or non-applicable!

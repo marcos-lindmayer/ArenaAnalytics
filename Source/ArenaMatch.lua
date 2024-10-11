@@ -690,18 +690,19 @@ function ArenaMatch:AddPlayer(match, player)
         return;
     end
 
-    if(player.name == nil) then
+    if(player.name ~= nil) then
+        local name, realm = strsplit('-', player.name);
+        player.name = name;
+        player.realm = realm;
+    else
         ArenaAnalytics:Log("Warning: Adding player to stored match without name!");
     end
 
-    local name, realm = strsplit('-', player.name);
-    player.name = name;
-    player.realm = realm
 
     local newPlayer = ArenaMatch:MakeCompactPlayerData(player);
 
     local teamKey = player.isEnemy and matchKeys.enemy_team or matchKeys.team;
-    match[teamKey] = match[teamKey] or {}
+    match[teamKey] = match[teamKey] or {};
     tinsert(match[teamKey], newPlayer);
 end
 

@@ -175,9 +175,13 @@ function ArenaTracker:CommitCurrentRound(force)
 		return;
 	end
 
+	local startTime = currentArena.round.startTime;
+	local death, endTime = ArenaTracker:GetFirstDeathFromCurrentArena();
+	endTime = endTime or time();
+
 	local roundData = {
-		duration = currentArena.round.startTime and (time() - currentArena.round.startTime) or nil,
-		firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena(),
+		duration = startTime and (endTime - startTime) or nil,
+		firstDeath = death,
 		team = {},
 		enemy = {},
 	};
@@ -206,7 +210,7 @@ function ArenaTracker:CommitCurrentRound(force)
 
 	-- Reset currentArena round data
 	currentArena.deathData = {};
-	
+
 	-- Reset current round
 	currentArena.round.team = {};
 	currentArena.round.startTime = nil;
@@ -485,6 +489,7 @@ end
 function ArenaTracker:HandleArenaEnd()
 	currentArena.endedProperly = true;
 	currentArena.ended = true;
+	currentArena.endTime = time();
 
 	ArenaAnalytics:Log("HandleArenaEnd!", #currentArena.players);
 
@@ -542,7 +547,7 @@ function ArenaTracker:HandleArenaEnd()
 			elseif(currentArena.isShuffle) then
 				player.isEnemy = true;
 			end
-			
+
 			table.insert(players, player);
 		else
 			ArenaAnalytics:Log("Tracker: Invalid player name, player will not be stored!");
@@ -595,11 +600,13 @@ function ArenaTracker:HandleArenaExit()
 
 	-- Solo Shuffle
 	ArenaTracker:HandleRoundEnd(true);
+	
+	currentArena.endTime = currentArena.endTime or time();
 
 	if(not currentArena.endedProperly) then
 		currentArena.ended = true;
 		currentArena.outcome = false;
-
+		
 		ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
 	end
 
@@ -731,7 +738,8 @@ function ArenaTracker:GetFirstDeathFromCurrentArena()
 		return nil;
 	end
 
-	return currentArena.deathData[bestKey].name;
+	local firstDeathData = currentArena.deathData[bestKey];
+	return firstDeathData.name, firstDeathData.time;
 end
 
 -- Handle a player's death, through death or kill credit message

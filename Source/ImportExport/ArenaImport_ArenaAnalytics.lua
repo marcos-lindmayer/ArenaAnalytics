@@ -10,7 +10,7 @@ local sourceName = "ArenaStats (Cata)";
 local formatPrefix = "" --TODO Fill with new format
 
 local importIdentifier = "ArenaAnalytics:";
-local formatPrefix = "ArenaAnalytics:"..
+local formatPrefix = importIdentifier ..
     -- Match data
     "date,season,bracket,map,duration,won,isRated,rating,ratingDelta,mmr,enemyRating,enemyRatingDelta,enemyMMR,firstDeath,player,"..
 
@@ -41,4 +41,35 @@ function Import:CheckDataSource_ArenaAnalytics_v3()
     end
 
     return Import.raw:sub(1, #importIdentifier) == importIdentifier;
+end
+
+function Import:CheckDataSource_ArenaAnalytics(outImportData)
+    if(not Import.raw or Import.raw == "") then
+        return false;
+    end
+
+    if(formatPrefix ~= Import.raw:sub(1, #formatPrefix)) then
+        return false;
+    end
+
+    local valueCount = select(2, Import.raw:gsub("[^" .. delimiter .. "]+", ""));
+
+    -- Corrupted import
+    if(#valueCount % valuesPerArena ~= 0) then
+        ArenaAnalytics:Log("Import corrupted! Source:", sourceName);
+        return false;
+    end
+
+    ArenaAnalytics:Log("Discarding ArenaAnalytics import: NYI!");
+    if(true) then return false end -- NYI
+
+    -- Get arena count
+    outImportData.isValid = true;
+    outImportData.count = valueCount / valuesPerArena;
+    outImportData.sourceKey = sourceKey;
+    outImportData.sourceName = sourceName;
+    outImportData.delimiter = delimiter;
+    outImportData.prefixLength = #formatPrefix;
+    outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsCata;
+    return true;
 end

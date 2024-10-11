@@ -10,10 +10,6 @@ local Import = ArenaAnalytics.Import;
 
 local pasteBuffer, index = {}, 0;
 local function onCharAdded(frame, c)
-    if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
-        return;
-    end
-
     if(frame:IsEnabled()) then
         frame:Disable();
         pasteBuffer, index = {}, 0;
@@ -23,7 +19,7 @@ local function onCharAdded(frame, c)
         C_Timer.After(0, function()
             Import:SetPastedInput(pasteBuffer);
 
-            if(#Import.raw[1] > 0) then
+            if(#Import.raw > 0) then
                 frame:Enable();
             end
 
@@ -31,7 +27,6 @@ local function onCharAdded(frame, c)
 
             -- Update text:
             frame.owner:SetText(Import:GetSourceName() .. " import detected...");
-    
         end);
     end
 
@@ -43,12 +38,13 @@ function ImportBox:Create(parent, frameName, width, height)
     assert(parent, "Invalid parent when creating ImportBox.");
     local self = setmetatable({}, ImportBox);
 
-    self.frame = CreateFrame("EditBox", frameName, parent, "InputBoxTemplate")
+    self.frame = CreateFrame("EditBox", frameName, parent, "InputBoxTemplate");
     self.frame:SetFrameStrata("DIALOG");
     self.frame:SetFrameLevel(501)
     self.frame:SetSize(width, height);
     self.frame:SetAutoFocus(false);
     self.frame:SetMaxBytes(50);
+    self.frame:SetMultiLine(true);
 
     self.frame:SetScript("OnChar", onCharAdded);
 

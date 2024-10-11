@@ -90,7 +90,7 @@ function Helpers:FormatNumber(value)
 end
 
 function Helpers:FormatDate(value)
-    return value and date("%d/%m/%y  %H:%M", value);
+    return value and date("%d.%m.%y  %H:%M", value);
 end
 
 -- Create two layers of backdrop, for an extra low transparency
