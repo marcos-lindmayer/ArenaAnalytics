@@ -9,6 +9,7 @@
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB
 
 
+Source/ArenaDebugging.lua
 Source/init.lua
 
 Source/ArenaAnalytics.lua

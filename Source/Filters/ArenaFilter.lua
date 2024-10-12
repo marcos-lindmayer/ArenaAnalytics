@@ -9,6 +9,7 @@ local AAtable = ArenaAnalytics.AAtable;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local TablePool = ArenaAnalytics.TablePool;
 local Sessions = ArenaAnalytics.Sessions;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -209,7 +210,7 @@ local function doesMatchPassFilter_Season(match)
     if match == nil then return false end;
 
     local season = currentFilters["Filter_Season"];
-    ArenaAnalyticsDebugAssert(season ~= nil);
+    Debug:Assert(season ~= nil);
     if(season == "All") then
         return true;
     end

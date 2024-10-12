@@ -12,6 +12,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Localization = ArenaAnalytics.Localization;
 local Sessions = ArenaAnalytics.Sessions;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -504,7 +505,7 @@ function VersionManager:RevertIndexBasedNameAndRealm()
 
         -- Logging
 		ArenaAnalytics:Log("Converted ArenaAnalyticsRealmsDB:", #ArenaAnalyticsDB.realms);
-		Helpers:DebugLogTable(ArenaAnalyticsDB.realms);
+		Debug:LogTable(ArenaAnalyticsDB.realms);
 	end
 
     -- Convert realms DB to final DB

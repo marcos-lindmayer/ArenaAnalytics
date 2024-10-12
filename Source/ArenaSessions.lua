@@ -6,6 +6,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Options = ArenaAnalytics.Options;
 local AAtable = ArenaAnalytics.AAtable;
 local Helpers = ArenaAnalytics.Helpers;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -179,10 +180,6 @@ function TeamContainsPlayer(team, player)
 	end
 
 	local fullName = ArenaMatch:GetPlayerFullName(player, false, true);
-    if(tonumber(fullName)) then
-        Helpers:DebugLogTable(player);
-    end
-
 	for _,player in ipairs(team) do
 		if (ArenaMatch:IsSamePlayer(player, fullName)) then
 			return true;

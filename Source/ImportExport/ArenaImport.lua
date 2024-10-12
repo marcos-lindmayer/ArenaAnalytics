@@ -7,6 +7,7 @@ local TablePool = ArenaAnalytics.TablePool;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Filters = ArenaAnalytics.Filters;
 local Helpers = ArenaAnalytics.Helpers;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -82,11 +83,11 @@ function Import:ProcessImportSource()
     end
 
     -- ArenaAnalytics v3
-    if(Import:CheckDataSource_ArenaAnalytics_v3(newImportData)) then
+    if(Import:CheckDataSource_ArenaAnalytics(newImportData)) then
         isValid = true;
     elseif(Import:CheckDataSource_ArenaStatsCata(newImportData)) then
         isValid = true;
-    elseif(Import:CheckDataSource_ArenaStatsWotlk(newImportData)) then
+    elseif(Import:CheckDataSource_ArenaStatsWrath(newImportData)) then
         isValid = true;
     elseif(Import:CheckDataSource_ReflexArenas(newImportData)) then
         isValid = true;
@@ -118,8 +119,14 @@ function Import:ParseRawData()
     end
 
     -- Reset cached values
-    TablePool:Release(Import.cachedArenas);
-    Import.cachedArenas = {strsplit("\n", Import.raw)};
+    Import.cachedArenas = Import.cachedArenas or TablePool:Acquire();
+    TablePool:Clear(Import.cachedArenas);
+
+    for arena in Import.raw:gmatch("[^\n]+") do
+        table.insert(Import.cachedArenas, arena)
+    end
+
+    Import.raw = nil;
 
     ArenaAnalytics:Log("Importing", Import.current.sourceName, #Import.cachedArenas);
     Import:ProcessCachedValues();
@@ -127,10 +134,7 @@ end
 
 function Import:ProcessCachedValues()
     local index = 2;
-    local batchLimit = 1;
-
-    -- TEMP (To help testing)
-    ArenaAnalytics:PurgeArenaAnalyticsDB();
+    local batchLimit = 100;
 
     Import.isImporting = true;
 
@@ -155,8 +159,12 @@ function Import:ProcessCachedValues()
 
     local function ProcessBatch()
         local batchIndexLimit = index + batchLimit;
+        Debug:LogFrameTime("Import: ProcessBatch()");
+        if(ArenaAnalyticsScrollFrame.importDataText3) then
+            ArenaAnalyticsScrollFrame.importDataText3:SetText(string.format("Progress: %d out of %d", index, #Import.cachedArenas));
+        end
 
-        while index < #Import.cachedArenas do
+        while index <= #Import.cachedArenas do
             if(not Import.current.processorFunc) then
                 ArenaAnalytics:Log("Import: Processor func missing, bailing out at index:", lastIndex + 1);
                 break;
@@ -165,10 +173,11 @@ function Import:ProcessCachedValues()
             local arena = Import.current.processorFunc(index);
             if(arena) then
                 Import:SaveArena(arena);
+                TablePool:ReleaseNested(arena);
             end
 
             index = index + 1;
-            if(batchIndexLimit < index) then
+            if(batchIndexLimit <= index) then
                 C_Timer.After(0, ProcessBatch);
                 return;
             end
@@ -190,9 +199,9 @@ function Import:SaveArena(arena)
 	ArenaMatch:SetBracketIndex(newArena, arena.bracketIndex);
 
 	local matchType = nil;
-	if(newArena.isRated) then
+	if(arena.isRated) then
 		matchType = "rated";
-	elseif(newArena.isWargame) then
+	elseif(arena.isWargame) then
 		matchType = "wargame";
 	else
 		matchType = "skirmish";
@@ -200,7 +209,7 @@ function Import:SaveArena(arena)
 
 	ArenaMatch:SetMatchType(newArena, matchType);
 
-	if (newArena.isRated) then
+	if (arena.isRated) then
 		ArenaMatch:SetPartyRating(newArena, arena.partyRating);
 		ArenaMatch:SetPartyRatingDelta(newArena, arena.partyRatingDelta);
 		ArenaMatch:SetPartyMMR(newArena, arena.partyMMR);
@@ -256,16 +265,19 @@ function Import:CreatePlayer(isEnemy, isSelf, name, race, spec, kills, deaths, d
 end
 
 function Import:RetrieveBool(value)
-    if not value or value == "" then
-        return nil
+    if(value == nil or value == "") then
+        return nil;
     end
 
+    value = Helpers:ToSafeLower(value);
+
     -- Support multiple affirmative values
-    return value == "YES" or value == "1" or value == "true" or value == true;
+    return (value == "yes") or (value == "1") or (value == "true") or (value == true) or false;
 end
 
 function Import:RetrieveSimpleOutcome(value)
     local isWin = Import:RetrieveBool(value);
+
     if(isWin == nil) then
         return nil;
     end

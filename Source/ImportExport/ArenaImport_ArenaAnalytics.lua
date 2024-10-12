@@ -4,16 +4,13 @@ local Import = ArenaAnalytics.Import;
 -- Local module aliases
 
 -------------------------------------------------------------------------
-local sourceKey = "ImportSource_ArenaStatsCata";
-local sourceName = "ArenaStats (Cata)";
+
+local sourceName = "ArenaAnalytics";
 
 local formatPrefix = "" --TODO Fill with new format
 
-local importIdentifier = "ArenaAnalytics:";
-local formatPrefix = importIdentifier ..
-    -- Match data
-    "date,season,bracket,map,duration,won,isRated,rating,ratingDelta,mmr,enemyRating,enemyRatingDelta,enemyMMR,firstDeath,player,"..
-
+-- TODO: Update format
+local formatPrefix = "date,season,bracket,map,duration,won,isRated,rating,ratingDelta,mmr,enemyRating,enemyRatingDelta,enemyMMR,firstDeath,player,"..
     -- Team data
     "party1Name,party2Name,party3Name,party4Name,party5Name,"..
     "party1Race,party2Race,party3Race,party4Race,party5Race,"..
@@ -34,14 +31,7 @@ local formatPrefix = importIdentifier ..
     "enemy1Damage,enemy2Damage,enemy3Damage,enemy4Damage,enemy5Damage,"..
     "enemy1Healing,enemy2Healing,enemy3Healing,enemy4Healing,enemy5Healing";
 
--- TODO: Update to v3 format, including shuffles and possibly additional tracked data
-function Import:CheckDataSource_ArenaAnalytics_v3()
-    if(not Import.raw or Import.raw == "") then
-        return false;
-    end
-
-    return Import.raw:sub(1, #importIdentifier) == importIdentifier;
-end
+local valuesPerArena = -1;
 
 function Import:CheckDataSource_ArenaAnalytics(outImportData)
     if(not Import.raw or Import.raw == "") then
@@ -52,24 +42,15 @@ function Import:CheckDataSource_ArenaAnalytics(outImportData)
         return false;
     end
 
-    local valueCount = select(2, Import.raw:gsub("[^" .. delimiter .. "]+", ""));
-
-    -- Corrupted import
-    if(#valueCount % valuesPerArena ~= 0) then
-        ArenaAnalytics:Log("Import corrupted! Source:", sourceName);
-        return false;
-    end
-
-    ArenaAnalytics:Log("Discarding ArenaAnalytics import: NYI!");
-    if(true) then return false end -- NYI
-
     -- Get arena count
     outImportData.isValid = true;
-    outImportData.count = valueCount / valuesPerArena;
-    outImportData.sourceKey = sourceKey;
     outImportData.sourceName = sourceName;
-    outImportData.delimiter = delimiter;
     outImportData.prefixLength = #formatPrefix;
-    outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsCata;
+    outImportData.processorFunc = Import.ProcessNextMatch_ReflexArenas;
     return true;
 end
+
+-------------------------------------------------------------------------
+-- Process arenas
+
+-- TODO: Implement

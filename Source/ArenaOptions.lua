@@ -9,6 +9,7 @@ local Dropdown = ArenaAnalytics.Dropdown;
 local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -86,7 +87,8 @@ function Options:LoadSettings()
     AddSetting("unsavedWarningThreshold", 10);
     AddSetting("alwaysShowDeathOverlay", false);
     AddSetting("alwaysShowSpecOverlay", false);
-
+    
+    AddSetting("hideZeroRatingDelta", true);
     AddSetting("ignoreGroupForSkirmishSession", true);
 
     -- Filters
@@ -139,7 +141,8 @@ function Options:LoadSettings()
     AddSetting("quickSearchAction_Faction", "None");
 
     -- Debugging
-    AddSetting("debuggingEnabled", false);
+    AddSetting("debuggingLevel", 0);
+    ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] = nil; -- Clear old value
 
     hasOptionsLoaded = true;
     ArenaAnalytics:Log("Settings loaded successfully.");
@@ -482,6 +485,7 @@ function SetupTab_General()
 
     CreateSpace();
 
+    parent.hideZeroRatingDelta = CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
     parent.ignoreGroupForSkirmishSession = CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
 end
 
@@ -572,7 +576,7 @@ function SetupTab_Search()
     -- Setup options
     -- TODO: Convert to explicit team dropdown (Any, Team, Enemy)
     parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
-        if(ArenaAnalyticsDebugAssert(ArenaAnalyticsScrollFrame.searchbox.title)) then
+        if(Debug:Assert(ArenaAnalyticsScrollFrame.searchbox.title)) then
             local explicitEnemyText = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
             ArenaAnalyticsScrollFrame.searchBox.title:SetText(explicitEnemyText or "");
         end

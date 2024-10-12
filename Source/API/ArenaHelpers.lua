@@ -55,19 +55,32 @@ end
 
 function Helpers:RatingToText(rating, delta)
     rating = tonumber(rating);
-    delta = tonumber(delta);
-    if(rating ~= nil) then
-        if(delta) then
-            if(delta > 0) then
-                delta = "+"..delta;
-            end
-            delta = " ("..delta..")";
-        else
-            delta = "";
+    delta = tonumber(delta) or 0;
+
+    if(Options:Get("hideZeroRatingDelta") and delta == 0) then
+        if(rating ~= nil) then
+            delta = nil;
         end
-        return rating .. delta;
     end
-    return "-";
+
+    if(not rating and not delta) then
+        return nil;
+    end
+    
+    -- Add + for positive numbers
+    if(delta) then
+        if(delta > 0) then
+            delta = "+"..delta;
+        end
+    end
+
+    if(not rating) then
+        return string.format("(%s)", delta);
+    elseif(not delta) then
+        return rating;
+    end
+
+    return string.format("%d (%s)", rating, delta);
 end
 
 function Helpers:FormatNumber(value)
@@ -190,96 +203,4 @@ end
 function Helpers:IsSpecID(spec_id)
     spec_id = tonumber(spec_id);
     return spec_id and (spec_id % 10 > 0);
-end
-
--------------------------------------------------------------------------
--- Debugging
-
-function Helpers:DebugLogTable(table, level)
-    if(not table) then
-        ArenaAnalytics:Log("DebugLogTable: Nil table");
-        return;
-    end
-
-    level = level or 0;
-    local indentation = string.rep(" ", 3*level);
-
-    if(type(table) ~= "table") then
-        ArenaAnalytics:Log(indentation, table);
-        return;
-    end
-
-    for key,value in pairs(table) do
-        if(type(value) == "table") then
-            ArenaAnalytics:Log(indentation, key);
-            Helpers:DebugLogTable(value, level+1);
-        else
-            ArenaAnalytics:Log(indentation, key, value);
-        end
-    end
-end
-
-function Helpers:DebugLogFrameTime(context)
-	if(not Options:Get("debuggingEnabled")) then
-        return;
-    end
-
-    debugprofilestart();
-
-    C_Timer.After(0, function()
-        local elapsed = debugprofilestop();
-        ArenaAnalytics:Log("DebugLogFrameTime:", elapsed, "Context:", context);
-    end);
-end
-
--- Used to draw a solid box texture over a frame for testing
-function Helpers:DrawDebugBackground(frame, r, g, b, a)
-	if(Options:Get("debuggingEnabled")) then
-		-- TEMP testing
-        if(not frame.debugBackground) then
-		    frame.debugBackground = frame:CreateTexture();
-        end
-
-		frame.debugBackground:SetAllPoints(frame);
-		frame.debugBackground:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
-	end
-end
-
--- TEMP debugging
-
-local statIDs = {}
-local statNames = {}
-
-function Helpers:PrintScoreboardStats(numPlayers)
-    numPlayers = numPlayers or 1;
-
-    for playerIndex=1, numPlayers do
-        ArenaAnalytics:LogSpacer();
-
-        local scoreInfo = C_PvP.GetScoreInfo(playerIndex);
-        if(scoreInfo and scoreInfo.stats) then
-            for i=1, #scoreInfo.stats do
-                local stat = scoreInfo.stats[i];
-                ArenaAnalytics:Log("Stat:", stat.pvpStatID, stat.pvpStatValue, stat.name);
-
-                if(stat.pvpStatID) then
-                    if(statIDs[stat.pvpStatID] and statIDs[stat.pvpStatID] ~= stat.name) then
-                        ArenaAnalytics:Log("New stat name for ID!", stat.pvpStatID, stat.name);
-                    end
-                    statIDs[stat.pvpStatID] = stat.name;
-                end
-                
-                if(stat.name) then
-                    if(statIDs[stat.name] and statIDs[stat.name] ~= stat.pvpStatID) then
-                        ArenaAnalytics:Log("New stat ID for name!", stat.pvpStatID, stat.name);
-                    end
-                    statNames[stat.name] = stat.pvpStatID;
-                end
-            end
-
-            Helpers:DebugLogTable(scoreInfo and scoreInfo.stats);
-        else
-            ArenaAnalytics:Log("No current stats found!");
-        end
-    end
 end

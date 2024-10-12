@@ -8,6 +8,8 @@ local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
+API.numClasses = 13; -- Number of class indices to check for class info
+
 -- Initialize the general and expansion specific addon API
 function API:Initialize()
 

@@ -13,8 +13,14 @@ function Localization:GetClassID(class)
         return nil;
     end
 
-    class = Helpers:ToSafeLower(class);
+    -- Check addon known tokens directly
+    local class_id = Internal:GetAddonClassID(class);
+    if(class_id) then
+        return class_id;
+    end
 
+    -- Check WoW localized tables
+    class = Helpers:ToSafeLower(class);
     for classToken,localizedClass in pairs(LOCALIZED_CLASS_NAMES_MALE) do
         if(class == Helpers:ToSafeLower(classToken) or class == Helpers:ToSafeLower(localizedClass)) then
             return Internal:GetAddonClassID(classToken);
@@ -27,7 +33,7 @@ function Localization:GetClassID(class)
         end
     end
 
-    ArenaAnalytics:Log("LocalizationTables: Failed to get class ID for class:", class);
+    ArenaAnalytics:LogError("LocalizationTables: Failed to get class ID for class:", class);
     return nil;
 end
 
@@ -38,17 +44,20 @@ function Localization:GetSpecID(classToken, spec)
         return nil;
     end
 
-    for classIndex=1, GetNumClasses() do
+    classToken = Helpers:ToSafeLower(classToken);
+    spec = Helpers:ToSafeLower(spec);
+
+    -- Check game values
+    for classIndex=1, API.numClasses do
         local _,token = GetClassInfo(classIndex);
-        if(token == classToken) then
+        if(Helpers:ToSafeLower(token) == classToken) then
             for specIndex=0, 5 do
                 local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
                 if(specID) then
                     for genderIndex = 1, 3 do
                         local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
-                        if(spec == specName) then
-                            local spec_id = API:GetMappedAddonSpecID(id);
-                            return spec_id;
+                        if(spec == Helpers:ToSafeLower(specName)) then
+                            return API:GetMappedAddonSpecID(id);
                         end
                     end
                 end
@@ -56,14 +65,21 @@ function Localization:GetSpecID(classToken, spec)
         end
     end
 
-    ArenaAnalytics:Log("LocalizationTables: Failed to get spec_id for spec:", spec);
+    -- Check English string values
+    local class_id = Internal:GetAddonClassID(classToken);
+    local spec_id = Internal:GetSpecFromSpecString(class_id, spec, true);
+    if(spec_id) then
+        return spec_id;
+    end
+
+    ArenaAnalytics:LogError("LocalizationTables: Failed to get spec_id for spec:", spec, classToken);
     return nil;
 end
 
 -------------------------------------------------------------------------
 
 -- NOTE: Korean and Chinese are ChatGPT-4o values. Untested and unreliable.
-raceMapping = {
+local raceMapping = {
     Human = {
         enGB = { "Human" },
         deDE = { "Mensch" },
@@ -372,7 +388,7 @@ function Localization:GetRaceID(race, factionIndex)
         end
     end
 
-    ArenaAnalytics:Log("LocalizationTables: Failed to find race table value:", race);
+    ArenaAnalytics:LogError("LocalizationTables: Failed to find race table value:", race);
 
     -- Fall back to try looking through 
     for raceID = 1, API.maxRaceID do
@@ -382,13 +398,13 @@ function Localization:GetRaceID(race, factionIndex)
             if addonRaceID then
                 return addonRaceID;
             else
-                ArenaAnalytics:Log("Error: No Addon Race ID found for:", raceID, raceInfo.raceName, raceInfo.clientFileString);
+                ArenaAnalytics:LogError("LocalizationTables: No Addon Race ID found for:", raceID, raceInfo.raceName, raceInfo.clientFileString);
                 return 1000 + raceID;
             end
         end
     end
 
-    ArenaAnalytics:Log("LocalizationTables: Failed to find raceID:", race);
+    ArenaAnalytics:LogError("LocalizationTables: Failed to find raceID:", race);
     return nil;
 end
 

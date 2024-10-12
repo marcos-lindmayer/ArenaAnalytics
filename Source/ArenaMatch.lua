@@ -244,14 +244,6 @@ local function ToPositiveNumber(value, allowZero)
     return value or nil;
 end
 
-local function ToNonZeroNumber(value)
-    value = tonumber(value);
-    if(not value or value == 0) then
-        return nil;
-    end
-    return value;
-end
-
 local function ToNumericalBool(value, drawValue)
     if(value == nil) then
         return;
@@ -516,7 +508,7 @@ end
 function ArenaMatch:SetPartyRatingDelta(match, value)
     assert(match);
 
-    match[matchKeys.rating_delta] = ToNonZeroNumber(value);
+    match[matchKeys.rating_delta] = tonumber(value);
 end
 
 -------------------------------------------------------------------------
@@ -573,7 +565,7 @@ function ArenaMatch:SetEnemyRatingDelta(match, value)
     assert(match);
 
     local key = matchKeys.enemy_rating_delta;
-    match[key] = ToNonZeroNumber(value);
+    match[key] = tonumber(value);
 end
 
 -------------------------------------------------------------------------

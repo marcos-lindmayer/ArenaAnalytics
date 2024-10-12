@@ -12,6 +12,7 @@ local Localization = ArenaAnalytics.Localization;
 local Inspection = ArenaAnalytics.Inspection;
 local Events = ArenaAnalytics.Events;
 local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -551,7 +552,7 @@ function ArenaTracker:HandleArenaEnd()
 			table.insert(players, player);
 		else
 			ArenaAnalytics:Log("Tracker: Invalid player name, player will not be stored!");
-			Helpers:DebugLogTable(player);
+			Debug:LogTable(player);
 		end
 
 		TablePool:Release(score);

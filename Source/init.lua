@@ -56,6 +56,7 @@ local AAtable = ArenaAnalytics.AAtable;
 local Events = ArenaAnalytics.Events;
 local Search = ArenaAnalytics.Search;
 local VersionManager = ArenaAnalytics.VersionManager;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -110,14 +111,8 @@ ArenaAnalytics.commands = {
 	end,
 
 	-- Debug command to 
-	["debug"] = function()
-		if(not Options:Get("debuggingEnabled")) then
-			Options:Set("debuggingEnabled", true);
-			ArenaAnalytics:Log("Debugging enabled!");
-		else
-			Options:Set("debuggingEnabled", false);
-			ArenaAnalytics:Print("Debugging disabled!");
-		end
+	["debug"] = function(level)
+		Debug:SetDebugLevel(level);
 	end,
 
 	["convert"] = function()
@@ -144,11 +139,11 @@ ArenaAnalytics.commands = {
 	end,
 
 	["debugcleardb"] = function()
-		if(not Options:Get("debuggingEnabled")) then
-			ArenaAnalytics:Print("Clearing ArenaAnalyticsDB requires enabling |cffBBBBBB/aa debug|r. Not intended for users!");
+		if(ArenaAnalytics:GetDebugLevel() == 0) then
+			ArenaAnalytics:Print("Clearing ArenaAnalyticsDB requires debugging enabled. |cffBBBBBB/aa debug|r. Not intended for users!");
 		else -- Debug mode is enabled, allow debug clearing the DB
 			if (ArenaAnalytics:HasStoredMatches()) then
-				ArenaAnalytics:Log("Clearing ArenaAnalyticsDB.");
+				ArenaAnalytics:Log("Purging ArenaAnalyticsDB.");
 				ArenaAnalytics:PurgeArenaAnalyticsDB();
 				ArenaAnalytics.AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
 
@@ -227,71 +222,7 @@ function ArenaAnalytics:Print(...)
 	print(prefix, ...);
 end
 
--- Debug logging version of print
-function ArenaAnalytics:LogSpacer()
-	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
-		return;
-	end
-
-	print(" ");
-end
-
-function ArenaAnalytics:Log(...)
-	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
-		return;
-	end
-
-    local hex = "FF6EC7";
-    local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Debug):");
-	print(prefix, ...);
-end
-
-function ArenaAnalytics:LogGreen(...)
-	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
-		return;
-	end
-
-    local hex = "1EFFA7";
-    local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Debug):");
-	print(prefix, ...);
-end
-
-function ArenaAnalytics:LogError(...)
-	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
-		return;
-	end
-
-    local hex = "ff1111";
-    local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics (Error):");
-	print(prefix, ...);
-end
-
-function ArenaAnalytics:LogEscaped(...)
-	if not ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] then
-		return;
-	end
-
-    -- Process each argument and replace | with || in string values, to escape formatting
-	local args = {...}
-	for i = 1, #args do
-		if(type(args[i]) == "string") then
-			args[i] = args[i]:gsub("|", "||");
-		end
-	end
-
-	-- Use unpack to print the modified arguments
-	ArenaAnalytics:Log(unpack(args));
-end
-
 -------------------------------------------------------------------------
-
--- Assert if debug is enabled. Returns value to allow wrapping within if statements.
-function ArenaAnalyticsDebugAssert(value, msg)
-	if(Options:Get("debuggingEnabled")) then
-		assert(value, "Debug Assertion failed! " .. (msg or ""));
-	end
-	return value;
-end
 
 -- Returns devault theme color
 function ArenaAnalytics:GetThemeColor()
@@ -416,9 +347,7 @@ function ArenaAnalytics:init()
 	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffAAAAAA" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	
-	if(Options:Get("debuggingEnabled")) then
-		ArenaAnalytics:Log("Debugging Enabled! |cffBBBBBB/aa debug to disable.|r ");
-	end
+	Debug:OnLoad();
 
 	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
 	if(not successfulRequest) then

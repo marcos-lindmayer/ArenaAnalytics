@@ -10,14 +10,10 @@ local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
-local sourceKey = "ImportSource_ReflexArenas";
 local sourceName = "REFlex (arenas)";
 
 local formatPrefix = "Timestamp;Map;PlayersNumber;TeamComposition;EnemyComposition;Duration;Victory;KillingBlows;Damage;Healing;Honor;RatingChange;MMR;EnemyMMR;Specialization;isRated";
 local valuesPerArena = 16;
-
--- Define the separator pattern that accounts for both ";" and "\n"
-local delimiter = "\n";
 
 function Import:CheckDataSource_ReflexArenas(outImportData)
     if(not Import.raw or Import.raw == "") then
@@ -30,12 +26,14 @@ function Import:CheckDataSource_ReflexArenas(outImportData)
 
     -- Get arena count
     outImportData.isValid = true;
-    outImportData.sourceKey = sourceKey;
     outImportData.sourceName = sourceName;
-    outImportData.delimiter = delimiter;
     outImportData.prefixLength = #formatPrefix;
     outImportData.processorFunc = Import.ProcessNextMatch_ReflexArenas;
     return true;
+end
+
+local function IsValidArena(values)
+    return values and #values == valuesPerArena;
 end
 
 -------------------------------------------------------------------------
@@ -55,7 +53,7 @@ local function ProcessTeam(players, cachedValues, isEnemyTeam)
     -- Process each player
     for playerString in team:gmatch("([^,]+)") do
         if(playerString and playerString ~= "") then
-            local newPlayer = {};
+            local newPlayer = TablePool:Acquire();
 
             -- Split player details by hyphen: "CLASS-Spec-Name-Realm"
             local class, spec, name = strsplit("-", playerString, 3);
@@ -93,22 +91,23 @@ end
 function Import.ProcessNextMatch_ReflexArenas(index)
     assert(Import.cachedArenas);
 
-    ArenaAnalytics:Log("Processing arena:", index);--, Import.cachedArenas[index]);
     if(not Import.cachedArenas[index]) then
         return nil;
     end
 
     local cachedValues = { strsplit(';', Import.cachedArenas[index]) };
-    if(not cachedValues or #cachedValues ~= valuesPerArena) then
+    if(not IsValidArena(cachedValues)) then
         ArenaAnalytics:Print("Import (Reflex): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
         TablePool:Release(cachedValues);
         return nil;
     end
 
-    -- New arena in standardized import format
+    -- Create a new arena match in a standardized import format
     local newArena = TablePool:Acquire();
+
+    -- Set basic arena properties
     newArena.date = tonumber(cachedValues[1]);           -- Date
-    newArena.map = cachedValues[2];   -- Map
+    newArena.map = Internal:GetMapToken(cachedValues[2]);   -- Map
 
     -- Fill teams
     newArena.players = TablePool:Acquire();
@@ -126,12 +125,14 @@ function Import.ProcessNextMatch_ReflexArenas(index)
         -- Player stats moved into ProcessTeam for ally team (Index 8, 9, 10)
         -- Honor ignored (Index 11)
 
+    -- Rated Info
     newArena.partyRatingDelta = tonumber(cachedValues[12]);  -- RatingChange
-    newArena.partyMMR = tonumber(cachedValues[13]);           -- MMR
+    ArenaAnalytics:LogForced(newArena.partyRatingDelta);
 
+    newArena.partyMMR = tonumber(cachedValues[13]);           -- MMR
     newArena.enemyMMR = tonumber(cachedValues[14]);      -- EnemyMMR
 
-    local mySpec = cachedValues[15];                    -- Specialization
+    --local mySpec = cachedValues[15];                    -- Specialization
 
     newArena.isRated = Import:RetrieveBool(cachedValues[16]);   -- isRated (boolean)
 

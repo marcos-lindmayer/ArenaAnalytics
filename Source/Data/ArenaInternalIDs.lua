@@ -17,6 +17,9 @@ local mapTokens = {
     [562] = "BladesEdgeArena",
     [1672] = "BladesEdgeArena",
 
+    [617] = "DalaranArena",
+    [571] = "DalaranArena", -- Northrend ID (Some imports use it, assuming Dalaran Arena)
+
     [572] = "RuinsOfLordaeron",
     [2167] = "TheRobodrome",
     [2563] = "NokhudonProvingGrounds",
@@ -25,7 +28,6 @@ local mapTokens = {
     [1504] = "BlackRookHoldArena",
     [1825] = "HookPoint",
     [2373] = "EmpyreanDomain",
-    [617] = "DalaranArena",
     [1134] = "TheTigersPeak",
     [2547] = "EnigmaCrucible",
     [2509] = "MaldraxxusColiseum",
@@ -34,7 +36,14 @@ local mapTokens = {
 
 function Internal:GetMapToken(mapID)
     mapID = tonumber(mapID);
-    return mapID and mapTokens[mapID] or nil;
+    local token = mapID and mapTokens[mapID];
+
+    if(not token) then
+        ArenaAnalytics:LogWarning("Failed to retrieve token for mapID:", mapID);
+        return nil;
+    end
+
+    return token
 end
 
 local addonMapIDs = {
@@ -212,8 +221,6 @@ function Internal:GetAddonClassID(class)
     class = Helpers:ToSafeLower(class);
 
     for class_id,data in pairs(addonClassIDs) do
-        assert(data);
-
         if(class == Helpers:ToSafeLower(data.token) or class == Helpers:ToSafeLower(data.name)) then
             return class_id;
         end
@@ -345,7 +352,7 @@ function InitializeSpecIDs()
     }
 end
 
--- Get the ID from string class and spec. Should only be used by version control.
+-- Get the ID from string class and spec. (For import and version control)
 function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
     if(not class_id) then
         return nil;
@@ -355,10 +362,19 @@ function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
         return nil;
     end
 
+    local function SanitizeSpec(value)
+        if(type(value) == "string") then
+            value = value:gsub(" ", ""):lower();
+        end
+        return value;
+    end
+
+    spec = SanitizeSpec(spec);
+
     -- Iterate through the table to find the matching class and spec
     for id,data in pairs(addonSpecializationIDs) do
         if(Helpers:GetClassID(id) == class_id) then
-            if((not forceExactSpec and spec == nil) or (spec == data.spec)) then
+            if(spec == SanitizeSpec(data.spec)) then
                 return id;
             end
         end

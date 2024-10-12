@@ -3,11 +3,13 @@ local Import = ArenaAnalytics.Import;
 
 -- Local module aliases
 local API = ArenaAnalytics.API;
+local TablePool = ArenaAnalytics.TablePool;
+local Internal = ArenaAnalytics.Internal;
+local Localization = ArenaAnalytics.Localization;
 
 -------------------------------------------------------------------------
 
-local sourceKey = "ImportSource_ArenaStatsWrath";
-local sourceName = "ArenaStats (Wrath)";
+local sourceName = "ArenaStats (wrath)";
 
 local formatPrefix = "isRanked,startTime,endTime,zoneId,duration,teamName,teamColor,"..
     "winnerColor,teamPlayerName1,teamPlayerName2,teamPlayerName3,teamPlayerName4,teamPlayerName5,"..
@@ -21,10 +23,7 @@ local formatPrefix = "isRanked,startTime,endTime,zoneId,duration,teamName,teamCo
 
 local valuesPerArena = 48;
 
--- Define the separator pattern that accounts for both ";" and "\n"
-local delimiter = "\n";
-
-function Import:CheckDataSource_ArenaStatsWotlk(outImportData)
+function Import:CheckDataSource_ArenaStatsWrath(outImportData)
     if(not Import.raw or Import.raw == "") then
         return false;
     end
@@ -33,37 +32,44 @@ function Import:CheckDataSource_ArenaStatsWotlk(outImportData)
         return false;
     end
 
-    local valueCount = select(2, Import.raw:gsub("[^" .. delimiter .. "]+", ""));
-
-    -- Corrupted import
-    if(#valueCount % valuesPerArena ~= 0) then
-        ArenaAnalytics:Log("Import corrupted! Source:", sourceName);
-        return false;
-    end
-
     -- Get arena count
     outImportData.isValid = true;
-    outImportData.count = valueCount / valuesPerArena;
-    outImportData.sourceKey = sourceKey;
     outImportData.sourceName = sourceName;
-    outImportData.delimiter = delimiter;
     outImportData.prefixLength = #formatPrefix;
-    outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsWotlk;
+    outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsWrath;
     return true;
+end
+
+local function IsValidArena(values)
+    return values and #values == (valuesPerArena + 1); -- Ends by comma, include a dummy last value.
 end
 
 -------------------------------------------------------------------------
 -- Process arenas
 
-local function ProcessPlayer(lastIndex, isEnemyTeam, playerIndex, factionIndex)
-    local indexOffset = isEnemyTeam and 32 or 8;
+local function IsValidValue(value)
+    return value and value ~= "" and value ~= "Unknown";
+end
 
-    local valueIndex = lastIndex + indexOffset + playerIndex;
+local function GetMatchOutcome(cachedValues)
+    local myTeam = cachedValues[7];
+    local winningTeam = cachedValues[8];
+    if(not IsValidValue(myTeam) or not IsValidValue(winningTeam)) then
+        return nil;
+    end
 
-    local name = Import.cachedValues[valueIndex];
-    
+    local isWin = winningTeam == myTeam;
+    ArenaAnalytics:LogTemp(isWin);
+    return Import:RetrieveSimpleOutcome(isWin);
+end
+
+local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionIndex)
+    local valueIndex = (isEnemyTeam and 32 or 8) + playerIndex;
+
+    local name = cachedValues[valueIndex];
+
     -- Assume invalid player, if name is missing
-    if(not name) then
+    if(not IsValidValue(name)) then
         return nil;
     end
 
@@ -71,41 +77,60 @@ local function ProcessPlayer(lastIndex, isEnemyTeam, playerIndex, factionIndex)
         factionIndex = nil;
     end
 
-    local class = Import.cachedValues[valueIndex + 5];
-    local race = Import.cachedValues[valueIndex + 10];
+    local class = cachedValues[valueIndex + 5];
+    local race = cachedValues[valueIndex + 10];
 
     local player = {
         isEnemy = isEnemyTeam,
         isSelf = (name == UnitName("player")),
         name = name,
-        spec_id = Localization:GetClassID(class),
-        race_id = Localization:GetRaceID(race, factionIndex),
+        race = Localization:GetRaceID(race, factionIndex),
     };
+
+    if(IsValidValue(class)) then
+        player.spec = Localization:GetClassID(class);
+    else
+        ArenaAnalytics:LogError("Import: Missing class and spec for player:", name);
+    end
 
     return player;
 end
 
-function Import:ProcessNextMatch_ArenaStatsWotlk(lastIndex)
-    assert(Import.cachedValues);
+function Import.ProcessNextMatch_ArenaStatsWrath(index)
+    assert(Import.cachedArenas);
 
-    -- Create a new arena match table in a standardized format
-    local newArena = {}
+    if(not Import.cachedArenas[index]) then
+        return nil;
+    end
+
+    local cachedValues = { strsplit(',', Import.cachedArenas[index]) };
+    if(not IsValidArena(cachedValues)) then
+        ArenaAnalytics:LogError("Import (ArenaStats Wrath): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
+        TablePool:Release(cachedValues);
+        return nil;
+    end
+
+    -- Create a new arena match in a standardized import format
+    local newArena = TablePool:Acquire();
 
     -- Set basic arena properties
-    newArena.isRated = Import:RetrieveBool(Import.cachedValues[lastIndex + 1]);        -- isRated (boolean)
-    newArena.date = tonumber(Import.cachedValues[lastIndex + 2]);          -- Start time (date)
-    newArena.map = Internal:GetAddonMapID(Import.cachedValues[lastIndex + 4]);  -- Map ID
-    newArena.duration = tonumber(Import.cachedValues[lastIndex + 5]);  -- Duration
-    newArena.outcome = Import:RetrieveSimpleOutcome(Import.cachedValues[lastIndex + 8]);    -- Victory (boolean)
+    newArena.isRated = Import:RetrieveBool(cachedValues[1]);
+    ArenaAnalytics:LogTemp("IsRated:", newArena.isRated, cachedValues[1]);
+
+    newArena.date = tonumber(cachedValues[2]);
+    newArena.map = Internal:GetMapToken(cachedValues[4]);
+    newArena.duration = tonumber(cachedValues[5]);  -- Duration
+    newArena.outcome = GetMatchOutcome(cachedValues);
+    ArenaAnalytics:LogTemp("outcome:", newArena.outcome, cachedValues[7], cachedValues[8]);
 
     -- Fill teams with player data
-    newArena.players = {}
+    newArena.players = TablePool:Acquire();
 
     local enemyCount = 0;
-    local factionIndex = Localization:GetFactionIndex(Import.cachedValues[lastIndex + 48]);
+    local factionIndex = Localization:GetFactionIndex(cachedValues[48]);
     for _,isEnemy in ipairs({false, true}) do
         for i=1, 5 do
-            local player = ProcessPlayer(lastIndex, isEnemy, i, factionIndex);
+            local player = ProcessPlayer(cachedValues, isEnemy, i, factionIndex);
             if(player) then
                 tinsert(newArena.players, player);
 
@@ -122,19 +147,20 @@ function Import:ProcessNextMatch_ArenaStatsWotlk(lastIndex)
         newArena.bracket = "3v3";
     elseif(#newArena.players == 10 and enemyCount == 5) then
         newArena.bracket = "5v5";
+    else
+        ArenaAnalytics:Log("Player count:", #newArena.players);
     end
 
     -- Player rating and MMR data
-    newArena.partyRating = tonumber(Import.cachedValues[lastIndex + 25]);
-    newArena.partyRatingDelta = tonumber(Import.cachedValues[lastIndex + 26]);  -- Rating Delta
-    newArena.partyMMR = tonumber(Import.cachedValues[lastIndex + 27]);  -- Party MMR
+    newArena.partyRating = tonumber(cachedValues[25]);
+    newArena.partyRatingDelta = tonumber(cachedValues[26]);  -- Rating Delta
+    newArena.partyMMR = tonumber(cachedValues[27]);  -- Party MMR
 
     -- Enemy rating and MMR data
-    newArena.enemyRating = tonumber(Import.cachedValues[lastIndex + 29]);
-    newArena.enemyRatingDelta = tonumber(Import.cachedValues[lastIndex + 30]);  -- Rating Delta
-    newArena.enemyMMR = tonumber(Import.cachedValues[lastIndex + 31]);  -- Enemy MMR
+    newArena.enemyRating = tonumber(cachedValues[29]);
+    newArena.enemyRatingDelta = tonumber(cachedValues[30]);  -- Rating Delta
+    newArena.enemyMMR = tonumber(cachedValues[31]);  -- Enemy MMR
 
     -- Return new arena and updated index
-    lastIndex = lastIndex + valuesPerArena;
-    return newArena, lastIndex;
+    return newArena;
 end
