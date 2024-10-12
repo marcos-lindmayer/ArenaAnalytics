@@ -58,17 +58,9 @@ local function ProcessTeam(players, cachedValues, isEnemyTeam)
             -- Split player details by hyphen: "CLASS-Spec-Name-Realm"
             local class, spec, name = strsplit("-", playerString, 3);
 
-            if(not name) then
-                ArenaAnalytics:LogGreen("ReflexArenas imported player with missing name!");
-            end
-
             newPlayer.isEnemy = isEnemyTeam;
             newPlayer.name = name;
             newPlayer.spec = Localization:GetSpecID(class, spec);
-
-            if(not newPlayer.spec) then
-                ArenaAnalytics:LogError("Invalid import spec for player:", name, class, spec);
-            end
 
             -- Determine if the player is self
             newPlayer.isSelf = (name == UnitName("player"));
@@ -95,7 +87,7 @@ function Import.ProcessNextMatch_ReflexArenas(index)
         return nil;
     end
 
-    local cachedValues = { strsplit(';', Import.cachedArenas[index]) };
+    local cachedValues = strsplittable(',', Import.cachedArenas[index]);
     if(not IsValidArena(cachedValues)) then
         ArenaAnalytics:Print("Import (Reflex): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
         TablePool:Release(cachedValues);
@@ -117,6 +109,8 @@ function Import.ProcessNextMatch_ReflexArenas(index)
     -- Appears to be a 2v2.
     if(teamCount == 2 and enemyCount == 2) then
         newArena.bracket = "2v2";
+    elseif(teamCount == 5 and enemyCount == 5) then
+        newArena.bracket = "5v5";
     end
 
     newArena.duration = tonumber(cachedValues[6]);           -- Duration
@@ -127,8 +121,6 @@ function Import.ProcessNextMatch_ReflexArenas(index)
 
     -- Rated Info
     newArena.partyRatingDelta = tonumber(cachedValues[12]);  -- RatingChange
-    ArenaAnalytics:LogForced(newArena.partyRatingDelta);
-
     newArena.partyMMR = tonumber(cachedValues[13]);           -- MMR
     newArena.enemyMMR = tonumber(cachedValues[14]);      -- EnemyMMR
 

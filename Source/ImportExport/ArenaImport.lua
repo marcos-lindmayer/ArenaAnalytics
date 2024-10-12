@@ -120,7 +120,7 @@ function Import:ParseRawData()
 
     -- Reset cached values
     Import.cachedArenas = Import.cachedArenas or TablePool:Acquire();
-    TablePool:Clear(Import.cachedArenas);
+    wipe(Import.cachedArenas);
 
     for arena in Import.raw:gmatch("[^\n]+") do
         table.insert(Import.cachedArenas, arena)
@@ -138,10 +138,12 @@ function Import:ProcessCachedValues()
 
     Import.isImporting = true;
 
+    local startTime = time();
     local skippedArenaCount = 0;
 
     local existingArenaCount = #ArenaAnalyticsDB;
 
+    -- Finalize import
     local function Finalize()
         Import:Reset();
         Import:TryHide();
@@ -153,10 +155,13 @@ function Import:ProcessCachedValues()
 
         Filters:Refresh();
 
-        ArenaAnalytics:Print("Import complete. " .. (#ArenaAnalyticsDB - existingArenaCount) .. " arenas added!");
+        local elapsedText = startTime and SecondsToTime(time() - startTime) or "???";
+
+        ArenaAnalytics:Print("Import complete.", (#ArenaAnalyticsDB - existingArenaCount), "arenas added in", elapsedText);
         ArenaAnalytics:Log("Import ignored", skippedArenaCount, "arenas due to their date.");
     end
 
+    -- Batch Processing
     local function ProcessBatch()
         local batchIndexLimit = index + batchLimit;
         Debug:LogFrameTime("Import: ProcessBatch()");
@@ -174,6 +179,8 @@ function Import:ProcessCachedValues()
             if(arena) then
                 Import:SaveArena(arena);
                 TablePool:ReleaseNested(arena);
+            else
+                skippedArenaCount = skippedArenaCount + 1;
             end
 
             index = index + 1;
@@ -196,7 +203,7 @@ function Import:SaveArena(arena)
 	ArenaMatch:SetDuration(newArena, arena.duration);
 	ArenaMatch:SetMap(newArena, arena.map);
 
-	ArenaMatch:SetBracketIndex(newArena, arena.bracketIndex);
+	ArenaMatch:SetBracket(newArena, arena.bracket);
 
 	local matchType = nil;
 	if(arena.isRated) then

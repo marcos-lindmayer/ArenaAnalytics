@@ -101,9 +101,9 @@ function Search:CreateToken(raw, isExact)
     -- Valid if it has a keyword or no spaces
     newToken.isValid = newToken.value and not newToken.noSpace or type(newToken.value) == "number" or not newToken.value:find(' ', 1, true);
 
-    newToken.value = tonumber(newToken.value) or newToken.value;
-    if(type(newToken.value) == "string") then
-        newToken.value = newToken.value:lower();
+    -- Sanitize value
+    if(newToken.value) then
+        newToken.value = Helpers:ToSafeNumber(newToken.value) or Helpers:ToSafeLower(newToken.value);
     end
 
     --ArenaAnalytics:Log("Created Token: ", newToken.explicitType, newToken.value, newToken.raw)

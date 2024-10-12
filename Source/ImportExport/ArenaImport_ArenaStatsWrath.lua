@@ -103,7 +103,7 @@ function Import.ProcessNextMatch_ArenaStatsWrath(index)
         return nil;
     end
 
-    local cachedValues = { strsplit(',', Import.cachedArenas[index]) };
+    local cachedValues = strsplittable(',', Import.cachedArenas[index]);
     if(not IsValidArena(cachedValues)) then
         ArenaAnalytics:LogError("Import (ArenaStats Wrath): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
         TablePool:Release(cachedValues);

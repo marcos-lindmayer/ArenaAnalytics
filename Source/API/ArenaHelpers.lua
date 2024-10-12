@@ -23,6 +23,14 @@ function Helpers:ToSafeLower(value)
     return value;
 end
 
+function Helpers:ToSafeNumber(value)
+    if(not value or value == "inf" or value == "nan") then
+        return nil; -- Assume non-nil values will be kept if needed elsewhere
+    end
+
+    return tonumber(value);
+end
+
 function Helpers:DeepCopy(original)
     local copy = {}
 

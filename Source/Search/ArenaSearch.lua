@@ -201,7 +201,7 @@ end
 -- NOTE: This is the main part to modify to handle actual token matching logic
 -- Returns true if a given type on a player matches the given value
 local function CheckTypeForPlayer(searchType, token, player)
-    if(tonumber(token.value)) then
+    if(type(token.value) == "number") then
         if(searchType == "class" or searchType == "spec") then
             return Search:CheckSpecMatch(token.value, player);
         elseif(searchType == "race") then
@@ -242,7 +242,7 @@ local function CheckTypeForPlayer(searchType, token, player)
     end
 
     -- Class and Spec IDs may be numbers in the token
-    if(tonumber(playerValue) or tonumber(token.value)) then
+    if(type(playerValue) == "number" or type(token.value) == number) then
         return tonumber(playerValue) == tonumber(token.value);
     else
         return not token.exact and playerValue:find(token.value, 1, true) or (token.value == playerValue);
