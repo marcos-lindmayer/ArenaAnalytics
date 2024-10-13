@@ -18,6 +18,7 @@ ArenaAnalytics.ArenaIcon = {};
 ArenaAnalytics.Tooltips = {};
 ArenaAnalytics.ShuffleTooltip = {};
 ArenaAnalytics.PlayerTooltip = {};
+ArenaAnalytics.ImportProgressFrame = {};
 
 ArenaAnalytics.Dropdown = {};
 ArenaAnalytics.Dropdown.List = {};
@@ -93,21 +94,28 @@ ArenaAnalytics.commands = {
 	["played"] = function()
 		local totalDurationInArenas = 0;
 		local currentSeasonTotalPlayed = 0;
+		local longestDuration = 0;
 		for i=1, #ArenaAnalyticsDB do
 			local match = ArenaAnalyticsDB[i];
 			local duration = ArenaMatch:GetDuration(match) or 0;
 			if(duration > 0) then
 				totalDurationInArenas = totalDurationInArenas + duration;
+				longestDuration = max(longestDuration, duration);
+				if(duration > 3600) then
+					ArenaAnalytics:LogTemp(i)
+				end
 
 				if(ArenaMatch:GetSeason(match) == GetCurrentArenaSeason()) then
 					currentSeasonTotalPlayed = currentSeasonTotalPlayed + duration;
 				end
 			end
 		end
+
 		-- TODO: Update coloring?
 		ArenaAnalytics:Print("Total arena time played: ", SecondsToTime(totalDurationInArenas));
 		ArenaAnalytics:Print("Time played this season: ", SecondsToTime(currentSeasonTotalPlayed));
 		ArenaAnalytics:Print("Average arena duration: ", SecondsToTime(math.floor(totalDurationInArenas / #ArenaAnalyticsDB)));
+		ArenaAnalytics:Print("Longest arena duration: ", SecondsToTime(math.floor(longestDuration)));
 	end,
 
 	-- Debug command to 

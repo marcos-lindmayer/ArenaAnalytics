@@ -80,16 +80,21 @@ local function ProcessTeam(players, cachedValues, isEnemyTeam)
     return teamCount;
 end
 
-function Import.ProcessNextMatch_ReflexArenas(index)
-    assert(Import.cachedArenas);
-
-    if(not Import.cachedArenas[index]) then
+function Import.ProcessNextMatch_ReflexArenas(arenaString)
+    ArenaAnalytics:Log("ProcessNextMatch_ReflexArenas", arenaString)
+    if(not arenaString) then
         return nil;
     end
 
-    local cachedValues = strsplittable(',', Import.cachedArenas[index]);
+    local cachedValues = strsplittable(';', arenaString);
     if(not IsValidArena(cachedValues)) then
         ArenaAnalytics:Print("Import (Reflex): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
+        TablePool:Release(cachedValues);
+        return nil;
+    end
+
+    local date = tonumber(cachedValues[1]);
+    if(not Import:CheckDate(date)) then
         TablePool:Release(cachedValues);
         return nil;
     end
@@ -98,7 +103,7 @@ function Import.ProcessNextMatch_ReflexArenas(index)
     local newArena = TablePool:Acquire();
 
     -- Set basic arena properties
-    newArena.date = tonumber(cachedValues[1]);           -- Date
+    newArena.date = date;           -- Date
     newArena.map = Internal:GetMapToken(cachedValues[2]);   -- Map
 
     -- Fill teams

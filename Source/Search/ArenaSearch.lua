@@ -102,6 +102,7 @@ function Search:Reset()
     end
 
     Search:CommitSearch("");
+    return true;
 end
 
 function Search:Update(input)

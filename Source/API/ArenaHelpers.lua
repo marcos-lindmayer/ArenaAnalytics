@@ -63,7 +63,7 @@ end
 
 function Helpers:RatingToText(rating, delta)
     rating = tonumber(rating);
-    delta = tonumber(delta) or 0;
+    delta = tonumber(delta);
 
     if(Options:Get("hideZeroRatingDelta") and delta == 0) then
         if(rating ~= nil) then

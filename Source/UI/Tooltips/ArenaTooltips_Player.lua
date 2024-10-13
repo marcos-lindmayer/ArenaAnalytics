@@ -12,6 +12,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -51,6 +52,7 @@ local statsPadding = 10;
 local function FillContainerValues(container, values, rowHeight, padding, yOffset)
     padding = padding or 0;
     yOffset = yOffset or 0;
+    rowHeight = rowHeight - 0.3; -- Fix rounding layout issues
 
     -- Ensure the frames table exists on the container for reuse
     container.frames = container.frames or TablePool:Acquire();
@@ -103,7 +105,7 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
             frame:SetText(value);
 
             -- Position the value in either the left or right column
-            frame:SetPoint("TOPLEFT", column, "TOPLEFT", 0, -yOffset);
+            frame:SetPoint("TOPLEFT", column, "TOPLEFT", -0.3, -yOffset);
 
             -- Check for increased required size
             if(frame:GetWidth() > column.desiredWidth) then

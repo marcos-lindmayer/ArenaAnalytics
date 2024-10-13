@@ -143,8 +143,7 @@ function Import:determineImportSource(data)
 end
 
 function Import:reset()
-    ArenaAnalyticsScrollFrame.importDialogFrame.button:Enable();
-    ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetText("");
+    ImportBox:ResetAll();
     AAtable:RefreshLayout(true);
 
     cachedValues = {};

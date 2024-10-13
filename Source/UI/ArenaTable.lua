@@ -294,34 +294,29 @@ function AAtable:TryShowimportDialogFrame(parent)
     if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
         ArenaAnalyticsScrollFrame.importDialogFrame = CreateFrame("Frame", "ArenaAnalyticsImportFrame", parent or UIParent, "BasicFrameTemplateWithInset")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetPoint("CENTER")
-        ArenaAnalyticsScrollFrame.importDialogFrame:SetSize(475, 145)
+        ArenaAnalyticsScrollFrame.importDialogFrame:SetSize(440, 145)
         ArenaAnalyticsScrollFrame.importDialogFrame:SetFrameStrata("DIALOG");
         ArenaAnalyticsScrollFrame.importDialogFrame.title = ArenaAnalyticsScrollFrame.importDialogFrame:CreateFontString(nil, "OVERLAY");
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", -10, -5);
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetText("Import");
-        ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, "|cffffffffPaste the ArenaStats or ArenaAnalytics export on the text box below.|r");
-        ArenaAnalyticsScrollFrame.importDialogFrame.Text2 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -65, "|cffCCCCCCNote:|r |cff888888Matches with missing specs detected won't show on comp filters.|r");
 
-        ArenaAnalyticsScrollFrame.importDialogFrame.button = AAtable:CreateButton("TOPRIGHT", ArenaAnalyticsScrollFrame.importDialogFrame, "TOPRIGHT", -45, -80, "Import");
-        ArenaAnalyticsScrollFrame.importDialogFrame.button:SetSize(115, 25);
+        local supportedSourcesText = "|cffffffffPaste the |cff00ccffArenaStats|r or |cff00ccffREFlex|r import string in the edit box.|r";
+        ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, supportedSourcesText);
+
+        local noteText = "|cffCCCCCCNote:|r |cff888888Import may be missing data required for some filters.|r";
+        ArenaAnalyticsScrollFrame.importDialogFrame.Text2 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -65, noteText);
 
         -- Import Edit Box
-        ArenaAnalyticsScrollFrame.importDialogFrame.importBox = ImportBox:Create(ArenaAnalyticsScrollFrame.importDialogFrame, "ImportDialogBox", 255, 55);
-        ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetPoint("RIGHT", ArenaAnalyticsScrollFrame.importDialogFrame.button, "LEFT", -10, 0);
+        ArenaAnalyticsScrollFrame.importDialogFrame.importBox = ImportBox:Create(ArenaAnalyticsScrollFrame.importDialogFrame, "ArenaAnalyticsImportDialogBox", 380, 25);
+        ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame.Text2, "BOTTOM", 0, -8);
 
-        ArenaAnalyticsScrollFrame.importDataText3 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "BOTTOM", 0, 25, "|cffff0000Do this NOW|r |cffffffffYou won't be able to do this while you have stored arenas!|r");
-
-        ArenaAnalyticsScrollFrame.importDialogFrame.button:SetScript("OnClick", function (i)
-            ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
-            Import:ParseRawData(ArenaImportPasteStringTable);
-            ArenaImportPasteStringTable = {};
-        end);
+        -- Date warning text
+        local dateWarningText = "|cffff0000Warning:|r |cffffffffSkips imports within 24 hours of existing arenas.|r";
+        ArenaAnalyticsScrollFrame.importDataText3 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", ArenaAnalyticsScrollFrame.importDialogFrame.importBox.frame, "BOTTOM", 0, -8, dateWarningText);
     end
 
     ArenaAnalyticsScrollFrame.importDialogFrame:SetParent(parent or UIParent);
-
-    ArenaAnalyticsScrollFrame.importDialogFrame.button:Enable();
     ArenaAnalyticsScrollFrame.importDialogFrame:Show();
 end
 

@@ -8,6 +8,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Filters = ArenaAnalytics.Filters;
 local Helpers = ArenaAnalytics.Helpers;
 local Debug = ArenaAnalytics.Debug;
+local ImportProgressFrame = ArenaAnalytics.ImportProgressFrame;
 
 -------------------------------------------------------------------------
 
@@ -33,15 +34,17 @@ local Debug = ArenaAnalytics.Debug;
         count
         sourceName
         processorFunc
+        state
 --]]
+
 -------------------------------------------------------------------------
 
-Import.raw = nil;
+-- Processing
+local batchTimeLimit = 0.01;
+
 Import.isImporting = false;
-
+Import.raw = nil;
 Import.current = nil;
-
-Import.cachedArenas = nil;
 
 function Import:IsLocked()
     return not Import.isImporting;
@@ -61,13 +64,10 @@ function Import:Reset()
 
     Import.raw = nil;
     Import.current = nil;
-    Import.cachedArenas = nil;
 end
 
 function Import:TryHide()
     if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil and ArenaAnalytics:HasStoredMatches()) then
-        ArenaAnalyticsScrollFrame.importDialogFrame.button:Disable();
-        ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetText("");
         ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
         ArenaAnalyticsScrollFrame.importDialogFrame = nil;
     end
@@ -112,88 +112,125 @@ function Import:ParseRawData()
         return;
     end
 
-    if(not Import.current  or not Import.current.isValid or not Import.current.processorFunc) then
+    if(not Import.current or not Import.current.isValid or not Import.current.processorFunc) then
         ArenaAnalytics:Log("Invalid data for import attempt.. Bailing out immediately..");
         Import:Reset();
         return;
     end
 
-    -- Reset cached values
-    Import.cachedArenas = Import.cachedArenas or TablePool:Acquire();
-    wipe(Import.cachedArenas);
-
-    for arena in Import.raw:gmatch("[^\n]+") do
-        table.insert(Import.cachedArenas, arena)
-    end
-
-    Import.raw = nil;
-
-    ArenaAnalytics:Log("Importing", Import.current.sourceName, #Import.cachedArenas);
-    Import:ProcessCachedValues();
+    Import:ProcessImport();
 end
 
-function Import:ProcessCachedValues()
-    local index = 2;
-    local batchLimit = 100;
+-- Check a date for a duplicate, in case of repeating same import
+function Import:CheckDate(timestamp)
+    if true then return true end
 
-    Import.isImporting = true;
-
-    local startTime = time();
-    local skippedArenaCount = 0;
-
-    local existingArenaCount = #ArenaAnalyticsDB;
-
-    -- Finalize import
-    local function Finalize()
-        Import:Reset();
-        Import:TryHide();
-
-        ArenaAnalytics:ResortMatchHistory();
-
-        Sessions:RecomputeSessionsForMatchHistory();
-        ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
-
-        Filters:Refresh();
-
-        local elapsedText = startTime and SecondsToTime(time() - startTime) or "???";
-
-        ArenaAnalytics:Print("Import complete.", (#ArenaAnalyticsDB - existingArenaCount), "arenas added in", elapsedText);
-        ArenaAnalytics:Log("Import ignored", skippedArenaCount, "arenas due to their date.");
+    if(not timestamp or timestamp == 0) then
+        ArenaAnalytics:LogError("Rejecting import arena for invalid date:", timestamp);
+        return false;
     end
 
-    -- Batch Processing
+    for i,match in ipairs(ArenaAnalyticsDB) do
+        local date = ArenaMatch:GetDate(match);
+        if(date == timestamp) then
+            ArenaAnalytics:LogWarning("Rejecting import arena for duplicate date:", Helpers:FormatDate(timestamp));
+            return false;
+        end
+    end
+
+    return true;
+end
+
+local function ArenaIterator()
+    return coroutine.wrap(function()
+        for arena in Import.raw:gmatch("[^\n]+") do
+            coroutine.yield(arena);
+        end
+    end);
+end
+
+-- Initiate processing
+function Import:ProcessImport()
+    Import.isImporting = true;
+    local iterator = ArenaIterator() -- Create the iterator
+
+    -- Progress state data
+    Import.current.state = TablePool:Acquire();
+    local state = Import.current.state;
+
+    state.startTime = GetTime();
+    state.index = 0;
+
+    local _, importCount = Import.raw:gsub("\n", "");
+    state.total = importCount;
+    state.existing = #ArenaAnalyticsDB;
+    state.skippedArenaCount = 0;
+
+    ImportProgressFrame:Start();
+
+    -- Batched proccessing
     local function ProcessBatch()
-        local batchIndexLimit = index + batchLimit;
+        local batchEndTime = GetTimePreciseSec() + batchTimeLimit;
+
+        ArenaAnalytics:LogTemp("ProcessBatch()")
         Debug:LogFrameTime("Import: ProcessBatch()");
         if(ArenaAnalyticsScrollFrame.importDataText3) then
-            ArenaAnalyticsScrollFrame.importDataText3:SetText(string.format("Progress: %d out of %d", index, #Import.cachedArenas));
+            ArenaAnalyticsScrollFrame.importDataText3:SetText(string.format("Progress: %d out of %d", state.index, importCount));
         end
 
-        while index <= #Import.cachedArenas do
+        while GetTimePreciseSec() < batchEndTime do
             if(not Import.current.processorFunc) then
-                ArenaAnalytics:Log("Import: Processor func missing, bailing out at index:", lastIndex + 1);
-                break;
-            end
-
-            local arena = Import.current.processorFunc(index);
-            if(arena) then
-                Import:SaveArena(arena);
-                TablePool:ReleaseNested(arena);
-            else
-                skippedArenaCount = skippedArenaCount + 1;
-            end
-
-            index = index + 1;
-            if(batchIndexLimit <= index) then
-                C_Timer.After(0, ProcessBatch);
+                ArenaAnalytics:Log("Import: Processor func missing, bailing out at index:", state.index + 1);
+                Import:Finalize();
                 return;
             end
+
+            local arenaString = iterator();
+            if(state.index > 0) then -- First iteration is the format prefix, before arena index 1
+                if(not arenaString) then
+                    ArenaAnalytics:Log("Empty arenaString")
+                    Import:Finalize();
+                    return;
+                end
+
+                local processedArena = Import.current.processorFunc(arenaString);
+                if(processedArena) then
+                    Import:SaveArena(processedArena);
+                    TablePool:ReleaseNested(processedArena); -- Release nested or simple release?
+                else
+                    state.skippedArenaCount = state.skippedArenaCount + 1;
+                end
+            end
+
+            state.index = state.index + 1;
         end
 
-        Finalize();
+        C_Timer.After(0, ProcessBatch);
     end
 
     C_Timer.After(0, ProcessBatch);
+end
+
+function Import:Finalize()
+    Import.isImporting = nil;
+
+    local state = Import.current and Import.current.state;
+    local elapsed = state.startTime and (GetTime() - state.startTime);
+    local existingArenaCount = state.existing or 0;
+
+    Import:Reset();
+    Import:TryHide();
+
+    ArenaAnalytics:ResortMatchHistory();
+
+    Sessions:RecomputeSessionsForMatchHistory();
+    ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
+
+    Filters:Refresh();
+
+    local elapsedText = elapsed and format(" in %.3f seconds.", elapsed) or "";
+    ArenaAnalytics:Print(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingArenaCount), elapsedText));
+    ArenaAnalytics:Log(format("Import ignored %d arenas due to their date.", skippedArenaCount));
 end
 
 function Import:SaveArena(arena)
@@ -251,25 +288,6 @@ function Import:SaveArena(arena)
 end
 
 -------------------------------------------------------------------------
-
-function Import:CreatePlayer(isEnemy, isSelf, name, race, spec, kills, deaths, damage, healing, wins, rating, ratingDelta, mmr, mmrDelta)
-    return {
-        isEnemy = isEnemy,
-        isSelf = isSelf,
-        name = name,
-        race_id = race,
-        spec_id = spec,
-        kills = kills,
-        deaths = deaths,
-        damage = damage,
-        healing = healing,
-        wins = wins,
-        rating = rating,
-        ratingDelta = ratingDelta,
-        mmr = mmr,
-        mmrDelta = mmrDelta,
-    };
-end
 
 function Import:RetrieveBool(value)
     if(value == nil or value == "") then

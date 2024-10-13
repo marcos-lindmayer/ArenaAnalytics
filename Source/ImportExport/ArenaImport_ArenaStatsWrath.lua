@@ -59,7 +59,6 @@ local function GetMatchOutcome(cachedValues)
     end
 
     local isWin = winningTeam == myTeam;
-    ArenaAnalytics:LogTemp(isWin);
     return Import:RetrieveSimpleOutcome(isWin);
 end
 
@@ -96,16 +95,20 @@ local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionInde
     return player;
 end
 
-function Import.ProcessNextMatch_ArenaStatsWrath(index)
-    assert(Import.cachedArenas);
-
-    if(not Import.cachedArenas[index]) then
+function Import.ProcessNextMatch_ArenaStatsWrath(arenaString)
+    if(not arenaString) then
         return nil;
     end
 
-    local cachedValues = strsplittable(',', Import.cachedArenas[index]);
+    local cachedValues = strsplittable(',', arenaString);
     if(not IsValidArena(cachedValues)) then
         ArenaAnalytics:LogError("Import (ArenaStats Wrath): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
+        TablePool:Release(cachedValues);
+        return nil;
+    end
+
+    local date = tonumber(cachedValues[2]);
+    if(not Import:CheckDate(date)) then
         TablePool:Release(cachedValues);
         return nil;
     end
@@ -115,13 +118,11 @@ function Import.ProcessNextMatch_ArenaStatsWrath(index)
 
     -- Set basic arena properties
     newArena.isRated = Import:RetrieveBool(cachedValues[1]);
-    ArenaAnalytics:LogTemp("IsRated:", newArena.isRated, cachedValues[1]);
 
-    newArena.date = tonumber(cachedValues[2]);
+    newArena.date = date;
     newArena.map = Internal:GetMapToken(cachedValues[4]);
     newArena.duration = tonumber(cachedValues[5]);  -- Duration
     newArena.outcome = GetMatchOutcome(cachedValues);
-    ArenaAnalytics:LogTemp("outcome:", newArena.outcome, cachedValues[7], cachedValues[8]);
 
     -- Fill teams with player data
     newArena.players = TablePool:Acquire();

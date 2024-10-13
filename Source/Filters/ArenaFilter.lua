@@ -84,36 +84,41 @@ function Filters:Set(filter, value)
 
     --ArenaAnalytics:Log("Setting filter:", filter, "to value:", (type(value) == "string" and value:gsub("|", "||") or "nil"));
     currentFilters[filter] = value;
-    
+
     Filters:Refresh();
 end
 
 function Filters:Reset(filter, skipOverrides)
     assert(currentFilters[filter] and defaults[filter], "Invalid filter: " .. (filter and filter or "nil"));
     local default = Filters:GetDefault(filter, skipOverrides);
+
+    local changed = (Filters:IsFilterActive(filter, skipOverrides));
+
     Filters:Set(filter, default);
 end
 
 -- Clearing filters, optionally keeping filters explicitly applied through options
-function Filters:ResetAll(forceDefaults)
-    currentFilters = {
-        ["Filter_Date"] = Filters:GetDefault("Filter_Date", forceDefaults),
-        ["Filter_Season"] = Filters:GetDefault("Filter_Season", forceDefaults),
-        ["Filter_Map"] = Filters:GetDefault("Filter_Map"),
-        ["Filter_Bracket"] = Filters:GetDefault("Filter_Bracket"),
-        ["Filter_Comp"] = Filters:GetDefault("Filter_Comp"),
-        ["Filter_EnemyComp"] = Filters:GetDefault("Filter_EnemyComp"),
-    };
+function Filters:ResetAll(skipOverrides)
+    local changed = false;
+    changed = Filters:Reset("Filter_Date", skipOverrides) or changed;
+    changed = Filters:Reset("Filter_Season", skipOverrides) or changed;
+    changed = Filters:Reset("Filter_Map") or changed;
+    changed = Filters:Reset("Filter_Bracket") or changed;
+    changed = Filters:Reset("Filter_Comp") or changed;
+    changed = Filters:Reset("Filter_EnemyComp") or changed;
 
-    Search:Reset();
+    changed = Search:Reset() or changed;
 
-    Filters:Refresh();
+    if(changed) then
+        ArenaAnalytics:Log("Filters has been reset. Refreshing.");
+        Filters:Refresh();
+    end
 end
 
-function Filters:IsFilterActive(filterName)
+function Filters:IsFilterActive(filterName, ignoreOverrides)
     local filter = currentFilters[filterName];
     if (filter ~= nil) then
-        return filter ~= defaults[filterName];
+        return filter ~= Filters:GetDefault(filter, ignoreOverrides);
     end
 
     ArenaAnalytics:Log("isFilterActive failed to find filter: ", filterName);

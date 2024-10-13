@@ -11,10 +11,11 @@ function ArenaAnalytics:GetDebugLevel()
 end
 
 function Debug:SetDebugLevel(level)
+    
     local currentLevel = ArenaAnalytics.Options:Get("debuggingLevel");
-
+    
     level = tonumber(level) or (currentLevel == 0 and 3) or 0;
-
+    
     if(level == currentLevel and level > 0) then
         level = 0;
     end

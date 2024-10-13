@@ -82,12 +82,12 @@ function Options:LoadSettings()
     if hasOptionsLoaded then return end;
 
     ArenaAnalytics:Log("Loading settings..");
-    
+
     -- General
     AddSetting("unsavedWarningThreshold", 10);
     AddSetting("alwaysShowDeathOverlay", false);
     AddSetting("alwaysShowSpecOverlay", false);
-    
+
     AddSetting("hideZeroRatingDelta", true);
     AddSetting("ignoreGroupForSkirmishSession", true);
 
@@ -107,10 +107,10 @@ function Options:LoadSettings()
     AddSetting("minimumCompsPlayed", 0); -- Minimum games to appear on comp dropdowns
     AddSetting("compDropdownVisibileLimit", 10);
     AddSetting("dropdownScrollStep", 1);
-    
+
     -- Selection (NYI)
     AddSetting("selectionControlModInversed", false);
-    
+
     -- Import/Export
     AddSetting("allowImportDataMerge", false);
 
@@ -172,7 +172,7 @@ function Options:Get(setting)
         local successful = Options:LoadSettings();
         if not successful then return end;
     end
-    
+
     local value = ArenaAnalyticsSharedSettingsDB[setting];
 
     if(value == nil) then
@@ -186,7 +186,7 @@ end
 function Options:Set(setting, value)
     assert(setting and hasOptionsLoaded);
     assert(ArenaAnalyticsSharedSettingsDB[setting] ~= nil, "Setting invalid option: " .. (setting or "nil"));
-    
+
     if(value == nil) then
         value = defaults[setting];
     end
@@ -199,7 +199,7 @@ function Options:Set(setting, value)
     local oldValue = ArenaAnalyticsSharedSettingsDB[setting];
     ArenaAnalyticsSharedSettingsDB[setting] = value;
     ArenaAnalytics:Log("Setting option: ", setting, "new:", value, "old:", oldValue);
-    
+
     HandleSettingsChanged();
 end
 
