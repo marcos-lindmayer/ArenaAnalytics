@@ -673,9 +673,9 @@ function SetupTab_QuickSearch()
 
     CreateSpace(15);
 
+    parent.clickedTeamValueDropdown = CreateDropdown("quickSearchAction_ClickedTeam", parent, offsetX, "Team of clicked player shortcut.", shortcuts);
     parent.teamValueDropdown = CreateDropdown("quickSearchAction_Team", parent, offsetX, "Team shortcut.", shortcuts);
     parent.enemyValueDropdown = CreateDropdown("quickSearchAction_Enemy", parent, offsetX, "Enemy shortcut.", shortcuts);
-    parent.clickedTeamValueDropdown = CreateDropdown("quickSearchAction_ClickedTeam", parent, offsetX, "Team of clicked player shortcut.", shortcuts);
 
     CreateSpace(15);
 

@@ -10,6 +10,7 @@ local Internal = ArenaAnalytics.Internal;
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIServiceButtonTemplate";
+API.trustScoreboardDeaths = true;
 
 API.availableBrackets = {
 	{ name = "2v2", key = 1},

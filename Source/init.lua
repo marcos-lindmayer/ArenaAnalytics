@@ -300,33 +300,33 @@ local function createMinimapButton()
 		local scale = UIParent:GetEffectiveScale() or 1;
 		cursorX = cursorX / scale;
 		cursorY = cursorY / scale;
-	
+
 		local radius = (Minimap:GetWidth() / 2) + 5
 
 		local centerX, centerY = Minimap:GetCenter();
 		local angle = math.atan2(cursorY - centerY, cursorX - centerX);
 		ArenaAnalyticsMapIconPos = math.deg(angle);
-		
+
 		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 	end
 
 	-- Set position
 	SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 
-	minimapButton:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+	minimapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 	minimapButton:RegisterForDrag("LeftButton")
 
 	minimapButton:SetScript("OnDragStart", function()
 		minimapButton:StartMoving()
 		minimapButton:SetScript("OnUpdate", UpdateMapBtn)
 	end)
-	
+
 	minimapButton:SetScript("OnDragStop", function()
 		minimapButton:StopMovingOrSizing();
 		minimapButton:SetScript("OnUpdate", nil)
 		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 	end)
-	
+
 	-- Control clicks
 	minimapButton:SetScript("OnClick", function(self, button)
 		if(button == "RightButton") then

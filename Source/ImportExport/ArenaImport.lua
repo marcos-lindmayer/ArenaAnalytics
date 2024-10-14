@@ -166,7 +166,6 @@ end
 
 -- Check a date for a duplicate, in case of repeating same import
 function Import:CheckDate(timestamp)
-    
     if(not timestamp or timestamp == 0) then
         ArenaAnalytics:LogError("Rejecting import arena for invalid date:", timestamp);
         return false;
@@ -184,13 +183,11 @@ function Import:CheckDate(timestamp)
     end
 
     -- Avoid duplicate dates
-    if(false) then
-        for i,match in ipairs(ArenaAnalyticsDB) do
-            local date = ArenaMatch:GetDate(match);
-            if(date == timestamp) then
-                ArenaAnalytics:LogWarning("Rejecting import arena for duplicate date:", Helpers:FormatDate(timestamp));
-                return false;
-            end
+    for i,match in ipairs(ArenaAnalyticsDB) do
+        local date = ArenaMatch:GetDate(match);
+        if(date == timestamp) then
+            ArenaAnalytics:LogWarning("Rejecting import arena for duplicate date:", Helpers:FormatDate(timestamp));
+            return false;
         end
     end
 

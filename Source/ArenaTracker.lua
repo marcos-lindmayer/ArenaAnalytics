@@ -53,21 +53,21 @@ function ArenaTracker:Reset()
 	currentArena.isRated = nil;
 	currentArena.isShuffle = nil;
 
-	currentArena.players = {};
+	currentArena.players = TablePool:Acquire();
 
 	currentArena.ended = false;
 	currentArena.endedProperly = false;
 	currentArena.outcome = nil;
 
-	currentArena.round = {}
-	currentArena.committedRounds = {}
+	currentArena.round = TablePool:Acquire();
+	currentArena.committedRounds = TablePool:Acquire();
 
-	currentArena.deathData = {};
+	currentArena.deathData = TablePool:Acquire();
 
 	-- Current Round
 	currentArena.round.hasStarted = nil;
 	currentArena.round.startTime = nil;
-	currentArena.round.team = {}
+	currentArena.round.team = TablePool:Acquire();
 
 	ArenaAnalyticsDB.currentArena = currentArena;
 end
@@ -180,6 +180,10 @@ function ArenaTracker:CommitCurrentRound(force)
 	local death, endTime = ArenaTracker:GetFirstDeathFromCurrentArena();
 	endTime = endTime or time();
 
+	-- Get death stats, then wipe the deaths to avoid double counting
+	ArenaTracker:CommitDeaths();
+	wipe(currentArena.deathData);
+
 	local roundData = {
 		duration = startTime and (endTime - startTime) or nil,
 		firstDeath = death,
@@ -210,7 +214,7 @@ function ArenaTracker:CommitCurrentRound(force)
 	tinsert(currentArena.committedRounds, roundData);
 
 	-- Reset currentArena round data
-	currentArena.deathData = {};
+	currentArena.deathData = TablePool:Acquire();
 
 	-- Reset current round
 	currentArena.round.team = {};
@@ -504,6 +508,8 @@ function ArenaTracker:HandleArenaEnd()
 	local myTeamIndex = nil;
 
 	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
+	ArenaTracker:CommitDeaths();
+	wipe(currentArena.deathData);
 
 	for i=1, GetNumBattlefieldScores() do
 		local score = API:GetPlayerScore(i);
@@ -521,7 +527,7 @@ function ArenaTracker:HandleArenaEnd()
 		player.spec = Helpers:IsSpecID(player.spec) and player.spec or score.spec;
 		player.race = player.race or score.race;
 		player.kills = score.kills;
-		player.deaths = score.deaths;
+		player.deaths = API.trustScoreboardDeaths and score.deaths or player.deaths or 0;
 		player.damage = score.damage;
 		player.healing = score.healing;
 
@@ -720,36 +726,13 @@ local function tryRemoveFromDeaths(playerGUID, spell)
 	end
 end
 
--- Fetch the real first death when saving the match
-function ArenaTracker:GetFirstDeathFromCurrentArena()
-	if(currentArena.deathData == nil) then
-		return;
-	end
-
-	local bestKey, bestTime;
-	for key,data in pairs(currentArena.deathData) do
-		if(bestTime == nil or data.time < bestTime) then
-			bestKey = key;
-			bestTime = data.time;
-		end
-	end
-
-	if(not bestKey or not currentArena.deathData[bestKey]) then
-		ArenaAnalytics:Log("Death data missing from currentArena.");
-		return nil;
-	end
-
-	local firstDeathData = currentArena.deathData[bestKey];
-	return firstDeathData.name, firstDeathData.time;
-end
-
 -- Handle a player's death, through death or kill credit message
 local function handlePlayerDeath(playerGUID, isKillCredit)
 	if(playerGUID == nil) then
 		return;
 	end
 
-	currentArena.deathData[playerGUID] = currentArena.deathData[playerGUID] or {}
+	currentArena.deathData[playerGUID] = currentArena.deathData[playerGUID] or TablePool:Acquire();
 
 	local class, race, name, realm = API:GetPlayerInfoByGUID(playerGUID);
 	if(not realm or realm == "") then
@@ -771,6 +754,40 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 	if(currentArena.isShuffle and (isKillCredit or class ~= "HUNTER")) then
 		C_Timer.After(0, ArenaTracker.HandleRoundEnd);
 	end
+end
+
+-- Commits current deaths to player stats (May be overridden by scoreboard, if value is trusted for the expansion)
+function ArenaTracker:CommitDeaths()
+	for GUID,data in pairs(currentArena.deathData) do
+		local player = ArenaTracker:GetPlayer(GUID);
+		if(player and data) then
+			-- Increment deaths
+			player.deaths = (player.deaths or 0) + 1;
+		end
+	end
+end
+
+-- Fetch the real first death when saving the match
+function ArenaTracker:GetFirstDeathFromCurrentArena()
+	if(currentArena.deathData == nil) then
+		return;
+	end
+
+	local bestKey, bestTime;
+	for key,data in pairs(currentArena.deathData) do
+		if(bestTime == nil or data.time < bestTime) then
+			bestKey = key;
+			bestTime = data.time;
+		end
+	end
+
+	if(not bestKey or not currentArena.deathData[bestKey]) then
+		ArenaAnalytics:Log("Death data missing from currentArena.");
+		return nil;
+	end
+
+	local firstDeathData = currentArena.deathData[bestKey];
+	return firstDeathData.name, firstDeathData.time;
 end
 
 function ArenaTracker:HandleOpponentUpdate()
