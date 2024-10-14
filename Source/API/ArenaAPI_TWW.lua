@@ -142,7 +142,6 @@ function API:GetMySpec()
     local id = currentSpec and GetSpecializationInfo(currentSpec);
 
     local spec_id = API:GetMappedAddonSpecID(id);
-	ArenaAnalytics:Log("My Spec ID:", spec_id, "from ID:", id);
 	return spec_id;
 end
 

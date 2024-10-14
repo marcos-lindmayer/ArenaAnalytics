@@ -108,8 +108,7 @@ function API:GetMySpec()
 		end
  	end
 
-	ArenaAnalytics:Log("My Spec ID:", spec_id);
-	return addonSpecID;
+    return addonSpecID;
 end
 
 function API:GetInspectSpecialization(unitToken)

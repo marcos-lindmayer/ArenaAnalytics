@@ -13,7 +13,7 @@ local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
-local updateInterval = 0.2;
+local updateInterval = 0.1;
 
 local progressFrame = nil;
 local progressToastFrame = nil;
@@ -48,7 +48,7 @@ function ImportProgressFrame:TryCreateProgressFrame()
         progressFrame.progressBar:SetSize(progressFrame:GetWidth() - 20, 13);  -- Longer progress bar across the frame
         progressFrame.progressBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar");
         progressFrame.progressBar:SetStatusBarColor(0.0, 0.8, 1);
-        progressFrame.progressBar:SetMinMaxValues(0, 100);
+        progressFrame.progressBar:SetMinMaxValues(0, 1);
         progressFrame.progressBar:SetValue(0);
 
         -- Elapsed Time (e.g., "Elapsed: 10s")
@@ -96,8 +96,8 @@ function ImportProgressFrame:TryCreateToast()
         progressToastFrame.progressBar:SetSize(progressToastFrame:GetWidth() - 12, 5);  -- Longer progress bar across the frame
         progressToastFrame.progressBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar");
         progressToastFrame.progressBar:SetStatusBarColor(0.0, 0.8, 1);
-        progressToastFrame.progressBar:SetMinMaxValues(0, 100);
-        progressToastFrame.progressBar:SetValue(99);
+        progressToastFrame.progressBar:SetMinMaxValues(0, 1);
+        progressToastFrame.progressBar:SetValue(0);
     end
 
     progressToastFrame:Show();
@@ -109,7 +109,7 @@ function ImportProgressFrame:UpdateWeightedMovingAverage(state, currentTime)
     local timeSinceLastUpdate = currentTime - (state.lastUpdateTime or currentTime);
 
     if(timeSinceLastUpdate and timeSinceLastUpdate > 0) then
-        weight = 0.1 * timeSinceLastUpdate;
+        weight = 0.2;
         local currentRate = progressSinceLastUpdate / timeSinceLastUpdate;
 
         if(self.latestWMA) then
@@ -119,21 +119,17 @@ function ImportProgressFrame:UpdateWeightedMovingAverage(state, currentTime)
         end
 
         local diff = currentRate - self.latestWMA;
-        if(abs(diff) > 100) then
-            self.latestWMA = self.latestWMA + diff * 0.25;
+        if(abs(diff) > 50) then
+            --self.latestWMA = self.latestWMA + diff * 0.25;
         end
     end
 end
 
 function ImportProgressFrame:EstimateRemainingTime(state, currentTime, percentage)
-    -- Constants for flat rate weight decay
-    local flatRateDecayTime = 5;
-    local flatRate = 1000;
-
     -- Calculate elapsed time and progress
     local elapsedTime = currentTime - state.startTime;
 
-    local WMA = self.latestWMA or flatRate;
+    local WMA = self.latestWMA or 400;
     ImportProgressFrame:UpdateWeightedMovingAverage(state, currentTime);
 
     -- Blended rate: flat rate dominates early, then latestWMA and overall average
@@ -144,7 +140,6 @@ function ImportProgressFrame:EstimateRemainingTime(state, currentTime, percentag
     -- Estimate remaining time
     local remainingProgress = state.total - state.index;
     local estimatedTimeRemaining = (blendedRate > 0) and (remainingProgress / blendedRate) or 0;
-
 
     return ceil(estimatedTimeRemaining);
 end
@@ -172,7 +167,7 @@ function ImportProgressFrame:UpdateTimeTexts(state, currentTime, percentage)
     self.lastEstimatedTime = ImportProgressFrame:EstimateRemainingTime(state, currentTime, percentage);
 
     local elapsedText = ColorText("Elapsed: %s", SecondsToTime(math.floor(elapsedTime)));
-    local remainingText = ColorText("Remaining: %s", (self.lastEstimatedTime > 1 and SecondsToTime(math.floor(self.lastEstimatedTime)) or "Few seconds"));
+    local remainingText = ColorText("Remaining: %s", (self.lastEstimatedTime > 1 and SecondsToTime(self.lastEstimatedTime) or "Few seconds"));
 
     -- Update Progress Frame if it exists
     if(progressFrame) then
@@ -201,12 +196,12 @@ function ImportProgressFrame:Update()
     -- Fetch state data
     local state = Import.state;
     local currentTime = GetTimePreciseSec();
-    local progressPercentage = state.total > 0 and ((state.index / state.total) * 100) or 0;
+    local percentage = state.total > 0 and ((state.index / state.total)) or 0;
 
-    local progressText = ColorText("Imported: %s/%s  (%s%%)", state.index, state.total, floor(progressPercentage));
+    local progressText = ColorText("Imported: %s/%s  (%s%%)", state.index, state.total, floor(percentage*100));
 
     if(not self.lastTextUpdateTime or self.lastTextUpdateTime + 1 < currentTime) then
-        ImportProgressFrame:UpdateTimeTexts(state, currentTime, progressPercentage);
+        ImportProgressFrame:UpdateTimeTexts(state, currentTime, percentage);
     end
 
     -- Cache values for next timer 
@@ -216,13 +211,13 @@ function ImportProgressFrame:Update()
     -- Update Progress Frame if it exists
     if(progressFrame) then
         progressFrame.progressText:SetText(progressText);
-        progressFrame.progressBar:SetValue(progressPercentage);
+        progressFrame.progressBar:SetValue(percentage);
     end
 
     -- Update Toast Frame if it exists
     if(progressToastFrame) then
         progressToastFrame.progressText:SetText(progressText);
-        progressToastFrame.progressBar:SetValue(progressPercentage);
+        progressToastFrame.progressBar:SetValue(percentage);
     end
 
     -- Schedule the next update (every 1 second)

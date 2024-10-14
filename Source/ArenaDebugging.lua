@@ -136,10 +136,10 @@ function Debug:LogFrameTime(context)
 end
 
 -------------------------------------------------------------------------
--- Debug level 4 (Temp)
+-- Temporary Debugging tools
 
 function ArenaAnalytics:LogTemp(...)
-	if(ArenaAnalytics:GetDebugLevel() < 4) then
+	if(ArenaAnalytics:GetDebugLevel() < 1) then
 		return;
 	end
 
