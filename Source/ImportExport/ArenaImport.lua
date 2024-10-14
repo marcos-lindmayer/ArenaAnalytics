@@ -8,6 +8,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Filters = ArenaAnalytics.Filters;
 local Helpers = ArenaAnalytics.Helpers;
 local Debug = ArenaAnalytics.Debug;
+local ImportBox = ArenaAnalytics.ImportBox;
 local ImportProgressFrame = ArenaAnalytics.ImportProgressFrame;
 
 -------------------------------------------------------------------------
@@ -62,14 +63,31 @@ function Import:Reset()
         return;
     end
 
+    ImportBox:ResetAll();
+    ImportProgressFrame:Stop();
+
     Import.raw = nil;
     Import.current = nil;
+    Import.state = nil;
 end
 
-function Import:TryHide()
-    if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil and ArenaAnalytics:HasStoredMatches()) then
-        ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
-        ArenaAnalyticsScrollFrame.importDialogFrame = nil;
+function Import:Cancel()
+    if(not Import.isImporting) then
+        return;
+    end
+
+    Import:Finalize();
+    Import.isImporting = false;
+
+    C_Timer.After(0, Import.Reset);
+end
+
+function Import:TryHide(forced)
+    if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil) then
+        if(ArenaAnalytics:HasStoredMatches() or forced) then
+            ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
+            ArenaAnalyticsScrollFrame.importDialogFrame = nil;
+        end
     end
 end
 
@@ -121,20 +139,58 @@ function Import:ParseRawData()
     Import:ProcessImport();
 end
 
+local function GetFirstAndLastStoredDateLimits()
+    local first, last;
+
+    for i=1, #ArenaAnalyticsDB do
+        local match = ArenaAnalytics:GetMatch(i);
+        local date = ArenaMatch:GetDate(match);
+        if(date and date > 0) then
+            if(not first or date < first) then
+                first = date;
+            end
+
+            if(not last or date > last) then
+                last = date;
+            end
+        end
+    end
+
+    -- Adjust to limits
+    local minimumOffset = 86400;
+    first = first and first - minimumOffset; -- 24 hours before first match
+    last = last and last + minimumOffset; -- 24 hours after last match
+
+    return first, last;
+end 
+
 -- Check a date for a duplicate, in case of repeating same import
 function Import:CheckDate(timestamp)
-    if true then return true end
-
+    
     if(not timestamp or timestamp == 0) then
         ArenaAnalytics:LogError("Rejecting import arena for invalid date:", timestamp);
         return false;
     end
 
-    for i,match in ipairs(ArenaAnalyticsDB) do
-        local date = ArenaMatch:GetDate(match);
-        if(date == timestamp) then
-            ArenaAnalytics:LogWarning("Rejecting import arena for duplicate date:", Helpers:FormatDate(timestamp));
-            return false;
+    if(Import.state) then
+        local firstLimit = Import.state.firstTimestampLimit;
+        local lastLimit = Import.state.lastTimestampLimit;
+
+        if(firstLimit and lastLimit) then
+            if(timestamp > firstLimit and timestamp < lastLimit) then
+                return false;
+            end
+        end
+    end
+
+    -- Avoid duplicate dates
+    if(false) then
+        for i,match in ipairs(ArenaAnalyticsDB) do
+            local date = ArenaMatch:GetDate(match);
+            if(date == timestamp) then
+                ArenaAnalytics:LogWarning("Rejecting import arena for duplicate date:", Helpers:FormatDate(timestamp));
+                return false;
+            end
         end
     end
 
@@ -155,16 +211,23 @@ function Import:ProcessImport()
     local iterator = ArenaIterator() -- Create the iterator
 
     -- Progress state data
-    Import.current.state = TablePool:Acquire();
-    local state = Import.current.state;
+    Import.state = TablePool:Acquire();
+    local state = Import.state;
 
     state.startTime = GetTime();
     state.index = 0;
 
     local _, importCount = Import.raw:gsub("\n", "");
-    state.total = importCount;
+    state.total = importCount - 1;
     state.existing = #ArenaAnalyticsDB;
     state.skippedArenaCount = 0;
+
+    state.firstTimestampLimit, state.lastTimestampLimit = GetFirstAndLastStoredDateLimits();
+
+    if(importCount > 0) then
+        -- Hide import dialogue
+        Import:TryHide(true);
+    end
 
     ImportProgressFrame:Start();
 
@@ -172,14 +235,8 @@ function Import:ProcessImport()
     local function ProcessBatch()
         local batchEndTime = GetTimePreciseSec() + batchTimeLimit;
 
-        ArenaAnalytics:LogTemp("ProcessBatch()")
-        Debug:LogFrameTime("Import: ProcessBatch()");
-        if(ArenaAnalyticsScrollFrame.importDataText3) then
-            ArenaAnalyticsScrollFrame.importDataText3:SetText(string.format("Progress: %d out of %d", state.index, importCount));
-        end
-
         while GetTimePreciseSec() < batchEndTime do
-            if(not Import.current.processorFunc) then
+            if(not Import.isImporting) then
                 ArenaAnalytics:Log("Import: Processor func missing, bailing out at index:", state.index + 1);
                 Import:Finalize();
                 return;
@@ -212,11 +269,22 @@ function Import:ProcessImport()
 end
 
 function Import:Finalize()
+    if(not Import.isImporting) then
+        return;
+    end
+
     Import.isImporting = nil;
 
-    local state = Import.current and Import.current.state;
-    local elapsed = state.startTime and (GetTime() - state.startTime);
-    local existingArenaCount = state.existing or 0;
+    local state = Import.current and Import.state;
+
+    local elapsed, existingCount;
+    if(state) then
+        elapsed = state.startTime and (GetTime() - state.startTime) or 0;
+        existingCount = state.existing or 0;
+    else
+        elapsed = 0;
+        existingCount = 0;
+    end
 
     Import:Reset();
     Import:TryHide();
@@ -229,7 +297,7 @@ function Import:Finalize()
     Filters:Refresh();
 
     local elapsedText = elapsed and format(" in %.3f seconds.", elapsed) or "";
-    ArenaAnalytics:Print(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingArenaCount), elapsedText));
+    ArenaAnalytics:Print(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingCount), elapsedText));
     ArenaAnalytics:Log(format("Import ignored %d arenas due to their date.", skippedArenaCount));
 end
 

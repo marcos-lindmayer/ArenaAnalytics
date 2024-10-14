@@ -92,7 +92,7 @@ function Filters:Reset(filter, skipOverrides)
     assert(currentFilters[filter] and defaults[filter], "Invalid filter: " .. (filter and filter or "nil"));
     local default = Filters:GetDefault(filter, skipOverrides);
 
-    local changed = (Filters:IsFilterActive(filter, skipOverrides));
+    local changed = (Filters:Get(filter) ~= default);
 
     Filters:Set(filter, default);
 end
@@ -115,13 +115,13 @@ function Filters:ResetAll(skipOverrides)
     end
 end
 
-function Filters:IsFilterActive(filterName, ignoreOverrides)
-    local filter = currentFilters[filterName];
-    if (filter ~= nil) then
-        return filter ~= Filters:GetDefault(filter, ignoreOverrides);
+function Filters:IsFilterActive(filter, ignoreOverrides)
+    local current = currentFilters[filter];
+    if (current ~= nil) then
+        return current ~= Filters:GetDefault(filter, ignoreOverrides);
     end
 
-    ArenaAnalytics:Log("isFilterActive failed to find filter: ", filterName);
+    ArenaAnalytics:Log("isFilterActive failed to find filter: ", filter);
     return false;
 end
 
@@ -310,21 +310,6 @@ end
 
 -------------------------------------------------------------------------
 -- Refresh processing
-
--- Add to ArenaHelpers.lua to help debugging cases?
-local function LogTableContents(tbl, indent)
-    if not indent then indent = 0 end
-    local formatting = string.rep("  ", indent)
-    
-    for key, value in pairs(tbl) do
-        if type(value) == "table" then
-            ArenaAnalytics:Log(formatting .. tostring(key) .. ":")
-            LogTableContents(value, indent + 1)
-        else
-            ArenaAnalytics:Log(formatting .. tostring(key) .. ": " .. tostring(value))
-        end
-    end
-end
 
 local transientCompData = TablePool:Acquire();
 

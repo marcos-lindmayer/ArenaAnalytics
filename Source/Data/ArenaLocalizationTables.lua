@@ -373,7 +373,7 @@ function Localization:GetRaceID(race, factionIndex)
         raceToken = Helpers:ToSafeLower(raceToken);
         if(race == raceToken) then
             -- Convert token to Race ID
-            return Internal:GetAddonRaceIDByToken(raceToken, faction);
+            return Internal:GetAddonRaceIDByToken(raceToken, factionIndex);
         end
 
         for _,values in pairs(localizations) do
@@ -382,7 +382,7 @@ function Localization:GetRaceID(race, factionIndex)
             for _,localizedValue in ipairs(values) do
                 if(race == Helpers:ToSafeLower(localizedValue)) then
                     -- Convert token to Race ID
-                    return Internal:GetAddonRaceIDByToken(raceToken, faction);
+                    return Internal:GetAddonRaceIDByToken(raceToken, factionIndex);
                 end
             end
         end
@@ -394,7 +394,7 @@ function Localization:GetRaceID(race, factionIndex)
     for raceID = 1, API.maxRaceID do
         local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)        
         if(raceInfo and race == Helpers:ToSafeLower(raceInfo.raceName)) then
-            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString, faction);
+            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString, factionIndex);
             if addonRaceID then
                 return addonRaceID;
             else
@@ -423,5 +423,5 @@ function Localization:GetFactionIndex(faction)
     end
 
     faction = tonumber(faction);
-    return faction % 2;
+    return faction and faction % 2;
 end

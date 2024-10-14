@@ -75,7 +75,7 @@ local function onCharAdded(editbox, c)
         editbox:Disable();
         ImportBox:DisableAll();
         ImportBox:ClearAll();
-        
+
         pasteBuffer, index = {}, 0;
         C_Timer.After(0, function()
             Import:SetPastedInput(pasteBuffer);
@@ -85,7 +85,7 @@ local function onCharAdded(editbox, c)
             end
 
             pasteBuffer, index = {}, 0;
-            
+
             -- Update text:
             editbox:SetTextSafe(Import:GetSourceName() .. " import detected...");
         end);
@@ -166,12 +166,18 @@ function ImportBox:Create(parent, frameName, width, height)
     return self;
 end
 
-function ImportBox:Clear()
-    assert(self, "Clear called on non-instanced ImportBox.");
-    self:SetText("");
+function ImportBox:Disable()
+    assert(self, "Enable called on non-instanced ImportBox.");
+    self.frame.editbox:Disable();
+    self.frame.button:Disable();
 end
 
 function ImportBox:SetPoint(...)
     assert(self, "SetPoint called on non-instanced ImportBox.");
     self.frame:SetPoint(...);
+end
+
+function ImportBox:GetHeight()
+    assert(self, "GetHeight called on non-instanced ImportBox.");
+    return self.frame:GetHeight();
 end

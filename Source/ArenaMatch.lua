@@ -1051,7 +1051,6 @@ end
 
 local function GetCompForSpecs(teamSpecs, requiredSize)
     if(not teamSpecs or not requiredSize or requiredSize == 0) then
-        ArenaAnalytics:Log("GetCompForSpecs: Invalid spec count:", teamSpecs and #teamSpecs, requiredSize);
         return nil;
     end
 

@@ -11,11 +11,9 @@ function ArenaAnalytics:GetDebugLevel()
 end
 
 function Debug:SetDebugLevel(level)
-    
     local currentLevel = ArenaAnalytics.Options:Get("debuggingLevel");
-    
+
     level = tonumber(level) or (currentLevel == 0 and 3) or 0;
-    
     if(level == currentLevel and level > 0) then
         level = 0;
     end
@@ -149,7 +147,7 @@ function ArenaAnalytics:LogTemp(...)
 	print(prefix, ...);
 end
 
-function Debug:LogTable(table, level)
+function Debug:LogTable(table, level, maxLevel)
     if(ArenaAnalytics:GetDebugLevel() < 4) then
         return;
     end
@@ -160,6 +158,11 @@ function Debug:LogTable(table, level)
     end
 
     level = level or 0;
+    if(level > (maxLevel or 10)) then
+        ArenaAnalytics:LogWarning("Debug:LogTable max level exceeded.");
+        return;
+    end
+
     local indentation = string.rep(" ", 3*level);
 
     if(type(table) ~= "table") then
@@ -170,7 +173,7 @@ function Debug:LogTable(table, level)
     for key,value in pairs(table) do
         if(type(value) == "table") then
             ArenaAnalytics:Log(indentation, key);
-            Debug:LogTable(value, level+1);
+            Debug:LogTable(value, level+1, maxLevel);
         else
             ArenaAnalytics:Log(indentation, key, value);
         end

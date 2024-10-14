@@ -80,6 +80,7 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print("|cff00cc66/aa played|r Prints total duration of tracked arenas.");
 		ArenaAnalytics:Print("|cff00cc66/aa version|r Prints the current ArenaAnalytics version.");
 		ArenaAnalytics:Print("|cff00cc66/aa total|r Prints total unfiltered matches.");
+		ArenaAnalytics:Print("|cff00cc66/aa purge|r Show dialog to permanently delete match history.");
 		print(" ");
 	end,
 
@@ -100,9 +101,9 @@ ArenaAnalytics.commands = {
 			local duration = ArenaMatch:GetDuration(match) or 0;
 			if(duration > 0) then
 				totalDurationInArenas = totalDurationInArenas + duration;
-				longestDuration = max(longestDuration, duration);
-				if(duration > 3600) then
-					ArenaAnalytics:LogTemp(i)
+
+				if(duration < 2760) then -- Only count valid duration (plus 60sec buffer)
+					longestDuration = max(longestDuration, duration);
 				end
 
 				if(ArenaMatch:GetSeason(match) == GetCurrentArenaSeason()) then
@@ -146,6 +147,10 @@ ArenaAnalytics.commands = {
         ArenaAnalyticsScrollFrame:Hide();
 	end,
 
+	["purge"] = function()
+		ArenaAnalytics:ShowPurgeConfirmationDialog();
+	end,
+
 	["debugcleardb"] = function()
 		if(ArenaAnalytics:GetDebugLevel() == 0) then
 			ArenaAnalytics:Print("Clearing ArenaAnalyticsDB requires debugging enabled. |cffBBBBBB/aa debug|r. Not intended for users!");
@@ -153,10 +158,6 @@ ArenaAnalytics.commands = {
 			if (ArenaAnalytics:HasStoredMatches()) then
 				ArenaAnalytics:Log("Purging ArenaAnalyticsDB.");
 				ArenaAnalytics:PurgeArenaAnalyticsDB();
-				ArenaAnalytics.AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
-
-				ArenaAnalytics.Filters:Refresh();
-				ArenaAnalytics.unsavedArenaCount = 0;
 			end
 		end
 	end,

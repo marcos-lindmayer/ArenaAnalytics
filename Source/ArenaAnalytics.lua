@@ -14,6 +14,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Sessions = ArenaAnalytics.Sessions;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -94,10 +95,65 @@ function ArenaAnalytics:InitializeArenaAnalyticsDB()
 end
 
 function ArenaAnalytics:PurgeArenaAnalyticsDB()
-	ArenaAnalyticsDB = {};
-	ArenaAnalytics:InitializeArenaAnalyticsDB();
+	Import:Cancel();
 
-	ArenaAnalytics:Print("Match history purged!");
+	local function purge()
+		ArenaAnalyticsDB = {};
+		ArenaAnalytics:InitializeArenaAnalyticsDB();
+
+		ArenaAnalytics.AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
+		ArenaAnalytics.unsavedArenaCount = 0;
+		ArenaAnalytics.Filters:Refresh();
+
+		ArenaAnalytics:Print("Match history purged!");
+	end
+
+	-- Give Import a frame to cancel
+	C_Timer.After(0, purge);
+end
+
+function ArenaAnalytics:ShowPurgeConfirmationDialog()
+	if(not StaticPopupDialogs["CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY"]) then
+		StaticPopupDialogs["CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY"] = {
+			text = "Do you want to purge the |cff00ccffArenaAnalytics|r match history?\nThis deletes all stored matches permanently!\n\nType |cffff0000DELETE|r into the field to confirm.",
+			button1 = "Purge",
+			button2 = "Cancel",
+			OnAccept = function(self)
+				-- Call the function to purge the match history
+				ArenaAnalytics:PurgeArenaAnalyticsDB();
+			end,
+			OnShow = function(self)
+				self.editBox:SetText("");
+				self.editBox:SetMaxLetters(10);
+				self.button1:Disable();  -- Disable the "Confirm" button initially
+				self:SetWidth(550);
+
+				-- Handle Escape key press in the edit box
+				self.editBox:SetScript("OnEscapePressed", function(editBox)
+					StaticPopup_Hide("CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY");  -- Close the dialog when escape is pressed
+				end);
+			end,
+			EditBoxOnTextChanged = function(self)
+				local parent = self:GetParent();
+				if self:GetText():upper() == "DELETE" then
+					parent.button1:Enable();
+				else
+					parent.button1:Disable();
+				end
+			end,
+			hasEditBox = true,  -- Add the input box
+			showAlert = true,
+			whileDead = true,
+			preferredIndex = 3,
+			exclusive = true,
+			hideOnEscape = true,
+			enterClicksFirstButton = true,
+			timeout = 30,
+		};
+	end
+
+	local dialog = StaticPopup_Show("CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY");
+	dialog.text:SetWidth(500);
 end
 
 -------------------------------------------------------------------------

@@ -13,7 +13,7 @@ local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
-local updateInterval = 0.1;
+local updateInterval = 0.5;
 
 local progressFrame = nil;
 local progressToastFrame = nil;
@@ -23,37 +23,39 @@ function ImportProgressFrame:TryCreateProgressFrame()
         -- Create frame with backdrop
         progressFrame = Helpers:CreateDoubleBackdrop(ArenaAnalyticsScrollFrame, "ArenaAnalyticsPlayerTooltip", "TOOLTIP");
         progressFrame:SetPoint("CENTER");
-        progressFrame:SetSize(500, 140); -- Increased height for better spacing of elements
+        progressFrame:SetSize(400, 100); -- Increased height for better spacing of elements
         progressFrame:SetFrameStrata("TOOLTIP");
         progressFrame:SetFrameLevel(progressFrame:GetFrameLevel() + 49);
         progressFrame:EnableMouse(true);
 
+        local padding = 5;
+
         -- Title
-        progressFrame.title = ArenaAnalyticsCreateText(progressFrame, "TOPLEFT", progressFrame, "TOPLEFT", 10, -10, "ArenaAnalytics Import Progress", 18);
+        progressFrame.title = ArenaAnalyticsCreateText(progressFrame, "TOPLEFT", progressFrame, "TOPLEFT", 10, -10, "ArenaAnalytics importing...", 18);
 
         -- Separator
         progressFrame.separator = progressFrame:CreateTexture(nil, "ARTWORK");
         progressFrame.separator:SetTexture("Interface\\Common\\UI-TooltipDivider-Transparent");
-        progressFrame.separator:SetSize(480, 1);
-        progressFrame.separator:SetPoint("TOPLEFT", progressFrame.title, "BOTTOMLEFT", 0, -2);
+        progressFrame.separator:SetSize(progressFrame:GetWidth() - 20, 16);
+        progressFrame.separator:SetPoint("TOPLEFT", progressFrame.title, "BOTTOMLEFT", 0, 3);
+
+        -- Progress Text (e.g., "Imported X/Y matches")
+        progressFrame.progressText = ArenaAnalyticsCreateText(progressFrame, "TOPLEFT", progressFrame.separator, "BOTTOMLEFT", 0.3, -padding, "", 12);
 
         -- Progress Bar
         progressFrame.progressBar = CreateFrame("StatusBar", nil, progressFrame, "TextStatusBar");
-        progressFrame.progressBar:SetSize(460, 10);  -- Longer progress bar across the frame
-        progressFrame.progressBar:SetPoint("BOTTOM", progressFrame, "BOTTOM", 0, 10);
+        progressFrame.progressBar:SetPoint("TOPLEFT", progressFrame.progressText, "BOTTOMLEFT", 0, -padding);
+        progressFrame.progressBar:SetSize(progressFrame:GetWidth() - 20, 13);  -- Longer progress bar across the frame
         progressFrame.progressBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar");
-        progressFrame.progressBar:SetStatusBarColor(0.0, 0.65, 0.0);
+        progressFrame.progressBar:SetStatusBarColor(0.0, 0.8, 1);
         progressFrame.progressBar:SetMinMaxValues(0, 100);
         progressFrame.progressBar:SetValue(0);
 
-        -- Progress Text (e.g., "Imported X/Y matches")
-        progressFrame.progressText = ArenaAnalyticsCreateText(progressFrame, "TOPLEFT", progressFrame.separator, "BOTTOMLEFT", 8, -8, "", 12);
-
         -- Elapsed Time (e.g., "Elapsed: 10s")
-        progressFrame.elapsedText = ArenaAnalyticsCreateText(progressFrame, "TOPLEFT", progressFrame.progressText, "BOTTOMLEFT", 8, -8, "", 12);
+        progressFrame.elapsedText = ArenaAnalyticsCreateText(progressFrame, "TOPLEFT", progressFrame.progressBar, "BOTTOMLEFT", 0, -padding, "", 12);
 
         -- Estimated Remaining Time (e.g., "Remaining: 20s")
-        progressFrame.remainingText = ArenaAnalyticsCreateText(progressFrame, "TOPLEFT", progressFrame.elapsedText, "BOTTOMLEFT", 8, -8, "", 12);
+        progressFrame.remainingText = ArenaAnalyticsCreateText(progressFrame, "TOPLEFT", progressFrame.progressBar, "BOTTOMRIGHT", -170.7, -padding, "", 12);
     end
 
     progressFrame:Show();
@@ -65,6 +67,7 @@ function ImportProgressFrame:TryCreateToast()
         progressToastFrame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate");
         progressToastFrame:SetPoint("TOP", UIParent, "TOP", 0, -25);
         progressToastFrame:SetSize(420, 52);
+        progressToastFrame:SetClipsChildren(false);
 
         progressToastFrame:SetBackdrop({
             bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -86,6 +89,15 @@ function ImportProgressFrame:TryCreateToast()
         progressToastFrame.timeRemaining = progressToastFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
         progressToastFrame.timeRemaining:SetText("Estimated remaining: 0s");
         progressToastFrame.timeRemaining:SetPoint("BOTTOMLEFT", progressToastFrame, "BOTTOMRIGHT", -170.7, 10);
+        
+        -- Progress Bar
+        progressToastFrame.progressBar = CreateFrame("StatusBar", nil, progressToastFrame, "TextStatusBar");
+        progressToastFrame.progressBar:SetPoint("BOTTOMLEFT", progressToastFrame, "BOTTOMLEFT", 6, 3);
+        progressToastFrame.progressBar:SetSize(progressToastFrame:GetWidth() - 12, 5);  -- Longer progress bar across the frame
+        progressToastFrame.progressBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar");
+        progressToastFrame.progressBar:SetStatusBarColor(0.0, 0.8, 1);
+        progressToastFrame.progressBar:SetMinMaxValues(0, 100);
+        progressToastFrame.progressBar:SetValue(99);
     end
 
     progressToastFrame:Show();
@@ -99,38 +111,32 @@ function ImportProgressFrame:Update()
         return;
     end
 
-    if(not Import.current) then
-        Import.current = {}
-    end
-
-    if(not Import.current.state) then
-        Import.current.state = {
-            startTime = GetTime() - 5000,
-            index = 99998,
-            total = 99999,
+    if(not Import.state) then
+        Import.state = {
+            startTime = 0,
+            index = 0,
+            total = 0,
             existing = ArenaAnalyticsDB and #ArenaAnalyticsDB or 0,
             skippedArenaCount = 0,
         };
     end
 
     -- Fetch state data
-    local state = Import.current.state;
+    local state = Import.state;
 
     -- Get current time and calculate elapsed time
     local elapsedTime = GetTime() - state.startTime;
-    local progress = state.index;
-    local total = state.total;
 
     -- Calculate percentage progress
-    local progressPercentage = (progress / total) * 100;
+    local progressPercentage = state.total > 0 and ((state.index / state.total) * 100) or 0;
     local percentageText = floor(progressPercentage) .. "%";
 
     -- Calculate estimated remaining time
-    local progressRate = (progress > 0) and (elapsedTime / progress) or 0;
-    local estimatedTimeRemaining = (total - progress) * progressRate;
+    local progressRate = (state.index > 0) and (elapsedTime / state.index) or 0;
+    local estimatedTimeRemaining = (state.total - state.index) * progressRate;
 
     -- Cache the estimated remaining time and update only if deviation is significant
-    local dynamicThreshold = ceil(min(3, estimatedTimeRemaining * 0.1));
+    local dynamicThreshold = ceil(min(1, estimatedTimeRemaining * 0.1));
     if(not self.lastEstimatedTime or math.abs(self.lastEstimatedTime - estimatedTimeRemaining) > dynamicThreshold) then
         self.lastEstimatedTime = math.ceil(estimatedTimeRemaining);
     else
@@ -140,25 +146,25 @@ function ImportProgressFrame:Update()
 
     local function ColorText(textFormat, ...)
         textFormat = ArenaAnalytics:ColorText(textFormat, Constants.prefixColor)
-        
+
         -- Gather the arguments into a table and color them with statsColor
         local coloredArgs = {...}
         for i = 1, #coloredArgs do
             coloredArgs[i] = ArenaAnalytics:ColorText(coloredArgs[i], Constants.statsColor)
         end
-    
+
         -- Return the formatted string using the colored arguments
         return format(textFormat, unpack(coloredArgs))
     end
 
-    local progressText = ColorText("Imported: %s/%s arenas  (%s)", progress, total, percentageText);
-    local simpleProgressText = ColorText("Progress: %s/%s  (%s)", progress, total, percentageText);
+    local progressText = ColorText("Imported: %s/%s arenas  (%s)", state.index, state.total, percentageText);
+    local simpleProgressText = ColorText("Progress: %s/%s  (%s)", state.index, state.total, percentageText);
 
     local elapsedText = ColorText("Elapsed: %s", SecondsToTime(math.floor(elapsedTime)));
-    local remainingText = ColorText("Remaining: %s", SecondsToTime(math.floor(self.lastEstimatedTime)));
+    local remainingText = ColorText("Remaining: %s", (self.lastEstimatedTime > 3 and SecondsToTime(math.floor(self.lastEstimatedTime)) or "Few seconds"));
 
     -- Update Progress Frame if it exists
-    if progressFrame then
+    if(progressFrame) then
         progressFrame.progressText:SetText(progressText);
         progressFrame.elapsedText:SetText(elapsedText);
         progressFrame.remainingText:SetText(remainingText);
@@ -166,9 +172,15 @@ function ImportProgressFrame:Update()
     end
 
     -- Update Toast Frame if it exists
-    if progressToastFrame then
-        progressToastFrame.progressText:SetText(simpleProgressText);
-        progressToastFrame.timeRemaining:SetText(remainingText);
+    if(progressToastFrame) then
+        if(state.total > 1000) then
+            progressToastFrame.progressText:SetText(simpleProgressText);
+            progressToastFrame.timeRemaining:SetText(remainingText);
+            progressToastFrame.progressBar:SetValue(progressPercentage);
+        else
+            progressToastFrame:Hide();
+            progressToastFrame = nil;
+        end
     end
 
     -- Schedule the next update (every 1 second)

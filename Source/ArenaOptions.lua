@@ -9,6 +9,7 @@ local Dropdown = ArenaAnalytics.Dropdown;
 local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
+local ImportBox = ArenaAnalytics.ImportBox;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -210,11 +211,10 @@ end
 local exportOptionsFrame = nil;
 
 function Options:TriggerStateUpdates()
-    if(exportOptionsFrame and exportOptionsFrame.importButton and exportOptionsFrame.importButton.stateFunc) then
-        exportOptionsFrame.importButton.stateFunc();
+    if(exportOptionsFrame and exportOptionsFrame.ImportBox and exportOptionsFrame.ImportBox.stateFunc) then
+        exportOptionsFrame.ImportBox:stateFunc();
     end
 end
-
 
 local TabTitleSize = 18;
 local TabHeaderSize = 16;
@@ -281,14 +281,14 @@ local function CreateButton(setting, parent, x, width, text, func)
 
     -- Create the button
     local button = CreateFrame("Button", "ArenaAnalyticsButton_" .. (setting or text or ""), parent, "UIPanelButtonTemplate");
-    
+
     -- Set the button's position
     button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
-    
+
     -- Set the button's size and text
     button:SetSize(width or 120, 30)
     button:SetText(text or "")
-    
+
     -- Add a script for the button's click action
     button:SetScript("OnClick", function()
         func(setting);
@@ -299,6 +299,25 @@ local function CreateButton(setting, parent, x, width, text, func)
     offsetY = offsetY - OptionsSpacing - button:GetHeight();
 
     return button;
+end
+
+local function CreateImportBox(parent, x, width, height)
+    local ImportBox = ImportBox:Create(parent, "ArenaAnalyticsImportDialogBox", width, (height or 25));
+    ImportBox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
+
+    function ImportBox:stateFunc()
+        if(Options:Get("allowImportDataMerge") or not ArenaAnalytics:HasStoredMatches()) then
+            self.frame.editbox:Enable();
+        else
+            self:Disable();
+        end
+    end
+
+    ImportBox:stateFunc();
+
+    offsetY = offsetY - ImportBox:GetHeight();
+
+    return ImportBox;
 end
 
 local function CreateCheckbox(setting, parent, x, text, func)
@@ -344,17 +363,17 @@ local function CreateInputBox(setting, parent, x, text, func)
     inputBox:SetText(tonumber(Options:Get(setting)) or "");
     inputBox:SetCursorPosition(0);
     inputBox:HighlightText(0,0);    
-    
+
     -- Text
     inputBox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     inputBox.text:SetPoint("LEFT", inputBox, "RIGHT", 5, 0);
     inputBox.text:SetTextHeight(TextSize);
     inputBox.text:SetText(text or "");
-    
+
     inputBox:SetScript("OnEnterPressed", function(self)
         self:ClearFocus();
     end);
-	
+
     inputBox:SetScript("OnEscapePressed", function(self)
 		inputBox:SetText(Options:Get(setting) or "");
         self:ClearFocus();
@@ -561,6 +580,7 @@ end
 -------------------------------------------------------------------
 -- Search Tab
 -------------------------------------------------------------------
+
 function SetupTab_Search()
     local filterOptionsFrame = CreateFrame("frame");
     --filterOptionsFrame.name = "Search";
@@ -668,6 +688,7 @@ end
 -------------------------------------------------------------------
 -- Import/Export Tab
 -------------------------------------------------------------------
+
 function SetupTab_ImportExport()
     exportOptionsFrame = CreateFrame("frame");
     Options:RegisterCategory(exportOptionsFrame, "Import / Export", ArenaAnalyticsOptionsFrame);
@@ -678,28 +699,25 @@ function SetupTab_ImportExport()
 
     parent.tabHeader = CreateHeader("Import / Export", TabHeaderSize, parent, nil, 15, -15);
 
-    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() Export:combineExportCSV() end);
-    
+    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() end);
+    parent.exportButton:Disable();
+    parent.exportButton.tooltip = { "ArenaAnalytics Export", "Not Yet Implemented" }
+
     CreateSpace();
 
     -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
-    parent.importButton = CreateButton(nil, parent, offsetX, 120, "Import", function() AAtable:TryShowimportDialogFrame(parent) end);
-    parent.importButton.stateFunc = function()
-        if(Options:Get("allowImportDataMerge") or not ArenaAnalytics:HasStoredMatches()) then
-            exportOptionsFrame.importButton:Enable();
-        else
-            exportOptionsFrame.importButton:Disable();
-        end
-    end
-    parent.importButton.stateFunc();
+    parent.ImportBox = CreateImportBox(parent, offsetX, 380);
 
     parent.importAllowMerge = CreateCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
-        parent.importButton.stateFunc();
+        parent.ImportBox:stateFunc();
     end);
-    parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nThis will add matches before and after already stored matches.\n\n|cffff0000Experimental! - Use at own risk.|r\nBackup SavedVariables recommended." }
+    parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nSkip matches within 24 hours of first and last arena, and matches between the two dates.\n\n|cffff0000Experimental! It is recommended to backup character specific SavedVariable first." }
 
-    
-    exportOptionsFrame:SetScript("OnShow", function() parent.importButton.stateFunc() end);
+    CreateSpace();
+
+    parent.purgeButton = CreateButton(nil, parent, offsetX, 213, "Purge Match History", ArenaAnalytics.ShowPurgeConfirmationDialog);
+
+    exportOptionsFrame:SetScript("OnShow", function() parent.ImportBox:stateFunc() end);
 end
 
 -------------------------------------------------------------------
@@ -718,6 +736,6 @@ function Options:Init()
         SetupTab_Filters();
         SetupTab_Search();
         SetupTab_QuickSearch();
-        --SetupTab_ImportExport();   -- TODO: Implement updated import/export
+        SetupTab_ImportExport();   -- TODO: Implement updated import/export
     end
 end

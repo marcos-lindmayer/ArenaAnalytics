@@ -294,7 +294,7 @@ function AAtable:TryShowimportDialogFrame(parent)
     if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
         ArenaAnalyticsScrollFrame.importDialogFrame = CreateFrame("Frame", "ArenaAnalyticsImportFrame", parent or UIParent, "BasicFrameTemplateWithInset")
         ArenaAnalyticsScrollFrame.importDialogFrame:SetPoint("CENTER")
-        ArenaAnalyticsScrollFrame.importDialogFrame:SetSize(440, 145)
+        ArenaAnalyticsScrollFrame.importDialogFrame:SetSize(440, 125)
         ArenaAnalyticsScrollFrame.importDialogFrame:SetFrameStrata("DIALOG");
         ArenaAnalyticsScrollFrame.importDialogFrame.title = ArenaAnalyticsScrollFrame.importDialogFrame:CreateFontString(nil, "OVERLAY");
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", -10, -5);
@@ -310,10 +310,6 @@ function AAtable:TryShowimportDialogFrame(parent)
         -- Import Edit Box
         ArenaAnalyticsScrollFrame.importDialogFrame.importBox = ImportBox:Create(ArenaAnalyticsScrollFrame.importDialogFrame, "ArenaAnalyticsImportDialogBox", 380, 25);
         ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame.Text2, "BOTTOM", 0, -8);
-
-        -- Date warning text
-        local dateWarningText = "|cffff0000Warning:|r |cffffffffSkips imports within 24 hours of existing arenas.|r";
-        ArenaAnalyticsScrollFrame.importDataText3 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", ArenaAnalyticsScrollFrame.importDialogFrame.importBox.frame, "BOTTOM", 0, -8, dateWarningText);
     end
 
     ArenaAnalyticsScrollFrame.importDialogFrame:SetParent(parent or UIParent);

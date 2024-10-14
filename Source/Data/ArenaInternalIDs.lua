@@ -36,6 +36,10 @@ local mapTokens = {
 
 function Internal:GetMapToken(mapID)
     mapID = tonumber(mapID);
+    if(not mapID or mapID == 0) then
+        return nil;
+    end
+
     local token = mapID and mapTokens[mapID];
 
     if(not token) then
@@ -150,6 +154,7 @@ function Internal:GetAddonRaceIDByToken(token, factionIndex)
     end
 
     token = Helpers:ToSafeLower(token);
+    factionIndex = tonumber(factionIndex);
 
     if(token == "scourge") then
         token = "undead";
@@ -160,7 +165,7 @@ function Internal:GetAddonRaceIDByToken(token, factionIndex)
             if(not factionIndex or (id % 2 == factionIndex)) then
                 return id;
             else
-                ArenaAnalytics:Log("Internal:GetAddonRaceIDByToken rejected faction for:", factionIndex);
+                ArenaAnalytics:Log("Internal:GetAddonRaceIDByToken rejected faction for:", token, factionIndex);
             end
         end
     end
