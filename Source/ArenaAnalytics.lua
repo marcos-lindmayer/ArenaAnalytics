@@ -147,13 +147,12 @@ function ArenaAnalytics:ShowPurgeConfirmationDialog()
 			preferredIndex = 3,
 			exclusive = true,
 			hideOnEscape = true,
-			enterClicksFirstButton = true,
 			timeout = 30,
 		};
 	end
 
 	local dialog = StaticPopup_Show("CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY");
-	dialog.text:SetWidth(500);
+	dialog.text:SetWidth(400);
 end
 
 -------------------------------------------------------------------------

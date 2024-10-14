@@ -13,7 +13,7 @@ local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
-local updateInterval = 0.5;
+local updateInterval = 0.2;
 
 local progressFrame = nil;
 local progressToastFrame = nil;
@@ -104,83 +104,125 @@ function ImportProgressFrame:TryCreateToast()
     return progressToastFrame;
 end
 
-function ImportProgressFrame:Update()
-    -- Ensure import is active
-    if(not Import.isImporting) then
-        ImportProgressFrame:Stop();
-        return;
-    end
+function ImportProgressFrame:UpdateWeightedMovingAverage(state, currentTime)
+    local progressSinceLastUpdate = state.index - (state.lastIndex or 0);
+    local timeSinceLastUpdate = currentTime - (state.lastUpdateTime or currentTime);
 
-    if(not Import.state) then
-        Import.state = {
-            startTime = 0,
-            index = 0,
-            total = 0,
-            existing = ArenaAnalyticsDB and #ArenaAnalyticsDB or 0,
-            skippedArenaCount = 0,
-        };
-    end
+    if(timeSinceLastUpdate and timeSinceLastUpdate > 0) then
+        weight = 0.1 * timeSinceLastUpdate;
+        local currentRate = progressSinceLastUpdate / timeSinceLastUpdate;
 
-    -- Fetch state data
-    local state = Import.state;
-
-    -- Get current time and calculate elapsed time
-    local elapsedTime = GetTime() - state.startTime;
-
-    -- Calculate percentage progress
-    local progressPercentage = state.total > 0 and ((state.index / state.total) * 100) or 0;
-    local percentageText = floor(progressPercentage) .. "%";
-
-    -- Calculate estimated remaining time
-    local progressRate = (state.index > 0) and (elapsedTime / state.index) or 0;
-    local estimatedTimeRemaining = (state.total - state.index) * progressRate;
-
-    -- Cache the estimated remaining time and update only if deviation is significant
-    local dynamicThreshold = ceil(min(1, estimatedTimeRemaining * 0.1));
-    if(not self.lastEstimatedTime or math.abs(self.lastEstimatedTime - estimatedTimeRemaining) > dynamicThreshold) then
-        self.lastEstimatedTime = math.ceil(estimatedTimeRemaining);
-    else
-        -- Decrement the cached estimate (simulating countdown)
-        self.lastEstimatedTime = self.lastEstimatedTime - updateInterval;
-    end
-
-    local function ColorText(textFormat, ...)
-        textFormat = ArenaAnalytics:ColorText(textFormat, Constants.prefixColor)
-
-        -- Gather the arguments into a table and color them with statsColor
-        local coloredArgs = {...}
-        for i = 1, #coloredArgs do
-            coloredArgs[i] = ArenaAnalytics:ColorText(coloredArgs[i], Constants.statsColor)
+        if(self.latestWMA) then
+            self.latestWMA = (1 - weight) * self.latestWMA + weight * currentRate;
+        else
+            self.latestWMA = currentRate;
         end
 
-        -- Return the formatted string using the colored arguments
-        return format(textFormat, unpack(coloredArgs))
+        local diff = currentRate - self.latestWMA;
+        if(abs(diff) > 100) then
+            self.latestWMA = self.latestWMA + diff * 0.25;
+        end
     end
+end
 
-    local progressText = ColorText("Imported: %s/%s arenas  (%s)", state.index, state.total, percentageText);
-    local simpleProgressText = ColorText("Progress: %s/%s  (%s)", state.index, state.total, percentageText);
+function ImportProgressFrame:EstimateRemainingTime(state, currentTime, percentage)
+    -- Constants for flat rate weight decay
+    local flatRateDecayTime = 5;
+    local flatRate = 1000;
+
+    -- Calculate elapsed time and progress
+    local elapsedTime = currentTime - state.startTime;
+
+    local WMA = self.latestWMA or flatRate;
+    ImportProgressFrame:UpdateWeightedMovingAverage(state, currentTime);
+
+    -- Blended rate: flat rate dominates early, then latestWMA and overall average
+    local overallRate = (elapsedTime > 0) and (state.index / elapsedTime) or 0;
+    local weight = percentage^2;
+    local blendedRate = (1-weight) * WMA + weight * overallRate;
+
+    -- Estimate remaining time
+    local remainingProgress = state.total - state.index;
+    local estimatedTimeRemaining = (blendedRate > 0) and (remainingProgress / blendedRate) or 0;
+
+
+    return ceil(estimatedTimeRemaining);
+end
+
+local function ColorText(textFormat, ...)
+    textFormat = ArenaAnalytics:ColorText(textFormat, Constants.prefixColor)
+    
+    -- Gather the arguments into a table and color them with statsColor
+    local coloredArgs = {...}
+    for i = 1, #coloredArgs do
+        coloredArgs[i] = ArenaAnalytics:ColorText(coloredArgs[i], Constants.statsColor)
+    end
+    
+    -- Return the formatted string using the colored arguments
+    return format(textFormat, unpack(coloredArgs))
+end
+
+function ImportProgressFrame:UpdateTimeTexts(state, currentTime, percentage)
+    self.lastTextUpdateTime = currentTime;
+
+    -- Get current time and calculate elapsed time
+    local elapsedTime = currentTime - state.startTime;
+
+    -- Calculate estimated remaining time
+    self.lastEstimatedTime = ImportProgressFrame:EstimateRemainingTime(state, currentTime, percentage);
 
     local elapsedText = ColorText("Elapsed: %s", SecondsToTime(math.floor(elapsedTime)));
-    local remainingText = ColorText("Remaining: %s", (self.lastEstimatedTime > 3 and SecondsToTime(math.floor(self.lastEstimatedTime)) or "Few seconds"));
+    local remainingText = ColorText("Remaining: %s", (self.lastEstimatedTime > 1 and SecondsToTime(math.floor(self.lastEstimatedTime)) or "Few seconds"));
 
     -- Update Progress Frame if it exists
     if(progressFrame) then
-        progressFrame.progressText:SetText(progressText);
         progressFrame.elapsedText:SetText(elapsedText);
         progressFrame.remainingText:SetText(remainingText);
-        progressFrame.progressBar:SetValue(progressPercentage);
     end
 
     -- Update Toast Frame if it exists
     if(progressToastFrame) then
         if(state.total > 1000) then
-            progressToastFrame.progressText:SetText(simpleProgressText);
             progressToastFrame.timeRemaining:SetText(remainingText);
-            progressToastFrame.progressBar:SetValue(progressPercentage);
         else
             progressToastFrame:Hide();
             progressToastFrame = nil;
         end
+    end
+end
+
+function ImportProgressFrame:Update()
+    -- Ensure import is active
+    if(not Import.isImporting or not Import.state) then
+        ImportProgressFrame:Stop();
+        return;
+    end
+
+    -- Fetch state data
+    local state = Import.state;
+    local currentTime = GetTimePreciseSec();
+    local progressPercentage = state.total > 0 and ((state.index / state.total) * 100) or 0;
+
+    local progressText = ColorText("Imported: %s/%s  (%s%%)", state.index, state.total, floor(progressPercentage));
+
+    if(not self.lastTextUpdateTime or self.lastTextUpdateTime + 1 < currentTime) then
+        ImportProgressFrame:UpdateTimeTexts(state, currentTime, progressPercentage);
+    end
+
+    -- Cache values for next timer 
+    state.lastIndex = state.index;
+    state.lastUpdateTime = currentTime;
+
+    -- Update Progress Frame if it exists
+    if(progressFrame) then
+        progressFrame.progressText:SetText(progressText);
+        progressFrame.progressBar:SetValue(progressPercentage);
+    end
+
+    -- Update Toast Frame if it exists
+    if(progressToastFrame) then
+        progressToastFrame.progressText:SetText(progressText);
+        progressToastFrame.progressBar:SetValue(progressPercentage);
     end
 
     -- Schedule the next update (every 1 second)
@@ -201,10 +243,22 @@ function ImportProgressFrame:Stop()
 end
 
 function ImportProgressFrame:Start()
+    if(not Import.isImporting or not Import.state or not Import.state.total or Import.state.total < 500) then
+        ImportProgressFrame:Stop();
+        return;
+    end
+
     ImportProgressFrame:TryCreateProgressFrame();
-    ImportProgressFrame:TryCreateToast();
+
+    if(Import.state.total > 1000) then
+        ImportProgressFrame:TryCreateToast();
+    elseif(progressToastFrame) then
+        progressToastFrame:Hide();
+        progressToastFrame = nil;
+    end
+
+    self.latestWMA = nil;
 
     -- Setup constants
     self:Update();
 end
-ImportProgressFrame:Start();

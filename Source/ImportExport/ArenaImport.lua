@@ -214,7 +214,7 @@ function Import:ProcessImport()
     Import.state = TablePool:Acquire();
     local state = Import.state;
 
-    state.startTime = GetTime();
+    state.startTime = GetTimePreciseSec();
     state.index = 0;
 
     local _, importCount = Import.raw:gsub("\n", "");
@@ -273,13 +273,16 @@ function Import:Finalize()
         return;
     end
 
+    -- Force update before potential freeze from resorting matches.
+    ImportProgressFrame:Update();
+
     Import.isImporting = nil;
 
     local state = Import.current and Import.state;
 
     local elapsed, existingCount;
     if(state) then
-        elapsed = state.startTime and (GetTime() - state.startTime) or 0;
+        elapsed = state.startTime and (GetTimePreciseSec() - state.startTime) or 0;
         existingCount = state.existing or 0;
     else
         elapsed = 0;
@@ -296,7 +299,7 @@ function Import:Finalize()
 
     Filters:Refresh();
 
-    local elapsedText = elapsed and format(" in %.3f seconds.", elapsed) or "";
+    local elapsedText = elapsed and format(" in %.1f seconds.", elapsed) or "";
     ArenaAnalytics:Print(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingCount), elapsedText));
     ArenaAnalytics:Log(format("Import ignored %d arenas due to their date.", skippedArenaCount));
 end
