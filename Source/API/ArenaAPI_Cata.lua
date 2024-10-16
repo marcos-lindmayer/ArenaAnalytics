@@ -161,8 +161,8 @@ API.specMappingTable = {
     [750] = 2, -- Feral Druid
     [752] = 3, -- Balance Druid
 
-    [839] = 11, -- Holy Paladin
-    [845] = 12, -- Protection Paladin
+    [831] = 11, -- Holy Paladin
+    [839] = 12, -- Protection Paladin
     [855] = 14, -- Retribution Paladin
 
     [262] = 21, -- Restoration Shaman
