@@ -539,7 +539,7 @@ function ArenaTracker:HandleArenaEnd()
 		end
 
 		if(currentArena.isShuffle) then
-			player.wins = score.wins;
+			player.wins = score.wins or 0;
 		end
 
 		if(player.name) then

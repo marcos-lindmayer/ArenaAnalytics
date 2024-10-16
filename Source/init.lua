@@ -153,7 +153,7 @@ ArenaAnalytics.commands = {
 
 	["debugcleardb"] = function()
 		if(ArenaAnalytics:GetDebugLevel() == 0) then
-			ArenaAnalytics:Print("Clearing ArenaAnalyticsDB requires debugging enabled. |cffBBBBBB/aa debug|r. Not intended for users!");
+			ArenaAnalytics:Print("Clearing ArenaAnalyticsDB requires debugging enabled.  |cffBBBBBB/aa debug|r. Not intended for users!");
 		else -- Debug mode is enabled, allow debug clearing the DB
 			if (ArenaAnalytics:HasStoredMatches()) then
 				ArenaAnalytics:Log("Purging ArenaAnalyticsDB.");

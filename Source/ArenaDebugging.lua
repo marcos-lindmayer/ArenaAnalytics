@@ -39,7 +39,7 @@ local tempColor = "FE42EE";
 function Debug:OnLoad()
     local debugLevel = ArenaAnalytics:GetDebugLevel();
 	if(debugLevel > 0) then
-        ArenaAnalytics:LogForced(string.format("Debugging Enabled at level: %d! |cffBBBBBB/aa debug to disable.|r", debugLevel));
+        ArenaAnalytics:LogForced(string.format("Debugging Enabled at level: %d!  |cffBBBBBB/aa debug to disable.|r", debugLevel));
 	end
 end
 

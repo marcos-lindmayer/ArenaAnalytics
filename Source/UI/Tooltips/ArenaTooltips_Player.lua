@@ -513,7 +513,7 @@ function PlayerTooltip:SetPlayerFrame(frame)
 end
 
 function PlayerTooltip:AddShuffleStats(frame)
-    local wins = ArenaMatch:GetPlayerVariableStats(player);
+    local wins = ArenaMatch:GetPlayerVariableStats(frame.player);
     PlayerTooltip:AddStatistic("Wins: ", wins);
 end
 
