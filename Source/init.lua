@@ -81,7 +81,12 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:Print("|cff00cc66/aa version|r Prints the current ArenaAnalytics version.");
 		ArenaAnalytics:Print("|cff00cc66/aa total|r Prints total unfiltered matches.");
 		ArenaAnalytics:Print("|cff00cc66/aa purge|r Show dialog to permanently delete match history.");
+		ArenaAnalytics:Print("|cff00cc66/aa credits|r Print addon credits.");
 		print(" ");
+	end,
+
+	["credits"] = function()
+		ArenaAnalytics:Print("ArenaAnalytics authors: Lingo, Zeetrax.   Developed in association with Hydra. www.twitch.tv/Hydramist");
 	end,
 
 	["version"] = function()
