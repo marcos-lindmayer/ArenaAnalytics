@@ -108,7 +108,7 @@ function API:GetMySpec()
 		end
  	end
 
-    return addonSpecID;
+    return spec_id;
 end
 
 function API:GetInspectSpecialization(unitToken)

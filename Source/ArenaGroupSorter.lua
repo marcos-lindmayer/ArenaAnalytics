@@ -108,7 +108,7 @@ end
 -------------------------------------------------------------------------
 
 local function ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo)
-    if not selfPlayerInfo then
+    if(not selfPlayerInfo) then
         return nil;
     end
 
@@ -135,7 +135,7 @@ local function ComparePlayersToSelf(playerInfoA, playerInfoB, selfPlayerInfo)
     if(selfPlayerInfo.role_sub and playerInfoA.role_sub ~= playerInfoB.role_sub) then
         local matchedA = playerInfoA.role_sub == selfPlayerInfo.role_sub;
         local matchedB = playerInfoB.role_sub == selfPlayerInfo.role_sub;
-        
+
         if(matchedA ~= matchedB) then
             return matchedA;
         end
