@@ -90,12 +90,13 @@ function Options:LoadSettings()
     AddSetting("alwaysShowSpecOverlay", false);
 
     AddSetting("hideZeroRatingDelta", true);
+    AddSetting("hidePlayerTooltipZeroRatingDelta", false);
     AddSetting("ignoreGroupForSkirmishSession", true);
 
     -- Filters
     AddSetting("defaultCurrentSeasonFilter", false);
     AddSetting("defaultCurrentSessionFilter", false);
-    
+
     AddSetting("showSkirmish", true);
     AddSetting("showWarGames", true);
 
@@ -505,6 +506,7 @@ function SetupTab_General()
     CreateSpace();
 
     parent.hideZeroRatingDelta = CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
+    parent.hidePlayerTooltipZeroRatingDelta = CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
     parent.ignoreGroupForSkirmishSession = CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
 end
 

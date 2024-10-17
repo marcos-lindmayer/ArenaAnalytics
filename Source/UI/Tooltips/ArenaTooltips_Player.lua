@@ -353,17 +353,25 @@ function PlayerTooltip:ClearStats()
     self.stats = TablePool:Acquire();
 end
 
-function PlayerTooltip:AddStatistic(prefix, value)
-    local self = GetOrCreateSingleton(); -- Tooltip singleton
-
+function PlayerTooltip:AddStatistic(prefix, text)
     prefix = ArenaAnalytics:ColorText(prefix, Constants.prefixColor);
-    tinsert(self.stats, prefix .. Helpers:FormatNumber(value));
+    text = ArenaAnalytics:ColorText(text, Constants.statsColor);
+
+    local self = GetOrCreateSingleton(); -- Tooltip singleton
+    tinsert(self.stats, prefix .. text);
+end
+
+function PlayerTooltip:AddNumberStatistic(prefix, value)
+    value = Helpers:FormatNumber(value);
+    PlayerTooltip:AddStatistic(prefix, value);
 end
 
 function PlayerTooltip:AddRatingStatistic(prefix, value, delta)
     local text = tonumber(value) or "-";
     delta = tonumber(delta);
-    if(delta) then
+
+    -- Format or hide delta
+    if(delta and (delta ~= 0 or not Options:Get("hidePlayerTooltipZeroRatingDelta"))) then
         local hex = nil;
 
         if(delta > 0) then
@@ -473,10 +481,10 @@ function PlayerTooltip:SetPlayerFrame(frame)
 
     local kills, deaths, damage, healing = ArenaMatch:GetPlayerStats(frame.player);
 
-    PlayerTooltip:AddStatistic("Kills: ", kills);
-    PlayerTooltip:AddStatistic("Deaths: ", deaths);
-    PlayerTooltip:AddStatistic("Damage: ", damage);
-    PlayerTooltip:AddStatistic("Healing: ", healing);
+    PlayerTooltip:AddNumberStatistic("Kills: ", kills);
+    PlayerTooltip:AddNumberStatistic("Deaths: ", deaths);
+    PlayerTooltip:AddNumberStatistic("Damage: ", damage);
+    PlayerTooltip:AddNumberStatistic("Healing: ", healing);
 
     -- DPS / HPS
     local duration = ArenaMatch:GetDuration(frame.match);
@@ -484,19 +492,19 @@ function PlayerTooltip:SetPlayerFrame(frame)
         local dps = damage and damage / duration or "-";
         local hps = healing and healing / duration or "-";
 
-        PlayerTooltip:AddStatistic("DPS: ", dps);
-        PlayerTooltip:AddStatistic("HPS: ", hps);
+        PlayerTooltip:AddNumberStatistic("DPS: ", dps);
+        PlayerTooltip:AddNumberStatistic("HPS: ", hps);
     end
 
     -- Player Rating Info
     if(ArenaMatch:IsRated(frame.match)) then
         local rating, ratingDelta, mmr, mmrDelta = ArenaMatch:GetPlayerRatedInfo(frame.player);
         if(rating or API.showPerPlayerRatedInfo) then
-            PlayerTooltip:AddStatistic("Rating: ", rating, ratingDelta);
+            PlayerTooltip:AddRatingStatistic("Rating: ", rating, ratingDelta);
         end
 
         if(mmr or API.showPerPlayerRatedInfo) then
-            PlayerTooltip:AddStatistic("MMR: ", mmr, mmrDelta);
+            PlayerTooltip:AddRatingStatistic("MMR: ", mmr, mmrDelta);
         end
     end
 
@@ -514,7 +522,7 @@ end
 
 function PlayerTooltip:AddShuffleStats(frame)
     local wins = ArenaMatch:GetPlayerVariableStats(frame.player);
-    PlayerTooltip:AddStatistic("Wins: ", wins);
+    PlayerTooltip:AddNumberStatistic("Wins: ", wins);
 end
 
 local function GetLeftColumnWidth(container)
