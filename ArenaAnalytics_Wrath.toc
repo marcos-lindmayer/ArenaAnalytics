@@ -2,7 +2,7 @@
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
 ## Author: Lingo, Zeetrax
-## Version: 0.9.2
+## Version: 0.9.3
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSharedSettingsDB
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB
