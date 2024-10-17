@@ -11,7 +11,6 @@ local Bitmap = ArenaAnalytics.Bitmap;
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIServiceButtonTemplate";
-API.trustScoreboardDeaths = true;
 
 API.availableBrackets = {
 	{ name = "2v2", key = 1},
@@ -90,7 +89,7 @@ function API:GetPlayerScore(index)
         deaths = deaths,
         damage = damage,
         healing = healing,
-    }
+    };
 
     return score;
 end

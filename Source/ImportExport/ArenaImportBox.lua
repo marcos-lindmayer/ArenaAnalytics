@@ -13,7 +13,6 @@ local AAtable = ArenaAnalytics.AAtable;
 ImportBox.instances = {};
 
 local function AddFrame(frame)
-    ArenaAnalytics:Log(frame)
     if(not frame) then
         return;
     end
