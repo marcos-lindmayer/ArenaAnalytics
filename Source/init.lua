@@ -348,11 +348,6 @@ end
 function ArenaAnalytics:init()
 	ArenaAnalytics:Log("Initializing..");
 
-	-- Initialize data
-	Bitmap:Initialize();
-	Internal:Initialize();
-	ArenaAnalytics:InitializeArenaAnalyticsDB();
-
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
@@ -378,23 +373,29 @@ function ArenaAnalytics:init()
 	SlashCmdList.AuraTracker = HandleSlashCommands;
 
 	---------------------------------
-	-- Version Control
-	---------------------------------
-
-	VersionManager:OnInit();
-
-	---------------------------------
 	-- Initialize modules
 	---------------------------------
 
-	ArenaAnalytics:TryFixLastMatchRating();
-
+	Bitmap:Initialize();
+	Internal:Initialize();
+	ArenaAnalytics:InitializeArenaAnalyticsDB();
 	Search:Initialize();
 	API:Initialize();
 	Options:Init();
 	FilterTables:Init();
 	Filters:Init();
 
+	---------------------------------
+	-- Version Control
+	---------------------------------
+
+	VersionManager:OnInit();	
+
+	---------------------------------
+	-- Startup
+	---------------------------------
+
+	ArenaAnalytics:TryFixLastMatchRating();
 	Events:RegisterGlobalEvents();
 
 	-- Update cached rating as soon as possible, through PVP_RATED_STATS_UPDATE event

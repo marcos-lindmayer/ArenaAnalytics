@@ -16,7 +16,7 @@ local Constants = ArenaAnalytics.Constants;
 -- General Helpers
 
 function Helpers:ToSafeLower(value)
-    if(value and type(value) == "string") then
+    if(type(value) == "string") then
         return value:lower();
     end
 

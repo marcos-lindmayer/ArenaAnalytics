@@ -81,6 +81,9 @@ end
 -- Returns true if loading should convert data
 function VersionManager:OnInit()
     ArenaAnalyticsDB.formatVersion = ArenaAnalyticsDB.formatVersion or 0;
+    if(ArenaAnalyticsDB.formatVersion >= VersionManager.latestFormatVersion) then
+        return;
+    end
 
     if(VersionManager:HasOldData() and #ArenaAnalyticsDB == 0) then
         -- Force early init, to ensure the internal tables are valid.
@@ -102,9 +105,6 @@ function VersionManager:OnInit()
         VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB(); -- 0.7.0
 
         MatchHistoryDB = nil;
-
-        ArenaAnalytics:ResortGroupsInMatchHistory();
-        Sessions:RecomputeSessionsForMatchHistory();
     end
 
     -- Reverts and reset index based name and realm (To improve order and streamline formatting across version)
@@ -132,6 +132,8 @@ function VersionManager:OnInit()
 
         ArenaAnalyticsDB.formatVersion = 4;
     end
+
+    VersionManager:FinalizeConversionAttempts();
 
     ArenaAnalyticsDB.formatVersion = VersionManager.latestFormatVersion;
 end
@@ -353,7 +355,8 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
         return;
     end
 
-    ArenaAnalytics:PurgeArenaAnalyticsDB();
+    ArenaAnalyticsDB = {};
+    ArenaAnalytics:InitializeArenaAnalyticsDB();
 
     local function ConvertValues(race, class, spec)
         local race_id = Localization:GetRaceID(race);
@@ -505,7 +508,6 @@ function VersionManager:RevertIndexBasedNameAndRealm()
 
         -- Logging
 		ArenaAnalytics:Log("Converted ArenaAnalyticsRealmsDB:", #ArenaAnalyticsDB.realms);
-		Debug:LogTable(ArenaAnalyticsDB.realms);
 	end
 
     -- Convert realms DB to final DB

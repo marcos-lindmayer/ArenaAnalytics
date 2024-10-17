@@ -558,7 +558,6 @@ function ArenaTracker:HandleArenaEnd()
 			table.insert(players, player);
 		else
 			ArenaAnalytics:Log("Tracker: Invalid player name, player will not be stored!");
-			Debug:LogTable(player);
 		end
 
 		TablePool:Release(score);

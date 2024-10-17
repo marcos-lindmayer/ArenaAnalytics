@@ -772,7 +772,7 @@ end
 
 -- Returns true if a value is set
 function ArenaMatch:SetTeamMemberValue(match, isEnemyTeam, indexedFullName, key, value)
-    assert(match and playerName);
+    assert(match and indexedFullName);
 
     key = key and playerKeys[key];
     assert(key, "SetTeamMemberValue: Invalid playerKey provided.");

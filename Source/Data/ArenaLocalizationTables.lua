@@ -388,23 +388,7 @@ function Localization:GetRaceID(race, factionIndex)
         end
     end
 
-    ArenaAnalytics:LogError("LocalizationTables: Failed to find race table value:", race);
-
-    -- Fall back to try looking through 
-    for raceID = 1, API.maxRaceID do
-        local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)        
-        if(raceInfo and race == Helpers:ToSafeLower(raceInfo.raceName)) then
-            local addonRaceID = Internal:GetAddonRaceIDByToken(raceInfo.clientFileString, factionIndex);
-            if addonRaceID then
-                return addonRaceID;
-            else
-                ArenaAnalytics:LogError("LocalizationTables: No Addon Race ID found for:", raceID, raceInfo.raceName, raceInfo.clientFileString);
-                return 1000 + raceID;
-            end
-        end
-    end
-
-    ArenaAnalytics:LogError("LocalizationTables: Failed to find raceID:", race);
+    ArenaAnalytics:LogError("LocalizationTables: Failed to find race_id for race:", race);
     return nil;
 end
 
