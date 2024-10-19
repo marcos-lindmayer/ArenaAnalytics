@@ -479,9 +479,9 @@ function ArenaAnalytics:ResortMatchHistory()
 		local date1 = ArenaMatch:GetDate(arena1);
 		local date2 = ArenaMatch:GetDate(arena2);
 
-		if(not arena2) then
+		if(not date2) then
 			return true;
-		elseif(not arena1) then
+		elseif(not date1) then
 			return false;
 		end
 
