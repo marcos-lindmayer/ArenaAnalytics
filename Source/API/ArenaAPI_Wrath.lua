@@ -6,6 +6,8 @@ local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
+local Bitmap = ArenaAnalytics.Bitmap;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
@@ -94,27 +96,50 @@ function API:GetPlayerScore(index)
     return score;
 end
 
--- NOTE: Not updated to release data format (id and preg missing)
 -- Get local player current spec
 function API:GetMySpec()
-    if(true) then
-        return;
+    local spec_id = nil
+	local currentSpecPoints = 0;
+
+    local isPlausiblePreg = true;
+
+    -- Determine spec
+    local class_id = Helpers:GetUnitClass("player");
+    if(class_id ~= 10) then
+        -- Not paladin, cannot be preg.
+        isPlausiblePreg = false;
     end
 
-    local spec = nil
-	local currentSpecPoints = 0
-
     for i = 1, 3 do
-        local name, _, pointsSpent = GetTalentTabInfo(i);
+        local specName, _, pointsSpent = GetTalentTabInfo(i);
+        local spec = Internal:GetSpecFromSpecString(class_id, specName);
 		if (pointsSpent > currentSpecPoints) then
 			currentSpecPoints = pointsSpent;
-			spec = name;
+			spec_id = spec;
 		end
+
+        if(isPlausiblePreg) then
+            if(spec == 11) then -- Holy
+                if(pointsSpent > 10) then -- Max 15 holy points for preg (0 is expected)
+                    isPlausiblePreg = false;
+                end
+            elseif(spec == 12) then -- Protection
+                if(pointsSpent < 15 or pointsSpent > 30) then -- Max 30 protection points for preg (28 expected)
+                    isPlausiblePreg = false;
+                end
+            elseif(spec == 14) then -- Retribution
+                if(pointsSpent < 15 or pointsSpent > 45) then -- Max 45 retribution points for preg (43 expected)
+                    isPlausiblePreg = false;
+                end
+            end
+        end
  	end
 
-	spec = spec == "Feral Combat" and "Feral" or spec;
+    if(isPlausiblePreg) then
+        spec_id = 13;
+    end
 
-    return nil;
+    return spec_id;
 end
 
 function API:GetPlayerInfoByGUID(GUID)

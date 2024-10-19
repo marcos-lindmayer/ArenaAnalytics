@@ -185,7 +185,7 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 
-		ArenaAnalytics:LogTemp(API:GetMySpec());
+		ArenaAnalytics:Print("My Spec:", API:GetMySpec());
 
 		ArenaAnalytics:ResortMatchHistory();
 
