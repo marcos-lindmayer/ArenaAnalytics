@@ -47,17 +47,19 @@ function Localization:GetSpecID(classToken, spec)
     classToken = Helpers:ToSafeLower(classToken);
     spec = Helpers:ToSafeLower(spec);
 
-    -- Check game values
-    for classIndex=1, API.numClasses do
-        local _,token = GetClassInfo(classIndex);
-        if(Helpers:ToSafeLower(token) == classToken) then
-            for specIndex=0, 5 do
-                local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
-                if(specID) then
-                    for genderIndex = 1, 3 do
-                        local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
-                        if(spec == Helpers:ToSafeLower(specName)) then
-                            return API:GetMappedAddonSpecID(id);
+    if(GetSpecializationInfoForClassID and GetSpecializationInfoForSpecID) then
+        -- Check game values
+        for classIndex=1, API.numClasses do
+            local _,token = GetClassInfo(classIndex);
+            if(Helpers:ToSafeLower(token) == classToken) then
+                for specIndex=0, 5 do
+                    local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
+                    if(specID) then
+                        for genderIndex = 1, 3 do
+                            local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
+                            if(spec == Helpers:ToSafeLower(specName)) then
+                                return API:GetMappedAddonSpecID(id);
+                            end
                         end
                     end
                 end

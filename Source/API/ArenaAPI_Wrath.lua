@@ -12,7 +12,6 @@ local TablePool = ArenaAnalytics.TablePool;
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIServiceButtonTemplate";
-API.trustScoreboardDeaths = true;
 
 API.availableBrackets = {
 	{ name = "2v2", key = 1},
@@ -96,23 +95,42 @@ function API:GetPlayerScore(index)
     return score;
 end
 
+local specByIndex = {
+    ["DRUID"] = { 3, 2, 1 }, -- Balance, Feral, Resto
+    ["PALADIN"] = { 11, 12, 14 }, -- Holy, Prot, Ret
+    ["SHAMAN"] = { 22, 23, 21 }, -- Ele, Enh, Resto
+    ["DEATHKNIGHT"] = { 33, 32, 31 }, -- Blood, Frost, Unholy
+    ["HUNTER"] = { 41, 42, 43 }, -- BM, MM, Surv
+    ["MAGE"] = { 53, 52, 51 }, -- Arcane, Fire, Frost
+    ["ROGUE"] = { 62, 63, 61 }, -- Assa, Combat, Sub
+    ["WARLOCK"] = { 71, 73, 72 }, -- Affli, Demo, Destro
+    ["WARRIOR"] = { 82, 83, 81 }, -- Arms, Fury, Prot
+    ["PRIEST"] = { 91, 92, 93 }, -- Disc, Holy, Shadow
+};
+
 -- Get local player current spec
 function API:GetMySpec()
     local spec_id = nil
 	local currentSpecPoints = 0;
-
     local isPlausiblePreg = true;
 
     -- Determine spec
-    local class_id = Helpers:GetUnitClass("player");
-    if(class_id ~= 10) then
+    local _,classToken = UnitClass(unit);
+    if(not classToken) then
+        ArenaAnalytics:LogWarning("API:GetMySpec failed to retrieve class token.");
+        return nil;
+    end
+
+    ArenaAnalytics:LogForced("Class:", classToken);
+    if(classToken ~= "PALADIN") then
         -- Not paladin, cannot be preg.
         isPlausiblePreg = false;
     end
 
     for i = 1, 3 do
-        local specName, _, pointsSpent = GetTalentTabInfo(i);
-        local spec = Internal:GetSpecFromSpecString(class_id, specName);
+        local _, _, pointsSpent = GetTalentTabInfo(i);
+        local spec = specByIndex[classToken] and specByIndex[classToken][i];
+        ArenaAnalytics:LogForced("Spec", spec, "Class:", classToken, "Points:", pointsSpent, "Most Spent:", currentSpecPoints, "Index:", i);
 		if (pointsSpent > currentSpecPoints) then
 			currentSpecPoints = pointsSpent;
 			spec_id = spec;
@@ -135,7 +153,8 @@ function API:GetMySpec()
         end
  	end
 
-    if(isPlausiblePreg) then
+    if(spec_id and isPlausiblePreg) then
+        ArenaAnalytics:LogForced("Overriding spec_id:", spec_id, "with preg!");
         spec_id = 13;
     end
 

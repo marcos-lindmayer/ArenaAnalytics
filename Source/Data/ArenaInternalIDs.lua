@@ -363,7 +363,7 @@ function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
         return nil;
     end
 
-    if forceExactSpec and spec == nil then
+    if(forceExactSpec and spec == nil) then
         return nil;
     end
 
