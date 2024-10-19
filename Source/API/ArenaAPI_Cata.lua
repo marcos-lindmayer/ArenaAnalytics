@@ -94,6 +94,29 @@ function API:GetPlayerScore(index)
     return score;
 end
 
+function API:GetSpecialization(unitToken)
+    unitToken = unitToken or "player";
+    if(not UnitExists(unitToken)) then
+        return nil;
+    end
+
+    local isInspect = (UnitGUID(unitToken) ~= UnitGUID("player"));
+
+    local spec_id = nil;
+	local currentSpecPoints = 0;
+
+    local spec, currentSpecPoints = nil, 0;
+    for i = 1, 3 do
+        local id, _, _, _, pointsSpent = GetTalentTabInfo(i, isInspect);
+		if (id and pointsSpent > currentSpecPoints) then
+			currentSpecPoints = pointsSpent;
+			spec = id;
+		end
+ 	end
+
+    return API:GetMappedAddonSpecID(spec);
+end
+
 -- Get local player current spec
 function API:GetMySpec()
     local spec_id = nil;
@@ -119,16 +142,16 @@ function API:GetInspectSpecialization(unitToken)
         return API:GetMySpec();
     end
 
-    local spec_id, currentSpecPoints = nil, 0;
+    local spec, currentSpecPoints = nil, 0;
     for i = 1, 3 do
-        local id, name, _, _, pointsSpent = GetTalentTabInfo(i, true);
+        local id, _, _, _, pointsSpent = GetTalentTabInfo(i, true);
 		if (id and pointsSpent > currentSpecPoints) then
 			currentSpecPoints = pointsSpent;
-			spec_id = API:GetMappedAddonSpecID(id);
+			spec = id;
 		end
  	end
 
-    return API:GetMappedAddonSpecID(specID);
+    return API:GetMappedAddonSpecID(spec);
 end
 
 function API:GetPlayerInfoByGUID(GUID)

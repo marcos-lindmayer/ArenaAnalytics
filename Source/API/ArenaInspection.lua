@@ -58,10 +58,6 @@ local function GetUnitToken(GUID)
 end
 
 function Inspection:RequestSpec(unitToken)
-    if(not API.GetInspectSpecialization) then
-        return;
-    end
-
     if(not unitToken or not API:IsInArena()) then
         return;
     end
@@ -99,10 +95,6 @@ function Inspection:TryInspectNext()
 end
 
 local function HandleInspect_Internal(GUID)
-    if(not API.GetInspectSpecialization) then
-        return;
-    end
-
     if(not API:IsInArena()) then
         return;
     end
@@ -110,7 +102,8 @@ local function HandleInspect_Internal(GUID)
     local foundSpec = false;
 
     local unitToken = GetUnitToken(GUID);
-    local spec_id = API:GetInspectSpecialization(unitToken);
+    local spec_id = API:GetSpecialization(unitToken);
+    ArenaAnalytics:Log("HandleInspect_Internal", spec_id)
     if(spec_id) then
         foundSpec = true;
         ArenaTracker:OnSpecDetected(GUID, spec_id);
@@ -140,10 +133,6 @@ end
 -------------------------------------------------------------------------
 
 function Inspection:TryStartTimer()
-    if(not API.GetInspectSpecialization) then
-        return;
-    end
-
     if(not API:IsInArena()) then
         ArenaAnalytics:Log("Inspection Timer rejected start: Not in arena!");
         Inspection:CancelTimer();

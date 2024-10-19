@@ -109,13 +109,20 @@ local specByIndex = {
 };
 
 -- Get local player current spec
-function API:GetMySpec()
+function API:GetSpecialization(unitToken)
+    unitToken = unitToken or "player";
+    if(not UnitExists(unitToken)) then
+        return nil;
+    end
+
+    local isInspect = (UnitGUID(unitToken) ~= UnitGUID("player"));
+
     local spec_id = nil
 	local currentSpecPoints = 0;
     local isPlausiblePreg = true;
 
     -- Determine spec
-    local _,classToken = UnitClass(unit);
+    local _,classToken = UnitClass(unitToken);
     if(not classToken) then
         ArenaAnalytics:LogWarning("API:GetMySpec failed to retrieve class token.");
         return nil;
@@ -128,7 +135,7 @@ function API:GetMySpec()
     end
 
     for i = 1, 3 do
-        local _, _, pointsSpent = GetTalentTabInfo(i);
+        local _, _, pointsSpent = GetTalentTabInfo(i, isInspect);
         local spec = specByIndex[classToken] and specByIndex[classToken][i];
         ArenaAnalytics:LogForced("Spec", spec, "Class:", classToken, "Points:", pointsSpent, "Most Spent:", currentSpecPoints, "Index:", i);
 		if (pointsSpent > currentSpecPoints) then

@@ -118,7 +118,7 @@ function API:GetPlayerScore(index)
     score.healing = scoreInfo.healingDone;
     score.rating = scoreInfo.rating;
     score.ratingDelta = scoreInfo.ratingChange;
-    
+
     if(API:IsSoloShuffle()) then
         -- Assume shuffle only has one stat (ID changes randomly)
         local firstStat = scoreInfo.stats and scoreInfo.stats[1];
@@ -136,22 +136,16 @@ function API:GetPlayerScore(index)
     return score;
 end
 
--- Get local player current spec
-function API:GetMySpec()
-    local currentSpec = GetSpecialization();
-    local id = currentSpec and GetSpecializationInfo(currentSpec);
-
-    local spec_id = API:GetMappedAddonSpecID(id);
-	return spec_id;
-end
-
-function API:GetInspectSpecialization(unitToken)
-    if(not unitToken or not UnitExists(unitToken)) then
-        return;
+function API:GetSpecialization(unitToken)
+    unitToken = unitToken or "player";
+    if(not UnitExists(unitToken)) then
+        return nil;
     end
 
-    if(UnitGUID("player") == UnitGUID(unitToken)) then
-        return API:GetMySpec();
+    if(UnitGUID(unitToken) == UnitGUID("player")) then
+        local currentSpec = GetSpecialization();
+        local id = currentSpec and GetSpecializationInfo(currentSpec);
+        return API:GetMappedAddonSpecID(id);
     end
 
     local specID = GetInspectSpecialization(unitToken);

@@ -367,7 +367,7 @@ function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
 	end
 
 	if(not ArenaAnalytics.localPlayerInfo or forceUpdate) then
-		local spec_id = API:GetMySpec();	
+		local spec_id = API:GetSpecialization();
 		local name, realm = UnitFullName("player");
 		local race_id = Helpers:GetUnitRace("player");
 

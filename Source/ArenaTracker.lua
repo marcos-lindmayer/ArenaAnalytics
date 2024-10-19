@@ -415,7 +415,7 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 		local name = currentArena.playerName;
 		local race_id = Helpers:GetUnitRace("player");
 		local class_id = Helpers:GetUnitClass("player");
-		local spec_id = API:GetMySpec() or class_id;
+		local spec_id = API:GetSpecialization() or class_id;
 		ArenaAnalytics:Log("Using MySpec:", spec_id);
 
 		local player = ArenaTracker:CreatePlayerTable(false, GUID, name, race_id, spec_id);
@@ -679,8 +679,8 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 					player = ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, (spec_id or class_id));
 					table.insert(currentArena.players, player);
 
-					if(not isEnemy) then
-						Inspection:RequestSpec(unitToken)
+					if(not isEnemy and Inspection and Inspection.RequestSpec) then
+						Inspection:RequestSpec(unitToken);
 					end
 				end
 			end

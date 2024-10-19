@@ -185,7 +185,7 @@ ArenaAnalytics.commands = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
 
-		ArenaAnalytics:Print("My Spec:", API:GetMySpec());
+		ArenaAnalytics:Print("My Spec:", API:GetSpecialization());
 
 		print(" ");
 	end,	
