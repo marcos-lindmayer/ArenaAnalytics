@@ -90,7 +90,7 @@ ArenaAnalytics.commands = {
 	end,
 
 	["version"] = function()
-		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (API:GetAddonVersion() or "Invalid Version") .. " (Early Access)|r");
+		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (API:GetAddonVersion() or "Invalid Version") .. "|r");
 	end,
 
 	["total"] = function()
@@ -184,8 +184,6 @@ ArenaAnalytics.commands = {
 	["test"] = function(...)
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-
-		ArenaAnalytics:Print("My Spec:", API:GetSpecialization());
 
 		print(" ");
 	end,	
@@ -353,7 +351,6 @@ function ArenaAnalytics:init()
 
 	local version = API:GetAddonVersion();
 	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
-	ArenaAnalytics:Print("Early Access: Bugs are expected!", "|cffAAAAAA" .. versionText .. "|r");
     ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
 	
 	Debug:OnLoad();

@@ -108,6 +108,14 @@ local specByIndex = {
     ["PRIEST"] = { 91, 92, 93 }, -- Disc, Holy, Shadow
 };
 
+local function GetPointsSpent(index, isInspect)
+    if(isInspect) then
+        return select(3,GetTalentTabInfo(index, true));
+    end
+
+    return select(3,GetTalentTabInfo(index));
+end
+
 -- Get local player current spec
 function API:GetSpecialization(unitToken)
     unitToken = unitToken or "player";
@@ -128,16 +136,14 @@ function API:GetSpecialization(unitToken)
         return nil;
     end
 
-    ArenaAnalytics:LogForced("Class:", classToken);
     if(classToken ~= "PALADIN") then
         -- Not paladin, cannot be preg.
         isPlausiblePreg = false;
     end
 
     for i = 1, 3 do
-        local _, _, pointsSpent = GetTalentTabInfo(i, isInspect);
+        local pointsSpent = GetPointsSpent(i, isInspect);
         local spec = specByIndex[classToken] and specByIndex[classToken][i];
-        ArenaAnalytics:LogForced("Spec", spec, "Class:", classToken, "Points:", pointsSpent, "Most Spent:", currentSpecPoints, "Index:", i);
 		if (pointsSpent > currentSpecPoints) then
 			currentSpecPoints = pointsSpent;
 			spec_id = spec;
@@ -161,7 +167,6 @@ function API:GetSpecialization(unitToken)
  	end
 
     if(spec_id and isPlausiblePreg) then
-        ArenaAnalytics:LogForced("Overriding spec_id:", spec_id, "with preg!");
         spec_id = 13;
     end
 

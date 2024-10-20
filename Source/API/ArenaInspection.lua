@@ -103,7 +103,7 @@ local function HandleInspect_Internal(GUID)
 
     local unitToken = GetUnitToken(GUID);
     local spec_id = API:GetSpecialization(unitToken);
-    ArenaAnalytics:Log("HandleInspect_Internal", spec_id)
+    ArenaAnalytics:Log("HandleInspect_Internal", unitToken, spec_id);
     if(spec_id) then
         foundSpec = true;
         ArenaTracker:OnSpecDetected(GUID, spec_id);
