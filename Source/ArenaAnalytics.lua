@@ -724,9 +724,11 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	Sessions:AssignSession(arenaData);
 	ArenaAnalytics:Log("session:", session);
 
-	-- Transient data
-	ArenaMatch:SetTransientSeasonPlayed(arenaData, newArena.seasonPlayed);
-	ArenaMatch:SetRequireRatingFix(arenaData, newArena.requireRatingFix);
+	if(newArena.requireRatingFix) then
+		-- Transient data
+		ArenaMatch:SetTransientSeasonPlayed(arenaData, newArena.seasonPlayed);
+		ArenaMatch:SetRequireRatingFix(arenaData, newArena.requireRatingFix);
+	end
 
 	-- Clear transient season played from last match
 	ArenaAnalytics:ClearLastMatchTransientValues(newArena.bracketIndex);

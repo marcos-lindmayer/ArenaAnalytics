@@ -109,7 +109,7 @@ function ArenaMatch:RevertPlayerNameAndRealmIndexing(match)
             for i,player in ipairs(team) do
                 local name = player[oldPlayerKeys.name];
                 local realm = player[oldPlayerKeys.realm];
-                
+
                 -- If either name or realm requires reverting
                 if(type(name) == "number" or type(realm) == "number") then
                     ArenaAnalytics:Log("Reverting player names:", name, realm);
@@ -289,12 +289,16 @@ end
 function ArenaMatch:TryFixLastRating(match)
     assert(match);
 
+    ArenaAnalytics:LogTemp("TryFixLastRating")
+
     if(not ArenaMatch:DoesRequireRatingFix(match)) then
+        ArenaAnalytics:LogTemp("TryFixLastRating Doesn't require rating fix.")
         return;
     end
 
-    local requiredSeasonPlayed = tonumber(match[matchKeys.transient_seasonPlayed]);
-    if(not requiredSeasonPlayed) then
+    local trackedSeasonPlayed = tonumber(match[matchKeys.transient_seasonPlayed]);
+    if(not trackedSeasonPlayed) then
+        ArenaAnalytics:LogTemp("TryFixLastRating no required season played.")
         return;    
     end
 
@@ -303,17 +307,20 @@ function ArenaMatch:TryFixLastRating(match)
     if(currentSeason and currentSeason > 0 and season and season ~= currentSeason) then
         -- Season appears to have changed, too late to fix last rating.
         ArenaMatch:ClearTransientValues(match);
+        ArenaAnalytics:LogTemp("TryFixLastRating invalid season.", season, currentSeason);
         return;
     end
 
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
     local newRating,seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
-    if(not seasonPlayed or seasonPlayed < requiredSeasonPlayed) then
-        ArenaAnalytics:Log("ArenaMatch: Delaying rating fix - Season Played.", seasonPlayed, bracketIndex, requiredSeasonPlayed)
+    if(not seasonPlayed or (seasonPlayed - 1) < trackedSeasonPlayed) then
+        ArenaAnalytics:Log("ArenaMatch: Delaying rating fix - Season Played.", seasonPlayed, bracketIndex, trackedSeasonPlayed);
         return;
     end
 
-    if(seasonPlayed == requiredSeasonPlayed) then
+    if(seasonPlayed + 1 == trackedSeasonPlayed) then
+        ArenaAnalytics:LogTemp("TryFixLastRating required season played match", seasonPlayed, trackedSeasonPlayed, newRating)
+        
         if(newRating) then
             -- Fix rating
             local oldRating = ArenaMatch:GetPartyRating(match);
@@ -327,6 +334,7 @@ function ArenaMatch:TryFixLastRating(match)
     end
 
     -- Clear transient values
+    ArenaAnalytics:LogTemp("TryFixLastRating Clearing")
     ArenaMatch:ClearTransientValues(match);
 end
 
