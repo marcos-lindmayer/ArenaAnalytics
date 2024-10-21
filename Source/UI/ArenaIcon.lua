@@ -31,7 +31,7 @@ function ArenaIcon:Create(parent, size, skipDeath)
 
         newFrame.deathOverlay.texture = newFrame.deathOverlay:CreateTexture();
         newFrame.deathOverlay.texture:SetAllPoints(newFrame.deathOverlay);
-        newFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.27);
+        newFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.31);
     end
 
     local halfSize = floor(size/2);
