@@ -7,6 +7,7 @@ local Constants = ArenaAnalytics.Constants;
 local Internal = ArenaAnalytics.Internal;
 local Helpers = ArenaAnalytics.Helpers;
 local API = ArenaAnalytics.API;
+local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 
@@ -64,17 +65,28 @@ function ArenaIcon:Create(parent, size, skipDeath)
     end
 
     function newFrame:SetSpec(spec_id, hideInvalid)
-        -- Class icon (Fallback to red question mark)
-        local classIconTexture = Internal:GetClassIcon(spec_id);
-        if(not classIconTexture and hideInvalid) then
-            classIconTexture = "";
+        local isSpec = Helpers:IsSpecID(spec_id);
+
+        local classIcon, specIcon;
+        if(Options:Get("fullSizeSpecIcons")) then
+            classIcon = isSpec and API:GetSpecIcon(spec_id) or Internal:GetClassIcon(spec_id);
+            specIcon = ""; -- Hide spec icon
+        else
+            classIcon = Internal:GetClassIcon(spec_id);
+            specIcon = API:GetSpecIcon(spec_id);
         end
 
-        newFrame.classTexture:SetTexture(classIconTexture or 134400);
+        -- Class icon (Fallback to red question mark)
+        if(not classIcon and hideInvalid) then
+            classIcon = "";
+        end
 
-        if(Helpers:IsSpecID(spec_id)) then
-            local specIconTexture = API:GetSpecIcon(spec_id);
-            newFrame.specOverlay.texture:SetTexture(specIconTexture or "");
+        -- Set class icon
+        newFrame.classTexture:SetTexture(classIcon or 134400);
+
+        -- Set spec icon
+        if(isSpec) then
+            newFrame.specOverlay.texture:SetTexture(specIcon or "");
         else
             newFrame.specOverlay.texture:SetTexture("");
         end

@@ -92,6 +92,9 @@ function Options:LoadSettings()
     AddSetting("hideZeroRatingDelta", true);
     AddSetting("hidePlayerTooltipZeroRatingDelta", false);
     AddSetting("ignoreGroupForSkirmishSession", true);
+    AddSetting("fullSizeSpecIcons", false);
+
+    AddSetting("enableSurrenderCommandOverrides", true);
 
     -- Filters
     AddSetting("defaultCurrentSeasonFilter", false);
@@ -499,6 +502,7 @@ function SetupTab_General()
     parent.tabHeader = CreateHeader("General", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
+    parent.fullSizeSpecIcons = CreateCheckbox("fullSizeSpecIcons", parent, offsetX, "Full size spec icons.");
     parent.showDeathOverlay = CreateCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
     parent.showDeathOverlay = CreateCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
     parent.unsavedWarning = CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
@@ -508,6 +512,11 @@ function SetupTab_General()
     parent.hideZeroRatingDelta = CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
     parent.hidePlayerTooltipZeroRatingDelta = CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
     parent.ignoreGroupForSkirmishSession = CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
+
+    if(API:HasSurrenderAPI()) then
+        CreateSpace();
+        parent.enableSurrenderCommandOverrides = CreateCheckbox("enableSurrenderCommandOverrides", parent, offsetX, "Enable |cff00cc66/afk|r and |cff00cc66/gg|r surrender.");
+    end
 end
 
 -------------------------------------------------------------------

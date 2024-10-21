@@ -5,14 +5,33 @@ local API = ArenaAnalytics.API;
 -- Local module aliases
 local Internal = ArenaAnalytics.Internal;
 local Constants = ArenaAnalytics.Constants;
+local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 
 API.numClasses = 13; -- Number of class indices to check for class info
 
--- Initialize the general and expansion specific addon API
-function API:Initialize()
+function API:HasSurrenderAPI()
+    return CanSurrenderArena and SurrenderArena;
+end
 
+function API:TrySurrenderArena()
+    if(not API:HasSurrenderAPI()) then
+        return nil;
+    end
+
+    if(not IsActiveBattlefieldArena() or not Options:Get("enableSurrenderCommandOverrides")) then
+        return nil;
+    end
+
+    if(CanSurrenderArena()) then
+        ArenaAnalytics:Print("You have surrendered!");
+        SurrenderArena();
+        return true;
+    else
+        ArenaAnalytics:Print("You cannot surrender yet!");
+        return false;
+    end
 end
 
 function API:GetAddonVersion()

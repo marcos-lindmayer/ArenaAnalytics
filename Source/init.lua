@@ -363,9 +363,27 @@ function ArenaAnalytics:init()
 	---------------------------------
 	-- Register Slash Commands
 	---------------------------------
-	SLASH_AuraTracker1 = "/AA";
-	SLASH_AuraTracker2 = "/ArenaAnalytics";
-	SlashCmdList.AuraTracker = HandleSlashCommands;
+	SLASH_ArenaAnalyticsCommands1 = "/AA";
+	SLASH_ArenaAnalyticsCommands2 = "/ArenaAnalytics";
+	SlashCmdList.ArenaAnalyticsCommands = HandleSlashCommands;
+	
+	if(API:HasSurrenderAPI()) then
+		-- Override /afk to surrender in arenas
+		SlashCmdList.CHAT_AFK = function(message)
+			local surrendered = API:TrySurrenderArena();
+			if(surrendered == nil) then
+				-- Fallback to base /afk
+				SendChatMessage(message, "AFK");
+			end
+		end
+
+		-- /gg to surrender
+		SLASH_ArenaAnalyticsSurrender1 = "/gg";
+		SlashCmdList.ArenaAnalyticsSurrender = function(msg)
+			ArenaAnalytics:Log("/gg triggered.");
+			local surrendered = API:TrySurrenderArena();
+		end
+	end
 
 	---------------------------------
 	-- Initialize modules
