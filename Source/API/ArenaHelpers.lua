@@ -55,9 +55,11 @@ end
 
 function Helpers:GetPlayerName(skipRealm)
     local name, realm = UnitFullName("player");
+
 	if(name and realm and not skipRealm) then
-		return name .. "-" .. realm;
+		return format("%s-%s", name, realm);
 	end
+
     return name;
 end
 

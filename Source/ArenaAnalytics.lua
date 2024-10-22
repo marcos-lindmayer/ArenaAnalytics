@@ -349,13 +349,11 @@ function ArenaAnalytics:IsLocalRealm(realm)
 		return;
 	end
 
-	local _, localRealm = UnitFullName("player");
-
 	if(tonumber(realm)) then
-		assert(ArenaAnalyticsDB.realms[1] == localRealm, "Local realm not found at index 1!");
-		return tonumber(realm) == 1;
+		realm = ArenaAnalytics:GetRealm(realm);
 	end
 
+	local _, localRealm = UnitFullName("player");
 	return realm == localRealm;
 end
 

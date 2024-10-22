@@ -821,8 +821,9 @@ end
 function ArenaMatch:IsLocalPlayer(player)
     assert(player);
 
-    local fullName = ArenaMatch:GetPlayerFullName(player, false, true);
-    return fullName and fullName == "1-1";
+    local localFullName = Helpers:GetPlayerName();
+    local fullName = ArenaMatch:GetPlayerFullName(player);
+    return fullName and fullName == localFullName;
 end
 
 function ArenaMatch:GetTeam(match, isEnemyTeam)
@@ -1332,7 +1333,7 @@ function ArenaMatch:SetRounds(match, rounds)
 
     -- Add self
     indexMapping[myName] = 0;
-    
+
     for index, player in ipairs(enemyTeam) do
         local fullName = ArenaMatch:GetPlayerFullName(player);
         if(fullName and fullName ~= "" and fullName ~= myName) then
