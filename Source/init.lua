@@ -260,9 +260,10 @@ function ArenaAnalytics:GetTitleColored(asSingleColor)
 	end
 end
 
-local function createMinimapButton()
+local function CreateMinimapButton()
 	-- Create minimap button -- Credit to Leatrix
-	local minimapButton = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap);
+	minimapButton = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap);
+	minimapButton:SetParent(Minimap);
 	minimapButton:SetFrameLevel(13);
 	minimapButton:SetSize(25,25);
 	minimapButton:SetMovable(true);
@@ -270,7 +271,7 @@ local function createMinimapButton()
 	minimapButton:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight");
 
 	local size = 50;
-	minimapButton.Border = CreateFrame("Frame", nil, minimapButton)
+	minimapButton.Border = CreateFrame("Frame", nil, minimapButton);
 	minimapButton.Border:SetSize(size,size);
 	minimapButton.Border:SetPoint("CENTER", minimapButton, "CENTER");
 
@@ -304,7 +305,7 @@ local function createMinimapButton()
 		cursorX = cursorX / scale;
 		cursorY = cursorY / scale;
 
-		local radius = (Minimap:GetWidth() / 2) + 5
+		local radius = (Minimap:GetWidth() / 2) + 5;
 
 		local centerX, centerY = Minimap:GetCenter();
 		local angle = math.atan2(cursorY - centerY, cursorX - centerX);
@@ -317,18 +318,18 @@ local function createMinimapButton()
 	SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 
 	minimapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-	minimapButton:RegisterForDrag("LeftButton")
+	minimapButton:RegisterForDrag("LeftButton");
 
 	minimapButton:SetScript("OnDragStart", function()
-		minimapButton:StartMoving()
-		minimapButton:SetScript("OnUpdate", UpdateMapBtn)
-	end)
+		minimapButton:StartMoving();
+		minimapButton:SetScript("OnUpdate", UpdateMapBtn);
+	end);
 
 	minimapButton:SetScript("OnDragStop", function()
 		minimapButton:StopMovingOrSizing();
 		minimapButton:SetScript("OnUpdate", nil)
 		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
-	end)
+	end);
 
 	-- Control clicks
 	minimapButton:SetScript("OnClick", function(self, button)
@@ -338,7 +339,7 @@ local function createMinimapButton()
 		else
 			ArenaAnalytics:Toggle();
 		end
-	end)
+	end);
 end
 
 function ArenaAnalytics:init()
@@ -421,8 +422,6 @@ function ArenaAnalytics:init()
 		local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, channel)
 	end
 
-	createMinimapButton();
-
 	-- Already in an arena
 	if (not API:IsInArena() and ArenaAnalyticsDB.currentArena) then
 		ArenaTracker:Clear();
@@ -434,6 +433,8 @@ function ArenaAnalytics:delayedInit(event, name, ...)
 	if (name ~= "ArenaAnalytics") then 
 		return;
 	end
+	
+	CreateMinimapButton();
 
 	ArenaAnalyticsScrollFrame:Hide();
 	C_Timer.After(1, function() ArenaAnalytics.init() end);
