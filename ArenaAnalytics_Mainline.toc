@@ -1,4 +1,4 @@
-## Interface: 110002
+## Interface: 110005
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
 ## Author: Lingo, Zeetrax
