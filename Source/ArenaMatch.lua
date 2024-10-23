@@ -1029,7 +1029,7 @@ function ArenaMatch:GetPlayerFullName(player, hideLocalRealm, requireCompact)
     local name = player[playerKeys.name] or 0;
     local realm = player[playerKeys.realm];
 
-    if(hideLocalRealm and realm == 1) then
+    if(hideLocalRealm and ArenaAnalytics:IsLocalRealm(realm)) then
         realm = nil;
     end 
 

@@ -340,8 +340,7 @@ function ArenaAnalytics:GetLocalRealmIndex()
 	end
 
 	local _, realm = UnitFullName("player");
-	assert(realm);
-	return ArenaAnalytics:GetRealmIndex(realm);
+	return realm and ArenaAnalytics:GetRealmIndex(realm);
 end
 
 function ArenaAnalytics:IsLocalRealm(realm)
