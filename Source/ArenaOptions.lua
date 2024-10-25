@@ -85,16 +85,20 @@ function Options:LoadSettings()
     ArenaAnalytics:Log("Loading settings..");
 
     -- General
-    AddSetting("unsavedWarningThreshold", 10);
-    AddSetting("alwaysShowDeathOverlay", false);
+    AddSetting("fullSizeSpecIcons", true);
+    AddSetting("alwaysShowDeathOverlay", true);
     AddSetting("alwaysShowSpecOverlay", false);
+    AddSetting("unsavedWarningThreshold", 10);
 
     AddSetting("hideZeroRatingDelta", true);
     AddSetting("hidePlayerTooltipZeroRatingDelta", false);
     AddSetting("ignoreGroupForSkirmishSession", true);
-    AddSetting("fullSizeSpecIcons", false);
 
     AddSetting("enableSurrenderCommandOverrides", true);
+    AddSetting("surrenderByMiddleMouseClick", false);
+
+    AddSetting("hideMinimapButton", false);
+    AddSetting("hideFromCompartment", false);
 
     -- Filters
     AddSetting("defaultCurrentSeasonFilter", false);
@@ -351,6 +355,7 @@ local function CreateCheckbox(setting, parent, x, text, func)
 
     offsetY = offsetY - OptionsSpacing - checkbox:GetHeight() + 10;
 
+    parent[setting] = checkbox;
     return checkbox;
 end
 
@@ -502,20 +507,29 @@ function SetupTab_General()
     parent.tabHeader = CreateHeader("General", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
-    parent.fullSizeSpecIcons = CreateCheckbox("fullSizeSpecIcons", parent, offsetX, "Full size spec icons.");
-    parent.showDeathOverlay = CreateCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
-    parent.showDeathOverlay = CreateCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
-    parent.unsavedWarning = CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
+    CreateCheckbox("hideMinimapButton", parent, offsetX, "Hide minimap icon.", ArenaAnalytics.MinimapButton.Update);
+
+    if(AddonCompartmentFrame) then
+        CreateCheckbox("hideFromCompartment", parent, offsetX, "Hide from addon compartment.", ArenaAnalytics.MinimapButton.Update);
+    end
 
     CreateSpace();
 
-    parent.hideZeroRatingDelta = CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
-    parent.hidePlayerTooltipZeroRatingDelta = CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
-    parent.ignoreGroupForSkirmishSession = CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
+    CreateCheckbox("fullSizeSpecIcons", parent, offsetX, "Full size spec icons.");
+    CreateCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
+    CreateCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
+    CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
+
+    CreateSpace();
+
+    CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
+    CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
+    CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
 
     if(API:HasSurrenderAPI()) then
         CreateSpace();
-        parent.enableSurrenderCommandOverrides = CreateCheckbox("enableSurrenderCommandOverrides", parent, offsetX, "Enable |cff00cc66/afk|r and |cff00cc66/gg|r surrender.");
+        CreateCheckbox("surrenderByMiddleMouseClick", parent, offsetX, "Surrender by middle mouse clicking the minimap icon.");
+        CreateCheckbox("enableSurrenderCommandOverrides", parent, offsetX, "Enable |cff00cc66/afk|r and |cff00cc66/gg|r surrender.");
     end
 end
 
@@ -534,18 +548,18 @@ function SetupTab_Filters()
     
     parent.tabHeader = CreateHeader("Filters", TabHeaderSize, parent, nil, 15, -15);
     
-    parent.showSkirmish = CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
-    parent.showSkirmish = CreateCheckbox("showWarGames", parent, offsetX, "Show War Games in match history.");
+    CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
+    CreateCheckbox("showWarGames", parent, offsetX, "Show War Games in match history.");
     
     CreateSpace();
     
     -- Setup options
-    parent.defaultCurrentSeasonFilter = CreateCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
-    parent.defaultCurrentSessionFilter = CreateCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
+    CreateCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
+    CreateCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
     
     CreateSpace();
     
-    parent.compFilterSortByTotal = CreateCheckbox("showCompDropdownInfoText", parent, offsetX, "Show info text by comp dropdown titles.", function()
+    CreateCheckbox("showCompDropdownInfoText", parent, offsetX, "Show info text by comp dropdown titles.", function()
         local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
         if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
             if(Options:Get("showCompDropdownInfoText")) then
@@ -567,9 +581,9 @@ function SetupTab_Filters()
 
     CreateSpace();
 
-    parent.compFilterSortByTotal = CreateCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
-    parent.showSelectedCompStats = CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
-    parent.compFilterSortByTotal = CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
+    CreateCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
+    CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
+    CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
         local info = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
         
         local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
@@ -606,7 +620,7 @@ function SetupTab_Search()
 
     -- Setup options
     -- TODO: Convert to explicit team dropdown (Any, Team, Enemy)
-    parent.searchDefaultExplicitEnemy = CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
+    CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
         if(Debug:Assert(ArenaAnalyticsScrollFrame.searchbox.title)) then
             local explicitEnemyText = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
             ArenaAnalyticsScrollFrame.searchBox.title:SetText(explicitEnemyText or "");
@@ -656,8 +670,8 @@ function SetupTab_QuickSearch()
     parent.tabHeader = CreateHeader("Quick Search", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
-    parent.quickSearchEnabled = CreateCheckbox("quickSearchEnabled", parent, offsetX, "Enable Quick Search");
-    parent.searchShowTooltipQuickSearch = CreateCheckbox("searchShowTooltipQuickSearch", parent, offsetX, "Show Quick Search shortcuts in Player Tooltips");
+    CreateCheckbox("quickSearchEnabled", parent, offsetX, "Enable Quick Search");
+    CreateCheckbox("searchShowTooltipQuickSearch", parent, offsetX, "Show Quick Search shortcuts in Player Tooltips");
 
     CreateSpace(15);
 
@@ -719,10 +733,10 @@ function SetupTab_ImportExport()
     -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
     parent.ImportBox = CreateImportBox(parent, offsetX, 380);
 
-    parent.importAllowMerge = CreateCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
+    local frame = CreateCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
         parent.ImportBox:stateFunc();
     end);
-    parent.importAllowMerge.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nSkip matches within 24 hours of first and last arena, and matches between the two dates.\n\n|cffff0000Experimental! It is recommended to backup character specific SavedVariable first." }
+    frame.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nSkip matches within 24 hours of first and last arena, and matches between the two dates.\n\n|cffff0000Experimental! It is recommended to backup character specific SavedVariable first." }
 
     CreateSpace();
 

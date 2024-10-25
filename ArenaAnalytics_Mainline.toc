@@ -10,6 +10,7 @@
 
 
 Source/ArenaDebugging.lua
+Source/UI/ArenaMinimapButton.lua
 Source/init.lua
 
 Source/ArenaAnalytics.lua

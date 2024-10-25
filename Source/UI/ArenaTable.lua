@@ -49,24 +49,6 @@ end
 -- Filtered stats
 local wins, sessionGames, sessionWins = 0, 0, 0;
 
--- Toggles addOn view/hide
-function ArenaAnalytics:Toggle()
-    if (not ArenaAnalyticsScrollFrame:IsShown()) then  
-        Selection:ClearSelectedMatches();
-
-        Filters:Refresh(function()
-            AAtable:RefreshLayout();
-        end);
-
-        Dropdown:CloseAll();
-        Tooltips:HideAll();
-
-        ArenaAnalyticsScrollFrame:Show();
-    else
-        ArenaAnalyticsScrollFrame:Hide();
-    end
-end
-
 function AAtable:GetDropdownTemplate(overrideTemplate)
     return overrideTemplate or API.defaultButtonTemplate or "UIPanelButtonTemplate";
 end

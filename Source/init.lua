@@ -57,7 +57,11 @@ local AAtable = ArenaAnalytics.AAtable;
 local Events = ArenaAnalytics.Events;
 local Search = ArenaAnalytics.Search;
 local VersionManager = ArenaAnalytics.VersionManager;
+local Selection = ArenaAnalytics.Selection;
+local Dropdown = ArenaAnalytics.Dropdown;
+local Tooltips = ArenaAnalytics.Tooltips;
 local Debug = ArenaAnalytics.Debug;
+local MinimapButton = ArenaAnalytics.MinimapButton;
 
 -------------------------------------------------------------------------
 
@@ -260,86 +264,28 @@ function ArenaAnalytics:GetTitleColored(asSingleColor)
 	end
 end
 
-local function CreateMinimapButton()
-	-- Create minimap button -- Credit to Leatrix
-	minimapButton = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap);
-	minimapButton:SetParent(Minimap);
-	minimapButton:SetFrameLevel(13);
-	minimapButton:SetSize(25,25);
-	minimapButton:SetMovable(true);
-	minimapButton:SetNormalTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmicon");
-	minimapButton:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight");
+-- Toggles addOn view/hide
+function ArenaAnalytics:Toggle()
+    if (not ArenaAnalyticsScrollFrame:IsShown()) then  
+        Selection:ClearSelectedMatches();
 
-	local size = 50;
-	minimapButton.Border = CreateFrame("Frame", nil, minimapButton);
-	minimapButton.Border:SetSize(size,size);
-	minimapButton.Border:SetPoint("CENTER", minimapButton, "CENTER");
+        Filters:Refresh(function()
+            AAtable:RefreshLayout();
+        end);
 
-	minimapButton.Border.texture = minimapButton.Border:CreateTexture();
-	minimapButton.Border.texture:SetSize(size,size);
-	minimapButton.Border.texture:SetPoint("TOPLEFT", 9.5, -9.5);
-	minimapButton.Border.texture:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder");
+        Dropdown:CloseAll();
+        Tooltips:HideAll();
 
-	minimapButton:SetScript("OnEnter", function ()
-		ArenaAnalytics.Tooltips:DrawMinimapTooltip();
-	end);
+        ArenaAnalyticsScrollFrame:Show();
+    else
+        ArenaAnalyticsScrollFrame:Hide();
+    end
+end
 
-	minimapButton:SetScript("OnLeave", function ()
-		GameTooltip:Hide();
-	end);
-
-	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos or 0;
-
-	local function SetMinimapIconPosition(angle)
-		minimapButton:ClearAllPoints();
-		local radius = (Minimap:GetWidth() / 2) + 5
-		local xOffset = radius * cos(angle);
-		local yOffset = radius * sin(angle);
-		minimapButton:SetPoint("CENTER", Minimap, "CENTER", xOffset, yOffset);
-	end
-
-	-- Control movement
-	local function UpdateMapBtn()
-		local cursorX, cursorY = GetCursorPosition();
-		local scale = UIParent:GetEffectiveScale() or 1;
-		cursorX = cursorX / scale;
-		cursorY = cursorY / scale;
-
-		local radius = (Minimap:GetWidth() / 2) + 5;
-
-		local centerX, centerY = Minimap:GetCenter();
-		local angle = math.atan2(cursorY - centerY, cursorX - centerX);
-		ArenaAnalyticsMapIconPos = math.deg(angle);
-
-		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
-	end
-
-	-- Set position
-	SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
-
-	minimapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-	minimapButton:RegisterForDrag("LeftButton");
-
-	minimapButton:SetScript("OnDragStart", function()
-		minimapButton:StartMoving();
-		minimapButton:SetScript("OnUpdate", UpdateMapBtn);
-	end);
-
-	minimapButton:SetScript("OnDragStop", function()
-		minimapButton:StopMovingOrSizing();
-		minimapButton:SetScript("OnUpdate", nil)
-		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
-	end);
-
-	-- Control clicks
-	minimapButton:SetScript("OnClick", function(self, button)
-		if(button == "RightButton") then
-			-- Open ArenaAnalytics Options
-			Options:Open();
-		else
-			ArenaAnalytics:Toggle();
-		end
-	end);
+function ArenaAnalytics:OpenOptions()
+    if(Options.Open) then
+        Options:Open();
+    end
 end
 
 function ArenaAnalytics:init()
@@ -433,11 +379,11 @@ function ArenaAnalytics:delayedInit(event, name, ...)
 	if (name ~= "ArenaAnalytics") then 
 		return;
 	end
-	
-	CreateMinimapButton();
+
+	MinimapButton:Update();
 
 	ArenaAnalyticsScrollFrame:Hide();
-	C_Timer.After(1, function() ArenaAnalytics.init() end);
+	C_Timer.After(0, function() ArenaAnalytics.init() end);
 end
 
 local events = CreateFrame("Frame");

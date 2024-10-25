@@ -19,10 +19,11 @@ function Tooltips:HideAll()
     GameTooltip:Hide();
 end
 
-function Tooltips:DrawMinimapTooltip()
+function Tooltips:DrawMinimapTooltip(frame)
     Tooltips:HideAll();
 
-    GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_BOTTOMLEFT");
+    GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_NONE");
+    GameTooltip:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT")
     GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. API:GetAddonVersion() .. "|r");
     GameTooltip:AddLine("|cffBBBBBB" .. "Left Click|r" .. " to toggle ArenaAnalytics");
     GameTooltip:AddLine("|cffBBBBBB" .. "Right Click|r".. " to open Options");
