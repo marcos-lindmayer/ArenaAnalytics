@@ -88,7 +88,7 @@ function Import.ProcessNextMatch_ReflexArenas(arenaString)
 
     local cachedValues = strsplittable(';', arenaString);
     if(not IsValidArena(cachedValues)) then
-        ArenaAnalytics:Print("Import (Reflex): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
+        ArenaAnalytics:PrintSystem("Import (Reflex): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
         TablePool:Release(cachedValues);
         return nil;
     end

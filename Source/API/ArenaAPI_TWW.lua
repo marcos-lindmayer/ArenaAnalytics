@@ -8,6 +8,7 @@ local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
 local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -74,11 +75,6 @@ function API:GetCurrentMapID()
     return select(8,GetInstanceInfo());
 end
 
-function API:GetTeamMMR(teamIndex)
-    local _,_,_,mmr = GetBattlefieldTeamInfo(teamIndex);
-    return tonumber(mmr);
-end
-
 function API:GetPersonalRatedInfo(bracketIndex)
     bracketIndex = tonumber(bracketIndex);
     if(not bracketIndex) then
@@ -128,10 +124,13 @@ function API:GetPlayerScore(index)
     end
 
     -- MMR
-    if(scoreInfo.prematchMMR and scoreInfo.prematchMMR) then
+    if(scoreInfo.prematchMMR and scoreInfo.prematchMMR ~= 0) then
         score.mmr = scoreInfo.prematchMMR;
-        score.mmrDelta = scoreInfo.postmatchMMR - scoreInfo.prematchMMR;
+        score.mmrDelta = scoreInfo.postmatchMMR and (scoreInfo.postmatchMMR - scoreInfo.prematchMMR);
     end
+
+    ArenaAnalytics:LogTemp("Score MMR:", scoreInfo.prematchMMR, scoreInfo.postmatchMMR);
+    Debug:LogTable(scoreInfo);
 
     return score;
 end

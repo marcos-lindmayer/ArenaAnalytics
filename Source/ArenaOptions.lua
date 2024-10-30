@@ -46,7 +46,6 @@ end
 -- Standardized Updated Option Response Functions
 
 local function HandleSettingsChanged()
-    ArenaAnalytics:Log("Settings changed..");
     Filters:ResetAll(false);
     PlayerTooltip:OnSettingsChanged();
 end
@@ -94,11 +93,15 @@ function Options:LoadSettings()
     AddSetting("hidePlayerTooltipZeroRatingDelta", false);
     AddSetting("ignoreGroupForSkirmishSession", true);
 
-    AddSetting("enableSurrenderCommandOverrides", true);
     AddSetting("surrenderByMiddleMouseClick", false);
+    AddSetting("enableSurrenderAfkOverride", true);
+    AddSetting("enableDoubleAfkToLeave", true);
+    AddSetting("enableSurrenderGoodGameCommand", true);
 
     AddSetting("hideMinimapButton", false);
     AddSetting("hideFromCompartment", false);
+
+    AddSetting("printAsSystem", true);
 
     -- Filters
     AddSetting("defaultCurrentSeasonFilter", false);
@@ -515,10 +518,14 @@ function SetupTab_General()
 
     CreateSpace();
 
+    CreateCheckbox("printAsSystem", parent, offsetX, "Print messages using system messages.    |cffaaaaaa(Alternative is general chat only prints)|r", ArenaAnalytics.MinimapButton.Update);
+
+    CreateSpace();
+
     CreateCheckbox("fullSizeSpecIcons", parent, offsetX, "Full size spec icons.");
     CreateCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
     CreateCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
-    CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
+    CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00ccff/reload|r warning.");
 
     CreateSpace();
 
@@ -527,9 +534,25 @@ function SetupTab_General()
     CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
 
     if(API:HasSurrenderAPI()) then
+        local function UpdateDoubleAfkState()
+            if(parent.enableDoubleAfkToLeave) then
+                if(Options:Get("enableSurrenderAfkOverride")) then
+                    parent.enableDoubleAfkToLeave:Enable();
+                else
+                    parent.enableDoubleAfkToLeave:Disable();
+                end
+            end
+        end
+
         CreateSpace();
         CreateCheckbox("surrenderByMiddleMouseClick", parent, offsetX, "Surrender by middle mouse clicking the minimap icon.");
-        CreateCheckbox("enableSurrenderCommandOverrides", parent, offsetX, "Enable |cff00cc66/afk|r and |cff00cc66/gg|r surrender.");
+        CreateCheckbox("enableSurrenderGoodGameCommand", parent, offsetX, "Register |cff00ccff/gg|r surrender command.", ArenaAnalytics.UpdateSurrenderCommands);
+        CreateCheckbox("enableSurrenderAfkOverride", parent, offsetX, "Enable |cff00ccff/afk|r surrender override.", function()
+            UpdateDoubleAfkState();
+            ArenaAnalytics.UpdateSurrenderCommands();
+        end);
+        CreateCheckbox("enableDoubleAfkToLeave", parent, offsetX*2, "Double |cff00ccff/afk|r to leave the arena.    |cffaaaaaa(Type |cff00ccff/afk|r twice within 5 seconds to confirm.)|r");
+        UpdateDoubleAfkState();
     end
 end
 

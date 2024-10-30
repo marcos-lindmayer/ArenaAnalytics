@@ -40,6 +40,7 @@ Source/UI/Tooltips/ArenaTooltips_Shuffle.lua
 Source/Data/ArenaInternalIDs.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
+Source/Data/ArenaSpecSpells_TWW.lua
 Source/Data/ArenaLocalizationTables.lua
 
 Source/Search/ArenaSearch.lua

@@ -21,7 +21,7 @@ function Debug:SetDebugLevel(level)
     ArenaAnalytics.Options:Set("debuggingLevel", level);
 
     if(ArenaAnalytics:GetDebugLevel() == 0) then
-        ArenaAnalytics:Print("Debugging disabled!");
+        ArenaAnalytics:PrintSystem("Debugging disabled!");
     else
         ArenaAnalytics:LogForced(string.format("Debugging level %d enabled!", level));
     end

@@ -15,21 +15,37 @@ function API:HasSurrenderAPI()
     return CanSurrenderArena and SurrenderArena;
 end
 
-function API:TrySurrenderArena()
+function API:TrySurrenderArena(source)
     if(not API:HasSurrenderAPI()) then
         return nil;
     end
 
-    if(not IsActiveBattlefieldArena() or not Options:Get("enableSurrenderCommandOverrides")) then
+    if(not IsActiveBattlefieldArena()) then
+        return nil;
+    end
+
+    if(source == "afk" and not Options:Get("enableSurrenderAfkOverride")) then
+        return nil;
+    elseif(source == "gg" and not Options:Get("enableSurrenderGoodGameCommand")) then
         return nil;
     end
 
     if(CanSurrenderArena()) then
-        ArenaAnalytics:Print("You have surrendered!");
+        ArenaAnalytics:PrintSystem("You have surrendered!");
+        ArenaAnalytics.lastSurrenderAttempt = nil;
         SurrenderArena();
         return true;
+    elseif(Options:Get("enableDoubleAfkToLeave") and source == "afk") then
+        if(not ArenaAnalytics.lastSurrenderAttempt or (ArenaAnalytics.lastSurrenderAttempt + 5 < time())) then
+            ArenaAnalytics:PrintSystem("Type /afk again to leave.");
+            ArenaAnalytics.lastSurrenderAttempt = time();
+        else
+            ArenaAnalytics:PrintSystem("Double /afk triggered.");
+            ArenaAnalytics.lastSurrenderAttempt = nil;
+            LeaveBattlefield();
+        end
     else
-        ArenaAnalytics:Print("You cannot surrender yet!");
+        ArenaAnalytics:PrintSystem("You cannot surrender yet!");
         return false;
     end
 end
@@ -55,6 +71,11 @@ end
 
 function API:IsSoloShuffle()
     return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
+end
+
+function API:GetTeamMMR(teamIndex)
+    local mmr = select(4, GetBattlefieldTeamInfo(teamIndex));
+    return tonumber(mmr);
 end
 
 function API:GetRoleBitmap(spec_id)

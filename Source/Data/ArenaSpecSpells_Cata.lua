@@ -270,5 +270,9 @@ local debugSpells = {
 }
 
 function SpecSpells:GetSpec(spellID)
-    return specSpells[spellID], debugSpells[spellID];
+    if(debugSpells[spellID]) then
+		ArenaAnalytics:Log("DEBUG ID Detected spec: ", sourceGUID, spellID, spellName);
+    end
+
+    return specSpells[spellID];
 end

@@ -52,11 +52,6 @@ function API:GetCurrentMapID()
     return select(8,GetInstanceInfo());
 end
 
-function API:GetTeamMMR(teamIndex)
-    local _,_,_,mmr = GetBattlefieldTeamInfo(teamIndex);
-    return tonumber(mmr);
-end
-
 function API:GetPersonalRatedInfo(bracketIndex)
     bracketIndex = tonumber(bracketIndex);
     if(not bracketIndex) then

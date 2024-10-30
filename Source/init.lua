@@ -62,6 +62,7 @@ local Dropdown = ArenaAnalytics.Dropdown;
 local Tooltips = ArenaAnalytics.Tooltips;
 local Debug = ArenaAnalytics.Debug;
 local MinimapButton = ArenaAnalytics.MinimapButton;
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 
@@ -78,27 +79,27 @@ end
 --------------------------------------
 ArenaAnalytics.commands = {	
 	["help"] = function()
-		print(" ");
-		ArenaAnalytics:Print("List of slash commands:");
-		ArenaAnalytics:Print("|cff00cc66/aa|r Togggles ArenaAnalytics main panel.");
-		ArenaAnalytics:Print("|cff00cc66/aa played|r Prints total duration of tracked arenas.");
-		ArenaAnalytics:Print("|cff00cc66/aa version|r Prints the current ArenaAnalytics version.");
-		ArenaAnalytics:Print("|cff00cc66/aa total|r Prints total unfiltered matches.");
-		ArenaAnalytics:Print("|cff00cc66/aa purge|r Show dialog to permanently delete match history.");
-		ArenaAnalytics:Print("|cff00cc66/aa credits|r Print addon credits.");
-		print(" ");
+		ArenaAnalytics:PrintSystemSpacer();
+		ArenaAnalytics:PrintSystem("List of slash commands:");
+		ArenaAnalytics:PrintSystem("|cff00cc66/aa|r Togggles ArenaAnalytics main panel.");
+		ArenaAnalytics:PrintSystem("|cff00cc66/aa played|r Prints total duration of tracked arenas.");
+		ArenaAnalytics:PrintSystem("|cff00cc66/aa version|r Prints the current ArenaAnalytics version.");
+		ArenaAnalytics:PrintSystem("|cff00cc66/aa total|r Prints total unfiltered matches.");
+		ArenaAnalytics:PrintSystem("|cff00cc66/aa purge|r Show dialog to permanently delete match history.");
+		ArenaAnalytics:PrintSystem("|cff00cc66/aa credits|r Print addon credits.");
+		ArenaAnalytics:PrintSystemSpacer();
 	end,
 
 	["credits"] = function()
-		ArenaAnalytics:Print("ArenaAnalytics authors: Lingo, Zeetrax.   Developed in association with Hydra. www.twitch.tv/Hydramist");
+		ArenaAnalytics:PrintSystem("ArenaAnalytics authors: Lingo, Zeetrax.   Developed in association with Hydra. www.twitch.tv/Hydramist");
 	end,
 
 	["version"] = function()
-		ArenaAnalytics:Print("Current version: |cffAAAAAAv" .. (API:GetAddonVersion() or "Invalid Version") .. "|r");
+		ArenaAnalytics:PrintSystem("Current version: |cffAAAAAAv" .. (API:GetAddonVersion() or "Invalid Version") .. "|r");
 	end,
 
 	["total"] = function()
-		ArenaAnalytics:Print("Total arenas stored: ", #ArenaAnalyticsDB);
+		ArenaAnalytics:PrintSystem("Total arenas stored: ", #ArenaAnalyticsDB);
 	end,
 
 	["played"] = function()
@@ -122,10 +123,10 @@ ArenaAnalytics.commands = {
 		end
 
 		-- TODO: Update coloring?
-		ArenaAnalytics:Print("Total arena time played: ", SecondsToTime(totalDurationInArenas));
-		ArenaAnalytics:Print("Time played this season: ", SecondsToTime(currentSeasonTotalPlayed));
-		ArenaAnalytics:Print("Average arena duration: ", SecondsToTime(math.floor(totalDurationInArenas / #ArenaAnalyticsDB)));
-		ArenaAnalytics:Print("Longest arena duration: ", SecondsToTime(math.floor(longestDuration)));
+		ArenaAnalytics:PrintSystem("Total arena time played: ", SecondsToTime(totalDurationInArenas));
+		ArenaAnalytics:PrintSystem("Time played this season: ", SecondsToTime(currentSeasonTotalPlayed));
+		ArenaAnalytics:PrintSystem("Average arena duration: ", SecondsToTime(math.floor(totalDurationInArenas / #ArenaAnalyticsDB)));
+		ArenaAnalytics:PrintSystem("Longest arena duration: ", SecondsToTime(math.floor(longestDuration)));
 	end,
 
 	-- Debug command to 
@@ -134,7 +135,7 @@ ArenaAnalytics.commands = {
 	end,
 
 	["convert"] = function()
-		ArenaAnalytics:Print("Forcing data version conversion..");
+		ArenaAnalytics:PrintSystem("Forcing data version conversion..");
 		if(not ArenaAnalyticsDB or #ArenaAnalyticsDB == 0) then
 			VersionManager:OnInit();
 		end
@@ -142,14 +143,14 @@ ArenaAnalytics.commands = {
 	end,
 
 	["updatesessions"] = function()
-		ArenaAnalytics:Print("Updating sessions in ArenaAnalyticsDB.");
+		ArenaAnalytics:PrintSystem("Updating sessions in ArenaAnalyticsDB.");
 		Sessions:RecomputeSessionsForMatchHistory();
 
         ArenaAnalyticsScrollFrame:Hide();
 	end,
 
 	["updategroupsort"] = function()
-		ArenaAnalytics:Print("Updating group sorting in ArenaAnalyticsDB.");
+		ArenaAnalytics:PrintSystem("Updating group sorting in ArenaAnalyticsDB.");
 
 		ArenaAnalytics:ResortGroupsInMatchHistory();
 		
@@ -162,7 +163,7 @@ ArenaAnalytics.commands = {
 
 	["debugcleardb"] = function()
 		if(ArenaAnalytics:GetDebugLevel() == 0) then
-			ArenaAnalytics:Print("Clearing ArenaAnalyticsDB requires debugging enabled.  |cffBBBBBB/aa debug|r. Not intended for users!");
+			ArenaAnalytics:PrintSystem("Clearing ArenaAnalyticsDB requires debugging enabled.  |cffBBBBBB/aa debug|r. Not intended for users!");
 		else -- Debug mode is enabled, allow debug clearing the DB
 			if (ArenaAnalytics:HasStoredMatches()) then
 				ArenaAnalytics:Log("Purging ArenaAnalyticsDB.");
@@ -186,10 +187,12 @@ ArenaAnalytics.commands = {
 
 	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function(...)
-		print(" ");
-		ArenaAnalytics:Print(" ================================================  ");
+		ArenaAnalytics:PrintSystemSpacer();
+		ArenaAnalytics:PrintSystem(" ================================================  ");
 
-		print(" ");
+		ArenaAnalytics:PrintSystem("You've being tracked.|r");
+
+		ArenaAnalytics:PrintSystemSpacer();
 	end,	
 };
 
@@ -233,9 +236,35 @@ end
 
 function ArenaAnalytics:Print(...)
     local hex = select(4, ArenaAnalytics:GetThemeColor());
-    local prefix = string.format("|cff%s%s|r", hex:upper(), "ArenaAnalytics:");
-    -- DEFAULT_CHAT_FRAME:AddMessage(string.join(" ", prefix, ...));
+    local prefix = string.format("|cff%s%s|r", hex, "ArenaAnalytics:");
 	print(prefix, ...);
+end
+
+function ArenaAnalytics:PrintSystem(...)
+	if(not Options:Get("printAsSystem")) then
+		ArenaAnalytics:Print(...);
+		return;
+	end
+
+    local hex = select(4, ArenaAnalytics:GetThemeColor());
+
+	local params = {...};
+	for key,value in pairs(params) do
+		if(params[key] == nil) then
+			params[key] = "nil";
+		end
+	end
+
+	SendSystemMessage(format("|cff%sArenaAnalytics:|r |cffffffff%s|r", hex, table.concat(params, " ")));
+end
+
+function ArenaAnalytics:PrintSystemSpacer()
+	if(not Options:Get("printAsSystem")) then
+		print(" ");
+		return;
+	end
+
+	SendSystemMessage(" ");
 end
 
 -------------------------------------------------------------------------
@@ -288,6 +317,67 @@ function ArenaAnalytics:OpenOptions()
     end
 end
 
+function ArenaAnalytics.HandleChatAfk(message)
+	ArenaAnalytics:Log("/afk override triggered.");
+	local surrendered = API:TrySurrenderArena("afk");
+	if(surrendered == nil) then
+		-- Fallback to base /afk
+		SendChatMessage(message, "AFK");
+	end
+end
+
+function ArenaAnalytics.HandleGoodGame()
+	ArenaAnalytics:Log("/gg triggered.");
+	API:TrySurrenderArena("gg");
+end
+
+function ArenaAnalytics.UpdateSurrenderCommands()
+	if(not API:HasSurrenderAPI()) then
+		return;
+	end
+
+	local isAfkOverrideActive = (SlashCmdList.CHAT_AFK == ArenaAnalytics.HandleChatAfk);
+	if(Options:Get("enableSurrenderAfkOverride")) then
+		if(not isAfkOverrideActive) then
+			ArenaAnalytics.previousAfkFunc = SlashCmdList.CHAT_AFK;
+			SlashCmdList.CHAT_AFK = ArenaAnalytics.HandleChatAfk;
+		end
+	elseif(isAfkOverrideActive and ArenaAnalytics.previousAfkFunc) then
+		SlashCmdList.CHAT_AFK = ArenaAnalytics.previousAfkFunc;
+	end
+
+	local hasGoodGameCommand = (SLASH_ArenaAnalyticsSurrender1 ~= nil and SlashCmdList.ArenaAnalyticsSurrender ~= nil);
+	if(Options:Get("enableSurrenderGoodGameCommand")) then
+		if(not hasGoodGameCommand) then
+			-- /gg to surrender
+			SLASH_ArenaAnalyticsSurrender1 = "/gg";
+			SlashCmdList.ArenaAnalyticsSurrender = ArenaAnalytics.HandleGoodGame;
+		end
+	elseif(hasGoodGameCommand) then
+		SLASH_ArenaAnalyticsSurrender1 = nil;
+		SlashCmdList.ArenaAnalyticsSurrender = nil;
+	end
+end
+
+local function PrintWelcomeMessage()
+	local welcomeMessageSeed = random(1, 10000);
+	local text;
+
+	local name = UnitNameUnmodified("player");
+
+	if(welcomeMessageSeed < 10) then
+		text = "You're being tracked.";
+	elseif(welcomeMessageSeed < 100) then
+		text = format("Have a wonderful day, %s!", name);
+	elseif(welcomeMessageSeed == 213) then
+		text = format("I'm watching you, %s!", name);
+	else
+		text = format("Tracking arena games, gl hf %s!!", name);
+	end
+
+    ArenaAnalytics:PrintSystem(text);
+end
+
 function ArenaAnalytics:init()
 	ArenaAnalytics:Log("Initializing..");
 
@@ -297,12 +387,14 @@ function ArenaAnalytics:init()
 	end
 
 	local version = API:GetAddonVersion();
-	local versionText = version ~= -1 and " (Version: " .. version .. ")" or ""
-    ArenaAnalytics:Print("Tracking arena games, gl hf",  UnitName("player") .. "!!");
+	local versionText = version ~= -1 and " (Version: " .. version .. ")" or "";
+
+	-- Welcome Message
+	PrintWelcomeMessage();
 	
 	Debug:OnLoad();
 
-	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
+	local successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
 	if(not successfulRequest) then
 		ArenaAnalytics:Log("Failed to register Addon Message Prefix: 'ArenaAnalytics'!")
 	end
@@ -310,27 +402,10 @@ function ArenaAnalytics:init()
 	---------------------------------
 	-- Register Slash Commands
 	---------------------------------
+
 	SLASH_ArenaAnalyticsCommands1 = "/AA";
 	SLASH_ArenaAnalyticsCommands2 = "/ArenaAnalytics";
 	SlashCmdList.ArenaAnalyticsCommands = HandleSlashCommands;
-	
-	if(API:HasSurrenderAPI()) then
-		-- Override /afk to surrender in arenas
-		SlashCmdList.CHAT_AFK = function(message)
-			local surrendered = API:TrySurrenderArena();
-			if(surrendered == nil) then
-				-- Fallback to base /afk
-				SendChatMessage(message, "AFK");
-			end
-		end
-
-		-- /gg to surrender
-		SLASH_ArenaAnalyticsSurrender1 = "/gg";
-		SlashCmdList.ArenaAnalyticsSurrender = function(msg)
-			ArenaAnalytics:Log("/gg triggered.");
-			local surrendered = API:TrySurrenderArena();
-		end
-	end
 
 	---------------------------------
 	-- Initialize modules
@@ -354,6 +429,9 @@ function ArenaAnalytics:init()
 	---------------------------------
 	-- Startup
 	---------------------------------
+
+	-- Setup surrender commands
+	ArenaAnalytics.UpdateSurrenderCommands();
 
 	ArenaAnalytics:TryFixLastMatchRating();
 	Events:RegisterGlobalEvents();

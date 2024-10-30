@@ -79,7 +79,8 @@ local function HandleGlobalEvent(_, eventType, ...)
 		elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
 			if(ArenaTracker:IsTrackingArena()) then
 				Events:UnregisterArenaEvents();
-				ArenaTracker:HandleArenaExit();
+				C_Timer.After(0, ArenaTracker.HandleArenaExit);
+				ArenaAnalytics:Log("ZONE_CHANGED_NEW_AREA triggering delayed HandleArenaExit");
 			end
 		end
 	end
@@ -87,13 +88,8 @@ end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
 local function ParseArenaTimerMessages(msg, ...)
-	if(GetLocale() == "itIT") then
-		ArenaAnalytics:Log("ParseArenaTimerMessages", msg and msg:gsub("\\", "\\\\"));
-		ArenaAnalytics:Log("     ", ...);
-	end
-
 	local localizedMessage = Constants.GetArenaTimer();
-	if(msg:find(localizedMessage, 1, true)) then
+	if(localizedMessage and msg:find(localizedMessage, 1, true)) then
 		ArenaTracker:HandleArenaStart();
 	end
 end
@@ -107,10 +103,18 @@ local function HandleArenaEvent(_, eventType, ...)
 		return;
 	end
 
+	if (eventType == "UPDATE_BATTLEFIELD_SCORE") then
+		ArenaAnalytics:LogSpacer();
+		ArenaAnalytics:LogTemp("UPDATE_BATTLEFIELD_SCORE");
+		ArenaAnalytics:LogTemp(API:GetTeamMMR(0), API:GetTeamMMR(1));
+		ArenaAnalytics:LogTemp(GetBattlefieldWinner(), GetNumBattlefieldScores());
+		ArenaAnalytics:LogSpacer();
+	end
+
 	if (ArenaTracker:IsTrackingArena()) then
 		if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
 			ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
-			C_Timer.After(0, ArenaTracker.HandleArenaEnd);
+			ArenaTracker:HandleArenaEnd();
 			Events:UnregisterArenaEvents();
 		elseif (eventType == "UNIT_AURA") then
 			ArenaTracker:ProcessUnitAuraEvent(...);

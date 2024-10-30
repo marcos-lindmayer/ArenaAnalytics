@@ -297,7 +297,7 @@ function PlayerTooltip:UpdateQuickSearchVisibility()
     end
 
     if(self.shouldShowShortcuts) then
-        container:SetHeight(container.desiredHeight);
+        container:SetHeight(container.desiredHeight or 0);
         container:Show();
     else
         container:SetHeight(0);
@@ -503,7 +503,7 @@ function PlayerTooltip:SetPlayerFrame(frame)
             PlayerTooltip:AddRatingStatistic("Rating: ", rating, ratingDelta);
         end
 
-        if(mmr or API.showPerPlayerRatedInfo) then
+        if(mmr) then
             PlayerTooltip:AddRatingStatistic("MMR: ", mmr, mmrDelta);
         end
     end

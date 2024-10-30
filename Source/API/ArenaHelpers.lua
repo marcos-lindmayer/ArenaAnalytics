@@ -53,16 +53,6 @@ function Helpers:DeepCopy(original)
     return copy;
 end
 
-function Helpers:GetPlayerName(skipRealm)
-    local name, realm = UnitFullName("player");
-
-	if(name and realm and not skipRealm) then
-		return format("%s-%s", name, realm);
-	end
-
-    return name;
-end
-
 function Helpers:RatingToText(rating, delta)
     rating = tonumber(rating);
     delta = tonumber(delta);
@@ -168,23 +158,35 @@ function Helpers:GetUnitClass(unit)
     return Internal:GetAddonClassID(token);
 end
 
+function Helpers:GetPlayerName(skipRealm)
+    local name = UnitNameUnmodified("player");
+    local realm = select(2, UnitFullName("player"));
+
+	if(not skipRealm and name and realm) then
+		return format("%s-%s", name, realm);
+	end
+
+    return name;
+end
+
 function Helpers:GetUnitFullName(unitToken)
-    local name, realm = UnitNameUnmodified(unitToken);
+    local name = UnitNameUnmodified(unitToken);
+    local realm = select(2, UnitFullName(unitToken));
 
     if (name == nil or name == "Unknown") then
         return nil;
     end
 
     if(realm == nil or realm == "") then
-        _,realm = UnitFullName("player"); -- Local player's realm
+        realm = select(2, UnitFullName("player")); -- Local player's realm
     end
 
     if(not realm) then
-        ArenaAnalytics:Log("Helpers:GetUnitFullName failed to retrieve any realm!");
+        ArenaAnalytics:Warning("Helpers:GetUnitFullName failed to retrieve any realm!");
         return name;
     end
 
-    return name.."-"..realm;
+    return format("%s-%s", name, realm);
 end
 
 function Helpers:ToFullName(name)
@@ -193,7 +195,7 @@ function Helpers:ToFullName(name)
     end
 
     if(not name:find("-", 1, true)) then
-        _,realm = UnitFullName("player"); -- Local player's realm
+        realm = select(2, UnitFullName("player")); -- Local player's realm
         name = realm and (name.."-"..realm) or name;
     end
 
