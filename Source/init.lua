@@ -190,7 +190,8 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:PrintSystemSpacer();
 		ArenaAnalytics:PrintSystem(" ================================================  ");
 
-		ArenaAnalytics:PrintSystem("You've being tracked.|r");
+		local index = tonumber(... or 1) or 1;
+		ArenaAnalytics:LogTemp(GetBattlefieldScore(index));
 
 		ArenaAnalytics:PrintSystemSpacer();
 	end,	
@@ -438,9 +439,9 @@ function ArenaAnalytics:init()
 
 	-- Update cached rating as soon as possible, through PVP_RATED_STATS_UPDATE event
 	RequestRatedInfo();
-	
+
 	AAtable:OnLoad();
-	
+
 	if(IsInInstance() or IsInGroup(1)) then
 		local channel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
 		local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, channel)

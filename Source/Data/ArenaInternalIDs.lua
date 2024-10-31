@@ -10,7 +10,7 @@ local API = ArenaAnalytics.API;
 -------------------------------------------------------------------------
 -- Maps
 
-local mapTokens = {
+local arenaMapTokens = {
     [559] = "NagrandArena",
     [1505] = "NagrandArena",
 
@@ -34,13 +34,13 @@ local mapTokens = {
     [980] = "TolVironArena"
 }
 
-function Internal:GetMapToken(mapID)
+function Internal:GetArenaMapToken(mapID)
     mapID = tonumber(mapID);
     if(not mapID or mapID == 0) then
         return nil;
     end
 
-    local token = mapID and mapTokens[mapID];
+    local token = mapID and arenaMapTokens[mapID];
 
     if(not token) then
         ArenaAnalytics:LogWarning("Failed to retrieve token for mapID:", mapID);
@@ -82,7 +82,7 @@ function Internal:GetAddonMapID(map)
     end
 
     if(tonumber(map)) then
-        map = Internal:GetMapToken(map);
+        map = Internal:GetArenaMapToken(map);
     end
 
     map = Helpers:ToSafeLower(map);

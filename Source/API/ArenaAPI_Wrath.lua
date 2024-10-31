@@ -30,10 +30,6 @@ function API:IsInArena()
     return IsActiveBattlefieldArena();
 end
 
-function API:IsRatedArena()
-    return API:IsInArena() and C_PvP.IsRatedArena() and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
-end
-
 function API:GetBattlefieldStatus(battlefieldId)
     local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
     

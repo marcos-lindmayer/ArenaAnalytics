@@ -11,6 +11,55 @@ local Options = ArenaAnalytics.Options;
 
 API.numClasses = 13; -- Number of class indices to check for class info
 
+-------------------------------------------------------------------------
+-- Arena
+
+function API:IsInArena()
+    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
+end
+
+function API:IsRatedArena()
+    if(not API:IsInArena()) then
+        return false;
+    end
+
+    -- Unrated modes
+    if(IsWargame() or IsArenaSkirmish() or C_PvP.IsInBrawl()) then
+        return false;
+    end
+
+    -- Any rated arena type
+    return C_PvP.IsRatedArena() or (C_PvP.IsRatedSoloShuffle and C_PvP.IsRatedSoloShuffle()) or false;
+end
+
+-------------------------------------------------------------------------
+-- Battleground
+
+function API:IsInBattleground()
+    local _, instanceType = IsInInstance();
+    return C_PvP.IsInBrawl() or instanceType == "pvp";
+end
+
+function API:IsInRatedBattleground()
+    if(not API:IsInBattleground() or IsWargame() or C_PvP.IsInBrawl()) then
+        return false;
+    end
+
+    -- Old interface
+    if(IsRatedBattleground) then
+        return IsRatedBattleground();
+    end
+
+    -- New interface
+    return C_PvP and C_PvP.IsRatedBattleground and C_PvP.IsRatedBattleground();
+end
+
+-------------------------------------------------------------------------
+
+function API:IsRated()
+    return C_PvP.IsRatedMap();
+end
+
 function API:HasSurrenderAPI()
     return CanSurrenderArena and SurrenderArena;
 end

@@ -246,15 +246,6 @@ function ArenaTracker:GetArenaEndedProperly()
 	return currentArena.endedProperly;
 end
 
--- TEMP (?)
-function ArenaTracker:SetNotEnded()
-	currentArena.ended = false;
-end
-
-function ArenaTracker:HasMapData()
-	return currentArena.mapId ~= nil;
-end
-
 function ArenaTracker:GetPlayer(playerID)
 	if(not playerID or playerID == "") then
 		return nil;
@@ -429,7 +420,7 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 	currentArena.mapId = API:GetCurrentMapID();
 	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId);
 
-	ArenaAnalytics:LogTemp("Arena Entered - Team MMR:", API:GetTeamMMR(0), API:GetTeamMMR(1));
+	ArenaTracker:CheckRoundEnded();
 
 	RequestBattlefieldScoreData();
 end
@@ -677,7 +668,7 @@ function ArenaTracker:HandleArenaExit()
 		end
 	end
 
-	ArenaAnalytics:InsertArenaToMatchHistory(currentArena);
+	ArenaTracker:SaveArena(currentArena);
 	ArenaTracker:Clear();
 end
 
@@ -983,4 +974,115 @@ function ArenaTracker:OnSpecDetected(playerID, spec_id, hero_spec_id)
 			player.heroSpec = hero_spec_id;
 		end
 	end
+end
+
+-------------------------------------------------------------------------
+
+-- Finalize and store the new arena, triggering updates as needed.
+function ArenaTracker:SaveArena(newArena)
+	local hasStartTime = tonumber(newArena.startTime) and newArena.startTime > 0;
+	if(not hasStartTime) then
+		-- At least get an estimate for the time of the match this way.
+		newArena.startTime = time();
+		ArenaAnalytics:Log("Warning: Start time overridden upon inserting arena.");
+	end
+
+	-- Calculate arena duration
+	if(newArena.isShuffle) then
+		newArena.duration = 0;
+
+		if(newArena.committedRounds) then
+			for _,round in ipairs(newArena.committedRounds) do
+				if(round) then
+					newArena.duration = newArena.duration + (tonumber(round.duration) or 0);
+				end
+			end
+		end
+
+		ArenaAnalytics:Log("Shuffle combined duration:", newArena.duration);
+	else
+		if (hasStartTime) then
+			newArena.endTime = newArena.endTime or time();
+			local duration = (newArena.endTime - newArena.startTime);
+			duration = duration < 0 and 0 or duration;
+			newArena.duration = duration;
+		else
+			ArenaAnalytics:Log("Force fixed start time at match end.");
+			newArena.duration = 0;
+		end
+	end
+
+	local matchType = nil;
+	if(newArena.isRated) then
+		matchType = "rated";
+	elseif(newArena.isWargame) then
+		matchType = "wargame";
+	else
+		matchType = "skirmish";
+	end
+
+	local season = GetCurrentArenaSeason();
+	if (season == 0) then
+		ArenaAnalytics:Log("Failed to get valid season for new match.");
+	end
+
+	-- Setup table data to insert into ArenaAnalyticsDB
+	local arenaData = { }
+	ArenaMatch:SetDate(arenaData, newArena.startTime);
+	ArenaMatch:SetDuration(arenaData, newArena.duration);
+	ArenaMatch:SetMap(arenaData, newArena.mapId);
+
+	ArenaAnalytics:Log("Bracket:", newArena.bracketIndex);
+	ArenaMatch:SetBracketIndex(arenaData, newArena.bracketIndex);
+
+	ArenaMatch:SetMatchType(arenaData, matchType);
+
+	if (newArena.isRated) then
+		ArenaMatch:SetPartyRating(arenaData, newArena.partyRating);
+		ArenaMatch:SetPartyRatingDelta(arenaData, newArena.partyRatingDelta);
+		ArenaMatch:SetPartyMMR(arenaData, newArena.partyMMR);
+
+		ArenaMatch:SetEnemyRating(arenaData, newArena.enemyRating);
+		ArenaMatch:SetEnemyRatingDelta(arenaData, newArena.enemyRatingDelta);
+		ArenaMatch:SetEnemyMMR(arenaData, newArena.enemyMMR);
+	end
+
+	ArenaMatch:SetSeason(arenaData, season);
+
+	ArenaMatch:SetMatchOutcome(arenaData, newArena.outcome);
+
+	-- Add players from both teams sorted, and assign comps.
+	ArenaMatch:AddPlayers(arenaData, newArena.players);
+
+	if(newArena.isShuffle) then
+		ArenaMatch:SetRounds(arenaData, newArena.committedRounds);
+	end
+
+	-- Assign session
+	Sessions:AssignSession(arenaData);
+	ArenaAnalytics:Log("session:", session);
+
+	if(newArena.requireRatingFix) then
+		-- Transient data
+		ArenaMatch:SetTransientSeasonPlayed(arenaData, newArena.seasonPlayed);
+		ArenaMatch:SetRequireRatingFix(arenaData, newArena.requireRatingFix);
+	end
+
+	-- Clear transient season played from last match
+	ArenaAnalytics:ClearLastMatchTransientValues(newArena.bracketIndex);
+
+	-- Insert arena data as a new ArenaAnalyticsDB entry
+	table.insert(ArenaAnalyticsDB, arenaData);
+
+	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
+
+	if(Import.TryHide) then
+		Import:TryHide();
+	end
+
+	ArenaAnalytics:PrintSystem("Arena recorded!");
+
+	Filters:Refresh();
+
+	Sessions:TryStartSessionDurationTimer();
 end

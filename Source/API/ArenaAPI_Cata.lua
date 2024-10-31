@@ -25,14 +25,6 @@ API.availableMaps = {
     "DalaranArena" 
 };
 
-function API:IsInArena()
-    return IsActiveBattlefieldArena();
-end
-
-function API:IsRatedArena()
-    return API:IsInArena() and not IsWargame() and not IsArenaSkirmish();
-end
-
 function API:GetBattlefieldStatus(battlefieldId)
     local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
 

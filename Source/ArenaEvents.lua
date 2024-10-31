@@ -62,8 +62,8 @@ local function HandleGlobalEvent(_, eventType, ...)
 		-- This checks for IsInArena() and IsTrackingArena()
 		if(API:IsInArena()) then
 			ArenaTracker:HandleArenaEnter();
-			--C_Timer.After(1, ArenaTracker.CheckRoundEnded);
-			ArenaTracker:CheckRoundEnded();
+		elseif(API:IsInBattleground()) then
+			BattlegroundTracker:HandleMatchEntered();
 		end	
 	end
 
@@ -74,9 +74,7 @@ local function HandleGlobalEvent(_, eventType, ...)
 			end
 		end
 	else -- Not in arena
-		if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
-			ArenaTracker:SetNotEnded() -- Player is out of arena, next arena hasn't ended yet
-		elseif (eventType == "ZONE_CHANGED_NEW_AREA") then
+		if (eventType == "ZONE_CHANGED_NEW_AREA") then
 			if(ArenaTracker:IsTrackingArena()) then
 				Events:UnregisterArenaEvents();
 				C_Timer.After(0, ArenaTracker.HandleArenaExit);

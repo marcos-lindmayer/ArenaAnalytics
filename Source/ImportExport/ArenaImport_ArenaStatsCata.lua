@@ -125,7 +125,7 @@ function Import.ProcessNextMatch_ArenaStatsCata(arenaString)
     newArena.isRated = Import:RetrieveBool(cachedValues[1]);
 
     newArena.date = date;
-    newArena.map = Internal:GetMapToken(cachedValues[4]);
+    newArena.map = Internal:GetArenaMapToken(cachedValues[4]);
     newArena.duration = tonumber(cachedValues[5]);  -- Duration
     newArena.outcome = GetMatchOutcome(cachedValues);
 

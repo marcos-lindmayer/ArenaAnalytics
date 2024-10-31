@@ -43,14 +43,6 @@ API.availableMaps = {
     "TolVironArena",
 };
 
-function API:IsInArena()
-    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl(); -- TODO: Add solo shuffle support
-end
-
-function API:IsRatedArena()
-    return API:IsInArena() and (C_PvP.IsRatedArena() or C_PvP.IsRatedSoloShuffle()) and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
-end
-
 function API:GetBattlefieldStatus(battlefieldId)
     local status,_, teamSize = GetBattlefieldStatus(battlefieldId);
     local isRated = API:IsRatedArena();
@@ -90,7 +82,6 @@ function API:GetPersonalRatedInfo(bracketIndex)
     return rating, seasonPlayed;
 end
 
--- TODO: Decide if we wanna get rating and MMR values from here
 function API:GetPlayerScore(index)
     local scoreInfo = C_PvP.GetScoreInfo(index);
 
