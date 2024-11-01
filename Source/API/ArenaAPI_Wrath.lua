@@ -64,7 +64,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
     return rating, seasonPlayed;
 end
 
-function API:GetPlayerScore(index)
+function API:GetPlayerScore(index, includeStats)
     local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(index);
     name = Helpers:ToFullName(name);
 
@@ -72,17 +72,16 @@ function API:GetPlayerScore(index)
     local race_id = Localization:GetRaceID(race);
     local class_id = Internal:GetAddonClassID(classToken);
 
-    local score = {
-        name = name,
-        race = race_id,
-        spec = class_id,
-        team = teamIndex,
-        kills = kills,
-        deaths = deaths,
-        damage = damage,
-        healing = healing,
-    }
-    
+    local score = TablePool:Acquire();
+    score.name = name;
+    score.race = race_id;
+    score.spec = class_id;
+    score.team = teamIndex;
+    score.kills = kills;
+    score.deaths = deaths;
+    score.damage = damage;
+    score.healing = healing;
+
     return score;
 end
 

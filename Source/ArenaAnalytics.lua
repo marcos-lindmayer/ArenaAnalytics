@@ -513,17 +513,6 @@ local eventTracker = {
 	["ArenaEventsAdded"] = false
 }
 
-function ArenaAnalytics:GetActiveBattlefieldID()
-    for index = 1, GetMaxBattlefieldID() do
-        local status = API:GetBattlefieldStatus(index)
-        if status == "active" then
-			ArenaAnalytics:Log("Found battlefield ID ", index)
-            return index
-        end
-    end
-	ArenaAnalytics:Log("Failed to find battlefield ID");
-end
-
 function ArenaAnalytics:HasStoredMatches()
 	return (ArenaAnalyticsDB ~= nil and #ArenaAnalyticsDB > 0);
 end

@@ -56,6 +56,19 @@ end
 
 -------------------------------------------------------------------------
 
+function API:GetActiveBattlefieldID()
+    for index = 1, GetMaxBattlefieldID() do
+        local status = API:GetBattlefieldStatus(index);
+        if status == "active" then
+			ArenaAnalytics:Log("Found battlefield ID:", index)
+            return index;
+        end
+    end
+
+	ArenaAnalytics:Warning("Failed to find battlefield ID.");
+    return nil;
+end
+
 function API:IsRated()
     return C_PvP.IsRatedMap();
 end

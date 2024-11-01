@@ -17,10 +17,14 @@ Source/ArenaOptions.lua
 Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
 Source/ArenaEvents.lua
-Source/ArenaTracker.lua
 Source/ArenaSessions.lua
 Source/ArenaVersionManager.lua
 Source/ArenaTablePool.lua
+
+Source/Tracking/SharedTracker.lua
+Source/Tracking/ArenaTracker.lua
+Source/Tracking/ArenaTracker_Shuffles.lua
+Source/Tracking/BattlegroundTracker.lua
 
 Source/API/ArenaHelpers.lua
 Source/API/ArenaAPI.lua

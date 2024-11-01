@@ -3,7 +3,7 @@ local Inspection = ArenaAnalytics.Inspection;
 
 -- Local module aliases
 local API = ArenaAnalytics.API;
-local ArenaTracker = ArenaAnalytics.ArenaTracker;
+local SharedTracker = ArenaAnalytics.SharedTracker;
 
 -------------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ function Inspection:TryInspectNext()
     end
 
     for _,GUID in pairs(queue) do
-        if(not ArenaTracker:HasSpec(GUID)) then
+        if(not SharedTracker:HasSpec(GUID)) then
             local unitToken = GetUnitToken(GUID);
             if unitToken and CanInspect(unitToken) then
                 ArenaAnalytics:Log("NotifyInspect:", unitToken, time());
@@ -106,7 +106,7 @@ local function HandleInspect_Internal(GUID)
     ArenaAnalytics:Log("HandleInspect_Internal", unitToken, spec_id);
     if(spec_id) then
         foundSpec = true;
-        ArenaTracker:OnSpecDetected(GUID, spec_id);
+        SharedTracker:OnSpecDetected(GUID, spec_id);
     end
 
     if(IsInQueue(GUID)) then

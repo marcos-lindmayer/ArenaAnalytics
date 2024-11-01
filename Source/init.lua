@@ -29,10 +29,13 @@ ArenaAnalytics.Dropdown.Display = {};
 ArenaAnalytics.Options = {};
 ArenaAnalytics.AAmatch = {};
 ArenaAnalytics.Events = {};
-ArenaAnalytics.ArenaTracker = {};
 ArenaAnalytics.Sessions = {};
 ArenaAnalytics.ArenaMatch = {};
 ArenaAnalytics.GroupSorter = {};
+
+ArenaAnalytics.SharedTracker = {};
+ArenaAnalytics.ArenaTracker = {};
+ArenaAnalytics.BattlegroundTracker = {};
 
 ArenaAnalytics.Search = {};
 ArenaAnalytics.Filters = {};
@@ -440,6 +443,7 @@ function ArenaAnalytics:init()
 	-- Update cached rating as soon as possible, through PVP_RATED_STATS_UPDATE event
 	RequestRatedInfo();
 
+	MinimapButton:Update();
 	AAtable:OnLoad();
 
 	if(IsInInstance() or IsInGroup(1)) then
@@ -448,7 +452,7 @@ function ArenaAnalytics:init()
 	end
 
 	-- Already in an arena
-	if (not API:IsInArena() and ArenaAnalyticsDB.currentArena) then
+	if (not API:IsInArena() and ArenaAnalyticsDB.currentMatch) then
 		ArenaTracker:Clear();
 	end
 end

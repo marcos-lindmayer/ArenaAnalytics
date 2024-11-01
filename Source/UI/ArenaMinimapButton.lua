@@ -65,8 +65,11 @@ function MinimapButton:Update()
             minimapButton:Hide();
             minimapButton = nil;
         end
-    elseif(not minimapButton) then
-        MinimapButton:Create();
+    else
+		if(not minimapButton) then
+        	MinimapButton:Create();
+		end
+		minimapButton:Show();
     end
 end
 

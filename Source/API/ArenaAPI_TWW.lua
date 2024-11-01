@@ -82,7 +82,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
     return rating, seasonPlayed;
 end
 
-function API:GetPlayerScore(index)
+function API:GetPlayerScore(index, includeStats)
     local scoreInfo = C_PvP.GetScoreInfo(index);
 
     local score = TablePool:Acquire();
@@ -106,6 +106,7 @@ function API:GetPlayerScore(index)
     score.rating = scoreInfo.rating;
     score.ratingDelta = scoreInfo.ratingChange;
 
+    -- Replace with general stats to keys logic
     if(API:IsSoloShuffle()) then
         -- Assume shuffle only has one stat (ID changes randomly)
         local firstStat = scoreInfo.stats and scoreInfo.stats[1];
@@ -119,9 +120,6 @@ function API:GetPlayerScore(index)
         score.mmr = scoreInfo.prematchMMR;
         score.mmrDelta = scoreInfo.postmatchMMR and (scoreInfo.postmatchMMR - scoreInfo.prematchMMR);
     end
-
-    ArenaAnalytics:LogTemp("Score MMR:", scoreInfo.prematchMMR, scoreInfo.postmatchMMR);
-    Debug:LogTable(scoreInfo);
 
     return score;
 end
