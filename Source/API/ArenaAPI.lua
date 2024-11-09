@@ -36,11 +36,15 @@ end
 -- Battleground
 
 function API:IsInBattleground()
+    if(C_PvP.IsInBrawl()) then
+        return false;
+    end
+
     local _, instanceType = IsInInstance();
-    return C_PvP.IsInBrawl() or instanceType == "pvp";
+    return instanceType == "pvp";
 end
 
-function API:IsInRatedBattleground()
+function API:IsRatedBattleground()
     if(not API:IsInBattleground() or IsWargame() or C_PvP.IsInBrawl()) then
         return false;
     end
@@ -54,6 +58,10 @@ function API:IsInRatedBattleground()
     return C_PvP and C_PvP.IsRatedBattleground and C_PvP.IsRatedBattleground();
 end
 
+function API:GetBattlegroundType()
+    
+end
+
 -------------------------------------------------------------------------
 
 function API:GetActiveBattlefieldID()
@@ -65,7 +73,6 @@ function API:GetActiveBattlefieldID()
         end
     end
 
-	ArenaAnalytics:Warning("Failed to find battlefield ID.");
     return nil;
 end
 

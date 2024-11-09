@@ -27,7 +27,7 @@ function BattlegroundTracker:Reset()
 
 	-- Current Battleground
 	currentBattleground.battlefieldId = nil;
-	currentBattleground.mapId = nil;
+	currentBattleground.map_id = nil;
 
 	currentBattleground.playerName = "";
 	currentBattleground.myTeam = nil;
@@ -55,7 +55,7 @@ function BattlegroundTracker:Reset()
 	TablePool:ReleaseNested(currentBattleground.players);
 	TablePool:Release(currentBattleground.knownSpecs);
 	TablePool:Release(currentBattleground.knownHeroSpecs);
-	
+
 	currentBattleground.players = TablePool:Acquire();
 	currentBattleground.knownSpecs = TablePool:Acquire();
 	currentBattleground.knownHeroSpecs = TablePool:Acquire();
@@ -77,7 +77,7 @@ end
 -------------------------------------------------------------------------
 
 function BattlegroundTracker:IsTracking()
-	return currentBattleground.mapId ~= nil;
+	return currentBattleground.map_id ~= nil;
 end
 
 -------------------------------------------------------------------------
@@ -85,20 +85,25 @@ end
 function BattlegroundTracker:HandleSpecDetected(GUID, spec_id, hero_spec_id)
 	local hasNewSpec = nil;
 
+	local playerName = Helpers:GetFullNameByGUID(GUID);
+	if(not playerName) then
+		return;
+	end
+
 	-- Add to found specs and hero specs if not already there.
-	if(not currentBattleground.knownSpecs[GUID] and spec_id) then
-		currentBattleground.knownSpecs[GUID] = spec_id;
+	if(not currentBattleground.knownSpecs[playerName] and spec_id) then
+		currentBattleground.knownSpecs[playerName] = spec_id;
 		hasNewSpec = true;
 	end
 
-	if(not currentBattleground.knownHeroSpecs[GUID] and hero_spec_id) then
-		currentBattleground.knownHeroSpecs[GUID] = hero_spec_id;
+	if(not currentBattleground.knownHeroSpecs[playerName] and hero_spec_id) then
+		currentBattleground.knownHeroSpecs[playerName] = hero_spec_id;
 		hasNewSpec = true;
 	end
 
 	-- Find and update player, if either spec were new.
 	if(hasNewSpec) then
-		local player = SharedTracker:GetPlayer(GUID);
+		local player = BattlegroundTracker:FindOrAddPlayer(playerName);
 		if(player) then
 			player.spec = spec_id;
 			player.heroSpec = hero_spec_id;
@@ -110,12 +115,24 @@ function BattlegroundTracker:IsTrackingPlayer(playerName)
 	return playerName and currentBattleground.players and currentBattleground.players[playerName] ~= nil;
 end
 
+function BattlegroundTracker:FindOrAddPlayer(playerName)
+	if(not playerName) then
+		return nil;
+	end
+
+	if(not BattlegroundTracker:IsTrackingPlayer(playerName)) then
+		local player = TablePool:Acquire();
+		player.name = playerName;
+		currentBattleground.players[playerName] = player;
+	end
+
+	return player;
+end
+
 function BattlegroundTracker:UpdatePlayers()
 	if(not BattlegroundTracker:IsTracking()) then
 		return;
 	end
-
-	BattlegroundTracker:UpdateMyTeam();
 
 	for i=1, GetNumBattlefieldScores() do
 		local score = API:GetPlayerScore(i, true);
@@ -124,8 +141,10 @@ function BattlegroundTracker:UpdatePlayers()
 				score.isSelf = true;
 			end
 
-			TablePool:Release(currentBattleground[score.name]);
-			currentBattleground[score.name] = score;
+			local player = BattlegroundTracker:FindOrAddPlayer(score.name);
+
+			TablePool:Release(player.score);
+			player.score = score;
 		end
 	end
 end
@@ -172,20 +191,23 @@ end
 
 function BattlegroundTracker:HandleEnter()
 	if(BattlegroundTracker:IsTracking()) then
-		ArenaAnalytics:Log("HandleArenaEnter: Already tracking match");
+		return;
+	end
+
+	-- Retrieve current match info
+	local battlefieldId = API:GetActiveBattlefieldID();
+	if(not battlefieldId) then
 		return;
 	end
 
 	Events:RegisterBattlegroundEvents();
 
-	-- Retrieve current match info
-	battlefieldId = API:GetActiveBattlefieldID();
 	local status, bracket, teamSize, isRated, isShuffle = API:GetBattlefieldStatus(battlefieldId);
 
 	if(not BattlegroundTracker:IsTrackingCurrentBattleground(battlefieldId, bracket)) then
-		ArenaTracker:Reset();
+		BattlegroundTracker:Reset();
 	else
-		ArenaAnalytics:Log("Keeping existing tracking!")
+		ArenaAnalytics:Log("Keeping existing battleground tracking!")
 		currentBattleground = ArenaAnalyticsDB.currentMatch;
 	end
 
@@ -228,25 +250,25 @@ function BattlegroundTracker:HandleEnter()
 	-- Add self
 	if (not BattlegroundTracker:IsTrackingPlayer(currentBattleground.playerName)) then
 		-- Add player
-		local GUID = UnitGUID("player");
-		local name = currentBattleground.playerName;
-		local race_id = Helpers:GetUnitRace("player");
+		local player = TablePool:Acquire();
+		player.GUID = UnitGUID("player");
+		player.name = currentBattleground.playerName;
+		player.race = Helpers:GetUnitRace("player");
 		local class_id = Helpers:GetUnitClass("player");
 		local spec_id = API:GetSpecialization() or class_id;
+		player.spec = spec_id or class_id;
 		ArenaAnalytics:Log("Using MySpec:", spec_id);
 
-		local player = ArenaTracker:CreatePlayerTable(false, GUID, name, race_id, spec_id);
-		table.insert(currentBattleground.players, player);
+		currentBattleground.players[player.name] = player;
 	end
 
 	if(ArenaAnalytics.DataSync) then
 		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
 	end
 
-	currentBattleground.mapId = API:GetCurrentMapID();
-	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentBattleground.mapId);
-
-	ArenaTracker:CheckRoundEnded();
+	local mapID = API:GetCurrentMapID();
+	currentBattleground.map_id = Internal:GetBattlegroundAddonMapID(mapID);
+	ArenaAnalytics:Log("Match entered! Tracking map_id: ", currentBattleground.map_id, mapID);
 
 	RequestBattlefieldScoreData();
 end
@@ -258,15 +280,79 @@ function BattlegroundTracker:HandleStart()
 	BattlegroundTracker:UpdatePlayers();
 
 	ArenaAnalytics:Log("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentBattleground.players);
-	ArenaAnalytics:LogTemp("Arena started - Team MMR:", API:GetTeamMMR(0), API:GetTeamMMR(1));
+	ArenaAnalytics:LogTemp("Battleground started - Team MMR:", API:GetTeamMMR(0), API:GetTeamMMR(1));
 end
 
 function BattlegroundTracker:HandleEnd()
+	if(not BattlegroundTracker:IsTracking()) then
+		return;
+	end
+
 	BattlegroundTracker:UpdatePlayers();
 
+	if(currentBattleground.endedProperly) then
+		return;
+	end
 
+	currentBattleground.endedProperly = true;
+	currentBattleground.ended = true;
+	currentBattleground.endTime = time();
+
+	ArenaAnalytics:Log("HandleArenaEnd!", #currentBattleground.players);
+	ArenaAnalytics:LogTemp("Battleground ended - Team MMR:", API:GetTeamMMR(0), API:GetTeamMMR(1), API:IsInArena());
+
+	local winner = GetBattlefieldWinner();
+
+	-- Figure out how to default to nil, without failing to count losses.
+	local myTeamIndex = nil;
+end
+
+local function getMyTeamID()
+	if(not currentBattleground.players) then
+		return nil;
+	end
+
+	local playerName = Helpers:GetPlayerName();
+
+	for _,player in currentBattleground.players do
+		if(player and player.name == playerName) then
+			local score = player.score;
+			return score and score.team;
+		end
+	end
+
+	return nil;
 end
 
 function BattlegroundTracker:HandleExit()
+	if(not BattlegroundTracker:IsTracking()) then
+		return;
+	end
 
+	currentBattleground.endTime = currentBattleground.endTime or time();
+	local statMapping = Internal:GetStatMapping(currentBattleground.map_id);
+	
+
+	-- TODO: Sanitize data, preparing for save
+	if(#currentBattleground.players > 0) then
+		currentBattleground.myTeam = getMyTeamID();
+
+		local players = TablePool:Acquire();
+		for _,player in ipairs(currentBattleground.players) do
+			local newPlayer = TablePool:Acquire();
+			newPlayer.name = player.name;
+			newPlayer.spec = player.spec;
+			newPlayer.heroSpec = player.heroSpec;
+
+			local score = player.score;
+			if(score) then
+				newPlayer.spec = newPlayer.spec or score.spec;
+				newPlayer.heroSpec = newPlayer.heroSpec or score.heroSpec;
+
+				-- TODO: Add stats
+			end
+		end
+	end	
+
+	ArenaAnalytics:LogTemp("Handle BG Exit.");
 end

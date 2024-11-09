@@ -575,7 +575,13 @@ function ArenaAnalytics:GetLatestRating(bracketIndex, explicitSeason, explicitSe
 	return 0;
 end
 
+local lastFixAttemptTime = 0
 function ArenaAnalytics:TryFixLastMatchRating()
+	if(time() - lastFixAttemptTime < 3) then
+		return;
+	end
+	lastFixAttemptTime = time();
+
 	local lastMatch = ArenaAnalytics:GetLastMatch(true);
 	if(ArenaMatch:DoesRequireRatingFix(lastMatch)) then
 		ArenaMatch:TryFixLastRating(lastMatch);

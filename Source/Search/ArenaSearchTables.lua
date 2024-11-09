@@ -214,9 +214,9 @@ local SearchTokenTypeTable = {
             [112] = { "vengeance", "vdh" },
 
             -- Evoker
-            [121] = { "devastation", "devoker", "dev" },
-            [122] = { "preservation", "prevoker", "pres" },
-            [123] = { "augmentation", "augvoker", "aug" },
+            [121] = { "preservation", "prevoker", "pres" },
+            [122] = { "augmentation", "augvoker", "aug" },
+            [123] = { "devastation", "devoker", "dev" },
         },
     },
     ["race"] = {

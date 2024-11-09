@@ -77,6 +77,21 @@ function API:GetPlayerScore(index, includeStats)
     score.damage = damage;
     score.healing = healing;
 
+    if(API:IsInBattleground() or API:IsSoloShuffle() or includeStats) then
+        local stats = TablePool:Acquire();
+
+        for statIndex=1, GetNumBattlefieldStats() do
+            local stat = GetBattlefieldStatData(index, statIndex);
+            if(stat) then
+                tinsert(stats, stat);
+            end
+        end
+
+        if(#stats > 0) then
+            score.stats = stats;
+        end
+    end
+
     return score;
 end
 

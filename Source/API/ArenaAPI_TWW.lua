@@ -44,6 +44,10 @@ API.availableMaps = {
 };
 
 function API:GetBattlefieldStatus(battlefieldId)
+    if(not battlefieldId) then
+        return;
+    end
+
     local status,_, teamSize = GetBattlefieldStatus(battlefieldId);
     local isRated = API:IsRatedArena();
     local isShuffle = API:IsSoloShuffle();
@@ -106,12 +110,25 @@ function API:GetPlayerScore(index, includeStats)
     score.rating = scoreInfo.rating;
     score.ratingDelta = scoreInfo.ratingChange;
 
-    -- Replace with general stats to keys logic
-    if(API:IsSoloShuffle()) then
-        -- Assume shuffle only has one stat (ID changes randomly)
-        local firstStat = scoreInfo.stats and scoreInfo.stats[1];
-        if(firstStat) then
-            score.wins = firstStat.pvpStatValue;
+    if(scoreInfo.stats) then
+        if(API:IsInBattleground() or API:IsSoloShuffle() or includeStats) then
+            score.stats = TablePool:Acquire();
+
+            for i,stat in ipairs(scoreInfo.stats) do
+                if(stat and stat.pvpStatValue) then
+                    score.stats[i] = stat.pvpStatValue;
+                end
+            end
+
+            -- TODO: Refactor this to a general stat handling setup
+            -- Replace with general stats to keys logic
+            if(API:IsSoloShuffle()) then
+                -- Assume shuffle only has one stat (ID changes randomly)
+                local firstStat = score.stats[1];
+                if(firstStat) then
+                    score.wins = firstStat.pvpStatValue;
+                end
+            end
         end
     end
 

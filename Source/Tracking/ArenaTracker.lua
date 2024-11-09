@@ -138,10 +138,14 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 		return;
 	end
 
-	Events:RegisterArenaEvents();
-
 	-- Retrieve current arena info
 	battlefieldId = battlefieldId or API:GetActiveBattlefieldID();
+	if(not battlefieldId) then
+		return;
+	end
+
+	Events:RegisterArenaEvents();
+
 	local status, bracket, teamSize, isRated, isShuffle = API:GetBattlefieldStatus(battlefieldId);
 
 	if(not ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracket)) then
@@ -352,7 +356,7 @@ function ArenaTracker:HandleArenaEnd()
 			currentArena.partyMMR = API:GetTeamMMR(myTeamIndex);
 			currentArena.enemyMMR = API:GetTeamMMR(otherTeamIndex);
 		else
-			ArenaAnalytics:Warning("Failed to retrieve MMR.");
+			ArenaAnalytics:LogWarning("Failed to retrieve MMR.");
 		end
 	end
 
@@ -361,8 +365,9 @@ end
 
 -- Player left an arena (Zone changed to non-arena with valid arena data)
 function ArenaTracker:HandleArenaExit()
-	assert(currentArena.size);
-	assert(currentArena.mapId);
+	if(not currentArena.size or not currentArena.mapId) then
+		return;
+	end
 
 	if(Inspection and Inspection.CancelTimer) then
 		Inspection:CancelTimer();

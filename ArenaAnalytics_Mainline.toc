@@ -5,7 +5,7 @@
 ## Version: 1.0.4
 ## IconTexture: Interface\Icons\achievement_arena_3v3_7
 ## DefaultState: enabled
-## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSharedSettingsDB
+## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSharedSettingsDB, ArenaAnalyticsTempDB
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB
 
 
@@ -41,7 +41,8 @@ Source/UI/Tooltips/ArenaTooltips.lua
 Source/UI/Tooltips/ArenaTooltips_Player.lua
 Source/UI/Tooltips/ArenaTooltips_Shuffle.lua
 
-Source/Data/ArenaInternalIDs.lua
+Source/Data/ArenaInternal.lua
+Source/Data/ArenaInternal_Battlegrounds.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
 Source/Data/ArenaSpecSpells_TWW.lua

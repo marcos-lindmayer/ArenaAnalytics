@@ -2,13 +2,41 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Events = ArenaAnalytics.Events;
 
 -- Local module aliases
-local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local SharedTracker = ArenaAnalytics.SharedTracker;
+local ArenaTracker = ArenaAnalytics.ArenaTracker;
+local BattlegroundTracker = ArenaAnalytics.BattlegroundTracker;
 local Constants = ArenaAnalytics.Constants;
 local API = ArenaAnalytics.API;
 local Inspection = ArenaAnalytics.Inspection;
 
 -------------------------------------------------------------------------
+
+local function CacheTempData(msg)
+	ArenaAnalytics:LogGreen("CacheTempData", msg);
+
+	ArenaAnalyticsTempDB[GetLocale()] = ArenaAnalyticsTempDB[GetLocale()] or {}
+	local cache = ArenaAnalyticsTempDB[GetLocale()];
+
+	local currentMapID = API:GetCurrentMapID();
+
+	if(msg) then
+		cache.messages = cache.messages or {};
+		cache.messages[msg] = currentMapID or -1;
+	end
+
+	if(currentMapID) then
+		cache.maps = cache.maps or {}
+		cache.maps[currentMapID] = cache.maps[currentMapID] or {};
+
+		local map = cache.maps[currentMapID];
+		map.name = GetZoneText();
+
+		local playerScore = API:GetPlayerScore(1);
+		if(playerScore and playerScore.stats) then
+			map.stats = playerScore.stats;
+		end
+	end
+end
 
 local arenaEventsRegistered = false;
 local eventFrame = CreateFrame("Frame");
@@ -49,39 +77,45 @@ end
 -- Assigns behaviour for "global" events
 -- UPDATE_BATTLEFIELD_STATUS: Begins arena tracking and arena events if inside arena
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
-local lastStatsUpdateTime = 0;
 local function HandleGlobalEvent(_, eventType, ...)
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
-		if(time() - lastStatsUpdateTime < 3) then
-			return;
-		end
-
-		lastStatsUpdateTime = time();
-
 		ArenaAnalytics:TryFixLastMatchRating();
-		
+
 		-- This checks for IsInArena() and IsTrackingArena()
 		if(API:IsInArena()) then
 			ArenaTracker:HandleArenaEnter();
 		elseif(API:IsInBattleground()) then
-			BattlegroundTracker:HandleMatchEntered();
+			BattlegroundTracker:HandleEnter();
 		end	
 	end
 
+	local isTrackingArena = ArenaTracker:IsTracking();
 	if (API:IsInArena()) then
-		if (not ArenaTracker:IsTracking()) then
+		if (not isTrackingArena) then
 			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
 				RequestRatedInfo(); -- Will trigger ArenaTracker:HandleArenaEnter(...)
 			end
 		end
-	else -- Not in arena
-		if (eventType == "ZONE_CHANGED_NEW_AREA") then
-			if(ArenaTracker:IsTracking()) then
-				Events:UnregisterArenaEvents();
-				C_Timer.After(0, ArenaTracker.HandleArenaExit);
-				ArenaAnalytics:Log("ZONE_CHANGED_NEW_AREA triggering delayed HandleArenaExit");
+	elseif(isTrackingArena and eventType == "ZONE_CHANGED_NEW_AREA") then
+		Events:UnregisterArenaEvents();
+		C_Timer.After(0, ArenaTracker.HandleArenaExit);
+		ArenaAnalytics:Log("ZONE_CHANGED_NEW_AREA triggering delayed HandleArenaExit");
+	end
+
+	-- Battleground
+	local isTrackingBattleground = BattlegroundTracker:IsTracking();
+	if (API:IsInBattleground()) then
+		CacheTempData();
+
+		if (not isTrackingBattleground) then
+			if (eventType == "UPDATE_BATTLEFIELD_STATUS") then
+				RequestRatedInfo(); -- Will trigger ArenaTracker:HandleArenaEnter(...)
 			end
 		end
+	elseif(isTrackingBattleground and eventType == "ZONE_CHANGED_NEW_AREA") then
+		Events:UnregisterBattlegroundEvents();
+		C_Timer.After(0, BattlegroundTracker.HandleExit);
+		ArenaAnalytics:Log("ZONE_CHANGED_NEW_AREA triggering delayed BattlegroundTracker.HandleExit");
 	end
 end
 
@@ -123,7 +157,7 @@ local function HandleArenaEvent(_, eventType, ...)
 			ArenaTracker:HandleOpponentUpdate();
 		elseif(eventType == "GROUP_ROSTER_UPDATE") then
 			ArenaTracker:HandlePartyUpdate();
-		elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
+		elseif(eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
 			ParseArenaTimerMessages(...);
 		elseif(eventType == "INSPECT_READY") then
 			if(Inspection and Inspection.HandleInspectReady) then
@@ -135,9 +169,11 @@ end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
 local function ParseBattlegroundTimerMessages(msg, ...)
+	CacheTempData(msg);
+
 	local localizedMessage = Constants.GetArenaTimer();
 	if(localizedMessage and msg:find(localizedMessage, 1, true)) then
-		ArenaTracker:HandleArenaStart();
+		BattlegroundTracker:HandleStart();
 	end
 end
 
@@ -163,14 +199,10 @@ local function HandleBattlegroundEvent(_, eventType, ...)
 				BattlegroundTracker:HandleEnd();
 				Events:UnregisterArenaEvents();
 			end
-		elseif (eventType == "UNIT_AURA") then
-			SharedTracker:ProcessUnitAuraEvent(...);
-		elseif(eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
+		elseif(eventType == "UNIT_AURA" or eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
 			SharedTracker:ProcessCombatLogEvent(...);
-		elseif(eventType == "GROUP_ROSTER_UPDATE") then
-			SharedTracker:HandlePartyUpdate();
 		elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
-			ParseArenaTimerMessages(...);
+			ParseBattlegroundTimerMessages(...);
 		elseif(eventType == "INSPECT_READY") then
 			if(Inspection and Inspection.HandleInspectReady) then
 				Inspection:HandleInspectReady(...);

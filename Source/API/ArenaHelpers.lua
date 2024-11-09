@@ -182,7 +182,26 @@ function Helpers:GetUnitFullName(unitToken)
     end
 
     if(not realm) then
-        ArenaAnalytics:Warning("Helpers:GetUnitFullName failed to retrieve any realm!");
+        ArenaAnalytics:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm!");
+        return name;
+    end
+
+    return format("%s-%s", name, realm);
+end
+
+function Helpers:GetFullNameByGUID(GUID)
+    if(not GUID) then
+        return nil;
+    end
+
+    local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(GUID);
+
+    if(not realmName) then
+        realm = select(2, UnitFullName("player")); -- Local player's realm
+    end
+
+    if(not realm) then
+        ArenaAnalytics:LogWarning("Helpers:GetFullNameByGUID failed to retrieve any realm!");
         return name;
     end
 

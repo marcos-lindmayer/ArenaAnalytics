@@ -67,6 +67,14 @@ local Debug = ArenaAnalytics.Debug;
 local MinimapButton = ArenaAnalytics.MinimapButton;
 local Helpers = ArenaAnalytics.Helpers;
 
+
+-------------------------------------------------------------------------
+-- TEMP
+
+-- TODO: Remove when done with this!
+ArenaAnalyticsTempDB = ArenaAnalyticsTempDB or {};
+ArenaAnalyticsTempDB[GetLocale()] = ArenaAnalyticsTempDB[GetLocale()] or {};
+
 -------------------------------------------------------------------------
 
 function ArenaAnalyticsToggle()
@@ -190,13 +198,38 @@ ArenaAnalytics.commands = {
 
 	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function(...)
-		ArenaAnalytics:PrintSystemSpacer();
-		ArenaAnalytics:PrintSystem(" ================================================  ");
+		print(" ");
+		ArenaAnalytics:Print(" ================================================  ");
 
-		local index = tonumber(... or 1) or 1;
-		ArenaAnalytics:LogTemp(GetBattlefieldScore(index));
+		ArenaAnalytics:LogTemp("IsInBG:", API:IsInBattleground(), API:IsRatedBattleground(), API:GetCurrentMapID(), GetZoneText());
 
-		ArenaAnalytics:PrintSystemSpacer();
+		ArenaAnalytics:Log(API:GetActiveBattlefieldID())
+
+		local scoreInfo;
+		if(C_PvP.GetScoreInfo) then
+			Debug:LogTable({C_PvP.GetScoreInfo(1)});
+		else
+			Debug:LogTable({GetBattlefieldScore(1)});
+		end
+
+		ArenaAnalytics:LogSpacer();
+		local battlefieldID = API:GetActiveBattlefieldID();
+		ArenaAnalytics:LogGreen("GetBattlefieldStatus", battlefieldID);
+		if(battlefieldID) then
+			ArenaAnalytics:LogTemp(GetBattlefieldStatus(battlefieldID));
+
+			local status, mapName, teamSize, registeredMatch, suspendedQueue, queueType, gameType, role, asGroup, shortDescription, longDescription, isSoloQueue = GetBattlefieldStatus(battlefieldID);
+			ArenaAnalytics:LogTemp(battlefieldID, mapName, localizedName, format("(%s)",gameType), shortDescription:gsub("\r", "/r"):gsub("\n", "/n"), longDescription:gsub("\r", "/r"):gsub("\n", "/n"));
+
+			ArenaAnalytics:LogSpacer();
+			ArenaAnalytics:LogGreen("GetBattlegroundInfo");
+			for index=1, GetNumBattlegroundTypes() do
+				local localizedName, canEnter, isHoliday, isRandom, battleGroundID, mapDescription, bgInstanceID, maxPlayers, gameType, iconTexture, shortDescription, longDescription, hasControllingHoliday = GetBattlegroundInfo(index);
+				ArenaAnalytics:LogTemp(index, maxPlayers, bgInstanceID, localizedName, format("(%s)",gameType), shortDescription:gsub("\r", "/r"):gsub("\n", "/n"), longDescription:gsub("\r", "/r"):gsub("\n", "/n"));
+			end
+		end
+
+		print(" ");
 	end,	
 };
 
