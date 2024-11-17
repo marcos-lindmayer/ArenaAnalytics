@@ -31,10 +31,44 @@ local arenaMapTokens = {
     [1134] = "TheTigersPeak",
     [2547] = "EnigmaCrucible",
     [2509] = "MaldraxxusColiseum",
-    [980] = "TolVironArena"
-}
+    [980] = "TolVironArena",
 
-function Internal:GetArenaMapToken(mapID)
+    -- Capture the Flag
+    [489]  = "WarsongGulch",        -- Warsong Gulch (Classic)
+    [2106] = "WarsongGulch",        -- Warsong Gulch (Updated)
+    [726]  = "TwinPeaks",           -- Twin Peaks
+
+    -- Domination (5-cap maps, similar scoring objectives)
+    [529]  = "ArathiBasin",         -- Arathi Basin (Classic)
+    [2107] = "ArathiBasin",         -- Arathi Basin (Updated)
+    [1681] = "ArathiBlizzard",      -- Arathi Blizzard
+    [2245] = "DeepwindGorge2",      -- Deepwind Gorge (Updated, 5-cap)
+
+    -- Resource Race (collect and hold objectives for score accumulation)
+    [566]  = "EyeOfTheStorm",       -- Eye of the Storm
+    [968]  = "EyeOfTheStorm",       -- Eye of the Storm (Rated)
+
+    -- Epic Battlegrounds (large-scale PvP with unique objectives)
+    [1191] = "Ashran",              -- Ashran
+    [2118] = "Wintergrasp",         -- Wintergrasp (Epic Battleground)
+    [30]   = "AlteracValley",       -- Alterac Valley
+    [628]  = "IsleOfConquest",      -- Isle of Conquest
+    [2197] = "KorraksRevenge",      -- Korrak's Revenge (Alterac Valley Classic)
+
+    -- Misc
+    [607]  = "StrandOfTheAncients", -- Strand of the Ancients
+    [761]  = "BattleForGilneas",    -- Battle for Gilneas
+    [727]  = "SilvershardMines",    -- Silvershard Mines
+    [998]  = "TempleOfKotmogu",     -- Temple of Kotmogu
+    [1105]  = "DeepwindGorge",      -- Deepwind Gorge (Classic)
+    [1803] = "SeethingShore",       -- Seething Shore
+    [2656] = "DeephaulRavine",    -- Deephaul Ravine
+
+    -- Blitz
+    -- [0] = "EyeOfTheStormBlitz",     -- Eye of the Storm (Blitz)
+};
+
+function Internal:GetMapToken(mapID)
     mapID = tonumber(mapID);
     if(not mapID or mapID == 0) then
         return nil;
@@ -74,6 +108,26 @@ local addonMapIDs = {
     [16] =  { token = "MaldraxxusColiseum", shortName = "MC", name = "Maldraxxus Coliseum" },
 
     [17] =  { token = "NokhudonProvingGrounds", shortName = "NPG", name = "Nokhudon Proving Grounds" },
+
+    -- Battleground Maps
+    [18]  = { token = "WarsongGulch", shortName = "WG", name = "Warsong Gulch" },
+    [19]  = { token = "ArathiBasin", shortName = "AB", name = "Arathi Basin" },
+    [20]  = { token = "AlteracValley", shortName = "AV", name = "Alterac Valley" },
+    [21]  = { token = "EyeOfTheStorm", shortName = "EotS", name = "Eye of the Storm" },
+    [22]  = { token = "StrandOfTheAncients", shortName = "SotA", name = "Strand of the Ancients" },
+    [23]  = { token = "IsleOfConquest", shortName = "IoC", name = "Isle of Conquest" },
+    [24]  = { token = "BattleForGilneas", shortName = "BfG", name = "Battle for Gilneas" },
+    [25]  = { token = "TwinPeaks", shortName = "TP", name = "Twin Peaks" },
+    [26]  = { token = "SilvershardMines", shortName = "SSM", name = "Silvershard Mines" },
+    [27]  = { token = "TempleOfKotmogu", shortName = "ToK", name = "Temple of Kotmogu" },
+    [28]  = { token = "DeepwindGorge", shortName = "DWG", name = "Deepwind Gorge" },
+    [29]  = { token = "SeethingShore", shortName = "SS", name = "Seething Shore" },
+    [30]  = { token = "Wintergrasp", shortName = "WG", name = "Wintergrasp" },
+    [31]  = { token = "TolBarad", shortName = "TB", name = "Tol Barad" },
+    [32]  = { token = "Ashran", shortName = "Ash", name = "Ashran" },
+    [33]  = { token = "KorraksRevenge", shortName = "KR", name = "Korrak's Revenge" },
+    [34]  = { token = "ArathiBlizzard", shortName = "ABW", name = "Arathi Basin Blizzard" },
+    [35]  = { token = "DeepwindGorge2", shortName = "DWG", name = "Deepwind Gorge" }
 }
 
 function Internal:GetAddonMapID(map)
@@ -82,7 +136,7 @@ function Internal:GetAddonMapID(map)
     end
 
     if(tonumber(map)) then
-        map = Internal:GetArenaMapToken(map);
+        map = Internal:GetMapToken(map);
     end
 
     map = Helpers:ToSafeLower(map);

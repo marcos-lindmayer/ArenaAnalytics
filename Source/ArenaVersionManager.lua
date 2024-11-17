@@ -396,7 +396,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
             ArenaMatch:SetDuration(convertedArena, oldArena["duration"]);
             ArenaMatch:SetMap(convertedArena, oldArena["map"]);
             ArenaMatch:SetBracket(convertedArena, oldArena["bracket"]);
-            ArenaMatch:SetMatchType(convertedArena, (not oldArena["isRated"] or oldArena["rating"] == "SKIRMISH") and "skirmish" or "rated");
+            ArenaMatch:SetMatchType(convertedArena, (not oldArena["isRated"] or oldArena["rating"] == "SKIRMISH") and "unrated" or "rated");
 
             ArenaMatch:SetPartyRating(convertedArena, oldArena["rating"]);
             ArenaMatch:SetPartyMMR(convertedArena, oldArena["mmr"]);

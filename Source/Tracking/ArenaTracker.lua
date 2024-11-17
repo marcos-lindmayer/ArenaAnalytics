@@ -55,7 +55,7 @@ function ArenaTracker:Reset()
 	currentArena.enemyMMR = nil;
 
 	currentArena.size = nil;
-	currentArena.isRated = nil;
+	currentArena.matchType = nil;
 	currentArena.isShuffle = nil;
 
 	currentArena.players = TablePool:Acquire();
@@ -112,7 +112,7 @@ function ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracket)
 		return false;
 	end
 
-	if(arena.isRated) then
+	if(arena.matchType == "rated") then
 		if(not arena.seasonPlayed) then
 			ArenaAnalytics:Log("IsTrackingCurrentArena: Existing rated arena has no season played.", arena.seasonPlayed)
 			return false;
@@ -146,12 +146,12 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 
 	Events:RegisterArenaEvents();
 
-	local status, bracket, teamSize, isRated, isShuffle = API:GetBattlefieldStatus(battlefieldId);
+	local status, bracket, matchType, teamSize, isShuffle = API:GetBattlefieldStatus(battlefieldId);
 
 	if(not ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracket)) then
 		ArenaTracker:Reset();
 	else
-		ArenaAnalytics:Log("Keeping existing tracking!")
+		ArenaAnalytics:Log("Keeping existing tracking!");
 		currentArena = ArenaAnalyticsDB.currentMatch;
 	end
 
@@ -175,13 +175,13 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 	currentArena.playerName = Helpers:GetPlayerName();
 
 	currentArena.bracketIndex = bracket;
-	currentArena.isRated = isRated;
+	currentArena.matchType = matchType;
 	currentArena.isShuffle = isShuffle;
 	currentArena.size = teamSize;
 
 	ArenaAnalytics:Log("TeamSize:", teamSize, currentArena.size, "Bracket:", currentArena.bracketIndex);
 
-	if(isRated) then
+	if(matchType == "rated") then
 		local oldRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
 		if(GetBattlefieldWinner()) then
 			currentArena.seasonPlayed = seasonPlayed and seasonPlayed - 1; -- Season Played during the match
@@ -294,7 +294,7 @@ function ArenaTracker:HandleArenaEnd()
 		player.damage = score.damage;
 		player.healing = score.healing;
 
-		if(currentArena.isRated) then
+		if(currentArena.matchType == "rated") then
 			player.rating = score.rating;
 			player.ratingDelta = score.ratingDelta;
 			player.mmr = score.mmr;
@@ -349,7 +349,7 @@ function ArenaTracker:HandleArenaEnd()
 	end
 
 	-- Process ranked information
-	if (currentArena.isRated) then
+	if (currentArena.matchType == "rated") then
 		if(myTeamIndex) then
 			local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
 
@@ -397,7 +397,7 @@ function ArenaTracker:HandleArenaExit()
 	ArenaAnalytics:Log("Exited Arena:", API:GetPersonalRatedInfo(currentArena.bracketIndex));
 	ArenaAnalytics:LogTemp("Arena exited - Team MMR:", API:GetTeamMMR(0), API:GetTeamMMR(1));
 
-	if(currentArena.isRated and not currentArena.partyRating) then
+	if(currentArena.matchType == "rated" and not currentArena.partyRating) then
 		local newRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
 		if(newRating and seasonPlayed) then
 			local oldRating = currentArena.oldRating;
@@ -677,15 +677,6 @@ function ArenaTracker:SaveArena(newArena)
 		end
 	end
 
-	local matchType = nil;
-	if(newArena.isRated) then
-		matchType = "rated";
-	elseif(newArena.isWargame) then
-		matchType = "wargame";
-	else
-		matchType = "skirmish";
-	end
-
 	local season = GetCurrentArenaSeason();
 	if (season == 0) then
 		ArenaAnalytics:Log("Failed to get valid season for new match.");
@@ -700,9 +691,9 @@ function ArenaTracker:SaveArena(newArena)
 	ArenaAnalytics:Log("Bracket:", newArena.bracketIndex);
 	ArenaMatch:SetBracketIndex(arenaData, newArena.bracketIndex);
 
-	ArenaMatch:SetMatchType(arenaData, matchType);
+	ArenaMatch:SetMatchType(arenaData, newArena.matchType);
 
-	if (newArena.isRated) then
+	if (newArena.matchType == "rated") then
 		ArenaMatch:SetPartyRating(arenaData, newArena.partyRating);
 		ArenaMatch:SetPartyRatingDelta(arenaData, newArena.partyRatingDelta);
 		ArenaMatch:SetPartyMMR(arenaData, newArena.partyMMR);

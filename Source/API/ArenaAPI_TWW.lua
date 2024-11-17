@@ -49,8 +49,16 @@ function API:GetBattlefieldStatus(battlefieldId)
     end
 
     local status,_, teamSize = GetBattlefieldStatus(battlefieldId);
-    local isRated = API:IsRatedArena();
     local isShuffle = API:IsSoloShuffle();
+
+    local matchType;
+    if(API:IsRated()) then
+        matchType = "rated";
+    elseif(API:IsWarGame()) then
+        matchType = "wargame";
+    else
+        matchType = "unrated";
+    end
 
     local bracket = nil;
     if(isShuffle) then
@@ -64,7 +72,7 @@ function API:GetBattlefieldStatus(battlefieldId)
         bracket = 3;
     end
 
-    return status, bracket, teamSize, isRated, isShuffle;
+    return status, bracket, matchType, teamSize, isShuffle;
 end
 
 function API:GetCurrentMapID()

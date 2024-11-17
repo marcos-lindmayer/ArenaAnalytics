@@ -5,7 +5,7 @@
 ## Version: 1.0.4
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsMapIconPos, ArenaAnalyticsSharedSettingsDB, ArenaAnalyticsTempDB
-## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB
+## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB, ArenaAnalyticsBattlegroundsDB
 
 
 Source/ArenaDebugging.lua
@@ -16,6 +16,7 @@ Source/ArenaAnalytics.lua
 Source/ArenaOptions.lua
 Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
+Source/BattlegroundMatch.lua
 Source/ArenaEvents.lua
 Source/ArenaSessions.lua
 Source/ArenaVersionManager.lua

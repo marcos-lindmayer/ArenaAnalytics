@@ -18,8 +18,8 @@ local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
-local matchTypes = { "rated", "skirmish", "wargame" }
-local brackets = { "2v2", "3v3", "5v5", "shuffle" }
+local matchTypes = { "rated", "unrated", "wargame" };
+local brackets = { "2v2", "3v3", "5v5", "shuffle", "bg", "epic", "rbg", "blitz", "brawl" };
 
 function ArenaAnalytics:GetAddonBracketIndex(bracket)
 	if(bracket) then
@@ -77,6 +77,8 @@ function ArenaAnalytics:InitializeArenaAnalyticsDB()
 	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
 	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
 	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
+
+	ArenaAnalyticsBattlegroundsDB = ArenaAnalyticsBattlegroundsDB or {};
 
 	if(not ShouldAttemptVersionControl()) then
 		-- No data to update, assign latest version

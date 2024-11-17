@@ -158,7 +158,7 @@ function ArenaMatch:ConvertPlayerValues(match, matchIndex)
             healing = player[oldPlayerKeys.healing],
         };
 
-        return ArenaMatch:MakeCompactPlayerData(player);
+        return ArenaMatch:MakeCompactPlayerData(player, ArenaMatch:IsRated(match));
     end
 
     -- For each player
@@ -219,41 +219,6 @@ function ArenaMatch:AddWinsToRoundData(match)
             end
         end
     end
-end
-
--------------------------------------------------------------------------
--- Helper functions
-
-local function ToPositiveNumber(value, allowZero)
-    value = tonumber(value);
-    if(not value) then
-        return;
-    end
-
-    value = Round(value);
-
-    if(value < 0) then
-        return nil;
-    elseif(value == 0) then
-        if(not allowZero) then
-            return nil;
-        end
-        return 0;
-    end
-
-    return value or nil;
-end
-
-local function ToNumericalBool(value, drawValue)
-    if(value == nil) then
-        return;
-    end
-
-    if(drawValue and value == drawValue) then
-        return tonumber(value);
-    end
-
-    return (value and value ~= 0) and 1 or 0;
 end
 
 -------------------------------------------------------------------------
@@ -346,7 +311,7 @@ function ArenaMatch:SetDate(match, value)
     assert(match);
 
     local key = matchKeys.date;
-    match[key] = ToPositiveNumber(value);
+    match[key] = Helpers:ToPositiveNumber(value);
 end
 
 -------------------------------------------------------------------------
@@ -365,7 +330,7 @@ function ArenaMatch:SetDuration(match, value)
     assert(match);
 
     local key = matchKeys.duration;
-    match[key] = ToPositiveNumber(value, true);
+    match[key] = Helpers:ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
@@ -490,7 +455,7 @@ function ArenaMatch:SetPartyRating(match, value)
     assert(match);
 
     local key = matchKeys.rating;
-    match[key] = ToPositiveNumber(value, true);
+    match[key] = Helpers:ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
@@ -527,7 +492,7 @@ function ArenaMatch:SetPartyMMR(match, value)
     assert(match);
 
     local key = matchKeys.mmr;
-    match[key] = ToPositiveNumber(value, true);
+    match[key] = Helpers:ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
@@ -546,7 +511,7 @@ function ArenaMatch:SetEnemyRating(match, value)
     assert(match);
 
     local key = matchKeys.enemy_rating;
-    match[key] = ToPositiveNumber(value, true);
+    match[key] = Helpers:ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
@@ -581,7 +546,7 @@ end
 
 function ArenaMatch:SetEnemyMMR(match, value)
     assert(match);
-    match[matchKeys.enemy_mmr] = ToPositiveNumber(value, true);
+    match[matchKeys.enemy_mmr] = Helpers:ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
@@ -597,7 +562,7 @@ end
 
 function ArenaMatch:SetSeason(match, value)
     assert(match);
-    match[matchKeys.season] = ToPositiveNumber(value, true);
+    match[matchKeys.season] = Helpers:ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
@@ -613,7 +578,7 @@ end
 
 function ArenaMatch:SetSession(match, value)
     assert(match);
-    match[matchKeys.session] = ToPositiveNumber(value, true);
+    match[matchKeys.session] = Helpers:ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
@@ -642,7 +607,7 @@ function ArenaMatch:SetMatchOutcome(match, value)
     assert(match);
 
     -- 0 = loss, 1 = win, 2 = draw, nil = unknown. 
-    match[matchKeys.outcome] = ToNumericalBool(value, 2);
+    match[matchKeys.outcome] = Helpers:ToNumericalBool(value, 2);
 end
 
 -------------------------------------------------------------------------
@@ -690,8 +655,7 @@ function ArenaMatch:AddPlayer(match, player)
         ArenaAnalytics:Log("Warning: Adding player to stored match without name!");
     end
 
-
-    local newPlayer = ArenaMatch:MakeCompactPlayerData(player);
+    local newPlayer = ArenaMatch:MakeCompactPlayerData(player, ArenaMatch:IsRated(match));
 
     local teamKey = player.isEnemy and matchKeys.enemy_team or matchKeys.team;
     match[teamKey] = match[teamKey] or {};
@@ -725,7 +689,7 @@ local function CompressPlayerKeys(player, keys)
     return table.concat(values, '|');
 end
 
-function ArenaMatch:MakeCompactPlayerData(player)
+function ArenaMatch:MakeCompactPlayerData(player, isRated)
     if(not player) then
         return nil;
     end
@@ -747,12 +711,16 @@ function ArenaMatch:MakeCompactPlayerData(player)
         [playerKeys.is_first_death] = player.isFirstDeath and 1 or nil,
     };
 
-    local ratedInfoKeys = {
-        "rating",
-        "ratingDelta",
-        "mmr",
-        "mmrDelta",
-    }
+    if(isRated) then
+        local ratedInfoKeys = {
+            "rating",
+            "ratingDelta",
+            "mmr",
+            "mmrDelta",
+        };
+
+        newPlayer[playerKeys.rated_info] = CompressPlayerKeys(player, ratedInfoKeys);
+    end
 
     local statsKeys = {
         "kills",
@@ -761,7 +729,6 @@ function ArenaMatch:MakeCompactPlayerData(player)
         "healing",
     };
 
-    newPlayer[playerKeys.rated_info] = CompressPlayerKeys(player, ratedInfoKeys);
     newPlayer[playerKeys.stats] = CompressPlayerKeys(player, statsKeys);
 
     -- Add support for compact bg variable stats values? (Arena/BG mode specific order)

@@ -32,7 +32,16 @@ end
 
 function API:GetBattlefieldStatus(battlefieldId)
     local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
-    
+
+    local matchType;
+    if(API:IsRated()) then
+        matchType = "rated";
+    elseif(API:IsWarGame()) then
+        matchType = "wargame";
+    else
+        matchType = "unrated";
+    end
+
     local bracket = nil;
     if(teamSize == 2) then
         bracket = 1;
@@ -42,7 +51,7 @@ function API:GetBattlefieldStatus(battlefieldId)
         bracket = 3;
     end
 
-    return status, bracket, teamSize, isRated;
+    return status, bracket, matchType, teamSize;
 end
 
 function API:GetCurrentMapID()

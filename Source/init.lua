@@ -31,6 +31,7 @@ ArenaAnalytics.AAmatch = {};
 ArenaAnalytics.Events = {};
 ArenaAnalytics.Sessions = {};
 ArenaAnalytics.ArenaMatch = {};
+ArenaAnalytics.BattlegroundMatch = {};
 ArenaAnalytics.GroupSorter = {};
 
 ArenaAnalytics.SharedTracker = {};
@@ -203,34 +204,21 @@ ArenaAnalytics.commands = {
 
 		ArenaAnalytics:LogTemp("IsInBG:", API:IsInBattleground(), API:IsRatedBattleground(), API:GetCurrentMapID(), GetZoneText());
 
-		ArenaAnalytics:Log(API:GetActiveBattlefieldID())
-
-		local scoreInfo;
-		if(C_PvP.GetScoreInfo) then
-			Debug:LogTable({C_PvP.GetScoreInfo(1)});
-		else
-			Debug:LogTable({GetBattlefieldScore(1)});
-		end
-
-		ArenaAnalytics:LogSpacer();
-		local battlefieldID = API:GetActiveBattlefieldID();
-		ArenaAnalytics:LogGreen("GetBattlefieldStatus", battlefieldID);
-		if(battlefieldID) then
-			ArenaAnalytics:LogTemp(GetBattlefieldStatus(battlefieldID));
-
-			local status, mapName, teamSize, registeredMatch, suspendedQueue, queueType, gameType, role, asGroup, shortDescription, longDescription, isSoloQueue = GetBattlefieldStatus(battlefieldID);
-			ArenaAnalytics:LogTemp(battlefieldID, mapName, localizedName, format("(%s)",gameType), shortDescription:gsub("\r", "/r"):gsub("\n", "/n"), longDescription:gsub("\r", "/r"):gsub("\n", "/n"));
-
-			ArenaAnalytics:LogSpacer();
-			ArenaAnalytics:LogGreen("GetBattlegroundInfo");
-			for index=1, GetNumBattlegroundTypes() do
-				local localizedName, canEnter, isHoliday, isRandom, battleGroundID, mapDescription, bgInstanceID, maxPlayers, gameType, iconTexture, shortDescription, longDescription, hasControllingHoliday = GetBattlegroundInfo(index);
-				ArenaAnalytics:LogTemp(index, maxPlayers, bgInstanceID, localizedName, format("(%s)",gameType), shortDescription:gsub("\r", "/r"):gsub("\n", "/n"), longDescription:gsub("\r", "/r"):gsub("\n", "/n"));
-			end
-		end
+		ArenaAnalytics:Log(API:GetBattlefieldStatus(1));
 
 		print(" ");
-	end,	
+	end,
+
+	["debugsavebg"] = function()
+		ArenaAnalytics.BattlegroundTracker:TestLastRaw();
+	end,
+	
+	["debugresetbgs"] = function()
+		ArenaAnalytics:Log("Resetting", #ArenaAnalyticsBattlegroundsDB, "bgs.");
+		for i in ipairs(ArenaAnalyticsBattlegroundsDB) do
+			ArenaAnalyticsBattlegroundsDB[i] = nil;
+		end
+	end,
 };
 
 local function HandleSlashCommands(str)	

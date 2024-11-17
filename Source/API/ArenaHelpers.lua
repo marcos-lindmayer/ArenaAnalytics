@@ -11,6 +11,7 @@ local Internal = ArenaAnalytics.Internal;
 local Localization = ArenaAnalytics.Localization;
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 -- General Helpers
@@ -31,9 +32,39 @@ function Helpers:ToSafeNumber(value)
     return tonumber(value);
 end
 
-function Helpers:DeepCopy(original)
-    local copy = {}
+function Helpers:ToPositiveNumber(value, allowZero)
+    value = Helpers:ToSafeNumber(value);
+    if(not value) then
+        return;
+    end
 
+    value = Round(value);
+
+    if(value < 0) then
+        return nil;
+    elseif(value == 0) then
+        if(not allowZero) then
+            return nil;
+        end
+        return 0;
+    end
+
+    return value or nil;
+end
+
+function Helpers:ToNumericalBool(value, drawValue)
+    if(value == nil) then
+        return;
+    end
+
+    if(drawValue and value == drawValue) then
+        return tonumber(value);
+    end
+
+    return (value and value ~= 0) and 1 or 0;
+end
+
+function Helpers:DeepCopy(original)    
     if(not original) then
         return nil;
     end
@@ -42,6 +73,7 @@ function Helpers:DeepCopy(original)
         return original;
     end
 
+    local copy = TablePool:Acquire();
     for k, v in pairs(original) do
         if type(v) == "table" then
             copy[k] = Helpers:DeepCopy(v);

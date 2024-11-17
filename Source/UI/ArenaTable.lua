@@ -716,7 +716,7 @@ function AAtable:RefreshLayout()
             if(matchType == "rated") then
                 local rating, ratingDelta = ArenaMatch:GetPartyRating(match), ArenaMatch:GetPartyRatingDelta(match);
                 ratingText = Helpers:RatingToText(rating, ratingDelta) or "-";
-            elseif(matchType == "skirmish") then
+            elseif(matchType == "unrated") then
                 ratingText = "SKIRMISH";
             elseif(matchType == "wargame") then
                 ratingText = "WAR GAME";

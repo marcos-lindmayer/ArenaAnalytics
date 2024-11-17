@@ -24,7 +24,7 @@ function API:IsRatedArena()
     end
 
     -- Unrated modes
-    if(IsWargame() or IsArenaSkirmish() or C_PvP.IsInBrawl()) then
+    if(API:IsWarGame() or IsArenaSkirmish() or C_PvP.IsInBrawl()) then
         return false;
     end
 
@@ -77,7 +77,11 @@ function API:GetActiveBattlefieldID()
 end
 
 function API:IsRated()
-    return C_PvP.IsRatedMap();
+    return API:IsRatedArena() or API:IsRatedBattleground();
+end
+
+function API:IsWarGame()
+    return IsWargame();
 end
 
 function API:HasSurrenderAPI()
@@ -116,6 +120,30 @@ function API:TrySurrenderArena(source)
     else
         ArenaAnalytics:PrintSystem("You cannot surrender yet!");
         return false;
+    end
+end
+
+function API:UpdateDialogueVolume()
+    if(API:IsInArena() and Options:Get("muteArenaDialogSounds")) then
+        if(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue == nil) then
+            local previousValue = tonumber(GetCVar("Sound_DialogVolume"));
+            if(previousValue ~= 0) then
+                ArenaAnalytics:Log("Muted dialogue sound.");
+                SetCVar("Sound_DialogVolume", 0);
+                local newValue = tonumber(GetCVar("Sound_DialogVolume"));
+                if(tonumber(newValue) == 0) then
+                    ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = previousValue;
+                    ArenaAnalytics:LogGreen("previousDialogMuteValue set to previous value:", previousValue);
+                end
+            end
+        end
+    elseif(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue ~= nil) then
+        if(tonumber(GetCVar("Sound_DialogVolume")) == 0) then
+            SetCVar("Sound_DialogVolume", ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
+            ArenaAnalytics:Log("Unmuted dialogue sound.");
+        end
+
+        ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = nil;
     end
 end
 

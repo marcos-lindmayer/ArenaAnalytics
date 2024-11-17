@@ -45,7 +45,7 @@ local function RequiresGroupForMatch(match)
 
     if(Options:Get("ignoreGroupForSkirmishSession")) then
         local matchType = ArenaMatch:GetMatchType(match);
-        if(matchType == "skirmish") then
+        if(matchType == "unrated") then
             return false;
         end
     end
@@ -165,7 +165,7 @@ function Sessions:IsMatchesSameSession(firstArena, secondArena)
 	local matchType1 = ArenaMatch:GetMatchType(firstArena);
 	local matchType2 = ArenaMatch:GetMatchType(secondArena);
 
-	if(matchType1 ~= "skirmish" or matchType2 ~= "skirmish") then	
+	if(matchType1 ~= "unrated" or matchType2 ~= "unrated") then	
 		if(not Sessions:ArenasHaveSameParty(firstArena, secondArena)) then
 			return false;
 		end

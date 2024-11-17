@@ -307,7 +307,7 @@ function Import:SaveArena(arena)
 	elseif(arena.isWargame) then
 		matchType = "wargame";
 	else
-		matchType = "skirmish";
+		matchType = "unrated";
 	end
 
 	ArenaMatch:SetMatchType(newArena, matchType);

@@ -86,7 +86,9 @@ local function HandleGlobalEvent(_, eventType, ...)
 			ArenaTracker:HandleArenaEnter();
 		elseif(API:IsInBattleground()) then
 			BattlegroundTracker:HandleEnter();
-		end	
+		end
+	elseif(eventType == "ZONE_CHANGED_NEW_AREA") then
+		API:UpdateDialogueVolume();
 	end
 
 	local isTrackingArena = ArenaTracker:IsTracking();

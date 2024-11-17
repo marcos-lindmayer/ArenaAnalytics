@@ -11,6 +11,10 @@ local Localization = ArenaAnalytics.Localization;
 local Inspection = ArenaAnalytics.Inspection;
 local Events = ArenaAnalytics.Events;
 local TablePool = ArenaAnalytics.TablePool;
+local BattlegroundMatch = ArenaAnalytics.BattlegroundMatch;
+local Sessions = ArenaAnalytics.Sessions;
+local Import = ArenaAnalytics.Import;
+local Filters = ArenaAnalytics.Filters;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -27,7 +31,7 @@ function BattlegroundTracker:Reset()
 
 	-- Current Battleground
 	currentBattleground.battlefieldId = nil;
-	currentBattleground.map_id = nil;
+	currentBattleground.mapId = nil;
 
 	currentBattleground.playerName = "";
 	currentBattleground.myTeam = nil;
@@ -49,8 +53,9 @@ function BattlegroundTracker:Reset()
 	currentBattleground.enemyMMR = nil;
 
 	currentBattleground.size = nil;
-	currentBattleground.isRated = nil;
 	currentBattleground.isShuffle = nil;
+	currentBattleground.matchType = nil;
+	currentBattleground.bracket = nil;
 
 	TablePool:ReleaseNested(currentBattleground.players);
 	TablePool:Release(currentBattleground.knownSpecs);
@@ -77,7 +82,7 @@ end
 -------------------------------------------------------------------------
 
 function BattlegroundTracker:IsTracking()
-	return currentBattleground.map_id ~= nil;
+	return currentBattleground.mapId ~= nil;
 end
 
 -------------------------------------------------------------------------
@@ -126,7 +131,7 @@ function BattlegroundTracker:FindOrAddPlayer(playerName)
 		currentBattleground.players[playerName] = player;
 	end
 
-	return player;
+	return currentBattleground.players[playerName];
 end
 
 function BattlegroundTracker:UpdatePlayers()
@@ -142,9 +147,12 @@ function BattlegroundTracker:UpdatePlayers()
 			end
 
 			local player = BattlegroundTracker:FindOrAddPlayer(score.name);
-
-			TablePool:Release(player.score);
-			player.score = score;
+			if(player) then
+				TablePool:Release(player.score);
+				player.score = score;
+			else
+				ArenaAnalytics:LogWarning("Failed to add player:", score.name);
+			end
 		end
 	end
 end
@@ -161,7 +169,7 @@ function BattlegroundTracker:IsTrackingCurrentBattleground(battlefieldId, bracke
 		return false;
 	end
 
-	if(match.bracketIndex ~= bracket) then
+	if(match.bracket ~= bracket) then
 		ArenaAnalytics:Log("IsTrackingCurrentBattleground: New bracket.");
 		return false;
 	end
@@ -171,7 +179,7 @@ function BattlegroundTracker:IsTrackingCurrentBattleground(battlefieldId, bracke
 		return false;
 	end
 
-	if(match.isRated) then
+	if(match.matchType == "rated") then
 		if(not match.seasonPlayed) then
 			ArenaAnalytics:Log("IsTrackingCurrentBattleground: Existing rated match has no season played.", match.seasonPlayed)
 			return false;
@@ -202,7 +210,7 @@ function BattlegroundTracker:HandleEnter()
 
 	Events:RegisterBattlegroundEvents();
 
-	local status, bracket, teamSize, isRated, isShuffle = API:GetBattlefieldStatus(battlefieldId);
+	local status, bracket, matchType, teamSize, isShuffle = API:GetBattlefieldStatus(battlefieldId);
 
 	if(not BattlegroundTracker:IsTrackingCurrentBattleground(battlefieldId, bracket)) then
 		BattlegroundTracker:Reset();
@@ -230,15 +238,14 @@ function BattlegroundTracker:HandleEnter()
 
 	currentBattleground.playerName = Helpers:GetPlayerName();
 
-	currentBattleground.bracketIndex = bracket;
-	currentBattleground.isRated = isRated;
-	currentBattleground.isShuffle = isShuffle;
+	currentBattleground.bracket = bracket;
+	currentBattleground.matchType = matchType;
 	currentBattleground.size = teamSize;
 
-	ArenaAnalytics:Log("TeamSize:", teamSize, currentBattleground.size, "Bracket:", currentBattleground.bracketIndex);
+	ArenaAnalytics:Log("TeamSize:", teamSize, currentBattleground.size, "Bracket:", currentBattleground.bracket);
 
-	if(isRated) then
-		local oldRating, seasonPlayed = API:GetPersonalRatedInfo(currentBattleground.bracketIndex);
+	if(currentBattleground.matchType == "rated") then
+		local oldRating, seasonPlayed = API:GetPersonalRatedInfo(currentBattleground.bracket);
 		if(GetBattlefieldWinner()) then
 			currentBattleground.seasonPlayed = seasonPlayed and seasonPlayed - 1; -- Season Played during the match
 		else
@@ -266,9 +273,8 @@ function BattlegroundTracker:HandleEnter()
 		ArenaAnalytics.DataSync:sendMatchGreetingMessage();
 	end
 
-	local mapID = API:GetCurrentMapID();
-	currentBattleground.map_id = Internal:GetBattlegroundAddonMapID(mapID);
-	ArenaAnalytics:Log("Match entered! Tracking map_id: ", currentBattleground.map_id, mapID);
+	currentBattleground.mapId = API:GetCurrentMapID();
+	ArenaAnalytics:Log("Match entered! Tracking map_id: ", currentBattleground.mapId);
 
 	RequestBattlefieldScoreData();
 end
@@ -279,7 +285,7 @@ function BattlegroundTracker:HandleStart()
 
 	BattlegroundTracker:UpdatePlayers();
 
-	ArenaAnalytics:Log("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentBattleground.players);
+	ArenaAnalytics:Log("Match started!", currentBattleground.mapId, GetZoneText(), #currentBattleground.players);
 	ArenaAnalytics:LogTemp("Battleground started - Team MMR:", API:GetTeamMMR(0), API:GetTeamMMR(1));
 end
 
@@ -308,13 +314,11 @@ function BattlegroundTracker:HandleEnd()
 end
 
 local function getMyTeamID()
-	if(not currentBattleground.players) then
+	if(not currentBattleground.players or #currentBattleground.players == 0) then
 		return nil;
 	end
 
-	local playerName = Helpers:GetPlayerName();
-
-	for _,player in currentBattleground.players do
+	for _,player in pairs(currentBattleground.players) do
 		if(player and player.name == playerName) then
 			local score = player.score;
 			return score and score.team;
@@ -324,35 +328,169 @@ local function getMyTeamID()
 	return nil;
 end
 
-function BattlegroundTracker:HandleExit()
+local function GetSpecFromPlayer(player, specKey)
+	if(not player) then
+		return nil;
+	end
+
+	specKey = specKey or "spec";
+
+	if(specKey == "spec" and Helpers:IsSpecID(player[specKey]) or player[specKey]) then
+		return player[specKey];
+	end
+
+	local score = player.score;
+	if(not score or not score[specKey]) then
+		return nil;
+	end
+
+	return score[specKey] or player[specKey] or nil;
+end
+
+function BattlegroundTracker:TestLastRaw()
+	currentBattleground = Helpers:DeepCopy(ArenaAnalyticsBattlegroundsDB.lastSavedRaw) or {};
+	BattlegroundTracker:HandleExit(true);
+end
+
+function BattlegroundTracker:HandleExit(isDebug)
 	if(not BattlegroundTracker:IsTracking()) then
 		return;
 	end
 
-	currentBattleground.endTime = currentBattleground.endTime or time();
-	local statMapping = Internal:GetStatMapping(currentBattleground.map_id);
-	
+	ArenaAnalytics:LogGreen("Battleground Exited!");
 
-	-- TODO: Sanitize data, preparing for save
-	if(#currentBattleground.players > 0) then
+	if(not isDebug) then
+		ArenaAnalyticsBattlegroundsDB.lastSavedRaw = currentBattleground;
+	end
+
+	currentBattleground.endTime = currentBattleground.endTime or time();
+
+	if(currentBattleground.players) then
 		currentBattleground.myTeam = getMyTeamID();
 
+		local playerName = Helpers:GetPlayerName();
+		local map_id = Internal:GetAddonMapID(currentBattleground.mapId);
+
 		local players = TablePool:Acquire();
-		for _,player in ipairs(currentBattleground.players) do
-			local newPlayer = TablePool:Acquire();
-			newPlayer.name = player.name;
-			newPlayer.spec = player.spec;
-			newPlayer.heroSpec = player.heroSpec;
+		for name,player in pairs(currentBattleground.players) do
+			local newPlayer = Helpers:DeepCopy(player.score) or TablePool:Acquire();
+			newPlayer.spec = GetSpecFromPlayer(player, "spec");
+			newPlayer.heroSpec = GetSpecFromPlayer(player, "heroSpec");
 
-			local score = player.score;
-			if(score) then
-				newPlayer.spec = newPlayer.spec or score.spec;
-				newPlayer.heroSpec = newPlayer.heroSpec or score.heroSpec;
+			if(newPlayer.team) then
+				newPlayer.isEnemy = (newPlayer.team ~= currentBattleground.myTeam);
+			end
 
-				-- TODO: Add stats
+			tinsert(players, newPlayer);
+		end
+
+		currentBattleground.players = (#players > 0) and players;
+	end
+
+	BattlegroundTracker:SaveBattleground(currentBattleground);
+	BattlegroundTracker:Clear();
+end
+
+function BattlegroundTracker:SaveBattleground(newBattleground)
+	if(not newBattleground) then
+		return;
+	end
+
+	local hasStartTime = tonumber(newBattleground.startTime) and newBattleground.startTime > 0;
+	if(not hasStartTime) then
+		-- At least get an estimate for the time of the match this way.
+		newBattleground.startTime = time();
+		ArenaAnalytics:Log("Warning: Start time overridden upon inserting arena.");
+	end
+
+	-- Calculate arena duration
+	if(newBattleground.isShuffle) then
+		newBattleground.duration = 0;
+
+		if(newBattleground.committedRounds) then
+			for _,round in ipairs(newBattleground.committedRounds) do
+				if(round) then
+					newBattleground.duration = newBattleground.duration + (tonumber(round.duration) or 0);
+				end
 			end
 		end
-	end	
 
-	ArenaAnalytics:LogTemp("Handle BG Exit.");
+		ArenaAnalytics:Log("Shuffle combined duration:", newBattleground.duration);
+	else
+		if (hasStartTime) then
+			newBattleground.endTime = newBattleground.endTime or time();
+			local duration = (newBattleground.endTime - newBattleground.startTime);
+			duration = duration < 0 and 0 or duration;
+			newBattleground.duration = duration;
+		else
+			ArenaAnalytics:Log("Force fixed start time at match end.");
+			newBattleground.duration = 0;
+		end
+	end
+
+	local season = GetCurrentArenaSeason();
+	if (season == 0) then
+		ArenaAnalytics:Log("Failed to get valid season for new match.");
+	end
+
+	Debug:LogTable(newBattleground);
+
+	-- Setup table data to insert into ArenaAnalyticsDB
+	local battlegroundData = {}
+	BattlegroundMatch:SetDate(battlegroundData, newBattleground.startTime);
+	BattlegroundMatch:SetDuration(battlegroundData, newBattleground.duration);
+	BattlegroundMatch:SetMap(battlegroundData, newBattleground.mapId);
+
+	ArenaAnalytics:Log("Bracket:", newBattleground.bracket);
+	BattlegroundMatch:SetBracketIndex(battlegroundData, newBattleground.bracket);
+	BattlegroundMatch:SetMatchType(battlegroundData, newBattleground.matchType);
+
+	if (newBattleground.matchType == "rated") then
+		BattlegroundMatch:SetPartyRating(battlegroundData, newBattleground.partyRating);
+		BattlegroundMatch:SetPartyRatingDelta(battlegroundData, newBattleground.partyRatingDelta);
+		BattlegroundMatch:SetPartyMMR(battlegroundData, newBattleground.partyMMR);
+
+		BattlegroundMatch:SetEnemyRating(battlegroundData, newBattleground.enemyRating);
+		BattlegroundMatch:SetEnemyRatingDelta(battlegroundData, newBattleground.enemyRatingDelta);
+		BattlegroundMatch:SetEnemyMMR(battlegroundData, newBattleground.enemyMMR);
+	end
+
+	BattlegroundMatch:SetSeason(battlegroundData, season);
+
+	BattlegroundMatch:SetMatchOutcome(battlegroundData, newBattleground.outcome);
+
+	-- Add players from both teams sorted
+	BattlegroundMatch:AddPlayers(battlegroundData, newBattleground.players);
+
+	if(newBattleground.isShuffle) then
+		BattlegroundMatch:SetRounds(battlegroundData, newBattleground.committedRounds);
+	end
+
+	-- Assign session
+	Sessions:AssignSession(battlegroundData);
+	ArenaAnalytics:Log("session:", session);
+
+	if(newBattleground.requireRatingFix) then
+		-- Transient data
+		BattlegroundMatch:SetTransientSeasonPlayed(battlegroundData, newBattleground.seasonPlayed);
+		BattlegroundMatch:SetRequireRatingFix(battlegroundData, newBattleground.requireRatingFix);
+	end
+
+	-- Clear transient season played from last match
+	--ArenaAnalytics:ClearLastMatchTransientValues(newBattleground.bracket);
+
+	-- Insert arena data as a new ArenaAnalyticsDB entry
+	table.insert(ArenaAnalyticsBattlegroundsDB, battlegroundData);
+
+	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
+
+	if(Import.TryHide) then
+		Import:TryHide();
+	end
+
+	ArenaAnalytics:PrintSystem("Battleground recorded!");
+
+	Filters:Refresh();
+
+	Sessions:TryStartSessionDurationTimer();
 end

@@ -93,6 +93,8 @@ function Options:LoadSettings()
     AddSetting("hidePlayerTooltipZeroRatingDelta", false);
     AddSetting("ignoreGroupForSkirmishSession", true);
 
+    AddSetting("muteArenaDialogSounds", false);
+
     AddSetting("surrenderByMiddleMouseClick", false);
     AddSetting("enableSurrenderAfkOverride", true);
     AddSetting("enableDoubleAfkToLeave", true);
@@ -348,8 +350,8 @@ local function CreateCheckbox(setting, parent, x, text, func)
 
     checkbox:SetScript("OnClick", function()
 		Options:Set(setting, checkbox:GetChecked());
-        
-        if(func) then
+
+        if(type(func) == "function") then
             func(setting);
         end
 	end);
@@ -532,6 +534,10 @@ function SetupTab_General()
     CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
     CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
     CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
+
+    CreateSpace();
+
+    CreateCheckbox("muteArenaDialogSounds", parent, offsetX, "Mute dialog sound during arena.", API.UpdateDialogueVolume);
 
     if(API:HasSurrenderAPI()) then
         local function UpdateDoubleAfkState()

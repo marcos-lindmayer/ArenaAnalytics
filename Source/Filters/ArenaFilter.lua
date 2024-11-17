@@ -248,7 +248,7 @@ end
 
 function Filters:doesMatchPassGameSettings(match)
     local matchType = ArenaMatch:GetMatchType(match);
-    if (not Options:Get("showSkirmish") and matchType == "skirmish") then
+    if (not Options:Get("showSkirmish") and matchType == "unrated") then
         return false;
     end
 
