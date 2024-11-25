@@ -100,6 +100,7 @@ end
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame:SetFrameLevel(50);
 
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
 
@@ -107,8 +108,8 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = {}
 
     HybridScrollFrame_SetDoNotHideScrollBar(ArenaAnalyticsScrollFrame.ListScrollFrame, true);
-    ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.8);
-    ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.8);
+    ArenaAnalyticsScrollFrame.Bg:SetColorTexture(0, 0, 0, 0.9);
+    ArenaAnalyticsScrollFrame.TitleBg:SetColorTexture(0,0,0,0.9);
 
     -- Add the addon title to the main frame
     ArenaAnalyticsScrollFrame.title = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
@@ -174,18 +175,7 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.settingsButton:SetHighlightFontObject("GameFontHighlight");
     ArenaAnalyticsScrollFrame.settingsButton:SetSize(24, 19);
     ArenaAnalyticsScrollFrame.settingsButton:SetScript("OnClick", function()
-        local enableOldSettings = false;
-        if not enableOldSettings then
-            Options:Open();
-        else
-            if (not ArenaAnalyticsScrollFrame.settingsFrame:IsShown()) then  
-                ArenaAnalyticsScrollFrame.settingsFrame:Show();
-                ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
-                ArenaAnalyticsScrollFrame.resetBtn:Disable();
-            else
-                ArenaAnalyticsScrollFrame.settingsFrame:Hide();
-            end
-        end
+        Options:Open();
     end);
 
     -- Table headers
@@ -262,6 +252,17 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetFont("Fonts\\FRIZQT__.TTF", 10, "");
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetPoint("BOTTOM", ArenaAnalyticsScrollFrame.filterBtn_ClearFilters, "TOP", 0, 5);
     ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("");
+
+    -- TEMP tab testing
+    local name = ArenaAnalyticsScrollFrame:GetName();
+    local tabCount = 2;
+    for i=1, tabCount do
+        local tabName = name.."Tab"..i;
+        ArenaAnalyticsScrollFrame[tabName] = CreateFrame("Frame", tabName);
+    end
+
+    PanelTemplates_SetNumTabs(ArenaAnalyticsScrollFrame, tabCount);
+    PanelTemplates_SetTab(ArenaAnalyticsScrollFrame, 1);
 
     hasLoaded = true;
 

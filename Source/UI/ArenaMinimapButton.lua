@@ -20,7 +20,9 @@ local function OnClick(button)
         if(GetOption("surrenderByMiddleMouseClick")) then
             ArenaAnalytics.API:TrySurrenderArena();
         end
-    else
+    elseif(IsShiftKeyDown()) then
+		ArenaAnalytics:ToggleNew();
+	else
         ArenaAnalytics:Toggle();
     end
 end

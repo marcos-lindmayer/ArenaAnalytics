@@ -1,6 +1,9 @@
 local _, ArenaAnalytics = ...; -- Namespace
 
 -- Declare Module Namespaces
+ArenaAnalytics.UI = {};
+ArenaAnalytics.UI.Colors = {};
+
 ArenaAnalytics.Constants = {};
 ArenaAnalytics.SpecSpells = {};
 ArenaAnalytics.Localization = {};
@@ -209,10 +212,14 @@ ArenaAnalytics.commands = {
 		print(" ");
 	end,
 
+	["new"] = function(index)
+		ArenaAnalytics:ToggleNew(index);
+	end,
+
 	["debugsavebg"] = function()
 		ArenaAnalytics.BattlegroundTracker:TestLastRaw();
 	end,
-	
+
 	["debugresetbgs"] = function()
 		ArenaAnalytics:Log("Resetting", #ArenaAnalyticsBattlegroundsDB, "bgs.");
 		for i in ipairs(ArenaAnalyticsBattlegroundsDB) do

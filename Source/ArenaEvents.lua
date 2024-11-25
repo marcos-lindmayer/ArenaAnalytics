@@ -122,9 +122,8 @@ local function HandleGlobalEvent(_, eventType, ...)
 end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
-local function ParseArenaTimerMessages(msg, ...)
-	local localizedMessage = Constants.GetArenaTimer();
-	if(localizedMessage and msg:find(localizedMessage, 1, true)) then
+local function ParseArenaTimerMessages(message, ...)
+	if(Constants:IsMatchStartedMessage(message)) then
 		ArenaTracker:HandleArenaStart();
 	end
 end
@@ -170,11 +169,10 @@ local function HandleArenaEvent(_, eventType, ...)
 end
 
 -- Detects start of arena by CHAT_MSG_BG_SYSTEM_NEUTRAL message (msg)
-local function ParseBattlegroundTimerMessages(msg, ...)
-	CacheTempData(msg);
+local function ParseBattlegroundTimerMessages(message, ...)
+	CacheTempData(message);
 
-	local localizedMessage = Constants.GetArenaTimer();
-	if(localizedMessage and msg:find(localizedMessage, 1, true)) then
+	if(Constants:IsMatchStartedMessage(message)) then
 		BattlegroundTracker:HandleStart();
 	end
 end

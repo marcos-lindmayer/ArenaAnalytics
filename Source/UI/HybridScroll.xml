@@ -188,6 +188,50 @@
                     </Slider>
                 </Frames>
             </ScrollFrame>
+            <Button name="$parentTab1" inherits="PanelTabButtonTemplate" id="1" text="Arena">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" x="11" y="1" />
+				</Anchors>
+				<Scripts>
+					<OnClick>PanelTemplates_SetTab(ArenaAnalyticsScrollFrame, 1)</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="$parentTab2" inherits="PanelTabButtonTemplate" id="2" text="Battleground">
+				<Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentTab1" relativePoint="TOPRIGHT" x="1" />
+				</Anchors>
+				<Scripts>
+					<OnClick>PanelTemplates_SetTab(ArenaAnalyticsScrollFrame, 2)</OnClick>
+				</Scripts>
+			</Button>
         </Frames>
     </Frame>
+
+    <Frame name="ArenaAnalyticsPanelTemplate" virtual="true">
+		<Frames>
+			<Frame parentKey="Bg" inherits="FlatPanelBackgroundTemplate" frameLevel="0">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="7" y="-18"/>
+					<Anchor point="BOTTOMRIGHT" x="-3" y="3"/>
+				</Anchors>
+			</Frame>
+			<Frame parentKey="NineSlice" useParentLevel="true" inherits="NineSlicePanelTemplate">
+				<KeyValues>
+					<KeyValue key="layoutType" value="ButtonFrameTemplateNoPortrait" type="string"/>
+				</KeyValues>
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Text" inherits="GameFontNormal" wordwrap="false">
+							<Anchors>
+								<Anchor point="TOP" x="0" y="-5"/>
+								<Anchor point="LEFT" x="60"/>
+								<Anchor point="RIGHT" x="-60"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+			<Button parentKey="ClosePanelButton" inherits="UIPanelCloseButtonDefaultAnchors"/>
+		</Frames>
+	</Frame>
 </Ui>

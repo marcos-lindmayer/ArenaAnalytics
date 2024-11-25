@@ -13,7 +13,7 @@ Source/UI/ArenaMinimapButton.lua
 Source/init.lua
 
 Source/ArenaAnalytics.lua
-Source/ArenaOptions.lua
+Source/Options/ArenaOptions.lua
 Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
 Source/BattlegroundMatch.lua
@@ -74,3 +74,5 @@ Source/UI/Dropdowns/ArenaDropdownList.lua
 Source/UI/Dropdowns/ArenaDropdownEntry.lua
 Source/UI/Dropdowns/ArenaDropdownButton.lua
 Source/UI/Dropdowns/ArenaDropdownDisplay.lua
+
+Source/UI/Panel/ArenaPanel.lua
