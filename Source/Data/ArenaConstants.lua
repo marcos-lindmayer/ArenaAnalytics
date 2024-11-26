@@ -184,6 +184,33 @@ function Constants:GetArenaTimer()
     end
 end
 
+local matchStartedMessages = {
+    "The Arena battle has begun!", -- English / Default
+    "¡La batalla en arena ha comenzado!", -- esES / esMX
+    "A batalha na Arena começou!", -- ptBR
+    "Der Arenakampf hat begonnen!", -- deDE
+    "Le combat d'arène commence\194\160!", -- frFR
+    "Бой начался!", -- ruRU
+    "투기장 전투가 시작되었습니다!", -- koKR
+    "竞技场的战斗开始了", -- zhCN
+    "競技場戰鬥開始了!", -- zhTW (Wotlk?)
+    "竞技场战斗开始了!", -- zhTW (Retail?)
+};
+
+function Constants:IsMatchStartedMessage(msg)
+    if(not msg) then
+        return nil;
+    end
+
+    for i,message in ipairs(matchStartedMessages) do
+        if(msg:find(message, 1, true)) then
+            return true;
+        end
+    end
+
+    return false;
+end
+
 local specIconTable = {
         -- Druid
         [1] = [[Interface\Icons\spell_nature_healingtouch]],

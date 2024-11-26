@@ -105,7 +105,7 @@ function ArenaAnalytics:PurgeArenaAnalyticsDB()
 		ArenaAnalytics.unsavedArenaCount = 0;
 		ArenaAnalytics.Filters:Refresh();
 
-		ArenaAnalytics:Print("Match history purged!");
+		ArenaAnalytics:PrintSystem("Match history purged!");
 	end
 
 	-- Give Import a frame to cancel
@@ -739,7 +739,7 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 		Import:TryHide();
 	end
 
-	ArenaAnalytics:Print("Arena recorded!");
+	ArenaAnalytics:PrintSystem("Arena recorded!");
 
 	Filters:Refresh();
 

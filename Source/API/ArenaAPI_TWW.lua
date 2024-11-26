@@ -128,9 +128,14 @@ function API:GetPlayerScore(index)
     end
 
     -- MMR
-    if(scoreInfo.prematchMMR and scoreInfo.prematchMMR) then
-        score.mmr = scoreInfo.prematchMMR;
-        score.mmrDelta = scoreInfo.postmatchMMR - scoreInfo.prematchMMR;
+    local oldMMR = tonumber(scoreInfo.prematchMMR);
+    local newMMR = tonumber(scoreInfo.postmatchMMR);
+    if(oldMMR and oldMMR > 0) then
+        score.mmr = oldMMR;
+
+        if(newMMR and newMMR > 0) then
+            score.mmrDelta = newMMR - oldMMR;
+        end
     end
 
     return score;

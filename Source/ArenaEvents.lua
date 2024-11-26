@@ -64,7 +64,9 @@ local function HandleGlobalEvent(_, eventType, ...)
 			ArenaTracker:HandleArenaEnter();
 			--C_Timer.After(1, ArenaTracker.CheckRoundEnded);
 			ArenaTracker:CheckRoundEnded();
-		end	
+		end
+	elseif(eventType == "ZONE_CHANGED_NEW_AREA") then
+		API:UpdateDialogueVolume();
 	end
 
 	if (API:IsInArena()) then
@@ -92,8 +94,7 @@ local function ParseArenaTimerMessages(msg, ...)
 		ArenaAnalytics:Log("     ", ...);
 	end
 
-	local localizedMessage = Constants.GetArenaTimer();
-	if(msg:find(localizedMessage, 1, true)) then
+	if(Constants:IsMatchStartedMessage(msg)) then
 		ArenaTracker:HandleArenaStart();
 	end
 end

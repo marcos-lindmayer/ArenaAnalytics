@@ -15,22 +15,62 @@ function API:HasSurrenderAPI()
     return CanSurrenderArena and SurrenderArena;
 end
 
-function API:TrySurrenderArena()
+function API:TrySurrenderArena(source)
     if(not API:HasSurrenderAPI()) then
         return nil;
     end
 
-    if(not IsActiveBattlefieldArena() or not Options:Get("enableSurrenderCommandOverrides")) then
+    if(not IsActiveBattlefieldArena()) then
+        return nil;
+    end
+
+    if(source == "afk" and not Options:Get("enableSurrenderAfkOverride")) then
+        return nil;
+    elseif(source == "gg" and not Options:Get("enableSurrenderGoodGameCommand")) then
         return nil;
     end
 
     if(CanSurrenderArena()) then
-        ArenaAnalytics:Print("You have surrendered!");
+        ArenaAnalytics:PrintSystem("You have surrendered!");
+        ArenaAnalytics.lastSurrenderAttempt = nil;
         SurrenderArena();
         return true;
+    elseif(Options:Get("enableDoubleAfkToLeave") and source == "afk") then
+        if(not ArenaAnalytics.lastSurrenderAttempt or (ArenaAnalytics.lastSurrenderAttempt + 5 < time())) then
+            ArenaAnalytics:PrintSystem("Type /afk again to leave.");
+            ArenaAnalytics.lastSurrenderAttempt = time();
+        else
+            ArenaAnalytics:PrintSystem("Double /afk triggered.");
+            ArenaAnalytics.lastSurrenderAttempt = nil;
+            LeaveBattlefield();
+        end
     else
-        ArenaAnalytics:Print("You cannot surrender yet!");
+        ArenaAnalytics:PrintSystem("You cannot surrender yet!");
         return false;
+    end
+end
+
+function API:UpdateDialogueVolume()
+    if(API:IsInArena() and Options:Get("muteArenaDialogSounds")) then
+        if(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue == nil) then
+            local previousValue = tonumber(GetCVar("Sound_DialogVolume"));
+            if(previousValue ~= 0) then
+                ArenaAnalytics:Log("Muted dialogue sound.");
+                SetCVar("Sound_DialogVolume", 0);
+                local newValue = tonumber(GetCVar("Sound_DialogVolume"));
+                if(tonumber(newValue) == 0) then
+                    ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = previousValue;
+                    ArenaAnalytics:LogGreen("previousDialogMuteValue set to previous value:", previousValue);
+                end
+            end
+        end
+    elseif(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue ~= nil) then
+        if(tonumber(GetCVar("Sound_DialogVolume")) == 0) then
+            SetCVar("Sound_DialogVolume", ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
+            ArenaAnalytics:Log("Unmuted dialogue sound.");
+        end
+
+        ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = nil;
     end
 end
 

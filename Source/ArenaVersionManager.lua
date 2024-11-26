@@ -162,7 +162,7 @@ local function convertFormatedDurationToSeconds(inDuration)
             -- Get seconds before "sec
             seconds = tonumber(inDuration:match("(.*)sec")) or 0;
         else
-            ArenaAnalytics:Print("ERROR: Converting duration failed (:", inDuration, ")");
+            ArenaAnalytics:LogError("Converting duration failed (:", inDuration, ")");
         end
         
         if(minutes and seconds) then
@@ -307,7 +307,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
         end
     end
 
-    ArenaAnalytics:Print("Converted data from old database. Old total: ", oldTotal, " New total: ", #MatchHistoryDB);
+    ArenaAnalytics:PrintSystem("Converted data from old database. Old total: ", oldTotal, " New total: ", #MatchHistoryDB);
 
     table.sort(MatchHistoryDB, function (k1,k2)
         if (k1["date"] and k2["date"]) then

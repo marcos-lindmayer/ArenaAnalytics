@@ -288,7 +288,7 @@ function Import:Finalize()
     Filters:Refresh();
 
     local elapsedText = elapsed and format(" in %.1f seconds.", elapsed) or "";
-    ArenaAnalytics:Print(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingCount), elapsedText));
+    ArenaAnalytics:PrintSystem(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingCount), elapsedText));
     ArenaAnalytics:Log(format("Import ignored %d arenas due to their date.", skippedArenaCount));
 end
 

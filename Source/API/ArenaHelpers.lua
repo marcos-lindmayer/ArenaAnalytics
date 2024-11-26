@@ -169,22 +169,23 @@ function Helpers:GetUnitClass(unit)
 end
 
 function Helpers:GetUnitFullName(unitToken)
-    local name, realm = UnitNameUnmodified(unitToken);
+    local name = UnitNameUnmodified(unitToken);
+    local realm = select(2, UnitFullName(unitToken));
 
     if (name == nil or name == "Unknown") then
         return nil;
     end
 
     if(realm == nil or realm == "") then
-        _,realm = UnitFullName("player"); -- Local player's realm
+        realm = select(2, UnitFullName("player")); -- Local player's realm
     end
 
     if(not realm) then
-        ArenaAnalytics:Log("Helpers:GetUnitFullName failed to retrieve any realm!");
+        ArenaAnalytics:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm!");
         return name;
     end
 
-    return name.."-"..realm;
+    return format("%s-%s", name, realm);
 end
 
 function Helpers:ToFullName(name)
