@@ -315,6 +315,48 @@ function ArenaAnalytics:OpenOptions()
     end
 end
 
+function ArenaAnalytics.HandleChatAfk(message)
+	ArenaAnalytics:Log("/afk override triggered.");
+	local surrendered = API:TrySurrenderArena("afk");
+	if(surrendered == nil) then
+		-- Fallback to base /afk
+		SendChatMessage(message, "AFK");
+	end
+end
+
+function ArenaAnalytics.HandleGoodGame()
+	ArenaAnalytics:Log("/gg triggered.");
+	API:TrySurrenderArena("gg");
+end
+
+function ArenaAnalytics.UpdateSurrenderCommands()
+	if(not API:HasSurrenderAPI()) then
+		return;
+	end
+
+	local isAfkOverrideActive = (SlashCmdList.CHAT_AFK == ArenaAnalytics.HandleChatAfk);
+	if(Options:Get("enableSurrenderAfkOverride")) then
+		if(not isAfkOverrideActive) then
+			ArenaAnalytics.previousAfkFunc = SlashCmdList.CHAT_AFK;
+			SlashCmdList.CHAT_AFK = ArenaAnalytics.HandleChatAfk;
+		end
+	elseif(isAfkOverrideActive and ArenaAnalytics.previousAfkFunc) then
+		SlashCmdList.CHAT_AFK = ArenaAnalytics.previousAfkFunc;
+	end
+
+	local hasGoodGameCommand = (SLASH_ArenaAnalyticsSurrender1 ~= nil and SlashCmdList.ArenaAnalyticsSurrender ~= nil);
+	if(Options:Get("enableSurrenderGoodGameCommand")) then
+		if(not hasGoodGameCommand) then
+			-- /gg to surrender
+			SLASH_ArenaAnalyticsSurrender1 = "/gg";
+			SlashCmdList.ArenaAnalyticsSurrender = ArenaAnalytics.HandleGoodGame;
+		end
+	elseif(hasGoodGameCommand) then
+		SLASH_ArenaAnalyticsSurrender1 = nil;
+		SlashCmdList.ArenaAnalyticsSurrender = nil;
+	end
+end
+
 local function PrintWelcomeMessage()
 	local welcomeMessageSeed = random(1, 10000);
 	local text;
@@ -402,6 +444,9 @@ function ArenaAnalytics:init()
 	---------------------------------
 	-- Startup
 	---------------------------------
+
+	-- Setup surrender commands
+	ArenaAnalytics.UpdateSurrenderCommands();
 
 	MinimapButton:Update();
 
