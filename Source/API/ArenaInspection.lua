@@ -42,7 +42,7 @@ local function RemoveFromQueue(GUID)
     end
 end
 
-local function GetUnitToken(GUID)
+local function getPartyUnitToken(GUID)
     if(not GUID) then
         return nil;
     end
@@ -75,14 +75,14 @@ function Inspection:RequestSpec(unitToken)
 end
 
 function Inspection:TryInspectNext()
-    if(currentInspectGUID or (time() - lastNotifyInspect) < 4.9) then
+    if(currentInspectGUID or (time() - lastNotifyInspect) < 3) then
         ArenaAnalytics:Log("Skipping inspect attempt: Already/still inspecting!");
         return;
     end
 
     for _,GUID in pairs(queue) do
         if(not ArenaTracker:HasSpec(GUID)) then
-            local unitToken = GetUnitToken(GUID);
+            local unitToken = getPartyUnitToken(GUID);
             if unitToken and CanInspect(unitToken) then
                 ArenaAnalytics:Log("NotifyInspect:", unitToken, time());
                 currentInspectGUID = GUID;
@@ -101,12 +101,14 @@ local function HandleInspect_Internal(GUID)
 
     local foundSpec = false;
 
-    local unitToken = GetUnitToken(GUID);
-    local spec_id = API:GetSpecialization(unitToken);
-    ArenaAnalytics:Log("HandleInspect_Internal", unitToken, spec_id);
-    if(spec_id) then
-        foundSpec = true;
-        ArenaTracker:OnSpecDetected(GUID, spec_id);
+    local unitToken = getPartyUnitToken(GUID);
+    if(unitToken) then
+        local spec_id = API:GetSpecialization(unitToken);
+        ArenaAnalytics:Log("HandleInspect_Internal", unitToken, spec_id);
+        if(spec_id) then
+            foundSpec = true;
+            ArenaTracker:OnSpecDetected(GUID, spec_id);
+        end
     end
 
     if(IsInQueue(GUID)) then

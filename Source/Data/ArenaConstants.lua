@@ -161,29 +161,6 @@ function Constants:GetFactionByRace(race)
     return race and raceToFaction[race] or nil;
 end
 
-local arenaTimer = {
-    ["default"] = "The Arena battle has begun!",
-    ["esES"] = "¡La batalla en arena ha comenzado!",
-    ["ptBR"] = "A batalha na Arena começou!",
-    ["deDE"] = "Der Arenakampf hat begonnen!",
-    ["frFR"] = "Le combat d'arène commence\194\160!",
-    ["ruRU"] = "Бой начался!",
-    ["itIT"] = "", -- TODO: Check if we can get a value for this
-    ["koKR"] = "투기장 전투가 시작되었습니다!",
-    ["zhCN"] = "竞技场的战斗开始了！",
-    ["zhTW"] = "競技場戰鬥開始了!",
-}
-arenaTimer["esMX"] = arenaTimer["esES"]
-arenaTimer["ptPT"] = arenaTimer["ptBR"]
-
-function Constants:GetArenaTimer()
-    if arenaTimer[GetLocale()] then
-        return arenaTimer[GetLocale()]
-    else
-        return arenaTimer["default"]
-    end
-end
-
 local matchStartedMessages = {
     "The Arena battle has begun!", -- English / Default
     "¡La batalla en arena ha comenzado!", -- esES / esMX
@@ -192,9 +169,9 @@ local matchStartedMessages = {
     "Le combat d'arène commence\194\160!", -- frFR
     "Бой начался!", -- ruRU
     "투기장 전투가 시작되었습니다!", -- koKR
-    "竞技场的战斗开始了", -- zhCN
-    "競技場戰鬥開始了!", -- zhTW (Wotlk?)
-    "竞技场战斗开始了!", -- zhTW (Retail?)
+    "竞技场战斗开始了！", -- zhCN
+    "竞技场的战斗开始了！", -- zhCN (Wotlk)
+    "競技場戰鬥開始了！", -- zhTW (Unconfirmed, classic?)
 };
 
 function Constants:IsMatchStartedMessage(msg)

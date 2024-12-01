@@ -188,6 +188,7 @@ ArenaAnalytics.commands = {
 	["test"] = function(...)
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
+		ArenaAnalytics:Log("My Spec:", API:GetSpecialization());
 
 		print(" ");
 	end,	

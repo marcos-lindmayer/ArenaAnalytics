@@ -49,25 +49,30 @@ local compartmentObject = {
     funcOnLeave = OnLeave,
 };
 
--- Check whether the minimap button should 
-function MinimapButton:Update()
-    -- Addon compartment
-    if(AddonCompartmentFrame) then
-        if(GetOption("hideFromCompartment")) then
-            MinimapButton:RemoveFromCompartment();
-        else
-            MinimapButton:AddToCompartment();
-        end
-    end
+local function SetMinimapIconPosition(angle)
+	if(not minimapButton) then
+		return;
+	end
 
-    if(GetOption("hideMinimapButton")) then
-        if(minimapButton) then
-            minimapButton:Hide();
-            minimapButton = nil;
-        end
-    elseif(not minimapButton) then
-        MinimapButton:Create();
-    end
+	minimapButton:ClearAllPoints();
+	local radius = (Minimap:GetWidth() / 2) + 5
+	local xOffset = radius * cos(angle);
+	local yOffset = radius * sin(angle);
+	minimapButton:SetPoint("CENTER", Minimap, "CENTER", xOffset, yOffset);
+end
+
+-- Control movement
+local function UpdateMinimapButtonPosition()
+	local cursorX, cursorY = GetCursorPosition();
+	local scale = UIParent:GetEffectiveScale() or 1;
+	cursorX = cursorX / scale;
+	cursorY = cursorY / scale;
+
+	local centerX, centerY = Minimap:GetCenter();
+	local angle = math.atan2(cursorY - centerY, cursorX - centerX);
+	ArenaAnalyticsMapIconPos = math.deg(angle);
+
+	SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 end
 
 function MinimapButton:Create()
@@ -95,30 +100,6 @@ function MinimapButton:Create()
 
 	ArenaAnalyticsMapIconPos = ArenaAnalyticsMapIconPos or 0;
 
-	local function SetMinimapIconPosition(angle)
-		minimapButton:ClearAllPoints();
-		local radius = (Minimap:GetWidth() / 2) + 5
-		local xOffset = radius * cos(angle);
-		local yOffset = radius * sin(angle);
-		minimapButton:SetPoint("CENTER", Minimap, "CENTER", xOffset, yOffset);
-	end
-
-	-- Control movement
-	local function UpdateMapBtn()
-		local cursorX, cursorY = GetCursorPosition();
-		local scale = UIParent:GetEffectiveScale() or 1;
-		cursorX = cursorX / scale;
-		cursorY = cursorY / scale;
-
-		local radius = (Minimap:GetWidth() / 2) + 5;
-
-		local centerX, centerY = Minimap:GetCenter();
-		local angle = math.atan2(cursorY - centerY, cursorX - centerX);
-		ArenaAnalyticsMapIconPos = math.deg(angle);
-
-		SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
-	end
-
 	-- Set position
 	SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 
@@ -127,7 +108,7 @@ function MinimapButton:Create()
 
 	minimapButton:SetScript("OnDragStart", function()
 		minimapButton:StartMoving();
-		minimapButton:SetScript("OnUpdate", UpdateMapBtn);
+		minimapButton:SetScript("OnUpdate", UpdateMinimapButtonPosition);
 	end);
 
 	minimapButton:SetScript("OnDragStop", function()
@@ -140,6 +121,29 @@ function MinimapButton:Create()
 	minimapButton:SetScript("OnClick", function(self, button)
 		OnClick(button);
 	end);
+end
+
+-- Check whether the minimap button should 
+function MinimapButton:Update()
+	-- Addon compartment
+    if(AddonCompartmentFrame) then
+        if(GetOption("hideFromCompartment")) then
+            MinimapButton:RemoveFromCompartment();
+        else
+            MinimapButton:AddToCompartment();
+        end
+    end
+
+    if(GetOption("hideMinimapButton")) then
+        if(minimapButton) then
+            minimapButton:Hide();
+            minimapButton = nil;
+        end
+    elseif(not minimapButton) then
+        MinimapButton:Create();
+    end
+
+	SetMinimapIconPosition(ArenaAnalyticsMapIconPos);
 end
 
 function MinimapButton:GetCompartmentIndex()

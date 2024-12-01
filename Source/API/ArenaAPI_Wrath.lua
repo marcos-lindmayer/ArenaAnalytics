@@ -117,7 +117,11 @@ local function GetPointsSpent(index, isInspect)
 end
 
 -- Get local player current spec
-function API:GetSpecialization(unitToken)
+function API:GetSpecialization(unitToken, explicit)
+    if(explicit and not unitToken) then
+        return nil;
+    end
+
     unitToken = unitToken or "player";
     if(not UnitExists(unitToken)) then
         return nil;
@@ -132,7 +136,7 @@ function API:GetSpecialization(unitToken)
     -- Determine spec
     local _,classToken = UnitClass(unitToken);
     if(not classToken) then
-        ArenaAnalytics:LogWarning("API:GetMySpec failed to retrieve class token.");
+        ArenaAnalytics:LogWarning("API:GetSpecialization failed to retrieve class token. unitToken:", unitToken);
         return nil;
     end
 

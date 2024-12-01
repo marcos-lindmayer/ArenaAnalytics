@@ -141,7 +141,11 @@ function API:GetPlayerScore(index)
     return score;
 end
 
-function API:GetSpecialization(unitToken)
+function API:GetSpecialization(unitToken, explicit)
+    if(explicit and not unitToken) then
+        return nil;
+    end
+
     unitToken = unitToken or "player";
     if(not UnitExists(unitToken)) then
         return nil;

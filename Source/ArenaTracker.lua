@@ -148,8 +148,7 @@ function ArenaTracker:IsSameRoundTeam()
 	end
 
 	for i=1, 2 do
-		local unitToken = "party"..i;
-		local unitName = Helpers:GetUnitFullName(unitToken);
+		local unitName = Helpers:GetUnitFullName("party"..i);
 
 		if(unitName and not ArenaTracker:RoundTeamContainsPlayer(unitName)) then
 			return false;

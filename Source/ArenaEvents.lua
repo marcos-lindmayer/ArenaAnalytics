@@ -95,6 +95,7 @@ local function ParseArenaTimerMessages(msg, ...)
 	end
 
 	if(Constants:IsMatchStartedMessage(msg)) then
+		ArenaAnalytics:Log("ParseArenaTimerMessages message passed:", msg);
 		ArenaTracker:HandleArenaStart();
 	end
 end
