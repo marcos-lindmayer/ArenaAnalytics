@@ -267,8 +267,33 @@ local debugSpells = {
 
     -- Retribution
     [59578] = 14, -- Art of War?
-}
+
+    --------------------------------------------------------
+    -- HUNTER
+
+    -- Beast Mastery
+    [ 19577 ] = 41, -- Intimidation
+    [ 82726 ] = 41, -- Fervor
+    [ 82692 ] = 41, -- Focus Fire
+    [ 19574 ] = 41, -- Bestial Wrath
+
+    -- Marksmanship
+    [ 19434 ] = 42, -- Aimed Shot
+    [ 34490 ] = 42, -- Silencing Shot
+    [ 23989 ] = 42, -- Readiness
+    [ 53209 ] = 42,  -- Chimera Shot
+
+    -- Survival
+    [ 53301 ] = 43, -- Explosive Shot
+    [ 19306 ] = 43, -- Counterattack
+    [ 19386 ] = 43, -- Wyvern Sting
+    [ 3674 ] = 43, -- Black Arrow
+};
 
 function SpecSpells:GetSpec(spellID)
-    return specSpells[spellID], debugSpells[spellID];
+    if(debugSpells[spellID]) then
+        ArenaAnalytics:Log("SpecSpells:GetSpec identified debug spell:", spellID, "for spec:", debugSpells[spellID]);
+    end
+
+    return specSpells[spellID];
 end

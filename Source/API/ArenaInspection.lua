@@ -4,6 +4,7 @@ local Inspection = ArenaAnalytics.Inspection;
 -- Local module aliases
 local API = ArenaAnalytics.API;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
@@ -16,7 +17,7 @@ local timer = nil;
 
 local lastNotifyInspect = 0;
 
-local function IsInQueue(GUID)
+local function isInQueue(GUID)
     for _,guid in ipairs(queue) do
         if(guid == GUID) then
             return true;
@@ -25,13 +26,13 @@ local function IsInQueue(GUID)
     return false;
 end
 
-local function AddToQueue(GUID)
-    if(GUID and not IsInQueue(GUID)) then
+local function addToQueue(GUID)
+    if(GUID and not isInQueue(GUID)) then
         tinsert(queue, GUID);
     end
 end
 
-local function RemoveFromQueue(GUID)
+local function removeFromQueue(GUID)
     if(GUID) then
         for i,guid in ipairs(queue) do
             if(guid == GUID) then
@@ -58,7 +59,7 @@ local function getPartyUnitToken(GUID)
 end
 
 function Inspection:RequestSpec(unitToken)
-    if(not unitToken or not API:IsInArena()) then
+    if(not API.enableInspection or not unitToken or not API:IsInArena()) then
         return;
     end
 
@@ -67,14 +68,18 @@ function Inspection:RequestSpec(unitToken)
     end
 
     local GUID = UnitGUID(unitToken);
-    if(not IsInQueue(GUID)) then
-        AddToQueue(GUID);
+    if(not isInQueue(GUID)) then
+        addToQueue(GUID);
     end
 
     Inspection:TryStartTimer();
 end
 
 function Inspection:TryInspectNext()
+    if(not API.enableInspection) then
+        return;
+    end
+
     if(currentInspectGUID or (time() - lastNotifyInspect) < 3) then
         ArenaAnalytics:Log("Skipping inspect attempt: Already/still inspecting!");
         return;
@@ -83,7 +88,7 @@ function Inspection:TryInspectNext()
     for _,GUID in pairs(queue) do
         if(not ArenaTracker:HasSpec(GUID)) then
             local unitToken = getPartyUnitToken(GUID);
-            if unitToken and CanInspect(unitToken) then
+            if(unitToken and CanInspect(unitToken)) then
                 ArenaAnalytics:Log("NotifyInspect:", unitToken, time());
                 currentInspectGUID = GUID;
                 NotifyInspect(unitToken);
@@ -95,30 +100,42 @@ function Inspection:TryInspectNext()
 end
 
 local function HandleInspect_Internal(GUID)
+    if(not API.enableInspection) then
+        return;
+    end
+
     if(not API:IsInArena()) then
         return;
     end
+
+    ArenaAnalytics:Log("HandleInspect_Internal");
 
     local foundSpec = false;
 
     local unitToken = getPartyUnitToken(GUID);
     if(unitToken) then
         local spec_id = API:GetSpecialization(unitToken);
-        ArenaAnalytics:Log("HandleInspect_Internal", unitToken, spec_id);
+        ArenaAnalytics:Log("HandleInspect_Internal", unitToken, spec_id, Internal:GetClassAndSpec(spec_id));
         if(spec_id) then
             foundSpec = true;
             ArenaTracker:OnSpecDetected(GUID, spec_id);
         end
     end
 
-    if(IsInQueue(GUID)) then
+    if(isInQueue(GUID)) then
         if(foundSpec) then
-            RemoveFromQueue(GUID);
+            removeFromQueue(GUID);
         end
     end
 end
 
 function Inspection:HandleInspectReady(GUID)
+    if(not API.enableInspection) then
+        return;
+    end
+
+    ArenaAnalytics:Log("HandleInspectReady");
+
     HandleInspect_Internal(GUID);
 
     if(currentInspectGUID) then
@@ -135,6 +152,10 @@ end
 -------------------------------------------------------------------------
 
 function Inspection:TryStartTimer()
+    if(not API.enableInspection) then
+        return;
+    end
+
     if(not API:IsInArena()) then
         ArenaAnalytics:Log("Inspection Timer rejected start: Not in arena!");
         Inspection:CancelTimer();

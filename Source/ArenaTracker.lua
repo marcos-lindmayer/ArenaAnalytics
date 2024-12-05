@@ -259,21 +259,24 @@ function ArenaTracker:GetPlayer(playerID)
 		return nil;
 	end
 
-	for i = 1, #currentArena.players do
-		local player = currentArena.players[i];
-		if (player) then
-			if(Helpers:ToSafeLower(player.name) == Helpers:ToSafeLower(playerID)) then
-				return player;
-			elseif(player.GUID == playerID) then
-				return player;
-			else -- Unit Token
-				local GUID = UnitGUID(playerID);
-				if(GUID and GUID == player.GUID) then
+	if(currentArena.players) then
+		for i = 1, #currentArena.players do
+			local player = currentArena.players[i];
+			if (player) then
+				if(Helpers:ToSafeLower(player.name) == Helpers:ToSafeLower(playerID)) then
 					return player;
+				elseif(player.GUID == playerID) then
+					return player;
+				else -- Unit Token
+					local GUID = UnitGUID(playerID);
+					if(GUID and GUID == player.GUID) then
+						return player;
+					end
 				end
 			end
 		end
 	end
+
 	return nil;
 end
 
@@ -352,7 +355,7 @@ end
 
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
-function ArenaTracker:HandleArenaEnter(battlefieldId)
+function ArenaTracker:HandleArenaEnter()
 	if(ArenaTracker:IsTrackingArena()) then
 		ArenaAnalytics:Log("HandleArenaEnter: Already tracking arena");
 		return;
@@ -361,7 +364,11 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 	Events:RegisterArenaEvents();
 
 	-- Retrieve current arena info
-	battlefieldId = battlefieldId or ArenaAnalytics:GetActiveBattlefieldID();
+	local battlefieldId = API:GetActiveBattlefieldID();
+	if(not battlefieldId) then
+		return;
+	end
+
 	local status, bracket, teamSize, isRated, isShuffle = API:GetBattlefieldStatus(battlefieldId);
 
 	if(not ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracket)) then
@@ -899,11 +906,7 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	end
 
 	-- Check if spell belongs to spec defining spells
-	local spec_id, shouldDebug = SpecSpells:GetSpec(spellID);
-	if(shouldDebug ~= nil) then
-		ArenaAnalytics:Log("DEBUG ID Detected spec: ", sourceGUID, spellID, spellName);
-	end
-
+	local spec_id = SpecSpells:GetSpec(spellID);
 	if (spec_id ~= nil) then
 		if(ArenaTracker:IsTrackingPlayer(sourceGUID)) then
 			ArenaTracker:OnSpecDetected(sourceGUID, spec_id);

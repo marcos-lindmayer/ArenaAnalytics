@@ -34,6 +34,11 @@ function API:IsRatedArena()
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
+    if(not battlefieldId) then
+        ArenaAnalytics:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
+        return nil;
+    end
+
     local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
 
     local bracket = nil;
@@ -94,7 +99,21 @@ function API:GetPlayerScore(index)
     return score;
 end
 
-function API:GetSpecialization(unitToken)
+local function getPointsSpent(index, isInspect)
+    if(isInspect) then
+        local id, name, _, _, pointsSpent = GetTalentTabInfo(index, true);
+        return id, pointsSpent, name;
+    end
+
+    local id, _, _, _, pointsSpent = GetTalentTabInfo(index);
+    return id, pointsSpent;
+end
+
+function API:GetSpecialization(unitToken, explicit)
+    if(explicit and not unitToken) then
+        return nil;
+    end
+
     unitToken = unitToken or "player";
     if(not UnitExists(unitToken)) then
         return nil;
@@ -107,44 +126,8 @@ function API:GetSpecialization(unitToken)
 
     local spec, currentSpecPoints = nil, 0;
     for i = 1, 3 do
-        local id, _, _, _, pointsSpent = GetTalentTabInfo(i, isInspect);
-		if (id and pointsSpent > currentSpecPoints) then
-			currentSpecPoints = pointsSpent;
-			spec = id;
-		end
- 	end
+        local id, pointsSpent = getPointsSpent(i, isInspect);
 
-    return API:GetMappedAddonSpecID(spec);
-end
-
--- Get local player current spec
-function API:GetMySpec()
-    local spec_id = nil;
-	local currentSpecPoints = 0;
-
-    for i = 1, 3 do
-        local id, name, _, _, pointsSpent = GetTalentTabInfo(i);
-		if (pointsSpent > currentSpecPoints) then
-			currentSpecPoints = pointsSpent;
-			spec_id = API:GetMappedAddonSpecID(id);
-		end
- 	end
-
-    return spec_id;
-end
-
-function API:GetInspectSpecialization(unitToken)
-    if(not unitToken or not UnitExists(unitToken)) then
-        return;
-    end
-
-    if(UnitGUID("player") == UnitGUID(unitToken)) then
-        return API:GetMySpec();
-    end
-
-    local spec, currentSpecPoints = nil, 0;
-    for i = 1, 3 do
-        local id, _, _, _, pointsSpent = GetTalentTabInfo(i, true);
 		if (id and pointsSpent > currentSpecPoints) then
 			currentSpecPoints = pointsSpent;
 			spec = id;

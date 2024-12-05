@@ -35,8 +35,13 @@ function API:IsRatedArena()
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
+    if(not battlefieldId) then
+        ArenaAnalytics:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
+        return nil;
+    end
+
     local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
-    
+
     local bracket = nil;
     if(teamSize == 2) then
         bracket = 1;

@@ -14,6 +14,7 @@ local TablePool = ArenaAnalytics.TablePool;
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
 API.showPerPlayerRatedInfo = true;
 API.useThirdTooltipBackdrop = true;
+API.enableInspection = true;
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {
@@ -51,7 +52,12 @@ function API:IsRatedArena()
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
-    local status,_, teamSize = GetBattlefieldStatus(battlefieldId);
+    if(not battlefieldId) then
+        ArenaAnalytics:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
+        return nil;
+    end
+
+    local status, _, teamSize = GetBattlefieldStatus(battlefieldId);
     local isRated = API:IsRatedArena();
     local isShuffle = API:IsSoloShuffle();
 

@@ -11,6 +11,26 @@ local Options = ArenaAnalytics.Options;
 
 API.numClasses = 13; -- Number of class indices to check for class info
 
+function API:GetAddonVersion()
+    if(GetAddOnMetadata) then
+        return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
+    end
+    return C_AddOns and C_AddOns.GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
+end
+
+function API:GetActiveBattlefieldID()
+    for index = 1, GetMaxBattlefieldID() do
+        local status = API:GetBattlefieldStatus(index)
+        if status == "active" then
+			ArenaAnalytics:Log("Found battlefield ID ", index)
+            return index;
+        end
+    end
+	ArenaAnalytics:Log("Failed to find battlefield ID");
+end
+
+-------------------------------------------------------------------------
+
 function API:HasSurrenderAPI()
     return CanSurrenderArena and SurrenderArena;
 end
@@ -50,6 +70,8 @@ function API:TrySurrenderArena(source)
     end
 end
 
+-------------------------------------------------------------------------
+
 function API:UpdateDialogueVolume()
     if(API:IsInArena() and Options:Get("muteArenaDialogSounds")) then
         if(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue == nil) then
@@ -74,12 +96,7 @@ function API:UpdateDialogueVolume()
     end
 end
 
-function API:GetAddonVersion()
-    if(GetAddOnMetadata) then
-        return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
-    end
-    return C_AddOns and C_AddOns.GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
-end
+-------------------------------------------------------------------------
 
 function API:GetArenaPlayerSpec(index, isEnemy)
     if(isEnemy) then

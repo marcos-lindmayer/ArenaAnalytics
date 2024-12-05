@@ -22,13 +22,13 @@ local arenaEvents = {
 	"ARENA_OPPONENT_UPDATE", 
 	"GROUP_ROSTER_UPDATE", 
 	"ARENA_PREP_OPPONENT_SPECIALIZATIONS",
-}
+};
 
 local globalEvents = { 
 	"UPDATE_BATTLEFIELD_STATUS", 
 	"ZONE_CHANGED_NEW_AREA", 
 	"PVP_RATED_STATS_UPDATE",
-}
+};
 
 -- Register an event as a response to a 
 function Events:CreateEventListenerForRequest(event, repeatable, callback)
@@ -42,7 +42,7 @@ function Events:CreateEventListenerForRequest(event, repeatable, callback)
 		end
 
         callback();
-    end)
+    end);
 end
 
 -- Assigns behaviour for "global" events
@@ -105,29 +105,27 @@ end
 -- UNIT_AURA, COMBAT_LOG_EVENT_UNFILTERED, ARENA_OPPONENT_UPDATE: try to get more arena information (players, specs, etc)
 -- CHAT_MSG_BG_SYSTEM_NEUTRAL: Detect if the arena started
 local function HandleArenaEvent(_, eventType, ...)
-	if (not API:IsInArena()) then 
+	if (not API:IsInArena() or not ArenaTracker:IsTrackingArena()) then 
 		return;
 	end
 
-	if (ArenaTracker:IsTrackingArena()) then
-		if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
-			ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
-			C_Timer.After(0, ArenaTracker.HandleArenaEnd);
-			Events:UnregisterArenaEvents();
-		elseif (eventType == "UNIT_AURA") then
-			ArenaTracker:ProcessUnitAuraEvent(...);
-		elseif(eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
-			ArenaTracker:ProcessCombatLogEvent(...);
-		elseif(eventType == "ARENA_OPPONENT_UPDATE" or eventType == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
-			ArenaTracker:HandleOpponentUpdate();
-		elseif(eventType == "GROUP_ROSTER_UPDATE") then
-			ArenaTracker:HandlePartyUpdate();
-		elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
-			ParseArenaTimerMessages(...);
-		elseif(eventType == "INSPECT_READY") then
-			if(Inspection and Inspection.HandleInspectReady) then
-				Inspection:HandleInspectReady(...);
-			end
+	if (eventType == "UPDATE_BATTLEFIELD_SCORE" and GetBattlefieldWinner() ~= nil) then
+		ArenaAnalytics:Log("Arena ended. UPDATE_BATTLEFIELD_SCORE with non-nil winner.");
+		C_Timer.After(0, ArenaTracker.HandleArenaEnd);
+		Events:UnregisterArenaEvents();
+	elseif (eventType == "UNIT_AURA") then
+		ArenaTracker:ProcessUnitAuraEvent(...);
+	elseif(eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
+		ArenaTracker:ProcessCombatLogEvent(...);
+	elseif(eventType == "ARENA_OPPONENT_UPDATE" or eventType == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
+		ArenaTracker:HandleOpponentUpdate();
+	elseif(eventType == "GROUP_ROSTER_UPDATE") then
+		ArenaTracker:HandlePartyUpdate();
+	elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
+		ParseArenaTimerMessages(...);
+	elseif(API.enableInspection and eventType == "INSPECT_READY") then
+		if(Inspection and Inspection.HandleInspectReady) then
+			Inspection:HandleInspectReady(...);
 		end
 	end
 end

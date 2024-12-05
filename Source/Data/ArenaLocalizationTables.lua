@@ -92,7 +92,7 @@ local raceMapping = {
         ruRU = { "Человек" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "人类" },
     },
     Dwarf = {
         enGB = { "Dwarf" },
@@ -104,7 +104,7 @@ local raceMapping = {
         ruRU = { "Дворф", "Дворфийка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "矮人" },
     },
     NightElf = {
         enGB = { "Night Elf" },
@@ -116,7 +116,7 @@ local raceMapping = {
         ruRU = { "Ночной эльф", "Ночная эльфийка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "暗夜精灵" },
     },
     Gnome = {
         enGB = { "Gnome" },
@@ -128,7 +128,7 @@ local raceMapping = {
         ruRU = { "Гном", "Гномка"},
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "侏儒" },
     },
     Draenei = {
         enGB = { "Draenei" },
@@ -140,7 +140,7 @@ local raceMapping = {
         ruRU = { "Дреней", "Дренейка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "德莱尼" },
     },
     Worgen = {
         enGB = { "Worgen" },
@@ -152,7 +152,7 @@ local raceMapping = {
         ruRU = { "Ворген" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "狼人" },
     },
     Pandaren = {
         enGB = { "Pandaren" },
@@ -164,7 +164,7 @@ local raceMapping = {
         ruRU = { "Пандарен", "Пандаренка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "熊猫人" },
     },
     Dracthyr = {
         enGB = { "Dracthyr" },
@@ -176,7 +176,7 @@ local raceMapping = {
         ruRU = { "Драктир" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "龙希尔" },
     },
     VoidElf = {
         enGB = { "Void Elf" },
@@ -188,7 +188,7 @@ local raceMapping = {
         ruRU = { "Эльф Бездны", "Эльфийка Бездны" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "虚空精灵" },
     },
     LightforgedDraenei = {
         enGB = { "Lightforged Draenei" },
@@ -200,7 +200,7 @@ local raceMapping = {
         ruRU = { "Озаренный дреней", "Озаренная дренейка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "光铸德莱尼" },
     },
     DarkIronDwarf = {
         enGB = { "Dark Iron Dwarf" },
@@ -212,7 +212,7 @@ local raceMapping = {
         ruRU = { "Дворф из клана Черного Железа", "Дворфийка из клана Черного Железа" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "黑铁矮人" },
     },
     Earthen = {
         enGB = { "Earthen" },
@@ -224,7 +224,7 @@ local raceMapping = {
         ruRU = { "Земельник" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "土灵" },
     },
     KulTiran = {
         enGB = { "Kul Tiran" },
@@ -236,7 +236,7 @@ local raceMapping = {
         ruRU = { "Култирасец", "Култираска" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "库尔提拉斯人" },
     },
     Mechagnome = {
         enGB = { "Mechagnome" },
@@ -248,7 +248,7 @@ local raceMapping = {
         ruRU = { "Механогном", "Механогномка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "机械侏儒" },
     },
     Orc = {
         enGB = { "Orc" },
@@ -260,7 +260,7 @@ local raceMapping = {
         ruRU = { "Орк", "Орчиха" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "兽人" },
     },
     Undead = {
         enGB = { "Undead" },
@@ -272,7 +272,7 @@ local raceMapping = {
         ruRU = { "Нежить" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "亡灵" },
     },
     Tauren = {
         enGB = { "Tauren" },
@@ -284,7 +284,7 @@ local raceMapping = {
         ruRU = { "Таурен", "Тауренка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "牛头人" },
     },
     Troll = {
         enGB = { "Troll" },
@@ -296,7 +296,7 @@ local raceMapping = {
         ruRU = { "Тролль" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "巨魔" },
     },
     BloodElf = {
         enGB = { "Blood Elf" },
@@ -308,7 +308,7 @@ local raceMapping = {
         ruRU = { "Эльф крови", "Эльфийка крови" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "血精灵" },
     },
     Goblin = {
         enGB = { "Goblin" },
@@ -320,7 +320,7 @@ local raceMapping = {
         ruRU = { "Гоблин" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "地精" },
     },
     Nightborne = {
         enGB = { "Nightborne" },
@@ -332,7 +332,7 @@ local raceMapping = {
         ruRU = { "Ночнорожденный", "Ночнорожденная" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "夜之子" },
     },
     HighmountainTauren = {
         enGB = { "Highmountain Tauren" },
@@ -344,7 +344,7 @@ local raceMapping = {
         ruRU = { "Таурен Крутогорья", "Тауренка Крутогорья" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "至高岭牛头人" },
     },
     MagharOrc = {
         enGB = { "Mag'har Orc" },
@@ -356,7 +356,7 @@ local raceMapping = {
         ruRU = { "Маґ'хар", "Маґ'харка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "玛格汉兽人" },
     },
     ZandalariTroll = {
         enGB = { "Zandalari Troll" },
@@ -368,7 +368,7 @@ local raceMapping = {
         ruRU = { "Зандалар", "Зандаларка" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "赞达拉巨魔" },
     },
     Vulpera = {
         enGB = { "Vulpera" },
@@ -380,9 +380,9 @@ local raceMapping = {
         ruRU = { "Вульпера" },
         koKR = {  },
         zhTW = {  },
-        zhCN = {  },
+        zhCN = { "狐人" },
     },
-}
+};
 
 function Localization:GetRaceID(race, factionIndex)
     if(not race) then
