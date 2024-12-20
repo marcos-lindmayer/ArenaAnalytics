@@ -79,7 +79,8 @@ function MinimapButton:Create()
 	-- Create minimap button -- Credit to Leatrix
 	minimapButton = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap);
 	minimapButton:SetParent(Minimap);
-	minimapButton:SetFrameLevel(13);
+	minimapButton:SetFrameStrata("HIGH");
+	minimapButton:SetFrameLevel(0);
 	minimapButton:SetSize(25,25);
 	minimapButton:SetMovable(true);
 	minimapButton:SetNormalTexture("Interface\\AddOns\\ArenaAnalytics\\icon\\mmicon");
