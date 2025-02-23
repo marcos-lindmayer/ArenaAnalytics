@@ -128,9 +128,14 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:PrintSystem("Longest arena duration: ", SecondsToTime(math.floor(longestDuration)));
 	end,
 
-	-- Debug command to 
+	-- Debug level
 	["debug"] = function(level)
 		Debug:SetDebugLevel(level);
+	end,
+
+	-- Toggle show 
+	["error"] = function()
+		ArenaAnalytics:LogError("Test error.");
 	end,
 
 	["convert"] = function()

@@ -62,6 +62,10 @@ end
 -- Debug level 1 (Error)
 
 function ArenaAnalytics:LogError(...)
+    if(ArenaAnalyticsSharedSettingsDB["hideErrorLogs"]) then
+        return;
+    end
+
     local prefix = string.format("|cff%s%s|r", errorColor, "ArenaAnalytics (Error):");
 	print(prefix, ...);
 end

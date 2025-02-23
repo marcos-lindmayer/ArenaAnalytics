@@ -46,7 +46,6 @@ end
 -- Standardized Updated Option Response Functions
 
 local function HandleSettingsChanged()
-    ArenaAnalytics:Log("Settings changed..");
     Filters:ResetAll(false);
     PlayerTooltip:OnSettingsChanged();
 end
@@ -157,7 +156,7 @@ function Options:LoadSettings()
 
     -- Debugging
     AddSetting("debuggingLevel", 0);
-    ArenaAnalyticsSharedSettingsDB["debuggingEnabled"] = nil; -- Clear old value
+    AddSetting("hideErrorLogs", false);
 
     hasOptionsLoaded = true;
     ArenaAnalytics:Log("Settings loaded successfully.");
@@ -213,7 +212,7 @@ function Options:Set(setting, value)
 
     local oldValue = ArenaAnalyticsSharedSettingsDB[setting];
     ArenaAnalyticsSharedSettingsDB[setting] = value;
-    ArenaAnalytics:Log("Setting option: ", setting, "new:", value, "old:", oldValue);
+    ArenaAnalytics:Log("Setting option:   ", setting, "  new:", value, "  old:", oldValue);
 
     HandleSettingsChanged();
 end
@@ -521,7 +520,8 @@ function SetupTab_General()
 
     CreateSpace();
 
-    CreateCheckbox("printAsSystem", parent, offsetX, "Print messages using system messages.    |cffaaaaaa(Alternative is general chat only prints)|r", ArenaAnalytics.MinimapButton.Update);
+    CreateCheckbox("printAsSystem", parent, offsetX, "Print messages using system messages.    |cffaaaaaa(Alternative is general chat only prints)|r");
+    CreateCheckbox("hideErrorLogs", parent, offsetX, "Hide error logging in chat.     |cffaaaaaa(Consider reporting errors instead)|r");
 
     CreateSpace();
 
