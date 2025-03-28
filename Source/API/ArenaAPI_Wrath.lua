@@ -100,6 +100,7 @@ function API:GetPlayerScore(index)
     return score;
 end
 
+--[[
 local specByIndex = {
     ["DRUID"] = { 3, 2, 1 }, -- Balance, Feral, Resto
     ["PALADIN"] = { 11, 12, 14 }, -- Holy, Prot, Ret
@@ -112,13 +113,37 @@ local specByIndex = {
     ["WARRIOR"] = { 82, 83, 81 }, -- Arms, Fury, Prot
     ["PRIEST"] = { 91, 92, 93 }, -- Disc, Holy, Shadow
 };
+--]]
 
-local function GetPointsSpent(index, isInspect)
+local function getPointsSpent(index, isInspect)
     if(isInspect) then
-        return select(3,GetTalentTabInfo(index, true));
+        local id, name, _, _, pointsSpent = GetTalentTabInfo(index, true);
+        return tonumber(id), tonumber(pointsSpent), name;
     end
 
-    return select(3,GetTalentTabInfo(index));
+    local id, name, _, _, pointsSpent = GetTalentTabInfo(index);
+    return tonumber(id), tonumber(pointsSpent), name;
+end
+
+local function checkPlausiblePreg(spec_id, pointsSpent)
+    if(pointsSpent > 45) then
+        return false; -- No spec has more than 45 points for Preg.
+    elseif(spec_id == 11) then -- Holy
+        if(pointsSpent > 10) then -- Max 10 holy points for preg (0 is expected)
+            return false;
+        end
+    elseif(spec_id == 12) then -- Protection
+        if(pointsSpent < 15 or pointsSpent > 30) then -- Max 30 protection points for preg (28 expected)
+            return false;
+        end
+    elseif(spec_id == 14) then -- Retribution
+        if(pointsSpent < 15 or pointsSpent > 45) then -- Max 45 retribution points for preg (43 expected)
+            return false;
+        end
+    end
+
+    -- No change to plausibility proven
+    return true;
 end
 
 -- Get local player current spec
@@ -134,8 +159,7 @@ function API:GetSpecialization(unitToken, explicit)
 
     local isInspect = (UnitGUID(unitToken) ~= UnitGUID("player"));
 
-    local spec_id = nil
-	local currentSpecPoints = 0;
+    local spec, currentSpecPoints = nil, 0;
     local isPlausiblePreg = true;
 
     -- Determine spec
@@ -151,35 +175,29 @@ function API:GetSpecialization(unitToken, explicit)
     end
 
     for i = 1, 3 do
-        local pointsSpent = GetPointsSpent(i, isInspect);
-        local spec = specByIndex[classToken] and specByIndex[classToken][i];
-		if (pointsSpent > currentSpecPoints) then
-			currentSpecPoints = pointsSpent;
-			spec_id = spec;
-		end
+        local id, pointsSpent = getPointsSpent(i, isInspect);
 
-        if(isPlausiblePreg) then
-            if(spec == 11) then -- Holy
-                if(pointsSpent > 10) then -- Max 15 holy points for preg (0 is expected)
-                    isPlausiblePreg = false;
-                end
-            elseif(spec == 12) then -- Protection
-                if(pointsSpent < 15 or pointsSpent > 30) then -- Max 30 protection points for preg (28 expected)
-                    isPlausiblePreg = false;
-                end
-            elseif(spec == 14) then -- Retribution
-                if(pointsSpent < 15 or pointsSpent > 45) then -- Max 45 retribution points for preg (43 expected)
-                    isPlausiblePreg = false;
-                end
+		if (id and pointsSpent) then
+            local spec_id = API:GetMappedAddonSpecID(id);
+            if(not spec_id) then
+                ArenaAnalytics:LogError("API:GetSpecialization failed to retrieve internal spec ID for:", id, classToken, i);
+            end
+
+            -- Update plausible preg flag
+            isPlausiblePreg = isPlausiblePreg and checkPlausiblePreg(spec_id, pointsSpent);
+
+            if(pointsSpent > currentSpecPoints) then
+                currentSpecPoints = pointsSpent;
+                spec = spec_id;
             end
         end
  	end
 
-    if(spec_id and isPlausiblePreg) then
-        spec_id = 13;
+    if(spec and isPlausiblePreg) then
+        spec = 13;
     end
 
-    return spec_id;
+    return spec;
 end
 
 function API:GetPlayerInfoByGUID(GUID)
@@ -207,13 +225,13 @@ API.classMappingTable = {
 
 -- Internal Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
-    [748] = 1, -- Restoration Druid
-    [750] = 2, -- Feral Druid
-    [752] = 3, -- Balance Druid
+    [282] = 1, -- Restoration Druid
+    [281] = 2, -- Feral Druid
+    [283] = 3, -- Balance Druid
 
-    [839] = 11, -- Holy Paladin
-    [845] = 12, -- Protection Paladin
-    [855] = 14, -- Retribution Paladin
+    [382] = 11, -- Holy Paladin
+    [383] = 12, -- Protection Paladin
+    [381] = 14, -- Retribution Paladin
 
     [262] = 21, -- Restoration Shaman
     [261] = 22, -- Elemental Shaman
@@ -223,30 +241,30 @@ API.specMappingTable = {
     [399] = 32, -- Frost Death Knight
     [398] = 33, -- Blood Death Knight
 
-    [811] = 41, -- Beast Mastery Hunter
-    [807] = 42, -- Marksmanship Hunter
-    [809] = 43, -- Survival Hunter
+    [361] = 41, -- Beast Mastery Hunter
+    [363] = 42, -- Marksmanship Hunter
+    [362] = 43, -- Survival Hunter
 
-    [823] = 51, -- Frost Mage
-    [851] = 52, -- Fire Mage
-    [799] = 53, -- Arcane Mage
+    [61] = 51, -- Frost Mage
+    [41] = 52, -- Fire Mage
+    [81] = 53, -- Arcane Mage
 
     [183] = 61, -- Subtlety Rogue
     [182] = 62, -- Assassination Rogue
     [181] = 63, -- Combat Rogue
 
-    [871] = 71, -- Affliction Warlock
-    [865] = 72, -- Destruction Warlock
-    [867] = 73, -- Demonology Warlock
+    [302] = 71, -- Affliction Warlock
+    [301] = 72, -- Destruction Warlock
+    [303] = 73, -- Demonology Warlock
 
-    [845] = 81, -- Protection Warrior
-    [746] = 82, -- Arms Warrior
-    [815] = 83, -- Fury Warrior
+    [163] = 81, -- Protection Warrior
+    [161] = 82, -- Arms Warrior
+    [164] = 83, -- Fury Warrior
 
-    [760] = 91, -- Discipline Priest
-    [813] = 92, -- Holy Priest
-    [795] = 93, -- Shadow Priest
-}
+    [201] = 91, -- Discipline Priest
+    [202] = 92, -- Holy Priest
+    [203] = 93, -- Shadow Priest
+};
 
 -------------------------------------------------------------------------
 -- Overrides

@@ -193,10 +193,70 @@ ArenaAnalytics.commands = {
 	["test"] = function(...)
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-		ArenaAnalytics:Log("My Spec:", API:GetSpecialization());
+		local spec_id = API:GetSpecialization();
+		ArenaAnalytics:PrintSystem("My Spec:", spec_id, Internal:GetClassAndSpec(spec_id));
+
+		local tmpMappingTable = {
+			[282] = "Restoration", -- Restoration Druid
+			[281] = "Feral", -- Feral Druid
+			[283] = "Balance", -- Balance Druid
+
+			[382] = "Holy", -- Holy Paladin
+			[383] = "Protection", -- Protection Paladin
+			[381] = "Retribution", -- Retribution Paladin
+
+			[262] = "Restoration", -- Restoration Shaman
+			[261] = "Elemental", -- Elemental Shaman
+			[263] = "Enhancement", -- Enhancement Shaman
+
+			[400] = "Unholy", -- Unholy Death Knight
+			[399] = "Frost", -- Frost Death Knight
+			[398] = "Blood", -- Blood Death Knight
+
+			[361] = "Beast Mastery", -- Beast Mastery Hunter
+			[363] = "Marksmanship", -- Marksmanship Hunter
+			[362] = "Survival", -- Survival Hunter
+
+			[61] = "Frost", -- Frost Mage
+			[41] = "Fire", -- Fire Mage
+			[81] = "Arcane", -- Arcane Mage
+
+			[183] = "Subtlety", -- Subtlety Rogue
+			[182] = "Assassination", -- Assassination Rogue
+			[181] = "Combat", -- Combat Rogue
+
+			[302] = "Affliction", -- Affliction Warlock
+			[301] = "Destruction", -- Destruction Warlock
+			[303] = "Demonology", -- Demonology Warlock
+
+			[163] = "Protection", -- Protection Warrior
+			[161] = "Arms", -- Arms Warrior
+			[164] = "Fury", -- Fury Warrior
+
+			[201] = "Discipline", -- Discipline Priest
+			[202] = "Holy", -- Holy Priest
+			[203] = "Shadow", -- Shadow Priest
+		};
 
 		print(" ");
-	end,	
+		if(GetSpecializationInfoForClassID and GetSpecializationInfoForSpecID) then
+			-- Check game values
+			for classIndex=1, API.numClasses do
+				local _,token = GetClassInfo(classIndex);
+				ArenaAnalytics:PrintSystem("Class:", classIndex, token);
+				for specIndex=0, 3 do
+					local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
+					if(specID) then
+						local id, specName = GetSpecializationInfoForSpecID(specID);
+						local englishName = id and tmpMappingTable[id] or "Missing!";
+						ArenaAnalytics:PrintSystem("     Spec", specIndex, ":", id, specName, englishName, token);
+					end
+				end
+			end
+		end
+
+		print(" ");
+	end,
 };
 
 local function HandleSlashCommands(str)	

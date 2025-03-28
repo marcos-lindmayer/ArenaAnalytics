@@ -102,11 +102,11 @@ end
 local function getPointsSpent(index, isInspect)
     if(isInspect) then
         local id, name, _, _, pointsSpent = GetTalentTabInfo(index, true);
-        return id, pointsSpent, name;
+        return tonumber(id), tonumber(pointsSpent), name;
     end
 
-    local id, _, _, _, pointsSpent = GetTalentTabInfo(index);
-    return id, pointsSpent;
+    local id, name, _, _, pointsSpent = GetTalentTabInfo(index);
+    return tonumber(id), tonumber(pointsSpent), name;
 end
 
 function API:GetSpecialization(unitToken, explicit)
@@ -121,20 +121,25 @@ function API:GetSpecialization(unitToken, explicit)
 
     local isInspect = (UnitGUID(unitToken) ~= UnitGUID("player"));
 
-    local spec_id = nil;
-	local currentSpecPoints = 0;
-
     local spec, currentSpecPoints = nil, 0;
     for i = 1, 3 do
         local id, pointsSpent = getPointsSpent(i, isInspect);
 
-		if (id and pointsSpent > currentSpecPoints) then
-			currentSpecPoints = pointsSpent;
-			spec = id;
+		if (id and pointsSpent) then
+            local spec_id = API:GetMappedAddonSpecID(id);
+            if(not spec_id) then
+                local _,classToken = UnitClass(unitToken);
+                ArenaAnalytics:LogError("API:GetSpecialization failed to retrieve internal spec ID for:", id, classToken, i);
+            end
+
+            if(pointsSpent > currentSpecPoints) then
+                currentSpecPoints = pointsSpent;
+                spec = spec_id;
+            end
 		end
  	end
 
-    return API:GetMappedAddonSpecID(spec);
+    return spec;
 end
 
 function API:GetPlayerInfoByGUID(GUID)
