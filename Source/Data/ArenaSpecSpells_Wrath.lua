@@ -14,16 +14,33 @@ local specSpells = {
     [ 33891 ] = 1, -- Tree of Life
 
     -- Feral
+    [ 33876 ] = 2, -- Mangle (Cat)
+    [ 33982 ] = 2, -- Mangle (Cat)
     [ 33983 ] = 2, -- Mangle (Cat)
+    [ 48565 ] = 2, -- Mangle (Cat)
+    [ 48566 ] = 2, -- Mangle (Cat)
+    
+    [ 33878 ] = 2, -- Mangle (Bear)
+    [ 33986 ] = 2, -- Mangle (Bear)
     [ 33987 ] = 2, -- Mangle (Bear)
+    [ 48563 ] = 2, -- Mangle (Bear)
+    [ 48564 ] = 2, -- Mangle (Bear)
+
+    [ 48483 ] = 3, -- Infected Wounds
+    [ 48484 ] = 3, -- Infected Wounds
+    [ 48485 ] = 3, -- Infected Wounds
+
     [ 24932 ] = 2, -- Leader of the Pack
     [ 49376 ] = 2, -- Feral Charge: Cat
     [ 16979 ] = 2, -- Feral Charge: Bear
+
+    [ 50334 ] = 3, -- Berserk
 
     -- Balance
     [ 33831 ] = 3, -- Force of Nature
     [ 24858 ] = 3, -- Moonkin Form
     [ 24907 ] = 3, -- Moonkin Aura
+    [ 50516 ] = 3, -- Typhoon
     [ 48505 ] = 3, -- Starfall (Rank 1)
     [ 53199 ] = 3, -- Starfall (Rank 2)
     [ 53200 ] = 3, -- Starfall (Rank 3)
@@ -81,6 +98,10 @@ local specSpells = {
 
     -- Restoration
     [ 16190 ] = 21, -- Mana Tide Totem
+    [ 974 ] = 21, -- Earth Shield
+    [ 32593 ] = 21, -- Earth Shield
+    [ 32594 ] = 21, -- Earth Shield
+    [ 49283 ] = 21, -- Earth Shield
     [ 49284 ] = 21, -- Earth Shield
     [ 16190 ] = 21, -- Mana Tide Totem
     [ 61300 ] = 21, -- Riptide
@@ -227,13 +248,26 @@ local specSpells = {
     -- Discipline
     [ 10060 ] = 91, -- Power Infusion
     [ 33206 ] = 91, -- Pain Suppression
-    [ 14752 ] = 91, -- Divine Spirit
     [ 45234 ] = 91, -- Focused Will
-    [ 27811 ] = 91, -- Blessed Recovery
-    [ 14752 ] = 91, -- Divine Spirit
-    [ 27681 ] = 91, -- Prayer of Spirit
-    [ 14893 ] = 91, -- Inspiration
+    [ 45242 ] = 91, -- Focused Will
+    [ 45243 ] = 91, -- Focused Will
+    [ 45244 ] = 91, -- Focused Will
     [ 52800 ] = 91, -- Borrowed Time
+    [ 59887 ] = 91, -- Borrowed Time
+    [ 59888 ] = 91, -- Borrowed Time
+    [ 59890 ] = 91, -- Borrowed Time
+    [ 59891 ] = 91, -- Borrowed Time
+    [ 47509 ] = 91, -- Divine Aegis
+    [ 47511 ] = 91, -- Divine Aegis
+    [ 47515 ] = 91, -- Divine Aegis
+    [ 47517 ] = 91, -- Grace
+    [ 47930 ] = 91, -- Grace
+    [ 47508 ] = 91, -- Aspiration
+    [ 57470 ] = 91, -- Renewed Hope
+    [ 63944 ] = 91, -- Renewed Hope
+    [ 47540 ] = 91, -- Penance
+    [ 53005 ] = 91, -- Penance
+    [ 53006 ] = 91, -- Penance
     [ 53007 ] = 91, -- Penance
 
     -- Holy
@@ -253,7 +287,7 @@ local specSpells = {
     [ 48160 ] = 93, -- Vampiric Touch (Rank 5)
     [ 64044 ] = 93, -- Psychic Horror
     [ 47585 ] = 93, -- Dispersion
-}
+};
 
 function SpecSpells:GetSpec(spellID)
     return specSpells[spellID];

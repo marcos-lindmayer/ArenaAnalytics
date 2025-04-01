@@ -908,12 +908,9 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	-- Check if spell belongs to spec defining spells
 	local spec_id = SpecSpells:GetSpec(spellID);
 	if (spec_id ~= nil) then
-		if(ArenaTracker:IsTrackingPlayer(sourceGUID)) then
-			ArenaTracker:OnSpecDetected(sourceGUID, spec_id);
-		end
-
 		-- Check if unit should be added
 		ArenaTracker:FillMissingPlayers(sourceGUID, spec_id);
+		ArenaTracker:OnSpecDetected(sourceGUID, spec_id);
 	end
 end
 
@@ -923,7 +920,7 @@ function ArenaTracker:OnSpecDetected(playerID, spec_id)
 	end
 
 	local player = ArenaTracker:GetPlayer(playerID);
-	if(not player or Helpers:IsSpecID(player.spec)) then
+	if(not player) then
 		return;
 	end
 

@@ -12,7 +12,7 @@ local Internal = ArenaAnalytics.Internal;
 FilterTables.moreFilters = {}
 
 local function GenerateSeasonData()
-    local currentSeason = GetCurrentArenaSeason()
+    local currentSeason = GetCurrentArenaSeason();
     local latestSeason =  math.max(currentSeason, (tonumber(ArenaAnalytics:GetLatestSeason()) or 0));
     if(latestSeason == nil or latestSeason == 0) then
         ArenaAnalytics:Log("Invalid latest season. Unable to add seasons");
@@ -47,6 +47,7 @@ local function GenerateSeasonData()
         {"Battle for Azeroth", 26},
         {"Shadowlands", 30},
         {"Dragonflight", 34},
+        {"The War Within", 38},
     }
 
     for season=1, latestSeason do
@@ -74,7 +75,7 @@ local function GenerateSeasonData()
         });
     end
 
-    return seasons
+    return seasons;
 end
 
 local function GenerateDateEntries(dates)
