@@ -399,7 +399,7 @@ function ArenaAnalytics:init()
 	
 	Debug:OnLoad();
 
-	successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
+	local successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
 	if(not successfulRequest) then
 		ArenaAnalytics:Log("Failed to register Addon Message Prefix: 'ArenaAnalytics'!")
 	end
