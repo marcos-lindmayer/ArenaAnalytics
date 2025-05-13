@@ -455,7 +455,7 @@ function ArenaTracker:HandleArenaStart(...)
 	currentArena.round.startTime = time();
 	currentArena.round.hasStarted = true;
 
-	ArenaAnalytics:Log("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
+	ArenaAnalytics:LogGreen("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
 end
 
 function ArenaTracker:CheckRoundEnded()
@@ -467,13 +467,13 @@ function ArenaTracker:CheckRoundEnded()
 		ArenaAnalytics:Log("CheckRoundEnded called while not tracking arena, or without active shuffle round.", currentArena.round.hasStarted);
 		return;
 	end
-	
+
 	-- Check if this is a new round
 	if(#currentArena.round.team ~= 2) then
 		ArenaAnalytics:Log("CheckRoundEnded missing players.");
 		return;
 	end
-	
+
 	-- Team remains same, thus round has not changed.
 	if(ArenaTracker:IsSameRoundTeam()) then
 		ArenaAnalytics:Log("CheckRoundEnded has same team.");

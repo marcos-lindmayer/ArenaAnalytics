@@ -29,6 +29,15 @@ function API:GetActiveBattlefieldID()
 	ArenaAnalytics:Log("Failed to find battlefield ID");
 end
 
+function API:GetCurrentMapID()
+    local mapID = select(8,GetInstanceInfo());
+    return tonumber(mapID);
+end
+
+function API:IsSoloShuffle()
+    return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
+end
+
 -------------------------------------------------------------------------
 
 function API:HasSurrenderAPI()
@@ -108,10 +117,6 @@ function API:GetArenaPlayerSpec(index, isEnemy)
     else
         -- Add friendly support
     end
-end
-
-function API:IsSoloShuffle()
-    return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
 end
 
 function API:GetRoleBitmap(spec_id)

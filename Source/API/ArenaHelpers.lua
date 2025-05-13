@@ -76,7 +76,7 @@ function Helpers:RatingToText(rating, delta)
     if(not rating and not delta) then
         return nil;
     end
-    
+
     -- Add + for positive numbers
     if(delta) then
         if(delta > 0) then

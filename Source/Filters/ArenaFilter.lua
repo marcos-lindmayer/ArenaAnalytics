@@ -32,6 +32,7 @@ function Filters:Init()
     AddFilter("Filter_Date", "All Time");
     AddFilter("Filter_Season", "All");
     AddFilter("Filter_Map", "All");
+    AddFilter("Filter_Outcome", "All");
     AddFilter("Filter_Bracket", "All");
     AddFilter("Filter_Comp", "All");
     AddFilter("Filter_EnemyComp", "All");
@@ -52,7 +53,12 @@ function Filters:IsValidCompKey(compKey)
 end
 
 function Filters:Get(filter)
-    assert(filter and currentFilters[filter], "Invalid filter: " .. (filter or "nil"));
+    assert(filter, "Invalid filter in Filters:Get(...)");
+
+    if(not currentFilters[filter]) then
+        currentFilters[filter] = Filters:GetDefault(filter);
+    end
+
     return currentFilters[filter];
 end
 
@@ -103,6 +109,7 @@ function Filters:ResetAll(skipOverrides)
     changed = Filters:Reset("Filter_Date", skipOverrides) or changed;
     changed = Filters:Reset("Filter_Season", skipOverrides) or changed;
     changed = Filters:Reset("Filter_Map") or changed;
+    changed = Filters:Reset("Filter_Outcome") or changed;
     changed = Filters:Reset("Filter_Bracket") or changed;
     changed = Filters:Reset("Filter_Comp") or changed;
     changed = Filters:Reset("Filter_EnemyComp") or changed;
@@ -139,6 +146,9 @@ function Filters:GetActiveFilterCount()
     if(Filters:IsFilterActive("Filter_Map")) then
         count = count + 1;
     end
+    if(Filters:IsFilterActive("Filter_Outcome")) then
+        count = count + 1;
+    end
     if(Filters:IsFilterActive("Filter_Bracket")) then
         count = count + 1;
     end
@@ -155,18 +165,24 @@ end
 local function doesMatchPassFilter_Map(match)
     if match == nil then return false end;
 
-    if(currentFilters["Filter_Map"] == "All") then
+    local filter = Filters:Get("Filter_Map");
+    if(not filter or filter == "All") then
         return true;
     end
-    
-    local filterMap = currentFilters["Filter_Map"];
-    
-    if(filterMap == nil) then
-        filterMap = "All"
-        currentFilters["Filter_Map"] = filterMap;
+
+    return ArenaMatch:GetMapID(match) == filter;
+end
+
+-- check outcome filter
+local function doesMatchPassFilter_Outcome(match)
+    if match == nil then return false end; 
+
+    local filter = Filters:Get("Filter_Outcome");
+    if(not filter or filter == "All") then
+        return true;
     end
 
-    return ArenaMatch:GetMapID(match) == filterMap;
+    return ArenaMatch:GetMatchOutcome(match) == filter;
 end
 
 -- check bracket filter
@@ -276,6 +292,11 @@ function Filters:DoesMatchPassAllFilters(match, excluded)
 
     -- Map
     if(not doesMatchPassFilter_Map(match)) then
+        return false;
+    end
+
+    -- Outcome
+    if(not doesMatchPassFilter_Outcome(match)) then
         return false;
     end
 

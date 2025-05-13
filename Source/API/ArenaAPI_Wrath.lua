@@ -19,11 +19,11 @@ API.availableBrackets = {
 	{ name = "5v5", key = 3},
 };
 
-API.availableMaps = { 
-    "BladesEdgeArena", 
-    "NagrandArena", 
-    "RuinsOfLordaeron", 
-    "DalaranArena" 
+API.availableMaps = {
+    "BladesEdgeArena",
+    "NagrandArena",
+    "RuinsOfLordaeron",
+    "DalaranArena",
 };
 
 function API:IsInArena()
@@ -52,10 +52,6 @@ function API:GetBattlefieldStatus(battlefieldId)
     end
 
     return status, bracket, teamSize, isRated;
-end
-
-function API:GetCurrentMapID()
-    return select(8,GetInstanceInfo());
 end
 
 function API:GetTeamMMR(teamIndex)

@@ -189,6 +189,18 @@ ArenaAnalytics.commands = {
 		print(" ");
 	end,
 
+	-- Debugging: Used to gather zone and version info from users helping with version update
+	["devcontext"] = function(...)
+		print(" ");
+		ArenaAnalytics:Print(" ================================================  ");
+		ArenaAnalytics:Print("Interface Version:", select(4, GetBuildInfo()));
+
+		if(API and API.IsInArena()) then
+			ArenaAnalytics:Print("Arena Map ID:", API:GetCurrentMapID(), GetZoneText());
+		end
+		print(" ");
+	end,
+
 	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function(...)
 		print(" ");

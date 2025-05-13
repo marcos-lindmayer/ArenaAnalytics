@@ -98,11 +98,21 @@ end
 
 local function GenerateMapEntries()
     assert(API.availableMaps);
-    
-    local mapTable = {}
-    for _,token in ipairs(API.availableMaps) do
+
+    local mapTable = {
+        {
+            label = "All Maps",
+            alignment = "LEFT",
+            key = "Filter_Map",
+            value = "All",
+            onClick = FilterTables.SetFilterValue,
+            checked = FilterTables.IsFilterEntryChecked,
+        },
+    };
+
+    for idx,token in ipairs(API.availableMaps) do
         local map_id = Internal:GetAddonMapID(token);
-        assert(map_id, "Invalid map token in availableMaps: " .. (data and data.token or "nil") .. ", with id: " .. (data and data.id or "nil"));
+        assert(map_id, "Invalid map token in availableMaps: " .. (token or "nil") .. ", at index: " .. (idx or "nil"));
 
         tinsert(mapTable, {
             label = Internal:GetMapName(map_id),
@@ -117,11 +127,36 @@ local function GenerateMapEntries()
     return mapTable;
 end
 
+local function GenerateOutcomeEntries()
+    local outcomes = {
+        {label = "Any", value = "All"},
+        {label = "Wins", value = 1},
+        {label = "Losses", value = 0},
+        {label = "Draws", value = 2}
+    }
+    
+    local outcomeTable = {}
+
+    for _, entry in ipairs(outcomes) do
+        tinsert(outcomeTable, {
+            label = entry.label,
+            alignment = "LEFT",
+            key = "Filter_Outcome",
+            value = entry.value,
+            onClick = FilterTables.SetFilterValue,
+            checked = FilterTables.IsFilterEntryChecked,
+        });
+    end
+
+    return outcomeTable;
+end
+
 local function OnMainButtonClicked(dropdownContext, btn)
     if(btn == "RightButton") then
         Filters:Reset("Filter_Season", true);
         Filters:Reset("Filter_Date", true);
         Filters:Reset("Filter_Map", true);
+        Filters:Reset("Filter_Outcome", true);
     else
         dropdownContext.parent:Toggle();
     end
@@ -158,6 +193,14 @@ function FilterTables:Init_MoreFilters()
                 alignment = "LEFT",
                 key = "Filter_Map",
                 nested = GenerateMapEntries(),
+                onClick = FilterTables.ResetFilterValue,
+                checked = FilterTables.IsFilterActive,
+            },
+            {
+                label = "Result",
+                alignment = "LEFT",
+                key = "Filter_Outcome",
+                nested = GenerateOutcomeEntries(),
                 onClick = FilterTables.ResetFilterValue,
                 checked = FilterTables.IsFilterActive,
             },

@@ -104,7 +104,7 @@ function Import.ProcessNextMatch_ReflexArenas(arenaString)
 
     -- Set basic arena properties
     newArena.date = date;           -- Date
-    newArena.map = Internal:GetMapToken(cachedValues[2]);   -- Map
+    newArena.map = tonumber(cachedValues[2]);   -- Map
 
     -- Fill teams
     newArena.players = TablePool:Acquire();

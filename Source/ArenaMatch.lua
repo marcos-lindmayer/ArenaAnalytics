@@ -36,7 +36,7 @@ local matchKeys = {
 
     transient_seasonPlayed = -100,
     transient_requireRatingFix = -101,
-}
+};
 
 local playerKeys = {
     name = 0,
@@ -55,7 +55,7 @@ local roundKeys = {
     data = 0,
     comp = -1,
     enemy_comp = -2,
-}
+};
 
 -- DEPRECATED (USed for conversion still)
 local oldPlayerKeys = {
@@ -75,7 +75,7 @@ local oldPlayerKeys = {
     ratingDelta = -13,
     mmr = -14,
     mmrDelta = -15,
-}
+};
 
 -------------------------------------------------------------------------
 -- Temp conversion functions
@@ -377,7 +377,25 @@ function ArenaMatch:GetMapID(match)
     end;
 
     local key = matchKeys.map;
-    return match and tonumber(match[key]);
+    local value = match and match[key];
+
+    -- Table implies saved map is invalid or Game Map ID
+    if(type(value) == "table") then
+        if(value.raw) then
+            -- Check for map_id from an arbitrary raw value
+            local map_id = tonumber(Internal:GetAddonMapID(value.raw));
+            if(map_id) then
+                match[key] = map_id;
+                return map_id;
+            end
+        else
+            match[key] = nil;
+        end
+
+        return nil;
+    end
+
+    return tonumber(value);
 end
 
 function ArenaMatch:GetMap(match, useShortName)
@@ -400,17 +418,20 @@ end
 
 function ArenaMatch:SetMap(match, value)
     assert(match);
-    
+
     if(not value) then
         return;
     end
 
     local map_id = Internal:GetAddonMapID(value);
-    if(not map_id) then
-        ArenaAnalytics:Log("Warning: ArenaMatch:SetMap failed to find map_id for value:", value);
-    end
+    if(map_id) then
+        match[matchKeys.map] = tonumber(map_id);
+    else
+        ArenaAnalytics:LogError("ArenaMatch:SetMap failed to find map_id for value:", value);
 
-    match[matchKeys.map] = tonumber(map_id)
+        -- Store raw value to fix later
+        match[matchKeys.map] = { raw=value };
+    end
 end
 
 -------------------------------------------------------------------------

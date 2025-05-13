@@ -41,6 +41,7 @@ API.availableMaps = {
     "EnigmaCrucible",
     "MaldraxxusColiseum",
     "TolVironArena",
+    "CageOfCarnage",
 };
 
 function API:IsInArena()
@@ -74,10 +75,6 @@ function API:GetBattlefieldStatus(battlefieldId)
     end
 
     return status, bracket, teamSize, isRated, isShuffle;
-end
-
-function API:GetCurrentMapID()
-    return select(8,GetInstanceInfo());
 end
 
 function API:GetTeamMMR(teamIndex)

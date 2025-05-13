@@ -31,8 +31,9 @@ local mapTokens = {
     [1134] = "TheTigersPeak",
     [2547] = "EnigmaCrucible",
     [2509] = "MaldraxxusColiseum",
-    [980] = "TolVironArena"
-}
+    [980] = "TolVironArena",
+    [2759] = "CageOfCarnage",
+};
 
 function Internal:GetMapToken(mapID)
     mapID = tonumber(mapID);
@@ -47,7 +48,7 @@ function Internal:GetMapToken(mapID)
         return nil;
     end
 
-    return token
+    return token;
 end
 
 local addonMapIDs = {
@@ -74,15 +75,16 @@ local addonMapIDs = {
     [16] =  { token = "MaldraxxusColiseum", shortName = "MC", name = "Maldraxxus Coliseum" },
 
     [17] =  { token = "NokhudonProvingGrounds", shortName = "NPG", name = "Nokhudon Proving Grounds" },
-}
+    [18] =  { token = "CageOfCarnage", shortName = "CoC", name = "Cage of Carnage" },
+};
 
 function Internal:GetAddonMapID(map)
-    if(not map) then
-        return nil;
-    end
-
     if(tonumber(map)) then
         map = Internal:GetMapToken(map);
+    end
+
+    if(not map) then
+        return nil;
     end
 
     map = Helpers:ToSafeLower(map);
@@ -91,11 +93,11 @@ function Internal:GetAddonMapID(map)
         assert(data and data.token);
 
         if(map == Helpers:ToSafeLower(data.token)) then
-            return map_id;
+            return tonumber(map_id);
         elseif(map == Helpers:ToSafeLower(data.shortName)) then
-            return map_id;
+            return tonumber(map_id);
         elseif(map == Helpers:ToSafeLower(data.name)) then
-            return map_id;
+            return tonumber(map_id);
         end
     end
 
@@ -146,7 +148,7 @@ local addonRaceIDs = {
     [24] = { token = "Earthen",              name = "Earthen" },
     [26] = { token = "ZandalariTroll",       name = "Zandalari Troll" },
     [28] = { token = "Vulpera",              name = "Vulpera" },
-}
+};
 
 function Internal:GetAddonRaceIDByToken(token, factionIndex)
     if(not token) then
@@ -377,10 +379,12 @@ function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
     spec = SanitizeSpec(spec);
 
     -- Iterate through the table to find the matching class and spec
-    for id,data in pairs(addonSpecializationIDs) do
-        if(Helpers:GetClassID(id) == class_id) then
-            if(spec == SanitizeSpec(data.spec)) then
-                return id;
+    if(addonSpecializationIDs) then
+        for id,data in pairs(addonSpecializationIDs) do
+            if(Helpers:GetClassID(id) == class_id) then
+                if(spec == SanitizeSpec(data.spec)) then
+                    return id;
+                end
             end
         end
     end
@@ -389,6 +393,10 @@ function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
 end
 
 function Internal:GetRoleBitmap(spec_id)
+    if(not addonSpecializationIDs) then
+        return nil;
+    end
+
     spec_id = tonumber(spec_id);
     if(not spec_id or not addonSpecializationIDs[spec_id]) then
         return nil;
@@ -400,7 +408,7 @@ end
 -------------------------------------------------------------------------
 
 function Internal:GetClassAndSpec(spec_id)
-    if(not spec_id) then
+    if(not spec_id or not addonSpecializationIDs) then
         return nil;
     end
 
