@@ -205,8 +205,8 @@ local SearchTokenTypeTable = {
             [93] = { "shadow", "spriest", "sp" },
 
             -- Monk
-            [101] = { "brewmaster", "bmmonk" },
-            [102] = { "mistweaver", "mwmonk", "mw" },
+            [101] = { "mistweaver", "mwmonk", "mw" },
+            [102] = { "brewmaster", "bmmonk" },
             [103] = { "windwalker", "wwmonk", "ww" },
 
             -- Demon Hunter
@@ -318,12 +318,11 @@ function Search:FindSearchValueDataForToken(token)
     assert(token);
 
     if(token.value == nil or type(token.value) == "string" and #token.value < 2) then
-        ArenaAnalytics:Log("FindSearchValueDataForToken bailing out early!", token.value and #token.value)
         return;
     end
 
     local lowerCaseValue = Helpers:ToSafeLower(token.value);
-    
+
     -- Cached info about the best match
     local bestMatch = nil;
     local function SetBestMatch(score, typeKey, valueKey, noSpace, isExactMatch)
