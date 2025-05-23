@@ -565,7 +565,7 @@ function ArenaAnalytics:GetLatestRating(bracketIndex, explicitSeason, explicitSe
 					local rating = ArenaMatch:GetPartyRating(match);
 					local bracket = ArenaMatch:GetBracketIndex(match);
 					if(rating and bracket == bracketIndex) then
-						return rating, seasonPlayed;
+						return rating, passedSeasonPlayed;
 					end
 				end
 			end
@@ -708,7 +708,6 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 
 	-- Assign session
 	Sessions:AssignSession(arenaData);
-	ArenaAnalytics:Log("session:", session);
 
 	if(newArena.requireRatingFix) then
 		-- Transient data

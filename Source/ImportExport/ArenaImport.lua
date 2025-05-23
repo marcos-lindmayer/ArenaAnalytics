@@ -231,7 +231,7 @@ function Import:ProcessImport()
             end
 
             local arenaString = iterator();
-            if(state.index > 0) then -- First iteration is the format prefix, before arena index 1
+            if(state and state.index and state.index > 0) then -- First iteration is the format prefix, before arena index 1
                 if(not arenaString) then
                     ArenaAnalytics:Log("Empty arenaString")
                     Import:Finalize();
@@ -289,7 +289,7 @@ function Import:Finalize()
 
     local elapsedText = elapsed and format(" in %.1f seconds.", elapsed) or "";
     ArenaAnalytics:PrintSystem(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingCount), elapsedText));
-    ArenaAnalytics:Log(format("Import ignored %d arenas due to their date.", skippedArenaCount));
+    ArenaAnalytics:Log(format("Import ignored %d arenas due to their date.", (state and state.skippedArenaCount or -1)));
 end
 
 function Import:SaveArena(arena)
@@ -322,7 +322,7 @@ function Import:SaveArena(arena)
 		ArenaMatch:SetEnemyMMR(newArena, arena.enemyMMR);
 	end
 
-	ArenaMatch:SetSeason(newArena, season);
+	ArenaMatch:SetSeason(newArena, arena.season);
 
 	ArenaMatch:SetMatchOutcome(newArena, arena.outcome);
 

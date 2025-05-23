@@ -48,7 +48,7 @@ function Search:GetTokenPrefixKey(text)
     if prefix then
         for key,data in pairs(PrefixTable) do
             assert(data.Aliases and #data.Aliases > 0);
-            
+
             for _,alias in ipairs(data.Aliases) do
                 if(prefix == alias) then
                     return key, value, data.NoSpaces;

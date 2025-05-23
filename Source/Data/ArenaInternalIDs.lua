@@ -28,7 +28,7 @@ local mapTokens = {
     [1504] = "BlackRookHoldArena",
     [1825] = "HookPoint",
     [2373] = "EmpyreanDomain",
-    [1134] = "TheTigersPeak",
+    [1134] = "TigersPeak",
     [2547] = "EnigmaCrucible",
     [2509] = "MaldraxxusColiseum",
     [980] = "TolVironArena",
@@ -59,7 +59,7 @@ local addonMapIDs = {
     [4]  =  { token = "RingOfValor", shortName = "RoV", name = "Ring of Valor" },
     [5]  =  { token = "DalaranArena", shortName = "DA", name = "Dalaran Arena" },
 
-    [6]  =  { token = "TheTigersPeak", shortName = "TTP", name = "The Tiger's Peak" },
+    [6]  =  { token = "TigersPeak", shortName = "TTP", name = "The Tiger's Peak" },
     [7]  =  { token = "TolVironArena", shortName = "TVA", name = "Tol'Viron Arena" },
 
     [8]  =  { token = "AshamanesFall", shortName = "AF", name = "Ashamane's Fall" },

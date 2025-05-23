@@ -44,7 +44,7 @@ local specSpells = {
     -- Protection
     [ 31935 ] = 12, -- Avenger's Shield
     [ 53595 ] = 12, -- Hammer of the Righteous
-    [ 31935 ] = 12, -- Shield of the Righteous
+    [ 53600 ] = 12, -- Shield of the Righteous
     [ 20925 ] = 12, -- Holy Shield
     [ 20927 ] = 12, -- Divine Guardian
     [ 20928 ] = 12, -- Ardent Defender

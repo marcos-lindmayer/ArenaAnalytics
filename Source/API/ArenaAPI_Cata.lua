@@ -16,7 +16,7 @@ API.availableBrackets = {
 	{ name = "2v2", key = 1},
 	{ name = "3v3", key = 2},
 	{ name = "5v5", key = 3},
-}
+};
 
 API.availableMaps = {
     "BladesEdgeArena",

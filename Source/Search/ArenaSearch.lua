@@ -153,11 +153,11 @@ local function GetPersistentData()
                 end
             end
         end
-        
+
         if(persistentSegment.isEnemyTeam == nil and Options:Get("searchDefaultExplicitEnemy")) then
             persistentSegment.isEnemyTeam = true;
         end
-        
+
         if(not persistentSegment.inversed) then
             persistentData.nonInversedCount = persistentData.nonInversedCount + 1;
         end
@@ -243,7 +243,7 @@ local function CheckTypeForPlayer(searchType, token, player)
     end
 
     -- Class and Spec IDs may be numbers in the token
-    if(type(playerValue) == "number" or type(token.value) == number) then
+    if(type(playerValue) == "number" or type(token.value) == "number") then
         return tonumber(playerValue) == tonumber(token.value);
     else
         return not token.exact and playerValue:find(token.value, 1, true) or (token.value == playerValue);

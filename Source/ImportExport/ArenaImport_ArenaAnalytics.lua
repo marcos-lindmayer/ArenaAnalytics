@@ -46,7 +46,7 @@ function Import:CheckDataSource_ArenaAnalytics(outImportData)
     outImportData.isValid = true;
     outImportData.sourceName = sourceName;
     outImportData.prefixLength = #formatPrefix;
-    outImportData.processorFunc = Import.ProcessNextMatch_ReflexArenas;
+    outImportData.processorFunc = Import.ProcessNextMatch_ArenaAnalytics;
     return true;
 end
 
@@ -54,3 +54,6 @@ end
 -- Process arenas
 
 -- TODO: Implement
+function Import.ProcessNextMatch_ArenaAnalytics(arenaString, index)
+
+end

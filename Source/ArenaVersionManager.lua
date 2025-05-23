@@ -35,8 +35,8 @@ function VersionManager:compareVersions(version, otherVersion)
     local function versionToTable(inVersion)
         local outTable = {}
         inVersion = inVersion or 0;
-        
-        arenasRaw:gsub("([^.]*).", function(c)
+
+        inVersion:gsub("([^.]*).", function(c)
             table.insert(outTable, c)
         end);
 
@@ -46,7 +46,7 @@ function VersionManager:compareVersions(version, otherVersion)
     if(version ~= otherVersion) then
         local v1table = versionToTable(version);
         local v2table = versionToTable(otherVersion);
-        
+
         local length = max(#v1table, #v2table);
         for i=1, length do
             local v1 = tonumber(v1table[i]) or 0;
@@ -164,7 +164,7 @@ local function convertFormatedDurationToSeconds(inDuration)
         else
             ArenaAnalytics:LogError("Converting duration failed (:", inDuration, ")");
         end
-        
+
         if(minutes and seconds) then
             return 60*minutes + seconds;
         else
@@ -210,7 +210,7 @@ end
 -- Convert long form string comp to addon spec ID comp
 local function convertCompToShortFormat(comp, bracket)
     local size = ArenaAnalytics:getTeamSizeFromBracket(bracket);
-    
+
     local newComp = {}
     for i=1, size do
         local specKeyString = comp[i];
@@ -302,7 +302,6 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 
                 ArenaAnalytics:Log("Adding arena from ArenaAnalyticsDB (Old format)", #MatchHistoryDB)
                 table.insert(MatchHistoryDB, updatedArenaData);
-                requiresReload = true;
             end
         end
     end
@@ -457,7 +456,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
         end
     end
 
-    local myName = Helpers:GetPlayerName(skipRealm);
+    local myName = Helpers:GetPlayerName();
     if(myName) then
         selfNames[myName] = true;
     else

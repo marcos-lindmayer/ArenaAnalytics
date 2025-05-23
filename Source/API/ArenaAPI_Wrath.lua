@@ -91,8 +91,8 @@ function API:GetPlayerScore(index)
         deaths = deaths,
         damage = damage,
         healing = healing,
-    }
-    
+    };
+
     return score;
 end
 
@@ -217,7 +217,7 @@ API.classMappingTable = {
     [11] = 0,
     [12] = 110,
     [13] = 120,
-}
+};
 
 -- Internal Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
@@ -269,7 +269,7 @@ API.roleBitmapOverrides = nil;
 local function InitializeRoleBitmapOverrides()
     API.roleBitmapOverrides = {
         [43] = Bitmap.roles.ranged_damager, -- Survival hunter
-    }
+    };
 end
 
 -------------------------------------------------------------------------

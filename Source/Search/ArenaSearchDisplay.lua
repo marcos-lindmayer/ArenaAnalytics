@@ -53,8 +53,13 @@ function Search:SetCurrentDisplay()
     Search.current.display = newDisplay;
 
     -- Update the searchBox
-    searchBox:SetText(newDisplay);
-    searchBox:SetCursorPosition(newCaretPosition or #newDisplay);
+    local searchBox = ArenaAnalyticsScrollFrame.searchBox;
+    if(searchBox) then
+        searchBox:SetText(newDisplay);
+        searchBox:SetCursorPosition(newCaretPosition or #newDisplay);
+    else
+        ArenaAnalytics:LogWarning("Mising search box");
+    end
 end
 
 function Search:GetTokenDisplay(token)

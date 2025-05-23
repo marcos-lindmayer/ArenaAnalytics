@@ -97,23 +97,27 @@ local specSpells = {
     -- SHAMAN
 
     -- Restoration
-    [ 16190 ] = 21, -- Mana Tide Totem
-    [ 974 ] = 21, -- Earth Shield
-    [ 32593 ] = 21, -- Earth Shield
-    [ 32594 ] = 21, -- Earth Shield
-    [ 49283 ] = 21, -- Earth Shield
-    [ 49284 ] = 21, -- Earth Shield
+    [ 16188 ] = 21, -- Nature's Swiftness
+    [ 974 ] = 21, -- Earth Shield (Rank 1)
+    [ 32593 ] = 21, -- Earth Shield (Rank 2)
+    [ 32594 ] = 21, -- Earth Shield (Rank 3)
+    [ 49283 ] = 21, -- Earth Shield (Rank 4)
+    [ 49284 ] = 21, -- Earth Shield (Rank 5)
     [ 16190 ] = 21, -- Mana Tide Totem
     [ 61300 ] = 21, -- Riptide
+    [ 51886 ] = 21, -- Cleanse Spirit
 
     -- Elemental
     [ 16166 ] = 22, -- Elemental Mastery
+    [ 30706 ] = 22, -- Totem of Wrath
     [ 59159 ] = 22, -- Thunderstorm
 
     -- Enhancement
     [ 30823 ] = 23, -- Shamanistic Rage
     [ 17364 ] = 23, -- Stormstrike
-    [ 30823 ] = 23, -- Shamanistic Rage
+    [ 60103 ] = 23, -- Lava Lash
+    [ 53817 ] = 23, -- Maelstrom Weapon
+    [ 51533 ] = 23, -- Feral Spirit
 
     --------------------------------------------------------
     -- DEATHKNIGHT
@@ -191,7 +195,6 @@ local specSpells = {
     [ 36554 ] = 61, -- Shadowstep
     [ 44373 ] = 61, -- Shadowstep Speed
     [ 36563 ] = 61, -- Shadowstep DMG
-    [ 14278 ] = 61, -- Ghostly Strike
     [ 31665 ] = 61, -- Master of Subtlety
     [ 51713 ] = 61, -- Shadow Dance
 

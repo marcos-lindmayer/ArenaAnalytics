@@ -458,7 +458,7 @@ function ArenaAnalytics:init()
 	-- Version Control
 	---------------------------------
 
-	VersionManager:OnInit();	
+	VersionManager:OnInit();
 
 	---------------------------------
 	-- Startup

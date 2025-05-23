@@ -2,8 +2,10 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Export = ArenaAnalytics.Export;
 
 -- Local module aliases
+local AAtable = ArenaAnalytics.AAtable;
 
 -------------------------------------------------------------------------
+
 -- ArenaAnalytics export
 
 -- TODO: Improve the export format

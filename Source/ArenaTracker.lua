@@ -16,12 +16,12 @@ local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
-function ArenaTracker:getCurrentArena()
-	return currentArena;
-end
-
 -- Arena variables
 local currentArena = {}
+
+function ArenaTracker:GetCurrentArena()
+	return currentArena;
+end
 
 -- Reset current arena values
 function ArenaTracker:Reset()

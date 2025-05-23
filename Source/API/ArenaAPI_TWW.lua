@@ -22,7 +22,7 @@ API.availableBrackets = {
 	{ name = "2v2", key = 1},
 	{ name = "3v3", key = 2},
 	{ name = "5v5", key = 3, requireMatches = true },    -- TODO: Implement requireMatches logic
-}
+};
 
 -- Order defines the UI order of maps filter dropdown
 API.availableMaps = {
@@ -37,7 +37,7 @@ API.availableMaps = {
     "HookPoint",
     "EmpyreanDomain",
     "DalaranArena",
-    "TheTigersPeak",
+    "TigersPeak",
     "EnigmaCrucible",
     "MaldraxxusColiseum",
     "TolVironArena",
@@ -45,7 +45,7 @@ API.availableMaps = {
 };
 
 function API:IsInArena()
-    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl(); -- TODO: Add solo shuffle support
+    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
 end
 
 function API:IsRatedArena()
@@ -97,7 +97,6 @@ function API:GetPersonalRatedInfo(bracketIndex)
     return rating, seasonPlayed;
 end
 
--- TODO: Decide if we wanna get rating and MMR values from here
 function API:GetPlayerScore(index)
     local scoreInfo = C_PvP.GetScoreInfo(index);
 
@@ -185,7 +184,7 @@ API.classMappingTable = {
     [11] = 0,
     [12] = 110,
     [13] = 120,
-}
+};
 
 -- Internal Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
@@ -240,7 +239,7 @@ API.specMappingTable = {
     [1468] = 121, -- Preservation Evoker
     [1473] = 122, -- Augmentation Evoker
     [1467] = 123, -- Devastation Evoker
-}
+};
 
 -------------------------------------------------------------------------
 -- Overrides
@@ -249,7 +248,7 @@ API.roleBitmapOverrides = nil;
 local function InitializeRoleBitmapOverrides()
     API.roleBitmapOverrides = {
         [43] = Bitmap.roles.melee_damager, -- Survival hunter
-    }
+    };
 end
 
 API.specIconOverrides = nil;
@@ -271,7 +270,7 @@ local function InitializeSpecOverrides()
 
         -- Warrior
         [82] = [[Interface\Icons\ability_warrior_savageblow]], -- Arms
-    }
+    };
 end
 
 -------------------------------------------------------------------------

@@ -20,6 +20,7 @@ function Sessions:AssignSession(match)
 	end
 
 	ArenaMatch:SetSession(match, session);
+	ArenaAnalytics:Log("Assigned session:", session);
 end
 
 function Sessions:RecomputeSessionsForMatchHistory()
@@ -90,7 +91,7 @@ end
 
 -- Returns the start and end times of the last session
 function Sessions:GetLatestSessionStartAndEndTime()
-	local lastSession, expired, bestStartTime, endTime = nil,true;
+	local lastSession, expired, bestStartTime, endTime = nil, true, nil, nil;
 
 	for i=#ArenaAnalyticsDB, 1, -1 do
 		local match = ArenaAnalytics:GetMatch(i);
