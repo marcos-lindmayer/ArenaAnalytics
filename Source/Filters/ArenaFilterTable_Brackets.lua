@@ -52,7 +52,7 @@ function FilterTables:Init_Brackets()
     }
 
     AddBracket("All");
-    
+
     local brackets = API.availableBrackets or {};
     for _,bracket in ipairs(brackets) do
         AddBracket(bracket);

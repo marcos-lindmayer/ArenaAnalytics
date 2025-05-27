@@ -14,31 +14,34 @@ local eventFrame = CreateFrame("Frame");
 local arenaEventFrame = CreateFrame("Frame");
 
 local arenaEvents = { 
-	"UPDATE_BATTLEFIELD_SCORE", 
-	"UNIT_AURA", 
-	"CHAT_MSG_BG_SYSTEM_NEUTRAL", 
-	"COMBAT_LOG_EVENT_UNFILTERED", 
-	"INSPECT_READY", 
-	"ARENA_OPPONENT_UPDATE", 
-	"GROUP_ROSTER_UPDATE", 
+	"INSPECT_READY",
+	"INSPECT_TALENT_READY",
+	"ARENA_OPPONENT_UPDATE",
 	"ARENA_PREP_OPPONENT_SPECIALIZATIONS",
+	"GROUP_ROSTER_UPDATE",
+	"UPDATE_BATTLEFIELD_SCORE",
+	"UNIT_AURA", -- TODO: Modify to allow expansion specfic toggles for events
+	"CHAT_MSG_BG_SYSTEM_NEUTRAL",
+	"COMBAT_LOG_EVENT_UNFILTERED",
 };
 
 local globalEvents = { 
-	"UPDATE_BATTLEFIELD_STATUS", 
-	"ZONE_CHANGED_NEW_AREA", 
+	"UPDATE_BATTLEFIELD_STATUS",
+	"ZONE_CHANGED_NEW_AREA",
 	"PVP_RATED_STATS_UPDATE",
+
+	"INSPECT_READY", -- Used when testing inspection
 };
 
 -- Register an event as a response to a 
 function Events:CreateEventListenerForRequest(event, repeatable, callback)
-    local eventFrame = CreateFrame("Frame")
-    eventFrame:RegisterEvent(event)
-    eventFrame:SetScript("OnEvent", function(self)
+    local frame = CreateFrame("Frame")
+    frame:RegisterEvent(event)
+    frame:SetScript("OnEvent", function(self)
         if(not repeatable) then
 			self:UnregisterEvent(event, nil) -- Unregister the event handler
 			self:Hide() -- Hide the frame
-			eventFrame = nil;
+			frame = nil;
 		end
 
         callback();
@@ -50,6 +53,16 @@ end
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
 local lastStatsUpdateTime = 0;
 local function HandleGlobalEvent(_, eventType, ...)
+	-- Inspect debugging
+	if(API.enableInspection and (eventType == "INSPECT_READY" or eventType == "INSPECT_TALENT_READY")) then
+		ArenaAnalytics:Log(eventType, "triggered:", ...);
+		ArenaAnalytics.Debug:HandleDebugInspect(...);
+
+		if(Inspection and Inspection.HandleInspectReady) then
+			Inspection:HandleInspectReady(...);
+		end
+	end
+
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
 		if(time() - lastStatsUpdateTime < 3) then
 			return;
@@ -58,7 +71,7 @@ local function HandleGlobalEvent(_, eventType, ...)
 		lastStatsUpdateTime = time();
 
 		ArenaAnalytics:TryFixLastMatchRating();
-		
+
 		-- This checks for IsInArena() and IsTrackingArena()
 		if(API:IsInArena()) then
 			ArenaTracker:HandleArenaEnter();
@@ -123,8 +136,9 @@ local function HandleArenaEvent(_, eventType, ...)
 		ArenaTracker:HandlePartyUpdate();
 	elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
 		ParseArenaTimerMessages(...);
-	elseif(API.enableInspection and eventType == "INSPECT_READY") then
+	elseif(API.enableInspection and (eventType == "INSPECT_READY" or eventType == "INSPECT_TALENT_READY")) then
 		if(Inspection and Inspection.HandleInspectReady) then
+			ArenaAnalytics:Log(eventType, "triggered!");
 			Inspection:HandleInspectReady(...);
 		end
 	end

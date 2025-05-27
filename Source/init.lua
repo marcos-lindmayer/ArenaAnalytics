@@ -115,7 +115,7 @@ ArenaAnalytics.commands = {
 					longestDuration = max(longestDuration, duration);
 				end
 
-				if(ArenaMatch:GetSeason(match) == GetCurrentArenaSeason()) then
+				if(ArenaMatch:GetSeason(match) == API:GetCurrentSeason()) then
 					currentSeasonTotalPlayed = currentSeasonTotalPlayed + duration;
 				end
 			end
@@ -157,7 +157,7 @@ ArenaAnalytics.commands = {
 		ArenaAnalytics:PrintSystem("Updating group sorting in ArenaAnalyticsDB.");
 
 		ArenaAnalytics:ResortGroupsInMatchHistory();
-		
+
         ArenaAnalyticsScrollFrame:Hide();
 	end,
 
@@ -205,10 +205,34 @@ ArenaAnalytics.commands = {
 	["test"] = function(...)
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-		local spec_id = API:GetSpecialization();
-		ArenaAnalytics:PrintSystem("My Spec:", spec_id, Internal:GetClassAndSpec(spec_id));
 
-		print(" ");
+		for classIndex = 1, GetNumClasses() do
+			local classDisplayName, classToken, classID = GetClassInfo(classIndex)
+			ArenaAnalytics:Log(classToken, classDisplayName, " (Index: ", classIndex, ")")
+
+			for specIndex = 1, C_SpecializationInfo.GetNumSpecializationsForClassID(classID) do
+				local specID, specName = GetSpecializationInfoForClassID(classID, specIndex)
+				if(specID) then
+					ArenaAnalytics:Log("    ", specID, " - ", specName, API:GetMappedAddonSpecID(specID));
+					if(GetSpecializationInfoByID(specID)) then
+						ArenaAnalytics:Log("    ", GetSpecializationInfoByID(specID));
+					end
+				end
+			end
+		end
+
+		-- MoP Missing specs info:
+		-- Warrior 1
+		-- Paladin 2
+		-- Mage 8
+		-- Monk 10
+		-- Druid 11
+
+		ArenaAnalytics:Print(" ");
+	end,
+
+	["inspect"] = function(...)
+		ArenaAnalytics.Debug:NotifyInspectSpec(...);
 	end,
 };
 
@@ -216,9 +240,9 @@ local function HandleSlashCommands(str)
 	if (#str == 0) then	
 		-- User just entered "/aa" with no additional args.
 		ArenaAnalytics:Toggle();
-		return;		
-	end	
-	
+		return;
+	end
+
 	local args = {};
 	for _, arg in ipairs({ string.split(' ', str) }) do
 		if (#arg > 0) then

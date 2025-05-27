@@ -12,8 +12,11 @@ local Internal = ArenaAnalytics.Internal;
 FilterTables.moreFilters = {}
 
 local function GenerateSeasonData()
-    local currentSeason = GetCurrentArenaSeason();
-    local latestSeason =  math.max(currentSeason, (tonumber(ArenaAnalytics:GetLatestSeason()) or 0));
+    local currentSeason = API:GetCurrentSeason() or 0;
+
+    local latestSeason = tonumber(ArenaAnalytics:GetLatestSeason()) or 0;
+    latestSeason =  math.max(currentSeason, latestSeason, 0);
+
     if(latestSeason == nil or latestSeason == 0) then
         ArenaAnalytics:Log("Invalid latest season. Unable to add seasons");
         return;
@@ -34,8 +37,8 @@ local function GenerateSeasonData()
             key = "Filter_Season",
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
-        }
-    }
+        };
+    };
 
     local expansions = {
         {"The Burning Crusade", 1},
@@ -48,7 +51,7 @@ local function GenerateSeasonData()
         {"Shadowlands", 30},
         {"Dragonflight", 34},
         {"The War Within", 38},
-    }
+    };
 
     for season=1, latestSeason do
         -- Add expansion title
@@ -133,8 +136,8 @@ local function GenerateOutcomeEntries()
         {label = "Wins", value = 1},
         {label = "Losses", value = 0},
         {label = "Draws", value = 2}
-    }
-    
+    };
+
     local outcomeTable = {}
 
     for _, entry in ipairs(outcomes) do
@@ -205,5 +208,5 @@ function FilterTables:Init_MoreFilters()
                 checked = FilterTables.IsFilterActive,
             },
         },        
-    }
+    };
 end

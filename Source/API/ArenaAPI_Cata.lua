@@ -145,22 +145,6 @@ end
 
 API.maxRaceID = 70;
 
-API.classMappingTable = {
-    [1] = 80,
-    [2] = 10,
-    [3] = 40,
-    [4] = 60,
-    [5] = 90,
-    [6] = 30,
-    [7] = 20,
-    [8] = 50,
-    [9] = 70,
-    [10] = 100,
-    [11] = 0,
-    [12] = 110,
-    [13] = 120,
-}
-
 -- Internal Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
     [748] = 1, -- Restoration Druid
@@ -202,7 +186,7 @@ API.specMappingTable = {
     [760] = 91, -- Discipline Priest
     [813] = 92, -- Holy Priest
     [795] = 93, -- Shadow Priest
-}
+};
 
 -------------------------------------------------------------------------
 -- Overrides

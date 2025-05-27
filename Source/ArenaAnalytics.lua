@@ -544,7 +544,7 @@ function ArenaAnalytics:GetLatestSeason()
 		local match = ArenaAnalytics:GetMatch(i);
 		local season = ArenaMatch:GetSeason(match);
 		if(season and season > 0) then
-			return season;
+			return tonumber(season);
 		end
 	end
 
@@ -669,8 +669,8 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 		matchType = "skirmish";
 	end
 
-	local season = GetCurrentArenaSeason();
-	if (season == 0) then
+	local season = API:GetCurrentSeason();
+	if (not season or season == 0) then
 		ArenaAnalytics:Log("Failed to get valid season for new match.");
 	end
 

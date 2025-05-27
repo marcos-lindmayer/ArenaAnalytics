@@ -9,7 +9,23 @@ local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 
-API.numClasses = 13; -- Number of class indices to check for class info
+API.numClasses = 13; -- Number of class indices to check for class info (Custom to support cross expansion import)
+
+API.classMappingTable = {
+    [1] = 80,
+    [2] = 10,
+    [3] = 40,
+    [4] = 60,
+    [5] = 90,
+    [6] = 30,
+    [7] = 20,
+    [8] = 50,
+    [9] = 70,
+    [10] = 100,
+    [11] = 0,
+    [12] = 110,
+    [13] = 120,
+};
 
 function API:GetAddonVersion()
     if(GetAddOnMetadata) then
@@ -27,6 +43,24 @@ function API:GetActiveBattlefieldID()
         end
     end
 	ArenaAnalytics:Log("Failed to find battlefield ID");
+end
+
+-- Unused
+function API:GetMaxSpecializationsForClass(classIndex)
+    if(C_SpecializationInfo) then
+        return C_SpecializationInfo.GetNumSpecializationsForClassID(classIndex);
+    end
+
+    if(GetNumSpecializationsForClassID) then
+        return GetNumSpecializationsForClassID(classIndex);
+    end
+
+    return nil;
+end
+
+-- TODO: Custom off season logic?
+function API:GetCurrentSeason()
+    return GetCurrentArenaSeason();
 end
 
 function API:GetCurrentMapID()

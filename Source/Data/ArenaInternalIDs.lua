@@ -435,9 +435,9 @@ function Internal:Initialize()
     if(hasInitialized) then
         return;
     end
-    
+
 	Bitmap:Initialize();
     InitializeSpecIDs();
-    
+
     hasInitialized = true;
 end

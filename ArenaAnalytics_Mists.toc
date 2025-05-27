@@ -1,8 +1,9 @@
-## Interface: 40400, 40401, 40402
+## Interface: 50500
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
 ## Author: Lingo, Zeetrax
 ## Version: 1.1.0
+## IconTexture: Interface\Icons\achievement_arena_3v3_7
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsSharedSettingsDB
 ## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB, ArenaAnalyticsMapIconPos
@@ -24,7 +25,7 @@ Source/ArenaTablePool.lua
 
 Source/API/ArenaHelpers.lua
 Source/API/ArenaAPI.lua
-Source/API/ArenaAPI_Cata.lua
+Source/API/ArenaAPI_Mists.lua
 Source/API/ArenaInspection.lua
 
 Source/UI/HybridScroll.xml
@@ -39,7 +40,6 @@ Source/UI/Tooltips/ArenaTooltips_Shuffle.lua
 Source/Data/ArenaInternalIDs.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
-Source/Data/ArenaSpecSpells_Cata.lua
 Source/Data/ArenaLocalizationTables.lua
 
 Source/Search/ArenaSearch.lua

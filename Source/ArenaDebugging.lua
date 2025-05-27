@@ -243,3 +243,25 @@ function Debug:PrintScoreboardStats(numPlayers)
         end
     end
 end
+
+-------------------------------------------------------------------------
+-- Inspection Debugging
+
+local lastInspectUnitToken = "target";
+function Debug:NotifyInspectSpec(unitToken)
+    unitToken = unitToken or "target";
+    if(not CanInspect(unitToken)) then
+        return;
+    end
+    ClearInspectPlayer();
+    lastInspectUnitToken = unitToken;
+    ArenaAnalytics:Log("Inspecting:", unitToken);
+    NotifyInspect(unitToken);
+end
+
+function Debug:HandleDebugInspect(GUID)
+    local spec = C_SpecializationInfo.GetSpecialization(true);
+    local spec2 = GetInspectSpecialization(lastInspectUnitToken);
+
+    ArenaAnalytics:Log("HandleDebugInspect:", spec, spec2);
+end

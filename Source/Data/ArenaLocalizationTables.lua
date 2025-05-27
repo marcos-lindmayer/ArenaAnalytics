@@ -52,7 +52,7 @@ function Localization:GetSpecID(classToken, spec)
         for classIndex=1, API.numClasses do
             local _,token = GetClassInfo(classIndex);
             if(Helpers:ToSafeLower(token) == classToken) then
-                for specIndex=0, 5 do
+                for specIndex=0, 4 do
                     local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
                     if(specID) then
                         for genderIndex = 1, 3 do

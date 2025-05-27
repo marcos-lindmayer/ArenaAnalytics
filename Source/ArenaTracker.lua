@@ -606,19 +606,19 @@ function ArenaTracker:HandleArenaExit()
 	assert(currentArena.size);
 	assert(currentArena.mapId);
 
-	if(Inspection and Inspection.CancelTimer) then
-		Inspection:CancelTimer();
+	if(Inspection and Inspection.Clear) then
+		Inspection:Clear();
 	end
 
 	-- Solo Shuffle
 	ArenaTracker:HandleRoundEnd(true);
-	
+
 	currentArena.endTime = currentArena.endTime or time();
 
 	if(not currentArena.endedProperly) then
 		currentArena.ended = true;
 		currentArena.outcome = false;
-		
+
 		ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
 	end
 
@@ -629,7 +629,7 @@ function ArenaTracker:HandleArenaExit()
 		if(newRating and seasonPlayed) then
 			local oldRating = currentArena.oldRating;
 			if(not oldRating) then
-				local season = GetCurrentArenaSeason();
+				local season = API:GetCurrentSeason();
 				oldRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex, season, (seasonPlayed - 1));
 			end
 
@@ -825,12 +825,12 @@ function ArenaTracker:HandlePartyUpdate()
 	ArenaTracker:FillMissingPlayers();
 
 	for i = 1, currentArena.size do
-		local unit = "party"..i;
-		local player = ArenaTracker:GetPlayer(UnitGUID(unit));
+		local unitToken = "party"..i;
+		local player = ArenaTracker:GetPlayer(UnitGUID(unitToken));
 		if(player and not Helpers:IsSpecID(player.spec)) then
 			if(Inspection and Inspection.RequestSpec) then
-				ArenaAnalytics:Log("Tracker: HandlePartyUpdate requesting spec:", unit);
-				Inspection:RequestSpec(unit);
+				ArenaAnalytics:Log("Tracker: HandlePartyUpdate requesting spec:", unitToken);
+				Inspection:RequestSpec(unitToken);
 			end
 		end
 	end

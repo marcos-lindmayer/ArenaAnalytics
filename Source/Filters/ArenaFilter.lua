@@ -10,6 +10,7 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local TablePool = ArenaAnalytics.TablePool;
 local Sessions = ArenaAnalytics.Sessions;
 local Debug = ArenaAnalytics.Debug;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -237,7 +238,7 @@ local function doesMatchPassFilter_Season(match)
     end
     
     if(season == "Current Season") then
-        return ArenaMatch:GetSeason(match) == GetCurrentArenaSeason();
+        return ArenaMatch:GetSeason(match) == API:GetCurrentSeason();
     end
     
     return ArenaMatch:GetSeason(match) == tonumber(season);

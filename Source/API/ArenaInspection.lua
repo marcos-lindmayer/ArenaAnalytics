@@ -51,10 +51,12 @@ local function getPartyUnitToken(GUID)
     for i=1, 4 do
         local unitToken = "party"..i;
         if(UnitGUID(unitToken) == GUID) then
+            ArenaAnalytics:Log("getPartyUnitToken", unitToken);
             return unitToken;
         end
     end
 
+    ArenaAnalytics:Log("getPartyUnitToken invalid.", GUID == nil);
     return nil;
 end
 
@@ -62,6 +64,8 @@ function Inspection:RequestSpec(unitToken)
     if(not API.enableInspection or not unitToken or not API:IsInArena()) then
         return;
     end
+
+    ArenaAnalytics:Log("RequestSpec:", unitToken, CanInspect(unitToken));
 
     if(not CanInspect(unitToken)) then
         return;
@@ -81,7 +85,7 @@ function Inspection:TryInspectNext()
     end
 
     if(currentInspectGUID or (time() - lastNotifyInspect) < 3) then
-        ArenaAnalytics:Log("Skipping inspect attempt: Already/still inspecting!");
+        --ArenaAnalytics:Log("Skipping inspect attempt: Already/still inspecting!");
         return;
     end
 
@@ -114,7 +118,7 @@ local function HandleInspect_Internal(GUID)
 
     local unitToken = getPartyUnitToken(GUID);
     if(unitToken) then
-        local spec_id = API:GetSpecialization(unitToken);
+        local spec_id = API:GetSpecialization(unitToken, true);
         ArenaAnalytics:Log("HandleInspect_Internal", unitToken, spec_id, Internal:GetClassAndSpec(spec_id));
         if(spec_id) then
             foundSpec = true;

@@ -12,36 +12,24 @@ local TablePool = ArenaAnalytics.TablePool;
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
-API.showPerPlayerRatedInfo = true;
-API.useThirdTooltipBackdrop = true;
 API.enableInspection = true;
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {
-    { name = "Solo", key = 4},
-	{ name = "2v2", key = 1},
-	{ name = "3v3", key = 2},
-	{ name = "5v5", key = 3, requireMatches = true },    -- TODO: Implement requireMatches logic
+    -- { name = "Solo", key = 4, requireMatches = true },    -- TODO: Implement requireMatches logic
+    { name = "2v2", key = 1 },
+    { name = "3v3", key = 2 },
+    { name = "5v5", key = 3 },
 };
 
 -- Order defines the UI order of maps filter dropdown
 API.availableMaps = {
+    "BladesEdgeArena",
     "NagrandArena",
     "RuinsOfLordaeron",
-    "TheRobodrome",
-    "NokhudonProvingGrounds",
-    "AshamanesFall",
-    "BladesEdgeArena",
-    "Mugambala",
-    "BlackRookHoldArena",
-    "HookPoint",
-    "EmpyreanDomain",
     "DalaranArena",
     "TigersPeak",
-    "EnigmaCrucible",
-    "MaldraxxusColiseum",
     "TolVironArena",
-    "CageOfCarnage",
 };
 
 function API:IsInArena()
@@ -49,7 +37,7 @@ function API:IsInArena()
 end
 
 function API:IsRatedArena()
-    return API:IsInArena() and (C_PvP.IsRatedArena() or C_PvP.IsRatedSoloShuffle()) and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
+    return API:IsInArena() and C_PvP.IsRatedMap() and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
@@ -58,15 +46,11 @@ function API:GetBattlefieldStatus(battlefieldId)
         return nil;
     end
 
-    local status, _, teamSize = GetBattlefieldStatus(battlefieldId);
+    local status, _, _, _, _, teamSize = GetBattlefieldStatus(battlefieldId);
     local isRated = API:IsRatedArena();
-    local isShuffle = API:IsSoloShuffle();
 
     local bracket = nil;
-    if(isShuffle) then
-        teamSize = 3;
-        bracket = 4;
-    elseif(teamSize == 2) then
+    if(teamSize == 2) then
         bracket = 1;
     elseif(teamSize == 3) then
         bracket = 2;
@@ -74,7 +58,8 @@ function API:GetBattlefieldStatus(battlefieldId)
         bracket = 3;
     end
 
-    return status, bracket, teamSize, isRated, isShuffle;
+    ArenaAnalytics:Log(status, bracket, teamSize, isRated)
+    return status, bracket, teamSize, isRated;
 end
 
 function API:GetTeamMMR(teamIndex)
@@ -94,76 +79,64 @@ function API:GetPersonalRatedInfo(bracketIndex)
     end
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
+    ArenaAnalytics:Log(rating, seasonPlayed, bracketIndex);
     return rating, seasonPlayed;
 end
 
 function API:GetPlayerScore(index)
-    local scoreInfo = C_PvP.GetScoreInfo(index);
+    local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(index);
+    name = Helpers:ToFullName(name);
 
-    local score = TablePool:Acquire();
-    if(not scoreInfo) then
-        return score;
-    end
+    -- Convert values
+    local race_id = Localization:GetRaceID(race);
+    local class_id = Internal:GetAddonClassID(classToken);
 
-    local spec_id = Localization:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
-    if(not spec_id) then
-        spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
-    end
-
-    score.name = Helpers:ToFullName(scoreInfo.name);
-    score.race = Localization:GetRaceID(scoreInfo.raceName);
-    score.spec = spec_id;
-    score.team = scoreInfo.faction;
-    score.kills = scoreInfo.killingBlows;
-    score.deaths = scoreInfo.deaths;
-    score.damage = scoreInfo.damageDone;
-    score.healing = scoreInfo.healingDone;
-    score.rating = scoreInfo.rating;
-    score.ratingDelta = scoreInfo.ratingChange;
-
-    if(API:IsSoloShuffle()) then
-        -- Assume shuffle only has one stat (ID changes randomly)
-        local firstStat = scoreInfo.stats and scoreInfo.stats[1];
-        if(firstStat) then
-            score.wins = firstStat.pvpStatValue;
-        end
-    end
-
-    -- MMR
-    local oldMMR = tonumber(scoreInfo.prematchMMR);
-    local newMMR = tonumber(scoreInfo.postmatchMMR);
-    if(oldMMR and oldMMR > 0) then
-        score.mmr = oldMMR;
-
-        if(newMMR and newMMR > 0) then
-            score.mmrDelta = newMMR - oldMMR;
-        end
-    end
+    local score = {
+        name = name,
+        race = race_id,
+        spec = class_id,
+        team = teamIndex,
+        kills = kills,
+        deaths = deaths,
+        damage = damage,
+        healing = healing,
+    };
 
     return score;
 end
 
 function API:GetSpecialization(unitToken, explicit)
+    if(unitToken ~= nil) then
+        ArenaAnalytics:Log("API:GetSpecialization", unitToken, explicit)
+    end
+
     if(explicit and not unitToken) then
         return nil;
     end
 
     unitToken = unitToken or "player";
     if(not UnitExists(unitToken)) then
+        ArenaAnalytics:LogWarning("Invalid Unit Token in API:GetSpecialization");
         return nil;
     end
 
     if(UnitGUID(unitToken) == UnitGUID("player")) then
-        local currentSpec = GetSpecialization();
+        local currentSpec = C_SpecializationInfo.GetSpecialization();
 		if(currentSpec == 5) then
 			return nil;
 		end
 
-        local id = currentSpec and GetSpecializationInfo(currentSpec);
+        local id = currentSpec and C_SpecializationInfo.GetSpecializationInfo(currentSpec);
         return API:GetMappedAddonSpecID(id);
     end
 
-    local specID = GetInspectSpecialization(unitToken);
+    local specID = C_SpecializationInfo.GetSpecialization(true);
+    if(specID == nil or specID == 0) then
+        return nil;
+    end
+
+    ArenaAnalytics:LogGreen("API:GetSpecialization attempted to C_SpecializationInfo.GetSpecializationInfo(true)", unitToken, specID, API:GetMappedAddonSpecID(specID));
+    ArenaAnalytics:LogWarning(C_SpecializationInfo.GetSpecialization(true));
     return API:GetMappedAddonSpecID(specID);
 end
 
@@ -173,6 +146,54 @@ function API:GetPlayerInfoByGUID(GUID)
 end
 
 API.maxRaceID = 70;
+
+-- Internal Addon Spec ID to expansion spec IDs
+--[[
+API.specMappingTable = {
+    [748] = 1, -- Restoration Druid
+    [750] = 2, -- Feral Druid
+    [752] = 3, -- Balance Druid
+
+    [831] = 11, -- Holy Paladin
+    [839] = 12, -- Protection Paladin
+    [855] = 14, -- Retribution Paladin
+
+    [262] = 21, -- Restoration Shaman
+    [261] = 22, -- Elemental Shaman
+    [263] = 23, -- Enhancement Shaman
+
+    [400] = 31, -- Unholy Death Knight
+    [399] = 32, -- Frost Death Knight
+    [398] = 33, -- Blood Death Knight
+
+    [811] = 41, -- Beast Mastery Hunter
+    [807] = 42, -- Marksmanship Hunter
+    [809] = 43, -- Survival Hunter
+
+    [823] = 51, -- Frost Mage
+    [851] = 52, -- Fire Mage
+    [799] = 53, -- Arcane Mage
+
+    [183] = 61, -- Subtlety Rogue
+    [182] = 62, -- Assassination Rogue
+    [181] = 63, -- Combat Rogue
+
+    [871] = 71, -- Affliction Warlock
+    [865] = 72, -- Destruction Warlock
+    [867] = 73, -- Demonology Warlock
+
+    [845] = 81, -- Protection Warrior
+    [746] = 82, -- Arms Warrior
+    [815] = 83, -- Fury Warrior
+
+    [760] = 91, -- Discipline Priest
+    [813] = 92, -- Holy Priest
+    [795] = 93, -- Shadow Priest
+
+    [270] = 101, -- Mistweaver Monk
+    [268] = 102, -- Brewmaster Monk
+    [269] = 103, -- Windwalker Monk
+};  --]]
 
 -- Internal Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
@@ -203,7 +224,7 @@ API.specMappingTable = {
 
     [261] = 61, -- Subtlety Rogue
     [259] = 62, -- Assassination Rogue
-    [260] = 64, -- Outlaw Rogue
+    [260] = 63, -- Outlaw Rogue
 
     [265] = 71, -- Affliction Warlock
     [267] = 72, -- Destruction Warlock
@@ -236,7 +257,7 @@ API.roleBitmapOverrides = nil;
 local function InitializeRoleBitmapOverrides()
     API.roleBitmapOverrides = {
         [43] = Bitmap.roles.melee_damager, -- Survival hunter
-    };
+    }
 end
 
 API.specIconOverrides = nil;
@@ -258,7 +279,7 @@ local function InitializeSpecOverrides()
 
         -- Warrior
         [82] = [[Interface\Icons\ability_warrior_savageblow]], -- Arms
-    };
+    }
 end
 
 -------------------------------------------------------------------------

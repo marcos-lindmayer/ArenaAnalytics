@@ -299,7 +299,7 @@ function ArenaMatch:TryFixLastRating(match)
     end
 
     local season = ArenaMatch:GetSeason(match);
-    local currentSeason = GetCurrentArenaSeason();
+    local currentSeason = API:GetCurrentSeason();
     if(currentSeason and currentSeason > 0 and season and season ~= currentSeason) then
         -- Season appears to have changed, too late to fix last rating.
         ArenaMatch:ClearTransientValues(match);
