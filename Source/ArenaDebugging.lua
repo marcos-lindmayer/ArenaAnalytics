@@ -260,7 +260,14 @@ function Debug:NotifyInspectSpec(unitToken)
 end
 
 function Debug:HandleDebugInspect(GUID)
-    local spec = C_SpecializationInfo.GetSpecialization(true);
+    local spec = nil;
+
+    if(C_SpecializationInfo and C_SpecializationInfo.GetSpecialization) then
+        spec = C_SpecializationInfo.GetSpecialization(true);
+    elseif(GetSpecialization ~= nil) then
+        spec = GetSpecialization(true);
+    end
+
     local spec2 = GetInspectSpecialization(lastInspectUnitToken);
 
     ArenaAnalytics:Log("HandleDebugInspect:", spec, spec2);

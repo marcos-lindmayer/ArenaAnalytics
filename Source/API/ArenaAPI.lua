@@ -47,7 +47,7 @@ end
 
 -- Unused
 function API:GetMaxSpecializationsForClass(classIndex)
-    if(C_SpecializationInfo) then
+    if(C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializationsForClassID) then
         return C_SpecializationInfo.GetNumSpecializationsForClassID(classIndex);
     end
 

@@ -13,7 +13,7 @@ local arenaEventsRegistered = false;
 local eventFrame = CreateFrame("Frame");
 local arenaEventFrame = CreateFrame("Frame");
 
-local arenaEvents = { 
+local arenaEvents = {
 	"INSPECT_READY",
 	"INSPECT_TALENT_READY",
 	"ARENA_OPPONENT_UPDATE",
@@ -25,7 +25,7 @@ local arenaEvents = {
 	"COMBAT_LOG_EVENT_UNFILTERED",
 };
 
-local globalEvents = { 
+local globalEvents = {
 	"UPDATE_BATTLEFIELD_STATUS",
 	"ZONE_CHANGED_NEW_AREA",
 	"PVP_RATED_STATS_UPDATE",
@@ -57,10 +57,6 @@ local function HandleGlobalEvent(_, eventType, ...)
 	if(API.enableInspection and (eventType == "INSPECT_READY" or eventType == "INSPECT_TALENT_READY")) then
 		ArenaAnalytics:Log(eventType, "triggered:", ...);
 		ArenaAnalytics.Debug:HandleDebugInspect(...);
-
-		if(Inspection and Inspection.HandleInspectReady) then
-			Inspection:HandleInspectReady(...);
-		end
 	end
 
 	if(eventType == "PVP_RATED_STATS_UPDATE") then
