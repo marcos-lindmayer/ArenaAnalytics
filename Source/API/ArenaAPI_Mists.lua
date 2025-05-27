@@ -130,13 +130,14 @@ function API:GetSpecialization(unitToken, explicit)
         return API:GetMappedAddonSpecID(id);
     end
 
-    local specID = C_SpecializationInfo.GetSpecialization(true);
+    -- TODO: Figure out what will work in MoP Beta
+    --local specID = C_SpecializationInfo.GetSpecialization(true);
+    local specID = GetInspectSpecialization(unitToken);
     if(specID == nil or specID == 0) then
         return nil;
     end
 
     ArenaAnalytics:LogGreen("API:GetSpecialization attempted to C_SpecializationInfo.GetSpecializationInfo(true)", unitToken, specID, API:GetMappedAddonSpecID(specID));
-    ArenaAnalytics:LogWarning(C_SpecializationInfo.GetSpecialization(true));
     return API:GetMappedAddonSpecID(specID);
 end
 
