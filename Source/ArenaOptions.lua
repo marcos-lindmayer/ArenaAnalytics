@@ -72,6 +72,16 @@ local function AddSetting(setting, default)
     defaults[setting] = default;
 end
 
+local function RemoveSetting(setting)
+    assert(setting ~= nil);
+    if(ArenaAnalyticsSharedSettingsDB[setting] == nil) then
+        return;
+    end
+
+    ArenaAnalyticsSharedSettingsDB[setting] = nil;
+    defaults[setting] = nil;
+end
+
 -- Adds a setting that does not save across reloads. (Use with caution)
 local function AddTransientSetting(setting, default)
     ArenaAnalyticsSharedSettingsDB[setting] = default;
@@ -157,6 +167,11 @@ function Options:LoadSettings()
     -- Debugging
     AddSetting("debuggingLevel", 0);
     AddSetting("hideErrorLogs", false);
+
+    -- Temp Fix
+    if(API.requiresMoPFix or true) then
+        AddSetting("enableMoPHealerCharacterPanelFix", true);
+    end
 
     hasOptionsLoaded = true;
     ArenaAnalytics:Log("Settings loaded successfully.");
@@ -561,6 +576,18 @@ function SetupTab_General()
         CreateCheckbox("enableDoubleAfkToLeave", parent, offsetX*2, "Double |cff00ccff/afk|r to leave the arena.    |cffaaaaaa(Type |cff00ccff/afk|r twice within 5 seconds to confirm.)|r");
         UpdateDoubleAfkState();
     end
+
+    if(API.requiresMoPFix) then
+        CreateSpace();
+
+        local frame = CreateCheckbox("enableMoPHealerCharacterPanelFix", parent, offsetX, "Force healer character panel fix.     |cffaaaaaa(Workaround for MoP Beta Bug)|r", function()
+            if(SHOW_COMBAT_HEALING == nil and Options:Get("enableMoPHealerCharacterPanelFix")) then
+                ArenaAnalytics:LogTemp("Forcing MoP Fix from option change!");
+                SHOW_COMBAT_HEALING = "";
+            end
+        end);
+        frame.tooltip = { "MoP Stats Fix", "Fixes MoP Beta Character Panel Stats for healers.\n\n\n|cffff0000Experimental! Limited testing against taint. Use at own risk.|r" };
+    end
 end
 
 -------------------------------------------------------------------
@@ -570,25 +597,25 @@ end
 function SetupTab_Filters()
     local filterOptionsFrame = CreateFrame("frame");
     Options:RegisterCategory(filterOptionsFrame, "Filters", ArenaAnalyticsOptionsFrame);
-    
+
     -- Title
     InitializeTab(filterOptionsFrame);
     local parent = filterOptionsFrame;
     local offsetX = 20;
-    
+
     parent.tabHeader = CreateHeader("Filters", TabHeaderSize, parent, nil, 15, -15);
-    
+
     CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
     CreateCheckbox("showWarGames", parent, offsetX, "Show War Games in match history.");
-    
+
     CreateSpace();
-    
+
     -- Setup options
     CreateCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
     CreateCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
-    
+
     CreateSpace();
-    
+
     CreateCheckbox("showCompDropdownInfoText", parent, offsetX, "Show info text by comp dropdown titles.", function()
         local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
         if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
@@ -615,12 +642,12 @@ function SetupTab_Filters()
     CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
     CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
         local info = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
-        
+
         local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
         if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
             dropdownFrame.title.info:SetText(info or "");
         end
-        
+
         dropdownFrame = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown;
         if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
             dropdownFrame.title.info:SetText(info or "");
@@ -640,12 +667,12 @@ function SetupTab_Search()
     local filterOptionsFrame = CreateFrame("frame");
     --filterOptionsFrame.name = "Search";
     Options:RegisterCategory(filterOptionsFrame, "Search", ArenaAnalyticsOptionsFrame);
-    
+
     -- Title
     InitializeTab(filterOptionsFrame);
     local parent = filterOptionsFrame;
     local offsetX = 20;
-    
+
     parent.tabHeader = CreateHeader("Search", TabHeaderSize, parent, nil, 15, -15);
 
     -- Setup options
@@ -664,7 +691,7 @@ end
 
 local function ForceUniqueAppendRuleShortcut(dropdownContext, _, parent)
     local setting = dropdownContext and dropdownContext.key or nil;
-    
+
     if(Options:IsValid(setting)) then
         local value = Options:Get(setting);
 
@@ -672,11 +699,11 @@ local function ForceUniqueAppendRuleShortcut(dropdownContext, _, parent)
         for _,appendRule in ipairs(appendRuleFrames) do
             if(appendRule ~= setting) then
                 local appendRuleValue = Options:Get(appendRule);
-                
+
                 -- Clear the existing append rule shortcut, if it's being reused now.
                 if(appendRuleValue == value) then
                     Options:Set(appendRule, "None");
-                    
+
                     local otherDropdown = parent and parent[appendRule];
                     if(otherDropdown and otherDropdown.Refresh) then
                         otherDropdown:Refresh();

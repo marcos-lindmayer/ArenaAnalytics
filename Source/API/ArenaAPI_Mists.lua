@@ -8,11 +8,13 @@ local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
 local TablePool = ArenaAnalytics.TablePool;
+local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
 API.enableInspection = true;
+API.requiresMoPFix = true; -- MoP Beta healer character panel bug fix
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {
@@ -75,11 +77,11 @@ function API:GetPersonalRatedInfo(bracketIndex)
 
     -- Solo Shuffle
     if(bracketIndex == 4) then
-        bracketIndex = 7;
+        return nil;
     end
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
-    ArenaAnalytics:Log(rating, seasonPlayed, bracketIndex);
+    ArenaAnalytics:LogGreen("API:GetPersonalRatedInfo", rating, seasonPlayed, bracketIndex);
     return rating, seasonPlayed;
 end
 
@@ -137,7 +139,7 @@ function API:GetSpecialization(unitToken, explicit)
         return nil;
     end
 
-    ArenaAnalytics:LogGreen("API:GetSpecialization attempted to C_SpecializationInfo.GetSpecializationInfo(true)", unitToken, specID, API:GetMappedAddonSpecID(specID));
+    ArenaAnalytics:LogGreen("API:GetSpecialization attempted to inspect spec!", unitToken, specID, API:GetMappedAddonSpecID(specID));
     return API:GetMappedAddonSpecID(specID);
 end
 
@@ -289,4 +291,9 @@ end
 function API:InitializeExpansion()
     InitializeRoleBitmapOverrides();
     InitializeSpecOverrides();
+
+    if(API.requiresMoPFix and SHOW_COMBAT_HEALING == nil and Options:Get("enableMoPHealerCharacterPanelFix")) then
+        ArenaAnalytics:LogTemp("Forcing MoP Fix!");
+        SHOW_COMBAT_HEALING = "";
+    end
 end

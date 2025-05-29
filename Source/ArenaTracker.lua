@@ -435,6 +435,8 @@ function ArenaTracker:HandleArenaEnter()
 	currentArena.mapId = API:GetCurrentMapID();
 	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId);
 
+	ArenaTracker:HandlePartyUpdate();
+
 	RequestBattlefieldScoreData();
 end
 
@@ -450,6 +452,7 @@ function ArenaTracker:HandleArenaStart(...)
 
 	ArenaTracker:FillMissingPlayers();
 	ArenaTracker:HandleOpponentUpdate();
+	ArenaTracker:HandlePartyUpdate();
 	ArenaTracker:UpdateRoundTeam();
 
 	currentArena.round.startTime = time();
@@ -631,6 +634,7 @@ function ArenaTracker:HandleArenaExit()
 			if(not oldRating) then
 				local season = API:GetCurrentSeason();
 				oldRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex, season, (seasonPlayed - 1));
+				ArenaAnalytics:LogWarning("Fixed missing old rating:", oldRating, currentArena.bracketIndex, season, seasonPlayed);
 			end
 
 			currentArena.partyRating = newRating;

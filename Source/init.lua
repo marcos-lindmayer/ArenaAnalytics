@@ -413,7 +413,7 @@ local function PrintWelcomeMessage()
 	elseif(welcomeMessageSeed == 213) then
 		text = format("I'm watching you, %s!", name);
 	else
-		text = format("Tracking arena games, gl hf %s!!", name);
+		text = format("Tracking arena games, glhf %s!!", name);
 	end
 
     ArenaAnalytics:PrintSystem(text);
@@ -446,7 +446,7 @@ function ArenaAnalytics:init()
 	SLASH_ArenaAnalyticsCommands1 = "/AA";
 	SLASH_ArenaAnalyticsCommands2 = "/ArenaAnalytics";
 	SlashCmdList.ArenaAnalyticsCommands = HandleSlashCommands;
-	
+
 	if(API:HasSurrenderAPI()) then
 		-- Override /afk to surrender in arenas
 		SlashCmdList.CHAT_AFK = function(message)
