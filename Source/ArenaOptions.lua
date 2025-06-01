@@ -99,6 +99,7 @@ function Options:LoadSettings()
     AddSetting("alwaysShowSpecOverlay", false);
     AddSetting("unsavedWarningThreshold", 10);
 
+    AddSetting("compressLargeNumbers", true);
     AddSetting("hideZeroRatingDelta", true);
     AddSetting("hidePlayerTooltipZeroRatingDelta", false);
     AddSetting("ignoreGroupForSkirmishSession", true);
@@ -547,6 +548,7 @@ function SetupTab_General()
 
     CreateSpace();
 
+    CreateCheckbox("compressLargeNumbers", parent, offsetX, "Compact large numbers.");
     CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
     CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
     CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");

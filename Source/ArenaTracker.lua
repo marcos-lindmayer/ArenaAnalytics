@@ -23,6 +23,22 @@ function ArenaTracker:GetCurrentArena()
 	return currentArena;
 end
 
+function ArenaTracker:IsShuffle()
+	return currentArena.bracket == "shuffle";
+end
+
+function ArenaTracker:IsRated()
+	return currentArena.matchType == "rated";
+end
+
+function ArenaTracker:IsWargame()
+	return currentArena.matchType == "wargame";
+end
+
+function ArenaTracker:IsSkirmish()
+	return currentArena.matchType == "skirmish";
+end
+
 -- Reset current arena values
 function ArenaTracker:Reset()
 	ArenaAnalytics:Log("Resetting current arena values..");
@@ -50,8 +66,9 @@ function ArenaTracker:Reset()
 	currentArena.enemyMMR = nil;
 
 	currentArena.size = nil;
-	currentArena.isRated = nil;
-	currentArena.isShuffle = nil;
+	currentArena.matchType = nil; -- rated, wargame, skirmish
+	currentArena.bracket = nil; -- 2v2, 3v3, 5v5, shuffle
+	currentArena.bracketIndex = nil;
 
 	currentArena.players = TablePool:Acquire();
 
@@ -84,7 +101,7 @@ end
 
 -- Get current player wins and all players summed wins
 function ArenaTracker:GetCurrentWins()
-	if(not currentArena.isShuffle) then
+	if(not ArenaTracker:IsShuffle()) then
 		return;
 	end
 
@@ -104,7 +121,7 @@ function ArenaTracker:GetCurrentWins()
 end
 
 function ArenaTracker:UpdateRoundTeam()
-	if(not currentArena.isShuffle) then
+	if(not ArenaTracker:IsShuffle()) then
 		return;
 	end
 
@@ -125,7 +142,7 @@ function ArenaTracker:UpdateRoundTeam()
 end
 
 function ArenaTracker:RoundTeamContainsPlayer(playerName)
-	if(not currentArena.isShuffle) then
+	if(not ArenaTracker:IsShuffle()) then
 		return;
 	end
 
@@ -143,7 +160,7 @@ function ArenaTracker:RoundTeamContainsPlayer(playerName)
 end
 
 function ArenaTracker:IsSameRoundTeam()
-	if(not currentArena.isShuffle) then
+	if(not ArenaTracker:IsShuffle()) then
 		return nil;
 	end
 
@@ -159,7 +176,7 @@ function ArenaTracker:IsSameRoundTeam()
 end
 
 function ArenaTracker:CommitCurrentRound(force)
-	if(not currentArena.isShuffle) then
+	if(not ArenaTracker:IsShuffle()) then
 		return;
 	end
 
@@ -313,7 +330,7 @@ function ArenaTracker:GetShuffleOutcome()
 	return nil;
 end
 
-function ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracket)
+function ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracketIndex)
 	if(not API:IsInArena()) then
 		ArenaAnalytics:Log("IsTrackingCurrentArena: Not in arena.")
 		return false;
@@ -325,7 +342,7 @@ function ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracket)
 		return false;
 	end
 
-	if(arena.bracketIndex ~= bracket) then
+	if(arena.bracketIndex ~= bracketIndex) then
 		ArenaAnalytics:Log("IsTrackingCurrentArena: New bracket.");
 		return false;
 	end
@@ -341,7 +358,7 @@ function ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracket)
 			return false;
 		end
 
-		local _, seasonPlayed = API:GetPersonalRatedInfo(bracket);
+		local _, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
 		local trackedSeasonPlayed = arena.seasonPlayed - (arena.endedProperly and 1 or 0);
 		if(not seasonPlayed or seasonPlayed ~= trackedSeasonPlayed) then
 			ArenaAnalytics:Log("IsTrackingCurrentArena: Invalid season played, or mismatch to tracked value.", seasonPlayed, arena.seasonPlayed)
@@ -369,12 +386,13 @@ function ArenaTracker:HandleArenaEnter()
 		return;
 	end
 
-	local status, bracket, teamSize, isRated, isShuffle = API:GetBattlefieldStatus(battlefieldId);
+	local status, bracket, teamSize, matchType = API:GetBattlefieldStatus(battlefieldId);
+	local bracketIndex = ArenaAnalytics:GetAddonBracketIndex(bracket);
 
-	if(not ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracket)) then
+	if(not ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracketIndex)) then
 		ArenaTracker:Reset();
 	else
-		ArenaAnalytics:Log("Keeping existing tracking!")
+		ArenaAnalytics:LogGreen("Keeping existing tracking!");
 		currentArena = ArenaAnalyticsDB.currentArena;
 	end
 
@@ -397,14 +415,15 @@ function ArenaTracker:HandleArenaEnter()
 
 	currentArena.playerName = Helpers:GetPlayerName();
 
-	currentArena.bracketIndex = bracket;
-	currentArena.isRated = isRated;
-	currentArena.isShuffle = isShuffle;
 	currentArena.size = teamSize;
 
-	ArenaAnalytics:Log("TeamSize:", teamSize, currentArena.size, "Bracket:", currentArena.bracketIndex);
+	currentArena.matchType = matchType;
+	currentArena.bracket = bracket;
+	currentArena.bracketIndex = bracketIndex;
 
-	if(isRated) then
+	ArenaAnalytics:Log("TeamSize:", teamSize, currentArena.size, "Bracket:", bracket);
+
+	if(ArenaTracker:IsRated()) then
 		local oldRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
 		if(GetBattlefieldWinner()) then
 			currentArena.seasonPlayed = seasonPlayed and seasonPlayed - 1; -- Season Played during the match
@@ -462,7 +481,7 @@ function ArenaTracker:HandleArenaStart(...)
 end
 
 function ArenaTracker:CheckRoundEnded()
-	if(not API:IsInArena() or not currentArena.isShuffle) then
+	if(not API:IsInArena() or not ArenaTracker:IsShuffle()) then
 		return;
 	end
 
@@ -489,7 +508,7 @@ end
 
 -- Solo Shuffle specific round end
 function ArenaTracker:HandleRoundEnd(force)
-	if(not API:IsInArena() or not currentArena.isShuffle) then
+	if(not API:IsInArena() or not ArenaTracker:IsShuffle()) then
 		return;
 	end
 
@@ -540,27 +559,27 @@ function ArenaTracker:HandleArenaEnd()
 		player.damage = score.damage;
 		player.healing = score.healing;
 
-		if(currentArena.isRated) then
+		if(ArenaTracker:IsRated()) then
 			player.rating = score.rating;
 			player.ratingDelta = score.ratingDelta;
 			player.mmr = score.mmr;
 			player.mmrDelta = score.mmrDelta;
 		end
 
-		if(currentArena.isShuffle) then
+		if(ArenaTracker:IsShuffle()) then
 			player.wins = score.wins or 0;
 		end
 
 		if(player.name) then
 			-- First Death
-			if(not currentArena.isShuffle and player.name == firstDeath) then
+			if(not ArenaTracker:IsShuffle() and player.name == firstDeath) then
 				player.isFirstDeath = true;
 			end
 
 			if (player.name == currentArena.playerName) then
 				myTeamIndex = player.teamIndex;
 				player.isSelf = true;
-			elseif(currentArena.isShuffle) then
+			elseif(ArenaTracker:IsShuffle()) then
 				player.isEnemy = true;
 			end
 
@@ -572,7 +591,7 @@ function ArenaTracker:HandleArenaEnd()
 		TablePool:Release(score);
 	end
 
-	if(currentArena.isShuffle) then
+	if(ArenaTracker:IsShuffle()) then
 		-- Determine match outcome
 		currentArena.outcome = ArenaTracker:GetShuffleOutcome()
 	else
@@ -592,7 +611,7 @@ function ArenaTracker:HandleArenaEnd()
 	end
 
 	-- Process ranked information
-	if (currentArena.isRated and myTeamIndex) then
+	if (ArenaTracker:IsRated() and myTeamIndex) then
 		local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
 
 		currentArena.partyMMR = API:GetTeamMMR(myTeamIndex);
@@ -627,7 +646,7 @@ function ArenaTracker:HandleArenaExit()
 
 	ArenaAnalytics:Log("Exited Arena:", API:GetPersonalRatedInfo(currentArena.bracketIndex));
 
-	if(currentArena.isRated and not currentArena.partyRating) then
+	if(ArenaTracker:IsRated() and not currentArena.partyRating) then
 		local newRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
 		if(newRating and seasonPlayed) then
 			local oldRating = currentArena.oldRating;
@@ -760,7 +779,7 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 		hasKillCredit = isKillCredit or currentArena.deathData[playerGUID].hasKillCredit,
 	};
 
-	if(currentArena.isShuffle and (isKillCredit or class ~= "HUNTER")) then
+	if(ArenaTracker:IsShuffle() and (isKillCredit or class ~= "HUNTER")) then
 		C_Timer.After(0, ArenaTracker.HandleRoundEnd);
 	end
 end
@@ -839,7 +858,7 @@ function ArenaTracker:HandlePartyUpdate()
 		end
 	end
 
-	if(currentArena.isShuffle) then
+	if(ArenaTracker:IsShuffle()) then
 		ArenaTracker:CheckRoundEnded();
 		ArenaTracker:UpdateRoundTeam();
 	end

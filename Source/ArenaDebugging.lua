@@ -153,6 +153,7 @@ end
 
 function Debug:LogTable(table, level, maxLevel)
     if(ArenaAnalytics:GetDebugLevel() < 4) then
+        ArenaAnalytics:Log("Debug:LogTable requires log level 4.");
         return;
     end
 

@@ -15,6 +15,7 @@ local Options = ArenaAnalytics.Options;
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
 API.enableInspection = true;
 API.requiresMoPFix = true; -- MoP Beta healer character panel bug fix
+API.disableSpecInfoAPI = true;
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {
@@ -34,12 +35,8 @@ API.availableMaps = {
     "TolVironArena",
 };
 
-function API:IsInArena()
-    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
-end
-
 function API:IsRatedArena()
-    return API:IsInArena() and C_PvP.IsRatedMap() and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
+    return API:IsInArena() and C_PvP.IsRatedMap() and not API:IsWargame() and not API:IsSkirmish();
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
@@ -49,19 +46,11 @@ function API:GetBattlefieldStatus(battlefieldId)
     end
 
     local status, _, _, _, _, teamSize = GetBattlefieldStatus(battlefieldId);
-    local isRated = API:IsRatedArena();
 
-    local bracket = nil;
-    if(teamSize == 2) then
-        bracket = 1;
-    elseif(teamSize == 3) then
-        bracket = 2;
-    elseif(teamSize == 5) then
-        bracket = 3;
-    end
+    local bracket = API:DetermineBracket(teamSize);
+    local matchType = API:DetermineMatchType();
 
-    ArenaAnalytics:Log(status, bracket, teamSize, isRated)
-    return status, bracket, teamSize, isRated;
+    return status, bracket, teamSize, matchType;
 end
 
 function API:GetTeamMMR(teamIndex)

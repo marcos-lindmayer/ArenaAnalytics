@@ -165,9 +165,9 @@ function Internal:GetAddonRaceIDByToken(token, factionIndex)
     for id,data in pairs(addonRaceIDs) do
         if(data and Helpers:ToSafeLower(data.token) == token) then
             if(not factionIndex or (id % 2 == factionIndex)) then
-                return id;
+                return tonumber(id);
             else
-                ArenaAnalytics:Log("Internal:GetAddonRaceIDByToken rejected faction for:", token, factionIndex);
+                --ArenaAnalytics:Log("Internal:GetAddonRaceIDByToken rejected faction for:", token, factionIndex);
             end
         end
     end
@@ -218,7 +218,7 @@ local addonClassIDs = {
     [100] = { token = "MONK",         name = "Monk" },
     [110] = { token = "DEMONHUNTER",  name = "Demon Hunter" },
     [120] = { token = "EVOKER",       name = "Evoker" },
-}
+};
 
 function Internal:GetAddonClassID(class)
     if(class == nil) then
@@ -229,7 +229,7 @@ function Internal:GetAddonClassID(class)
 
     for class_id,data in pairs(addonClassIDs) do
         if(class == Helpers:ToSafeLower(data.token) or class == Helpers:ToSafeLower(data.name)) then
-            return class_id;
+            return tonumber(class_id);
         end
     end
 
@@ -356,7 +356,7 @@ function InitializeSpecIDs()
         [121] = { spec = "Preservation", role = roles.caster_healer },
         [122] = { spec = "Augmentation", role = roles.caster_damager },
         [123] = { spec = "Devastation", role = roles.caster_damager },
-    }
+    };
 end
 
 -- Get the ID from string class and spec. (For import and version control)
@@ -369,27 +369,49 @@ function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
         return nil;
     end
 
-    local function SanitizeSpec(value)
-        if(type(value) == "string") then
-            value = value:gsub(" ", ""):lower();
-        end
-        return value;
-    end
-
-    spec = SanitizeSpec(spec);
+    spec = Helpers:SanitizeValue(spec);
 
     -- Iterate through the table to find the matching class and spec
     if(addonSpecializationIDs) then
         for id,data in pairs(addonSpecializationIDs) do
             if(Helpers:GetClassID(id) == class_id) then
-                if(spec == SanitizeSpec(data.spec)) then
-                    return id;
+                if(spec == Helpers:SanitizeValue((data.spec))) then
+                    return tonumber(id);
                 end
             end
         end
     end
 
     return nil;
+end
+
+function Internal:PopulateEnglishSpecs(outSpecTable, classIndex)
+    if(not addonSpecializationIDs) then
+        return;
+    end
+
+    local classToken = API:GetClassToken(classIndex);
+    if(not classToken) then
+        return;
+    end
+
+    classToken = Helpers:ToSafeLower(classToken);
+
+    local class_id = Internal:GetAddonClassID(classToken);
+    if(not class_id) then
+        return;
+    end
+
+    outSpecTable[classToken] = outSpecTable[classToken] or {};
+
+    for id,data in pairs(addonSpecializationIDs) do
+        if(Helpers:IsSpecID(id) and Helpers:GetClassID(id) == class_id) then
+            local specToken = Helpers:SanitizeValue(data.spec);
+            if(specToken) then
+                outSpecTable[classToken][specToken] = id;
+            end
+        end
+    end
 end
 
 function Internal:GetRoleBitmap(spec_id)

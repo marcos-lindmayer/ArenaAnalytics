@@ -9,7 +9,40 @@ local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 
-API.numClasses = 13; -- Number of class indices to check for class info (Custom to support cross expansion import)
+-- TODO: DEtermine desired order, and whether index order matters
+API.classTokens = {
+    -- Classic/TBC
+    "WARRIOR",
+    "PALADIN",
+    "HUNTER",
+    "ROGUE",
+    "PRIEST",
+    "SHAMAN",
+    "MAGE",
+    "WARLOCK",
+    "DRUID",
+
+    -- WotLK
+    "DEATHKNIGHT",
+
+    -- MoP  
+    "MONK",
+
+    -- Legion
+    "DEMONHUNTER",
+
+    -- Dragonflight
+    "EVOKER",
+};
+
+function API:GetClassToken(index)
+    index = tonumber(index);
+    return index and API.classTokens[index];
+end
+
+function API:GetNumClasses()
+    return #API.classTokens;
+end
 
 API.classMappingTable = {
     [1] = 80,
@@ -36,9 +69,9 @@ end
 
 function API:GetActiveBattlefieldID()
     for index = 1, GetMaxBattlefieldID() do
-        local status = API:GetBattlefieldStatus(index)
+        local status = API:GetBattlefieldStatus(index);
         if status == "active" then
-			ArenaAnalytics:Log("Found battlefield ID ", index)
+			ArenaAnalytics:Log("Found battlefield ID ", index);
             return index;
         end
     end
@@ -68,8 +101,50 @@ function API:GetCurrentMapID()
     return tonumber(mapID);
 end
 
+function API:IsInArena()
+    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
+end
+
+function API:IsWargame()
+    return IsWargame and IsWargame();
+end
+
+function API:IsSkirmish()
+    return IsArenaSkirmish();
+end
+
 function API:IsSoloShuffle()
     return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
+end
+
+function API:DetermineMatchType()
+    if(not API:IsInArena()) then
+        return "none";
+    end
+
+	if(API:IsRatedArena()) then
+		return "rated";
+	end
+
+    if(API:IsWargame()) then
+		return "wargame";
+	end
+
+    return "skirmish";
+end
+
+function API:DetermineBracket(teamSize)
+    if(API:IsSoloShuffle()) then
+        return "shuffle";
+    elseif(teamSize == 2) then
+        return "2v2";
+    elseif(teamSize == 3) then
+        return "3v3";
+    elseif(teamSize == 5) then
+        return "5v5";
+    end
+
+    return nil;
 end
 
 -------------------------------------------------------------------------
@@ -173,7 +248,7 @@ function API:GetMappedAddonSpecID(specID)
 
     specID = tonumber(specID);
 
-    local spec_id = specID and API.specMappingTable[specID];
+    local spec_id = specID and tonumber(API.specMappingTable[specID]);
     if(not spec_id) then
         ArenaAnalytics:Log("Failed to find spec_id for:", specID, type(specID));
         return nil;

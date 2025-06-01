@@ -495,12 +495,11 @@ function Filters:Refresh(onCompleteFunc)
     ArenaAnalytics.filteredMatchCount = 0;    
     Selection:ClearSelectedMatches();
     ResetTransientCompData();
-    cachedRealSession = 0;
 
     local currentIndex = 1;
     local batchDurationLimit = 0.01;
 
-    local startTime = GetTime();
+    local startTime = GetTimePreciseSec();
 
     local function Finalize()
         -- Assign session to filtered matches
@@ -517,23 +516,22 @@ function Filters:Refresh(onCompleteFunc)
             onCompleteFunc();
         end
 
-        C_Timer.After(0, function() 
-			local newTime = GetTime();
-			local elapsed = 1000 * (newTime - startTime);
-			ArenaAnalytics:Log("Refreshed filters in:", elapsed, "ms.");
-		end);
+        -- Log timing
+        local newTime = GetTimePreciseSec();
+        local elapsed = 1000 * (newTime - startTime);
+        ArenaAnalytics:Log("Refreshed filters in:", elapsed, "ms.");
 
         Filters.isRefreshing = nil;
     end
 
     local function ProcessBatch()
-        local batchEndTime = GetTime() + batchDurationLimit;
+        local batchEndTime = GetTimePreciseSec() + batchDurationLimit;
 
         while currentIndex <= #ArenaAnalyticsDB do
             ProcessMatchIndex(currentIndex);
             currentIndex = currentIndex + 1;
 
-            if(batchEndTime < GetTime()) then
+            if(batchEndTime < GetTimePreciseSec()) then
                 C_Timer.After(0, ProcessBatch);
                 return;
             end

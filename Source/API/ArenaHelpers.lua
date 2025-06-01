@@ -31,6 +31,13 @@ function Helpers:ToSafeNumber(value)
     return tonumber(value);
 end
 
+function Helpers:SanitizeValue(value)
+    if(type(value) == "string") then
+        value = value:gsub(" ", ""):lower();
+    end
+    return value;
+end
+
 function Helpers:DeepCopy(original)
     local copy = {}
 
@@ -93,18 +100,49 @@ function Helpers:RatingToText(rating, delta)
     return string.format("%d (%s)", rating, delta);
 end
 
+local function numberSuffixFormat(value)
+    local prefix = (value < 0) and "-" or "";
+    local absValue = math.abs(value);
+
+    if(absValue < 1000) then
+        return Round(value);
+    end
+
+    local suffixes = { "", "K", "M", "B", "T", "Q" };
+    local suffixIndex = 1;
+
+    while(absValue >= 1000 and suffixIndex < #suffixes) do
+        absValue = absValue / 1000;
+        suffixIndex = suffixIndex + 1;
+    end
+
+    absValue = Round(absValue*10);
+    local hasDecimal = (absValue < 1000) and (absValue % 10 ~= 0);
+    absValue = absValue / 10;
+
+    if(hasDecimal) then
+        return string.format("%s%.1f%s", prefix, absValue, suffixes[suffixIndex]);
+    else
+        return string.format("%s%d%s", prefix, absValue, suffixes[suffixIndex]);
+    end
+end
+
 function Helpers:FormatNumber(value)
     value = tonumber(value) or "-";
 
     if (type(value) == "number") then
         -- TODO: Add option to shorten large numbers by suffix
-
-        value = math.floor(value);
-
-        while true do  
-            value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2')
-            if (k==0) then
-                break;
+        if(math.abs(value) < 1000) then
+            value = Round(value);
+        elseif(Options:Get("compressLargeNumbers")) then
+            value = numberSuffixFormat(value);
+        else
+            value = Round(value);
+            while true do
+                value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2');
+                if (k==0) then
+                    break;
+                end
             end
         end
     end

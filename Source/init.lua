@@ -45,6 +45,7 @@ ArenaAnalytics.VersionManager = {};
 
 -- Local module aliases
 local Internal = ArenaAnalytics.Internal;
+local Localization = ArenaAnalytics.Localization;
 local Bitmap = ArenaAnalytics.Bitmap;
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
@@ -204,31 +205,11 @@ ArenaAnalytics.commands = {
 	-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = function(...)
 		print(" ");
-		ArenaAnalytics:Print(" ================================================  ");
+		ArenaAnalytics:Print(" ================================================ ");
 
-		for classIndex = 1, GetNumClasses() do
-			local classDisplayName, classToken, classID = GetClassInfo(classIndex)
-			ArenaAnalytics:Log(classToken, classDisplayName, " (Index: ", classIndex, ")")
+		Localization:TempLogSpecMapping();
 
-			for specIndex = 1, C_SpecializationInfo.GetNumSpecializationsForClassID(classID) do
-				local specID, specName = GetSpecializationInfoForClassID(classID, specIndex)
-				if(specID) then
-					ArenaAnalytics:Log("    ", specID, " - ", specName, API:GetMappedAddonSpecID(specID));
-					if(GetSpecializationInfoByID(specID)) then
-						ArenaAnalytics:Log("    ", GetSpecializationInfoByID(specID));
-					end
-				end
-			end
-		end
-
-		-- MoP Missing specs info:
-		-- Warrior 1
-		-- Paladin 2
-		-- Mage 8
-		-- Monk 10
-		-- Druid 11
-
-		ArenaAnalytics:Print(" ");
+		ArenaAnalytics:Print(" ================================================ ");
 	end,
 
 	["inspect"] = function(...)
@@ -249,9 +230,9 @@ local function HandleSlashCommands(str)
 			table.insert(args, arg);
 		end
 	end
-	
+
 	local path = ArenaAnalytics.commands; -- required for updating found table.
-	
+
 	for id, arg in ipairs(args) do
 		if (#arg > 0) then -- if string length is greater than 0.
 			arg = arg:lower();			
@@ -422,6 +403,11 @@ end
 function ArenaAnalytics:init()
 	ArenaAnalytics:Log("Initializing..");
 
+    local startTime = GetTimePreciseSec();
+
+	C_Timer.After(0, function() 
+	end);
+
 	-- allows using left and right buttons to move through chat 'edit' box
 	for i = 1, NUM_CHAT_WINDOWS do
 		_G["ChatFrame"..i.."EditBox"]:SetAltArrowKeyMode(false);
@@ -471,6 +457,7 @@ function ArenaAnalytics:init()
 
 	Bitmap:Initialize();
 	Internal:Initialize();
+	Localization:Initialize();
 	ArenaAnalytics:InitializeArenaAnalyticsDB();
 	Search:Initialize();
 	API:Initialize();
@@ -510,6 +497,11 @@ function ArenaAnalytics:init()
 	if (not API:IsInArena() and ArenaAnalyticsDB.currentArena) then
 		ArenaTracker:Clear();
 	end
+
+	-- Test timing
+	local newTime = GetTimePreciseSec();
+	local elapsed = 1000 * (newTime - startTime);
+	ArenaAnalytics:Log("Initialized in:", elapsed, "ms.");
 end
 
 -- Delay the init a frame, to allow all files to be loaded

@@ -419,7 +419,7 @@ end
 function ArenaMatch:SetMap(match, value)
     assert(match);
 
-    if(not value) then
+    if(not value or value == 0) then
         return;
     end
 

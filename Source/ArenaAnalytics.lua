@@ -18,12 +18,12 @@ local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
-local matchTypes = { "rated", "skirmish", "wargame" }
-local brackets = { "2v2", "3v3", "5v5", "shuffle" }
+local matchTypes = { "rated", "skirmish", "wargame" };
+local brackets = { "2v2", "3v3", "5v5", "shuffle" };
 
 function ArenaAnalytics:GetAddonBracketIndex(bracket)
 	if(bracket) then
-		bracket = Helpers:ToSafeLower(bracket)
+		bracket = Helpers:ToSafeLower(bracket);
 		for i,value in ipairs(brackets) do
 			if(Helpers:ToSafeLower(value) == bracket or tonumber(bracket) == i) then
 				return i;
@@ -660,15 +660,6 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 		end
 	end
 
-	local matchType = nil;
-	if(newArena.isRated) then
-		matchType = "rated";
-	elseif(newArena.isWargame) then
-		matchType = "wargame";
-	else
-		matchType = "skirmish";
-	end
-
 	local season = API:GetCurrentSeason();
 	if (not season or season == 0) then
 		ArenaAnalytics:Log("Failed to get valid season for new match.");
@@ -680,12 +671,12 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	ArenaMatch:SetDuration(arenaData, newArena.duration);
 	ArenaMatch:SetMap(arenaData, newArena.mapId);
 
-	ArenaAnalytics:Log("Bracket:", newArena.bracketIndex);
+	ArenaAnalytics:Log("Bracket:", newArena.bracketIndex, newArena.bracket, "MatchType:", newArena.matchType);
 	ArenaMatch:SetBracketIndex(arenaData, newArena.bracketIndex);
 
-	ArenaMatch:SetMatchType(arenaData, matchType);
+	ArenaMatch:SetMatchType(arenaData, newArena.matchType);
 
-	if (newArena.isRated) then
+	if (newArena.matchType == "rated") then
 		ArenaMatch:SetPartyRating(arenaData, newArena.partyRating);
 		ArenaMatch:SetPartyRatingDelta(arenaData, newArena.partyRatingDelta);
 		ArenaMatch:SetPartyMMR(arenaData, newArena.partyMMR);

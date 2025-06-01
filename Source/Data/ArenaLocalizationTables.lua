@@ -8,38 +8,72 @@ local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
+local classLookupTable = nil;
 function Localization:GetClassID(class)
-    if(not class) then
+    if(not classLookupTable) then
+        ArenaAnalytics:LogError("classLookupTable failed to initialize for Localization conversions.");
         return nil;
     end
 
-    -- Check addon known tokens directly
-    local class_id = Internal:GetAddonClassID(class);
-    if(class_id) then
-        return class_id;
+    if(not class or class == "") then
+        return nil;
     end
 
-    -- Check WoW localized tables
     class = Helpers:ToSafeLower(class);
-    for classToken,localizedClass in pairs(LOCALIZED_CLASS_NAMES_MALE) do
-        if(class == Helpers:ToSafeLower(classToken) or class == Helpers:ToSafeLower(localizedClass)) then
-            return Internal:GetAddonClassID(classToken);
+    local class_id = class and classLookupTable[class];
+
+    if(class_id) then
+        ArenaAnalytics:LogGreen("Localization:GetSpecID found ID:", class_id, "for", class);
+    else
+        ArenaAnalytics:LogWarning("Localization:GetSpecID failed to find ID for:", class);
+    end
+
+    return class_id;
+end
+
+-- TODO: Implement
+local function InitializeLookupTable_Class()
+    classLookupTable = {};
+
+    local function PopulateTable(classToken, className)
+        local classID = Internal:GetAddonClassID(classToken);
+
+        if(classID) then
+            classToken = Helpers:ToSafeLower(classToken);
+            className = Helpers:ToSafeLower(className);
+
+            if(classToken and not classLookupTable[classToken]) then
+                classLookupTable[classToken] = classID;
+            end
+
+            if(className and not classLookupTable[className]) then
+                classLookupTable[className] = classID;
+            end
         end
     end
 
-    for classToken,localizedClass in pairs(LOCALIZED_CLASS_NAMES_FEMALE) do 
-        if(class == Helpers:ToSafeLower(classToken) or class == Helpers:ToSafeLower(localizedClass)) then
-            return Internal:GetAddonClassID(classToken);
+    if(LOCALIZED_CLASS_NAMES_MALE) then
+        for classToken,localizedClass in pairs(LOCALIZED_CLASS_NAMES_MALE) do
+            PopulateTable(classToken, localizedClass);
         end
     end
 
-    ArenaAnalytics:LogError("LocalizationTables: Failed to get class ID for class:", class);
-    return nil;
+    if(LOCALIZED_CLASS_NAMES_FEMALE) then
+        for classToken,localizedClass in pairs(LOCALIZED_CLASS_NAMES_FEMALE) do
+            PopulateTable(classToken, localizedClass);
+        end
+    end
 end
 
 -------------------------------------------------------------------------
 
+local specLookupTable = nil;
 function Localization:GetSpecID(classToken, spec)
+    if(not specLookupTable) then
+        ArenaAnalytics:LogError("specLookupTable failed to initialize for Localization conversions.");
+        return nil;
+    end
+
     if(not classToken or not spec or spec == "") then
         return nil;
     end
@@ -47,18 +81,47 @@ function Localization:GetSpecID(classToken, spec)
     classToken = Helpers:ToSafeLower(classToken);
     spec = Helpers:ToSafeLower(spec);
 
-    if(GetSpecializationInfoForClassID and GetSpecializationInfoForSpecID) then
-        -- Check game values
-        for classIndex=1, API.numClasses do
-            local _,token = GetClassInfo(classIndex);
-            if(Helpers:ToSafeLower(token) == classToken) then
+    local classTable = specLookupTable[classToken];
+    local spec_id = classTable and tonumber(classTable[spec]);
+
+    -- Logging
+    if(spec_id) then
+        ArenaAnalytics:LogGreen("Localization:GetSpecID found ID:", spec_id, "for", classToken, spec);
+    else
+        ArenaAnalytics:LogWarning("Localization:GetSpecID failed to find ID for:", classToken, spec);
+    end
+
+    return spec_id;
+end
+
+local function InitializeLookupTable_Spec()
+    specLookupTable = {};
+
+    if(GetSpecializationInfoForClassID and GetSpecializationInfoForSpecID and not API.disableSpecInfoAPI) then
+        -- Populate English first, independent of game client and localization
+        for classIndex=1, API:GetNumClasses() do
+            Internal:PopulateEnglishSpecs(specLookupTable, classIndex);
+        end
+
+        -- Second loop to deal with different class index orders
+        for classIndex=1, API:GetNumClasses() do
+            local _,classToken = GetClassInfo(classIndex);
+            if(classToken) then
+                classToken = Helpers:ToSafeLower(classToken);
+                specLookupTable[classToken] = specLookupTable[classToken] or {};
+
+                local classTable = specLookupTable[classToken];
+
                 for specIndex=0, 4 do
                     local specID = GetSpecializationInfoForClassID(classIndex, specIndex);
                     if(specID) then
                         for genderIndex = 1, 3 do
                             local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
-                            if(spec == Helpers:ToSafeLower(specName)) then
-                                return API:GetMappedAddonSpecID(id);
+                            specName = Helpers:SanitizeValue(specName);
+
+                            if(id and specName and tonumber(classTable[specName]) == nil) then -- Prioritize known English IDs
+                                ArenaAnalytics:LogTemp("InitializeLookupTable_Spec", classToken, specName, id, classTable[specName]);
+                                classTable[specName] = API:GetMappedAddonSpecID(id);
                             end
                         end
                     end
@@ -66,16 +129,10 @@ function Localization:GetSpecID(classToken, spec)
             end
         end
     end
+end
 
-    -- Check English string values
-    local class_id = Internal:GetAddonClassID(classToken);
-    local spec_id = Internal:GetSpecFromSpecString(class_id, spec, true);
-    if(spec_id) then
-        return spec_id;
-    end
-
-    ArenaAnalytics:LogError("LocalizationTables: Failed to get spec_id for spec:", spec, classToken);
-    return nil;
+function Localization:TempLogSpecMapping()
+    ArenaAnalytics.Debug:LogTable(specLookupTable);
 end
 
 -------------------------------------------------------------------------
@@ -383,39 +440,77 @@ local raceMapping = {
     },
 };
 
+local raceLookupTable = nil;
 function Localization:GetRaceID(race, factionIndex)
+    if(not raceLookupTable) then
+        ArenaAnalytics:LogError("raceLookupTable failed to initialize for Localization conversions.");
+        return nil;
+    end
+
     if(not race) then
         return nil;
     end
 
-    factionIndex = tonumber(factionIndex) and tonumber(factionIndex) % 2;
+    race = Helpers:SanitizeValue(race);
 
-    race = Helpers:ToSafeLower(race);
+    local value = race and raceLookupTable[race];
+    if(not value) then
+        return nil;
+    end
 
-    -- Look for explicit conversion values
+    local race_id = nil;
+    if(type(value) == "table") then
+        local index = tonumber(factionIndex) and (1 + tonumber(factionIndex) % 2);
+        race_id = tonumber(index and value[index] or value[1]);
+    else
+        race_id = tonumber(value);
+    end
+
+    -- Logging
+    if(race_id) then
+        ArenaAnalytics:LogGreen("Localization:GetRaceID found ID:", race_id, "for", race, factionIndex);
+    else
+        ArenaAnalytics:LogWarning("Localization:GetRaceID failed to find ID for:", race, factionIndex);
+    end
+
+    return race_id;
+end
+
+local function InitializeLookupTable_Race()
+    raceLookupTable = {};
+
+    local function PopulateRace(raceToken, key)
+        if(raceToken and key and key ~= "" and not raceLookupTable[key]) then
+            local hordeID = Internal:GetAddonRaceIDByToken(raceToken, 0);
+            local allianceID = Internal:GetAddonRaceIDByToken(raceToken, 1);
+
+            -- Insert neutral as table, or explicit faction as number
+            if(hordeID and allianceID and hordeID ~= allianceID) then
+                raceLookupTable[key] = { hordeID, allianceID }
+            elseif(hordeID or allianceID) then
+                raceLookupTable[key] = hordeID or allianceID;
+            end
+        end
+    end
+
     for raceToken,localizations in pairs(raceMapping) do
         assert(raceToken and localizations);
 
-        raceToken = Helpers:ToSafeLower(raceToken);
-        if(race == raceToken) then
-            -- Convert token to Race ID
-            return Internal:GetAddonRaceIDByToken(raceToken, factionIndex);
-        end
+        raceToken = Helpers:SanitizeValue(raceToken);
+        PopulateRace(raceToken, raceToken);
 
         for _,values in pairs(localizations) do
             assert(values);
 
             for _,localizedValue in ipairs(values) do
-                if(race == Helpers:ToSafeLower(localizedValue)) then
-                    -- Convert token to Race ID
-                    return Internal:GetAddonRaceIDByToken(raceToken, factionIndex);
-                end
+                local localizedToken = Helpers:SanitizeValue(localizedValue);
+                PopulateRace(raceToken, localizedToken);
             end
         end
     end
 
-    ArenaAnalytics:LogError("LocalizationTables: Failed to find race_id for race:", race);
-    return nil;
+    -- Special cases
+    PopulateRace("undead", "scourge");
 end
 
 function Localization:GetFactionIndex(faction)
@@ -425,13 +520,20 @@ function Localization:GetFactionIndex(faction)
 
     if(type(faction) == "string") then
         -- TODO: Add localized checks?
-        if(Helpers:ToSafeLower(faction) == "horde") then
+        faction = Helpers:ToSafeLower(faction);
+        if(faction == "horde") then
             faction = 0;
-        elseif(Helpers:ToSafeLower(faction) == "alliance") then
+        elseif(faction == "alliance") then
             faction = 1;
         end
     end
 
     faction = tonumber(faction);
     return faction and faction % 2;
+end
+
+function Localization:Initialize()
+    InitializeLookupTable_Class();
+    InitializeLookupTable_Spec();
+    InitializeLookupTable_Race();
 end

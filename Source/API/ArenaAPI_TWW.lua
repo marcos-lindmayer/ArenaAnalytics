@@ -44,12 +44,9 @@ API.availableMaps = {
     "CageOfCarnage",
 };
 
-function API:IsInArena()
-    return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
-end
 
 function API:IsRatedArena()
-    return API:IsInArena() and (C_PvP.IsRatedArena() or C_PvP.IsRatedSoloShuffle()) and not IsWargame() and not IsArenaSkirmish() and not C_PvP.IsInBrawl();
+    return API:IsInArena() and (C_PvP.IsRatedArena() or C_PvP.IsRatedSoloShuffle()) and not API:IsWargame() and not API:IsSkirmish();
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
@@ -59,22 +56,16 @@ function API:GetBattlefieldStatus(battlefieldId)
     end
 
     local status, _, teamSize = GetBattlefieldStatus(battlefieldId);
-    local isRated = API:IsRatedArena();
-    local isShuffle = API:IsSoloShuffle();
 
-    local bracket = nil;
-    if(isShuffle) then
+    -- Shuffle team size
+    if(API:IsSoloShuffle()) then
         teamSize = 3;
-        bracket = 4;
-    elseif(teamSize == 2) then
-        bracket = 1;
-    elseif(teamSize == 3) then
-        bracket = 2;
-    elseif(teamSize == 5) then
-        bracket = 3;
     end
 
-    return status, bracket, teamSize, isRated, isShuffle;
+    local bracket = API:DetermineBracket(teamSize);
+    local matchType = API:DetermineMatchType();
+
+    return status, bracket, teamSize, matchType;
 end
 
 function API:GetTeamMMR(teamIndex)

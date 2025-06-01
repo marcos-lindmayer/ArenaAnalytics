@@ -281,7 +281,7 @@ function AAtable:TryShowimportDialogFrame(parent)
         ArenaAnalyticsScrollFrame.importDialogFrame.title = ArenaAnalyticsScrollFrame.importDialogFrame:CreateFontString(nil, "OVERLAY");
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", -10, -5);
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-        ArenaAnalyticsScrollFrame.importDialogFrame.title:SetText("Import");
+        ArenaAnalyticsScrollFrame.importDialogFrame.title:SetText("Import |cffCCCCCC(Optional)|r");
 
         local supportedSourcesText = "|cffffffffPaste the |cff00ccffArenaStats|r or |cff00ccffREFlex|r import string in the edit box.|r";
         ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, supportedSourcesText);
@@ -714,7 +714,8 @@ function AAtable:RefreshLayout()
             local ratingText = "-";
             local matchType = ArenaMatch:GetMatchType(match);
             if(matchType == "rated") then
-                local rating, ratingDelta = ArenaMatch:GetPartyRating(match), ArenaMatch:GetPartyRatingDelta(match);
+                local rating = ArenaMatch:GetPartyRating(match);
+                local ratingDelta = ArenaMatch:GetPartyRatingDelta(match);
                 ratingText = Helpers:RatingToText(rating, ratingDelta) or "-";
             elseif(matchType == "skirmish") then
                 ratingText = "SKIRMISH";
