@@ -8,13 +8,11 @@ local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
 local TablePool = ArenaAnalytics.TablePool;
-local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
 API.enableInspection = true;
-API.requiresMoPFix = true; -- MoP Beta healer character panel bug fix
 API.disableSpecInfoAPI = true;
 
 -- Order defines the UI order of maps bracket dropdown
@@ -280,9 +278,4 @@ end
 function API:InitializeExpansion()
     InitializeRoleBitmapOverrides();
     InitializeSpecOverrides();
-
-    if(API.requiresMoPFix and SHOW_COMBAT_HEALING == nil and Options:Get("enableMoPHealerCharacterPanelFix")) then
-        ArenaAnalytics:LogTemp("Forcing MoP Fix!");
-        SHOW_COMBAT_HEALING = "";
-    end
 end

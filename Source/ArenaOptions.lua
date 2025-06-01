@@ -170,10 +170,8 @@ function Options:LoadSettings()
     AddSetting("debuggingLevel", 0);
     AddSetting("hideErrorLogs", false);
 
-    -- Temp Fix
-    if(API.requiresMoPFix or true) then
-        AddSetting("enableMoPHealerCharacterPanelFix", true);
-    end
+    -- Temp Fix (No longer needed, removing from save files)
+    RemoveSetting("enableMoPHealerCharacterPanelFix");
 
     hasOptionsLoaded = true;
     ArenaAnalytics:Log("Settings loaded successfully.");
@@ -578,18 +576,6 @@ function SetupTab_General()
         end);
         CreateCheckbox("enableDoubleAfkToLeave", parent, offsetX*2, "Double |cff00ccff/afk|r to leave the arena.    |cffaaaaaa(Type |cff00ccff/afk|r twice within 5 seconds to confirm.)|r");
         UpdateDoubleAfkState();
-    end
-
-    if(API.requiresMoPFix) then
-        CreateSpace();
-
-        local frame = CreateCheckbox("enableMoPHealerCharacterPanelFix", parent, offsetX, "Force healer character panel fix.     |cffaaaaaa(Workaround for MoP Beta Bug)|r", function()
-            if(SHOW_COMBAT_HEALING == nil and Options:Get("enableMoPHealerCharacterPanelFix")) then
-                ArenaAnalytics:LogTemp("Forcing MoP Fix from option change!");
-                SHOW_COMBAT_HEALING = "";
-            end
-        end);
-        frame.tooltip = { "MoP Stats Fix", "Fixes MoP Beta Character Panel Stats for healers.\n\n\n|cffff0000Experimental! Limited testing against taint. Use at own risk.|r" };
     end
 end
 
