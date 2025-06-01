@@ -451,7 +451,7 @@ end
 local function setColorForSession(button, session, index)
     local isOddSession = (session or 0) % 2 == 1;
     local oddAlpha, evenAlpha = 0.8, 0.4;
-    
+
     local alpha = isOddSession and oddAlpha or evenAlpha;
 
     local isOddIndex = (index or 0) % 2 == 1;
@@ -476,15 +476,16 @@ function AAtable:CreateDropdownForFilterComps(isEnemyComp)
     local newDropdown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", frameName, config, 235, 35, 25);
     local relativeFrame = isEnemyComp and ArenaAnalyticsScrollFrame.filterCompsDropdown or ArenaAnalyticsScrollFrame.filterBracketDropdown;
     newDropdown:SetPoint("LEFT", relativeFrame:GetFrame(), "RIGHT", 10, 0);
-        
+
     local title = isEnemyComp and "Enemy Comp" or "Comp"
     local info = nil;
-    if(Options:Get("showCompDropdownInfoText")) then
+    -- TODO: Normalize the logic for option based texts, consider localization support in the process!
+    -- NOTE: Assumes only comp dropdowns has option based info text, hard coding option to toggle visibility within the CreateFilterTitle. Ew.
+    --if(Options:Get("showCompDropdownInfoText")) then
         info = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
-    end
-    
+    --end
+
     CreateFilterTitle(newDropdown:GetFrame(), title, info);
-    
 
     if(isEnemyComp) then
         ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown = newDropdown;

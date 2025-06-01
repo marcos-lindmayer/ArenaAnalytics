@@ -11,6 +11,7 @@ local API = ArenaAnalytics.API;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
 local ImportBox = ArenaAnalytics.ImportBox;
 local Debug = ArenaAnalytics.Debug;
+local Constants = ArenaAnalytics.Constants;
 
 -------------------------------------------------------------------------
 
@@ -619,23 +620,18 @@ function SetupTab_Filters()
     CreateSpace();
 
     CreateCheckbox("showCompDropdownInfoText", parent, offsetX, "Show info text by comp dropdown titles.", function()
-        local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
-        if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
-            if(Options:Get("showCompDropdownInfoText")) then
-                dropdownFrame.title.info:Show();
-            else
-                dropdownFrame.title.info:Hide();
+        local function forceUpdateInfoVisibility(frame)
+            if(frame and frame.title and frame.title.info) then
+                if(Options:Get("showCompDropdownInfoText")) then
+                    frame.title.info:Show();
+                else
+                    frame.title.info:Hide();
+                end
             end
         end
 
-        dropdownFrame = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown;
-        if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
-            if(Options:Get("showCompDropdownInfoText")) then
-                dropdownFrame.title.info:Show();
-            else
-                dropdownFrame.title.info:Hide();
-            end
-        end
+        forceUpdateInfoVisibility(ArenaAnalyticsScrollFrame.filterCompsDropdown:GetFrame());
+        forceUpdateInfoVisibility(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame());
     end);
 
     CreateSpace();
@@ -644,16 +640,16 @@ function SetupTab_Filters()
     CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
     CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
         local info = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
+        info = ArenaAnalytics:ColorText(info, Constants.infoColor);
 
-        local dropdownFrame = ArenaAnalyticsScrollFrame.filterCompsDropdown;
-        if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
-            dropdownFrame.title.info:SetText(info or "");
+        local function forceUpdateInfoText(frame)
+            if(frame and frame.title and frame.title.info) then
+                frame.title.info:SetText(info or "");
+            end
         end
 
-        dropdownFrame = ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown;
-        if(dropdownFrame and dropdownFrame.title and dropdownFrame.info) then
-            dropdownFrame.title.info:SetText(info or "");
-        end
+        forceUpdateInfoText(ArenaAnalyticsScrollFrame.filterCompsDropdown:GetFrame())
+        forceUpdateInfoText(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame());
     end);
 
     parent.minimumCompsPlayed = CreateInputBox("minimumCompsPlayed", parent, offsetX, "Minimum games required to appear on comp filter.");
