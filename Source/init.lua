@@ -400,7 +400,7 @@ local function PrintWelcomeMessage()
     ArenaAnalytics:PrintSystem(text);
 end
 
-function ArenaAnalytics:init()
+function ArenaAnalytics.init()
 	ArenaAnalytics:Log("Initializing..");
 
     local startTime = GetTimePreciseSec();
@@ -418,7 +418,7 @@ function ArenaAnalytics:init()
 
 	-- Welcome Message
 	PrintWelcomeMessage();
-	
+
 	Debug:OnLoad();
 
 	local successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");

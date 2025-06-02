@@ -217,9 +217,8 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.clearSelected:Hide();
     ArenaAnalyticsScrollFrame.clearSelected:SetScript("OnClick", function() Selection:ClearSelectedMatches() end);
 
-    ArenaAnalyticsScrollFrame.unsavedWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -160, 13, unsavedWarningText);
-    ArenaAnalyticsScrollFrame.unsavedWarning:Hide();
-    ArenaAnalyticsScrollFrame.unsavedWarning:Show();
+    ArenaAnalyticsScrollFrame.unsavedWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -160, 13, "");
+    AAtable:CheckUnsavedWarningThreshold();
 
     -- First time user import popup if no matches are stored
     if (not ArenaAnalytics:HasStoredMatches()) then
@@ -596,7 +595,7 @@ function AAtable:HandleArenaCountChanged()
     local valuesText = CombineStatsText(ArenaAnalytics.filteredMatchCount, wins, losses, draws);
     ArenaAnalyticsScrollFrame.overallStats:SetText(text .. valuesText);
 
-    AAtable.CheckUnsavedWarningThreshold();
+    AAtable:CheckUnsavedWarningThreshold();
 end
 
 function AAtable:UpdateSelected()
@@ -795,7 +794,6 @@ end
 ----------------------------------------------------------------------------------------------------------------------------
 -- Session Duration
 
-local isSessionTimerActive = false;
 local function formatSessionDuration(duration)
     duration = tonumber(duration);
     if(duration == nil) then

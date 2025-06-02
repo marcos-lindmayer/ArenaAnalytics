@@ -183,6 +183,42 @@ local function SanitizeSeason(season, unixDate)
     return season;
 end
 
+local raceToFaction = {
+    -- Horde Races
+    ["Orc"] = "Horde",
+    ["Undead"] = "Horde",
+    ["Tauren"] = "Horde",
+    ["Troll"] = "Horde",
+    ["Blood Elf"] = "Horde",
+    ["Goblin"] = "Horde",
+    ["Nightborne"] = "Horde",
+    ["Highmountain Tauren"] = "Horde",
+    ["Mag'har Orc"] = "Horde",
+    ["Vulpera"] = "Horde",
+    ["Zandalari Troll"] = "Horde",
+
+    -- Alliance Races
+    ["Human"] = "Alliance",
+    ["Dwarf"] = "Alliance",
+    ["Night Elf"] = "Alliance",
+    ["Gnome"] = "Alliance",
+    ["Draenei"] = "Alliance",
+    ["Worgen"] = "Alliance",
+    ["Void Elf"] = "Alliance",
+    ["Lightforged Draenei"] = "Alliance",
+    ["Dark Iron Dwarf"] = "Alliance",
+    ["Kul Tiran"] = "Alliance",
+    ["Mechagnome"] = "Alliance",
+
+    -- Neutral Races
+    ["Pandaren"] = "Neutral",
+    ["Dracthyr"] = "Neutral"
+};
+
+local function getFactionByRace(race)
+    return race and raceToFaction[race] or nil;
+end
+
 -- v0.3.0 -> 0.5.0
 local function updateGroupDataToNewFormat(group)
     local updatedGroup = {};
@@ -196,7 +232,7 @@ local function updateGroupDataToNewFormat(group)
             ["class"] = class,
             ["spec"] = spec,
             ["race"] = player["race"],
-            ["faction"] = Constants:GetFactionByRace(player["race"]),
+            ["faction"] = getFactionByRace(player["race"]),
             ["killingBlows"] = tonumber(player["killingBlows"]),
             ["deaths"] = tonumber(player["deaths"]),
             ["damageDone"] = tonumber(player["damageDone"]),
@@ -207,9 +243,90 @@ local function updateGroupDataToNewFormat(group)
     return updatedGroup;
 end
 
+ -- Addon specific spec IDs { ID, "class|spec", "class", "spec", priority value } (ID must never change to preserve data validity, priority is a runtime check)
+local addonSpecializationIDs = {
+    -- Druid
+    ["Druid"] = 0,
+    ["Druid|Restoration"] = 1,
+    ["Druid|Feral"] = 2,
+    ["Druid|Balance"] = 3,
+
+    -- Paladin
+    ["Paladin"] = 10,
+    ["Paladin|Holy"] = 11,
+    ["Paladin|Protection"] = 12,
+    ["Paladin|Preg"] = 13,
+    ["Paladin|Retribution"] = 14,
+
+    -- Shaman
+    ["Shaman"] = 20,
+    ["Shaman|Restoration"] = 21,
+    ["Shaman|Elemental"] = 22,
+    ["Shaman|Enhancement"] = 23,
+
+    -- Death Knight
+    ["Death Knight"] = 30,
+    ["Death Knight|Unholy"] = 31,
+    ["Death Knight|Frost"] = 32,
+    ["Death Knight|Blood"] = 33,
+
+    -- Hunter
+    ["Hunter"] = 40,
+    ["Hunter|Beast Mastery"] = 41,
+    ["Hunter|Marksmanship"] = 42,
+    ["Hunter|Survival"] = 43,
+
+    -- Mage
+    ["Mage"] = 50,
+    ["Mage|Frost"] = 51,
+    ["Mage|Fire"] = 52,
+    ["Mage|Arcane"] = 53,
+
+    -- Rogue
+    ["Rogue"] = 60,
+    ["Rogue|Subtlety"] = 61,
+    ["Rogue|Assassination"] = 62,
+    ["Rogue|Combat"] = 63,
+    ["Rogue|Outlaw"] = 64,
+
+    -- Warlock
+    ["Warlock"] = 70,
+    ["Warlock|Affliction"] = 71,
+    ["Warlock|Destruction"] = 72,
+    ["Warlock|Demonology"] = 73,
+
+    -- Warrior
+    ["Warrior"] = 80,
+    ["Warrior|Protection"] = 81,
+    ["Warrior|Arms"] = 82,
+    ["Warrior|Fury"] = 83,
+
+    -- Priest
+    ["Priest"] = 90,
+    ["Priest|Discipline"] = 91,
+    ["Priest|Holy"] = 92,
+    ["Priest|Shadow"] = 93,
+};
+
+local function getAddonSpecializationID(class, spec, forceExactSpec)
+    if(class == nil) then 
+        return nil;
+    end
+
+    if(forceExactSpec and spec == nil) then
+        return nil;
+    end
+
+    local specKey = spec and (class .. "|" .. spec) or class;
+    return tonumber(addonSpecializationIDs[specKey]);
+end
+
 -- Convert long form string comp to addon spec ID comp
-local function convertCompToShortFormat(comp, bracket)
-    local size = ArenaAnalytics:getTeamSizeFromBracket(bracket);
+local function convertCompToShortFormat(comp, bracketKey)
+    local size = ArenaAnalytics:getTeamSizeFromBracket(bracketKey);
+    if(not size) then
+        return nil;
+    end
 
     local newComp = {}
     for i=1, size do
@@ -219,7 +336,7 @@ local function convertCompToShortFormat(comp, bracket)
         end
 
         local class, spec = specKeyString:match("([^|]+)|(.+)");
-        local specID = Constants:getAddonSpecializationID(class, spec, true);
+        local specID = getAddonSpecializationID(class, spec, true);
         if(specID == nil) then
             return nil;
         end
@@ -273,9 +390,9 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
     end
 
     local brackets = { "2v2", "3v3", "5v5" }
-    for _, bracket in ipairs(brackets) do
-        if(ArenaAnalyticsDB[bracket] ~= nil) then
-            for _, arena in ipairs(ArenaAnalyticsDB[bracket]) do
+    for _, bracketKey in ipairs(brackets) do
+        if(type(ArenaAnalyticsDB[bracketKey]) == "table") then
+            for _, arena in ipairs(ArenaAnalyticsDB[bracketKey]) do
                 local team = updateGroupDataToNewFormat(arena["team"]);
                 local enemyTeam = updateGroupDataToNewFormat(arena["enemyTeam"]);
 
@@ -284,7 +401,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                     ["date"] = arena["dateInt"],
                     ["season"] = SanitizeSeason(arena["season"], arena["dateInt"]),
                     ["map"] = arena["map"], 
-                    ["bracket"] = bracket,
+                    ["bracket"] = bracketKey,
                     ["duration"] = convertFormatedDurationToSeconds(tonumber(arena["duration"]) or 0),
                     ["team"] = team,
                     ["rating"] = tonumber(arena["rating"]),
@@ -294,8 +411,8 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                     ["enemyRating"] = tonumber(arena["enemyRating"]), 
                     ["enemyRatingDelta"] = tonumber(arena["enemyRatingDelta"]),
                     ["enemyMmr"] = tonumber(arena["enemyMmr"]),
-                    ["comp"] = convertCompToShortFormat(arena["comp"], bracket),
-                    ["enemyComp"] = convertCompToShortFormat(arena["enemyComp"], bracket),
+                    ["comp"] = convertCompToShortFormat(arena["comp"], bracketKey),
+                    ["enemyComp"] = convertCompToShortFormat(arena["enemyComp"], bracketKey),
                     ["won"] = arena["won"],
                     ["firstDeath"] = getFullFirstDeathName(arena["firstDeath"], team, enemyTeam)
                 }
@@ -308,10 +425,11 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 
     ArenaAnalytics:PrintSystem("Converted data from old database. Old total: ", oldTotal, " New total: ", #MatchHistoryDB);
 
-    table.sort(MatchHistoryDB, function (k1,k2)
+    table.sort(MatchHistoryDB, function(k1,k2)
         if (k1["date"] and k2["date"]) then
             return k1["date"] < k2["date"];
         end
+        return k1["date"] ~= nil;
     end);
 end
 
@@ -476,6 +594,26 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
     end
 end
 
+-- Used in VersionManager:RevertIndexBasedNameAndRealm() and VersionManager:ConvertRoundAndPlayerFormat()
+local oldPlayerKeys = {
+    name = 0,
+    realm = -1,
+    is_self = -2,
+    is_first_death = -3,
+    race = -4,
+    spec_id = -5,
+    role = -6,
+    deaths = -7,
+    kills = -8,
+    healing = -9,
+    damage = -10,
+    wins = -11,
+    rating = -12,
+    ratingDelta = -13,
+    mmr = -14,
+    mmrDelta = -15,
+};
+
 function VersionManager:RevertIndexBasedNameAndRealm()
     if(ArenaAnalyticsDB.formatVersion ~= 0) then
         return;
@@ -523,11 +661,46 @@ function VersionManager:RevertIndexBasedNameAndRealm()
         ArenaAnalyticsDB.Names = nil;
     end
 
+    -- Revert 
+    local function revertPlayerNameAndRealmIndexing(match)
+        if(not match) then
+            return;
+        end
+
+        for i,isEnemy in ipairs({false, true}) do
+            local team = ArenaMatch:GetTeam(match, isEnemy);
+            if(type(team) == "table") then
+                for i,player in ipairs(team) do
+                    local name = player[oldPlayerKeys.name];
+                    local realm = player[oldPlayerKeys.realm];
+
+                    -- If either name or realm requires reverting
+                    if(type(name) == "number" or type(realm) == "number") then
+                        ArenaAnalytics:Log("Reverting player names:", name, realm);
+
+                        if(type(name) == "number") then
+                            name = ArenaAnalytics:GetName(name, true);
+                        end
+
+                        if(type(realm) == "number") then
+                            realm = ArenaAnalytics:GetRealm(realm, true);
+                        end
+
+                        ArenaAnalytics:Log("   Reverted player names:", name, realm);
+                    end
+
+                    player[oldPlayerKeys.name] = name;
+                    player[oldPlayerKeys.realm] = realm;
+                end
+            end
+        end
+    end
+
     -- Revert index based naming, to prioritize self as index 1
     for i=1, #ArenaAnalyticsDB do
         local match = ArenaAnalyticsDB[i];
         if(match) then
-            ArenaMatch:RevertPlayerNameAndRealmIndexing(match);
+            revertPlayerNameAndRealmIndexing(match);
         end
     end
 
@@ -550,11 +723,74 @@ function VersionManager:ConvertRoundAndPlayerFormat()
         return;
     end
 
+    local function convertPlayerValues(match, matchIndex)
+        if(not match) then
+            return;
+        end
+
+        -- Get a compact | separated player data string
+        local function ToPlayerData(player, isEnemy)
+            if(not player or type(player) == "string") then
+                return player;
+            end
+
+            local player = {
+                name = player[oldPlayerKeys.name],
+                realm = player[oldPlayerKeys.realm],
+                isSelf = player[oldPlayerKeys.is_self],
+                isFirstDeath = player[oldPlayerKeys.is_first_death],
+                isEnemy = isEnemy,
+                race = player[oldPlayerKeys.race],
+                spec = player[oldPlayerKeys.spec_id],
+                role = player[oldPlayerKeys.role],
+                kills = player[oldPlayerKeys.kills],
+                deaths = player[oldPlayerKeys.deaths],
+                damage = player[oldPlayerKeys.damage],
+                healing = player[oldPlayerKeys.healing],
+            };
+
+            return ArenaMatch:MakeCompactPlayerData(player);
+        end
+
+        -- For each player
+        for i,isEnemy in ipairs({false, true}) do
+            local team = ArenaMatch:GetTeam(match, isEnemy);
+            local newTeam = {}
+
+            if(type(team) == "table") then
+                for i,player in ipairs(team) do
+                    local newDataString = ToPlayerData(player, isEnemy);
+
+                    ArenaAnalytics:LogEscaped("ConvertPlayerValues:", i, newDataString);
+
+                    if(newDataString == "") then
+                        ArenaAnalytics:Log("ERROR: Converting player values added empty player value string!");
+                    end
+
+                    -- Actual conversion NYI!
+                    if(newDataString) then
+                        tinsert(newTeam, newDataString);
+                    end
+                end
+            end
+
+            ArenaAnalytics:Log("ConvertPlayerValues", #newTeam)
+            if(#newTeam > 0) then
+                local teamKey = isEnemy and ArenaMatch.matchKeys.enemy_team or ArenaMatch.matchKeys.team;
+                for i,player in ipairs(newTeam) do
+                    ArenaAnalytics:LogEscaped("     ", i, player);
+                end
+
+                match[teamKey] = newTeam;
+            end
+        end
+    end
+
     for i=1, #ArenaAnalyticsDB do
         local match = ArenaAnalyticsDB[i];
         if(match) then
             ArenaMatch:FixRoundFormat(match);
-            ArenaMatch:ConvertPlayerValues(match, i);
+            convertPlayerValues(match, i);
         end
     end
 

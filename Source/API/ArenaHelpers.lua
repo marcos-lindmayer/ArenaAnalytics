@@ -100,6 +100,19 @@ function Helpers:RatingToText(rating, delta)
     return string.format("%d (%s)", rating, delta);
 end
 
+local function splitLargeNumber(value)
+    if(not value) then
+        return 0;
+    end
+
+    value = Round(value);
+
+    local substitutions = nil;
+    repeat
+        value, substitutions = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2');
+    until (not substitutions or substitutions == 0);
+end
+
 local function numberSuffixFormat(value)
     local prefix = (value < 0) and "-" or "";
     local absValue = math.abs(value);
@@ -131,19 +144,12 @@ function Helpers:FormatNumber(value)
     value = tonumber(value) or "-";
 
     if (type(value) == "number") then
-        -- TODO: Add option to shorten large numbers by suffix
         if(math.abs(value) < 1000) then
             value = Round(value);
         elseif(Options:Get("compressLargeNumbers")) then
             value = numberSuffixFormat(value);
         else
-            value = Round(value);
-            while true do
-                value, k = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2');
-                if (k==0) then
-                    break;
-                end
-            end
+            splitLargeNumber(value);
         end
     end
 
@@ -233,7 +239,7 @@ function Helpers:ToFullName(name)
     end
 
     if(not name:find("-", 1, true)) then
-        _,realm = UnitFullName("player"); -- Local player's realm
+        local _,realm = UnitFullName("player"); -- Local player's realm
         name = realm and (name.."-"..realm) or name;
     end
 

@@ -21,18 +21,10 @@ API.classTokens = {
     "MAGE",
     "WARLOCK",
     "DRUID",
-
-    -- WotLK
-    "DEATHKNIGHT",
-
-    -- MoP  
-    "MONK",
-
-    -- Legion
-    "DEMONHUNTER",
-
-    -- Dragonflight
-    "EVOKER",
+    "DEATHKNIGHT",  -- WotLK
+    "MONK",         -- MoP
+    "DEMONHUNTER",  -- Legion
+    "EVOKER",       -- Dragonflight
 };
 
 function API:GetClassToken(index)
@@ -43,22 +35,6 @@ end
 function API:GetNumClasses()
     return #API.classTokens;
 end
-
-API.classMappingTable = {
-    [1] = 80,
-    [2] = 10,
-    [3] = 40,
-    [4] = 60,
-    [5] = 90,
-    [6] = 30,
-    [7] = 20,
-    [8] = 50,
-    [9] = 70,
-    [10] = 100,
-    [11] = 0,
-    [12] = 110,
-    [13] = 120,
-};
 
 function API:GetAddonVersion()
     if(GetAddOnMetadata) then

@@ -65,7 +65,7 @@ function Display:AddFrame(frame, alignment, offsetX)
 
     if(alignment == "LEFT") then
         offsetX = offsetX + self.parent:GetCheckboxWidth();
-    elseif(Alignment == "RIGHT") then
+    elseif(alignment == "RIGHT") then
         offsetX = offsetX - self.parent:GetArrowWidth()
     end
 

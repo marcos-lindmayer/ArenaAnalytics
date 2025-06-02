@@ -85,7 +85,7 @@ local function CheckShortcut(shortcut, btn)
 end
 
 local function GetPlayerName(player)
-    name = ArenaMatch:GetPlayerFullName(player);
+    local name = ArenaMatch:GetPlayerFullName(player);
 
     if(name:find('-', 1, true)) then
         local includeRealmSetting = Options:Get("quickSearchIncludeRealm");
@@ -339,7 +339,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
     end
     locked = true;
 
-    team = playerFrame.isEnemyTeam and "enemy" or "team";
+    local team = playerFrame.isEnemyTeam and "enemy" or "team";
     local appendRule = GetAppendRule(mouseButton);
     local tokens = GetQuickSearchTokens(playerFrame.player, team, mouseButton);
 

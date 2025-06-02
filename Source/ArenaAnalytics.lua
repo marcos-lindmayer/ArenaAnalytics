@@ -222,7 +222,7 @@ function ArenaAnalytics:GetRealm(realmIndex, errorIfMissing)
 	end
 
 	local realm = ArenaAnalyticsDB.realms[realmIndex];
-	
+
 	if(errorIfMissing and not realm) then
 		error("Realm index: " .. realmIndex .. " found no realms.")
 	end
@@ -587,42 +587,6 @@ function ArenaAnalytics:ClearLastMatchTransientValues(bracketIndex)
 	if(lastMatch) then
 		ArenaMatch:ClearTransientValues(lastMatch);
 	end
-end
-
--- DEPRECATED
--- Returns a table with the selected arena's player comp
-function AAmatch:GetArenaComp(teamTable, teamSize)	
-	if(teamTable == nil or teamSize > #teamTable) then
-		return nil;
-	end
-
-	local newComp = {}
-	for i=1, teamSize do
-		local player = teamTable[i];
-
-		-- No comp with missing player
-		if(player == nil) then
-			return nil;
-		end
-
-		local class, spec = player["class"], player["spec"];
-		if(not class or #class < 3 or not spec or #spec < 3) then
-			return nil;
-		end
-
-		local specID = Constants:getAddonSpecializationID(player["class"], player["spec"], true);
-		if(specID == nil) then
-			return nil;
-		end
-
-		table.insert(newComp, specID);
-	end
-
-	table.sort(newComp, function(a, b)
-		return a < b;
-	end);
-
-	return table.concat(newComp, '|');
 end
 
 -- Calculates arena duration, turns arena data into friendly strings, adds it to ArenaAnalyticsDB

@@ -461,7 +461,7 @@ local function ProcessMatchIndex(index)
             if(doesPassEnemyComp) then
                 AddToCompData(match, false);
             end
-            
+
             if(doesPassComp) then
                 AddToCompData(match, true);
             end
@@ -472,7 +472,6 @@ local function ProcessMatchIndex(index)
             ArenaAnalytics.filteredMatchCount = filteredIndex;
 
             if(filteredIndex > #ArenaAnalytics.filteredMatchHistory) then
-                tmpCount = (tmpCount or 0) + 1;
                 table.insert(ArenaAnalytics.filteredMatchHistory, {});
             end
 

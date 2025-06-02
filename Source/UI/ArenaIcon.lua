@@ -12,9 +12,8 @@ local Options = ArenaAnalytics.Options;
 -------------------------------------------------------------------------
 
 function ArenaIcon:Create(parent, size, skipDeath)
-    local name = "ArenaIcon_"..(spec_id or "???");
-    local newFrame = CreateFrame("Frame", name, parent);
-    newFrame:SetPoint("CENTER");    
+    local newFrame = CreateFrame("Frame", "ArenaIconFrame", parent);
+    newFrame:SetPoint("CENTER");
     newFrame:SetSize(size, size);
 
     local baseFrameLevel = newFrame:GetFrameLevel();

@@ -252,7 +252,7 @@ function Internal:GetClassColor(spec_id)
 end
 
 function Internal:GetClassIcon(spec_id)
-    class_id = Helpers:GetClassID(spec_id);
+    local class_id = Helpers:GetClassID(spec_id);
     if(not class_id) then
         return nil;
     end

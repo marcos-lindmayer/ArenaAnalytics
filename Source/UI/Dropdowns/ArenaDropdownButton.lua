@@ -118,7 +118,7 @@ function Button:GetName()
 end
 
 function Button:GetDropdownType()
-    return parent:GetDropdownType();
+    return self.parent and self.parent:GetDropdownType();
 end
 
 function Button:IsDisabled()

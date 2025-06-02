@@ -95,7 +95,7 @@ local ambiguousSpecMappings = {
 
 -- Get a shared id for ambiguous
 function Search:CheckSpecMatch(searchSpec, player)
-    playerSpec = ArenaMatch:GetPlayerSpec(player);
+    local playerSpec = ArenaMatch:GetPlayerSpec(player);
     searchSpec = tonumber(searchSpec);
 
     if(not searchSpec or not playerSpec) then

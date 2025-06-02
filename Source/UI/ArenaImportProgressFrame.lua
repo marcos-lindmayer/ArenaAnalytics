@@ -109,7 +109,7 @@ function ImportProgressFrame:UpdateWeightedMovingAverage(state, currentTime)
     local timeSinceLastUpdate = currentTime - (state.lastUpdateTime or currentTime);
 
     if(timeSinceLastUpdate and timeSinceLastUpdate > 0) then
-        weight = 0.2;
+        local weight = 0.2;
         local currentRate = progressSinceLastUpdate / timeSinceLastUpdate;
 
         if(self.latestWMA) then

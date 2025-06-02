@@ -13,7 +13,7 @@ local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
-local matchKeys = {
+ArenaMatch.matchKeys = {
     date = 0,
     duration = -1,
     map = -2,
@@ -37,8 +37,9 @@ local matchKeys = {
     transient_seasonPlayed = -100,
     transient_requireRatingFix = -101,
 };
+local matchKeys = ArenaMatch.matchKeys;
 
-local playerKeys = {
+ArenaMatch.playerKeys = {
     name = 0,
     realm = -1,
     race = -2,
@@ -50,32 +51,14 @@ local playerKeys = {
     stats = -8,
     variable_stats = -9, -- Game mode specific stats (Wins for shuffle)
 };
+local playerKeys = ArenaMatch.playerKeys;
 
-local roundKeys = {
+ArenaMatch.roundKeys = {
     data = 0,
     comp = -1,
     enemy_comp = -2,
 };
-
--- DEPRECATED (USed for conversion still)
-local oldPlayerKeys = {
-    name = 0,
-    realm = -1,
-    is_self = -2,
-    is_first_death = -3,
-    race = -4,
-    spec_id = -5,
-    role = -6,
-    deaths = -7,
-    kills = -8,
-    healing = -9,
-    damage = -10,
-    wins = -11,
-    rating = -12,
-    ratingDelta = -13,
-    mmr = -14,
-    mmrDelta = -15,
-};
+local roundKeys = ArenaMatch.roundKeys;
 
 -------------------------------------------------------------------------
 -- Temp conversion functions
@@ -93,104 +76,6 @@ function ArenaMatch:FixRoundFormat(match)
             local newData = roundData:gsub('-', '|');
             ArenaAnalytics:LogEscaped(newData, "  :  ", round[roundKeys.data]);
             round[roundKeys.data] = newData;
-        end
-    end
-end
-
--- Revert 
-function ArenaMatch:RevertPlayerNameAndRealmIndexing(match)
-    if(not match) then
-        return;
-    end
-
-    for i,isEnemy in ipairs({false, true}) do
-        local team = ArenaMatch:GetTeam(match, isEnemy);
-        if(type(team) == "table") then
-            for i,player in ipairs(team) do
-                local name = player[oldPlayerKeys.name];
-                local realm = player[oldPlayerKeys.realm];
-
-                -- If either name or realm requires reverting
-                if(type(name) == "number" or type(realm) == "number") then
-                    ArenaAnalytics:Log("Reverting player names:", name, realm);
-                    
-                    if(type(name) == "number") then
-                        name = ArenaAnalytics:GetName(name, true);
-                    end
-                    
-                    if(type(realm) == "number") then
-                        realm = ArenaAnalytics:GetRealm(realm, true);
-                    end
-                    
-                    ArenaAnalytics:Log("   Reverted player names:", name, realm);
-                end
-                
-                player[oldPlayerKeys.name] = name;
-                player[oldPlayerKeys.realm] = realm;
-            end
-        end
-    end
-end
-
-function ArenaMatch:ConvertPlayerValues(match, matchIndex)
-    if(not match) then
-        return;
-    end
-
-    -- Get a compact | separated player data string
-    local function ToPlayerData(player, isEnemy)
-        if(not player or type(player) == "string") then
-            return player;
-        end
-
-        local player = {
-            name = player[oldPlayerKeys.name],
-            realm = player[oldPlayerKeys.realm],
-            isSelf = player[oldPlayerKeys.is_self],
-            isFirstDeath = player[oldPlayerKeys.is_first_death],
-            isEnemy = isEnemy,
-            race = player[oldPlayerKeys.race],
-            spec = player[oldPlayerKeys.spec_id],
-            role = player[oldPlayerKeys.role],
-            kills = player[oldPlayerKeys.kills],
-            deaths = player[oldPlayerKeys.deaths],
-            damage = player[oldPlayerKeys.damage],
-            healing = player[oldPlayerKeys.healing],
-        };
-
-        return ArenaMatch:MakeCompactPlayerData(player);
-    end
-
-    -- For each player
-    for i,isEnemy in ipairs({false, true}) do
-        local team = ArenaMatch:GetTeam(match, isEnemy);
-        local newTeam = {}
-
-        if(type(team) == "table") then
-            for i,player in ipairs(team) do
-                local newDataString = ToPlayerData(player, isEnemy);
-
-                ArenaAnalytics:LogEscaped("ConvertPlayerValues:", i, newDataString);
-
-                if(newDataString == "") then
-                    ArenaAnalytics:Log("ERROR: Converting player values added empty player value string!");
-                end
-
-                -- Actual conversion NYI!
-                if(newDataString) then
-                    tinsert(newTeam, newDataString);
-                end
-            end
-        end
-
-        ArenaAnalytics:Log("ConvertPlayerValues", #newTeam)
-        if(#newTeam > 0) then
-            local teamKey = isEnemy and matchKeys.enemy_team or matchKeys.team;
-            for i,player in ipairs(newTeam) do
-                ArenaAnalytics:LogEscaped("     ", i, player);
-            end
-
-            match[teamKey] = newTeam;
         end
     end
 end
@@ -891,13 +776,13 @@ end
 function ArenaMatch:GetPlayer(match, isEnemyTeam, index)
     assert(index);
 
-    if(not match) then 
-        return nil 
-    end;
+    if(not match or index < 1) then
+        return nil;
+    end
 
     local team = ArenaMatch:GetTeam(match, isEnemyTeam);
 
-    if(not team or index < 1 or index > #team) then
+    if(not team or index > #team) then
         return nil;
     end
 
@@ -928,11 +813,11 @@ function ArenaMatch:GetPlayerInfo(player)
     -- Expand role
     playerInfo.role_main = Bitmap:GetMainRole(playerInfo.role);
     playerInfo.role_sub = Bitmap:GetSubRole(playerInfo.role);
- 
+
     -- Expand bitmask (isFirstDeath, isEnemy, isSelf)
     for key,index in pairs(Constants.playerFlags) do
         assert(key and tonumber(index), "Invalid flag in Constants.playerFlags!");
-        playerInfo[key] = playerInfo.bitmask and Bitmap:HasBitByIndex(playerInfo.bitmask, index) or nil;
+        --playerInfo[key] = playerInfo.bitmask and Bitmap:HasBitByIndex(playerInfo.bitmask, index) or nil;
     end
 
     return playerInfo;
@@ -1052,21 +937,21 @@ function ArenaMatch:GetPlayerFullName(player, hideLocalRealm, requireCompact)
 
     if(hideLocalRealm and ArenaAnalytics:IsLocalRealm(realm)) then
         realm = nil;
-    end 
+    end
 
     -- Convert to string names
     if(not requireCompact) then
         name = name and ArenaAnalyticsDB.names[name] or "";
-        
+
         if(realm) then
             realm = ArenaAnalyticsDB.realms[realm] or "";
         end
     end
-    
+
     if(not realm) then
         return name;
     end
-    
+
     local fullNameFormat = "%s-%s";
     return string.format(fullNameFormat, name, realm);
 end
@@ -1117,15 +1002,13 @@ function ArenaMatch:HasComp(match, comp, isEnemyTeam)
         end
 
         return false;
-    else
-        if(isEnemyTeam) then
-            return comp == match[matchKeys.enemy_comp];
-        else
-            return comp == match[matchKeys.comp];
-        end
     end
 
-    return nil;
+    if(isEnemyTeam) then
+        return comp == match[matchKeys.enemy_comp];
+    else
+        return comp == match[matchKeys.comp];
+    end
 end
 
 -- Returns the comp, outcome and mmr values for the match or round 
@@ -1233,11 +1116,15 @@ function ArenaMatch:HasSelf(match)
     end
 
     local team = ArenaMatch:GetTeam(match, false);
-    for _,player in ipairs(team) do
-        if(ArenaMatch:IsPlayerSelf(player)) then
-            return true;
+
+    if(team) then
+        for _,player in ipairs(team) do
+            if(ArenaMatch:IsPlayerSelf(player)) then
+                return true;
+            end
         end
     end
+
     return false;
 end
 
@@ -1348,7 +1235,7 @@ function ArenaMatch:SetRounds(match, rounds)
     local myName = Helpers:GetPlayerName();
     local selfPlayerInfo = ArenaMatch:GetSelfInfo(match, true);
     local requiredTeamSize = ArenaMatch:GetTeamSize(match);
-    
+
     -- Fill player name to index mapping
     local indexMapping = {}
 
@@ -1464,8 +1351,11 @@ function ArenaMatch:ResortPlayers(match)
     -- Fill old index to player name mapping
     local enemyTeam = ArenaMatch:GetTeam(match, true);
     local oldNameOrder = {}
-    for i,player in ipairs(enemyTeam) do
-        player.oldIndex = i;
+
+    if(enemyTeam) then
+        for i,player in ipairs(enemyTeam) do
+            player.oldIndex = i;
+        end
     end
 
     -- Sort match enemies
@@ -1481,14 +1371,17 @@ function ArenaMatch:ResortPlayers(match)
 
     -- Fill old index to new index mapping
     local indexMapping = {}
-    for newIndex,player in ipairs(enemyTeam) do
-        local oldIndex = player and player.oldIndex;
-        if(oldIndex) then
-            indexMapping[oldIndex] = newIndex;
-            player.oldIndex = nil; -- Clear temporary tag
-        else
-            ArenaAnalytics:Log("ERROR: Failed to retrieve old index for player! Sorting is likely to have broken the match data!");
-            assert(false); -- Force the addon to crash, preventing it from saving the match wrongly
+
+    if(enemyTeam) then
+        for newIndex,player in ipairs(enemyTeam) do
+            local oldIndex = player and player.oldIndex;
+            if(oldIndex) then
+                indexMapping[oldIndex] = newIndex;
+                player.oldIndex = nil; -- Clear temporary tag
+            else
+                ArenaAnalytics:Log("ERROR: Failed to retrieve old index for player! Sorting is likely to have broken the match data!");
+                assert(false); -- Force the addon to crash, preventing it from saving the match wrongly
+            end
         end
     end
 

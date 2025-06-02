@@ -225,6 +225,7 @@ end
 -------------------------------------------------------------------------
 -- Session Duration (Bottom Stats)
 
+local isSessionTimerActive = false;
 local function handleSessionDurationTimer()
     local _,expired, startTime, endTime = Sessions:GetLatestSessionStartAndEndTime();
 

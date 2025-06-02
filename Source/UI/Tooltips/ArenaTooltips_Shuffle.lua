@@ -220,7 +220,7 @@ local function AddBottomStat(prefix, name, value, spec_id)
     end
 
     local yOffset = #self.bottomStatTexts * 15 + 10;
-    
+
     local text = nil;
     if(name) then
         local textFormat = "%s %s  %s";
@@ -234,14 +234,6 @@ local function AddBottomStat(prefix, name, value, spec_id)
     tinsert(self.bottomStatTexts, fontString);
 end
 
-local function SetText(frame, text, yOffset)
-    if(frame) then
-        frame:SetText("");
-    end
-
-    frame = ArenaAnalyticsCreateText(self.frame, "BOTTOMLEFT", self.frame, "BOTTOMLEFT", 10, yOffset, text, 12);
-end
-
 function ShuffleTooltip:SetMatch(match)
     local self = GetOrCreateSingleton();
 
@@ -252,7 +244,6 @@ function ShuffleTooltip:SetMatch(match)
 
     Tooltips:HideAll();
 
-    
     local newHeight = 35;
     local wins = 0;
     local deaths = TablePool:Acquire();
