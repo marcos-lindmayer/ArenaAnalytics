@@ -139,9 +139,15 @@ function VersionManager:OnInit()
 end
 
 local function convertFormatedDurationToSeconds(inDuration)
-    if(tonumber(inDuration)) then
-        return inDuration;
+    if(not inDuration) then
+        return 0;
     end
+
+    if(type(inDuration) == "number") then
+        return tonumber(inDuration);
+    end
+
+    ArenaAnalytics:LogTemp(inDuration, type(inDuration));
 
     if(inDuration ~= nil and inDuration ~= "") then
         -- Sanitize the formatted time string
@@ -165,11 +171,7 @@ local function convertFormatedDurationToSeconds(inDuration)
             ArenaAnalytics:LogError("Converting duration failed (:", inDuration, ")");
         end
 
-        if(minutes and seconds) then
-            return 60*minutes + seconds;
-        else
-            return seconds or 0;
-        end
+        return 60*minutes + seconds;
     end
 
     return 0;
@@ -402,7 +404,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                     ["season"] = SanitizeSeason(arena["season"], arena["dateInt"]),
                     ["map"] = arena["map"], 
                     ["bracket"] = bracketKey,
-                    ["duration"] = convertFormatedDurationToSeconds(tonumber(arena["duration"]) or 0),
+                    ["duration"] = convertFormatedDurationToSeconds(arena["duration"]) or 0,
                     ["team"] = team,
                     ["rating"] = tonumber(arena["rating"]),
                     ["ratingDelta"] = tonumber(arena["ratingDelta"]),

@@ -186,7 +186,7 @@ function ArenaAnalytics:GetName(nameIndex, errorIfMissing)
 	end
 
 	local name = ArenaAnalyticsDB.names[nameIndex];
-	
+
 	if(errorIfMissing and not name) then
 		error("Name index: " .. nameIndex .. " found no names.")
 	end
