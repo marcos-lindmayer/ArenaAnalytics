@@ -120,8 +120,8 @@ local function InitializeLookupTable_Spec()
                             specName = Helpers:SanitizeValue(specName);
 
                             if(id and specName and tonumber(classTable[specName]) == nil) then -- Prioritize known English IDs
-                                ArenaAnalytics:LogTemp("InitializeLookupTable_Spec", classToken, specName, id, classTable[specName]);
                                 classTable[specName] = API:GetMappedAddonSpecID(id);
+                                ArenaAnalytics:LogTemp("InitializeLookupTable_Spec", classToken, specName, id, classTable[specName]);
                             end
                         end
                     end

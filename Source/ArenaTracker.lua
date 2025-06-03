@@ -184,13 +184,13 @@ function ArenaTracker:CommitCurrentRound(force)
 		return;
 	end
 
-	ArenaAnalytics:LogGreen("CommitCurrentRound triggered!")
-
 	-- Delay commit until team has changed, unless match ended.
 	if(not force and ArenaTracker:IsSameRoundTeam() and not GetBattlefieldWinner()) then
 		ArenaAnalytics:LogGreen("Delaying round commit. Team has not yet changed.");
 		return;
 	end
+
+	ArenaAnalytics:LogGreen("CommitCurrentRound triggered!")
 
 	local startTime = currentArena.round.startTime;
 	local death, endTime = ArenaTracker:GetFirstDeathFromCurrentArena();

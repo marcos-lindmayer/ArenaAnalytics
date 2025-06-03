@@ -657,7 +657,7 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 	-- Add players from both teams sorted, and assign comps.
 	ArenaMatch:AddPlayers(arenaData, newArena.players);
 
-	if(newArena.isShuffle) then
+	if(newArena.bracket == "shuffle") then
 		ArenaMatch:SetRounds(arenaData, newArena.committedRounds);
 	end
 

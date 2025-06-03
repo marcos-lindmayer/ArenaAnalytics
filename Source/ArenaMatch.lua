@@ -1224,6 +1224,8 @@ function ArenaMatch:SetRounds(match, rounds)
         return;
     end
 
+    ArenaAnalytics:LogGreen("Setting shuffle rounds for match.", #rounds);
+
     ArenaMatch:SortGroups(match);
 
     local enemyTeam = ArenaMatch:GetTeam(match, true);
