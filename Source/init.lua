@@ -191,10 +191,12 @@ ArenaAnalytics.commands = {
 	end,
 
 	-- Debugging: Used to gather zone and version info from users helping with version update
-	["devcontext"] = function(...)
+	["dump"] = function(...)
 		print(" ");
 		ArenaAnalytics:Print(" ================================================  ");
-		ArenaAnalytics:Print("Interface Version:", select(4, GetBuildInfo()));
+
+		local interfaceVersion = select(4, GetBuildInfo());
+		ArenaAnalytics:Print("Interface Version:", interfaceVersion);
 
 		if(API and API.IsInArena()) then
 			ArenaAnalytics:Print("Arena Map ID:", API:GetCurrentMapID(), GetZoneText());

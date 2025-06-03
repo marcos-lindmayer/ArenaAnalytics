@@ -146,7 +146,7 @@ function Helpers:FormatNumber(value)
     if (type(value) == "number") then
         if(math.abs(value) < 1000) then
             value = Round(value);
-        elseif(Options:Get("compressLargeNumbers")) then
+        elseif(Options:Get("compactLargeNumbers")) then
             value = numberSuffixFormat(value);
         else
             splitLargeNumber(value);

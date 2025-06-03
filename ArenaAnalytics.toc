@@ -1,4 +1,4 @@
-## Interface: 50500
+## Interface: 30404, 40402, 50500, 110105
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
 ## Author: Lingo, Zeetrax
@@ -25,7 +25,10 @@ Source/ArenaTablePool.lua
 
 Source/API/ArenaHelpers.lua
 Source/API/ArenaAPI.lua
-Source/API/ArenaAPI_Mists.lua
+Source/API/ArenaAPI_Wrath.lua [AllowLoadGameType wrath]
+Source/API/ArenaAPI_Cata.lua [AllowLoadGameType cata]
+Source/API/ArenaAPI_Mists.lua [AllowLoadGameType mists]
+Source/API/ArenaAPI_TWW.lua [AllowLoadGameType standard]
 Source/API/ArenaInspection.lua
 
 Source/UI/HybridScroll.xml
@@ -40,6 +43,8 @@ Source/UI/Tooltips/ArenaTooltips_Shuffle.lua
 Source/Data/ArenaInternalIDs.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
+Source/Data/ArenaSpecSpells_Wrath.lua [AllowLoadGameType wrath]
+Source/Data/ArenaSpecSpells_Cata.lua [AllowLoadGameType cata]
 Source/Data/ArenaLocalizationTables.lua
 
 Source/Search/ArenaSearch.lua
