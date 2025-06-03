@@ -22,9 +22,7 @@ function Localization:GetClassID(class)
     class = Helpers:ToSafeLower(class);
     local class_id = class and classLookupTable[class];
 
-    if(class_id) then
-        ArenaAnalytics:LogGreen("Localization:GetSpecID found ID:", class_id, "for", class);
-    else
+    if(not class_id) then
         ArenaAnalytics:LogWarning("Localization:GetSpecID failed to find ID for:", class);
     end
 
@@ -85,9 +83,7 @@ function Localization:GetSpecID(classToken, spec)
     local spec_id = classTable and tonumber(classTable[spec]);
 
     -- Logging
-    if(spec_id) then
-        ArenaAnalytics:LogGreen("Localization:GetSpecID found ID:", spec_id, "for", classToken, spec);
-    else
+    if(not spec_id) then
         ArenaAnalytics:LogWarning("Localization:GetSpecID failed to find ID for:", classToken, spec);
     end
 
@@ -467,9 +463,7 @@ function Localization:GetRaceID(race, factionIndex)
     end
 
     -- Logging
-    if(race_id) then
-        ArenaAnalytics:LogGreen("Localization:GetRaceID found ID:", race_id, "for", race, factionIndex);
-    else
+    if(not race_id) then
         ArenaAnalytics:LogWarning("Localization:GetRaceID failed to find ID for:", race, factionIndex);
     end
 

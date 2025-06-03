@@ -111,6 +111,8 @@ local function splitLargeNumber(value)
     repeat
         value, substitutions = string.gsub(value, "^(-?%d+)(%d%d%d)", '%1,%2');
     until (not substitutions or substitutions == 0);
+
+    return value;
 end
 
 local function numberSuffixFormat(value)
@@ -134,22 +136,22 @@ local function numberSuffixFormat(value)
     absValue = absValue / 10;
 
     if(hasDecimal) then
-        return string.format("%s%.1f%s", prefix, absValue, suffixes[suffixIndex]);
+        return string.format("%s%.1f %s", prefix, absValue, suffixes[suffixIndex]);
     else
-        return string.format("%s%d%s", prefix, absValue, suffixes[suffixIndex]);
+        return string.format("%s%d %s", prefix, absValue, suffixes[suffixIndex]);
     end
 end
 
-function Helpers:FormatNumber(value)
+function Helpers:FormatNumber(value, forceExact)
     value = tonumber(value) or "-";
 
     if (type(value) == "number") then
         if(math.abs(value) < 1000) then
             value = Round(value);
-        elseif(Options:Get("compactLargeNumbers")) then
+        elseif(Options:Get("compactLargeNumbers") and not forceExact) then
             value = numberSuffixFormat(value);
         else
-            splitLargeNumber(value);
+            value = splitLargeNumber(value);
         end
     end
 
