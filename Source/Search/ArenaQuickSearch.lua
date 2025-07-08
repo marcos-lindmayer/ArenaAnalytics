@@ -7,6 +7,7 @@ local Constants = ArenaAnalytics.Constants;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 -- Short Names
@@ -87,7 +88,7 @@ end
 local function GetPlayerName(player)
     local name = ArenaMatch:GetPlayerFullName(player);
 
-    if(name:find('-', 1, true)) then
+    if(name and name:find('-', 1, true)) then
         local includeRealmSetting = Options:Get("quickSearchIncludeRealm");
         local includeRealm = true;
 
@@ -196,7 +197,7 @@ local function GetQuickSearchTokens(player, team, btn)
     -- Team
     local newSimpleTeamToken = nil;
     if(CheckShortcut(Options:Get("quickSearchAction_ClickedTeam"), btn)) then
-        ArenaAnalytics:Log("Team of clicked player!", team);
+        Debug:Log("Team of clicked player!", team);
         newSimpleTeamToken = Search:CreateToken(Helpers:ToSafeLower(team));
     elseif(CheckShortcut(Options:Get("quickSearchAction_Team"), btn)) then
         newSimpleTeamToken = Search:CreateToken("team");
@@ -325,12 +326,12 @@ end
 local locked = nil;
 function Search:QuickSearch(playerFrame, mouseButton)
     if(not Options:Get("quickSearchEnabled")) then
-        ArenaAnalytics:Log("QuickSearch: Disabled");
+        Debug:Log("QuickSearch: Disabled");
         return;
     end
 
     if(not playerFrame or not playerFrame.player) then
-        ArenaAnalytics:Log("QuickSearch: invalid player frame");
+        Debug:Log("QuickSearch: invalid player frame");
         return;
     end
 
@@ -344,7 +345,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
     local tokens = GetQuickSearchTokens(playerFrame.player, team, mouseButton);
 
     if(not tokens or #tokens == 0) then
-        ArenaAnalytics:Log("QuickSearch: No tokens.");
+        Debug:Log("QuickSearch: No tokens.");
         return;
     end
 

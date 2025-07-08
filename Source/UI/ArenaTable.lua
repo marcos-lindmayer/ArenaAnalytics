@@ -20,29 +20,17 @@ local Helpers = ArenaAnalytics.Helpers;
 local Tooltips = ArenaAnalytics.Tooltips;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
 local Sessions = ArenaAnalytics.Sessions;
+local Colors = ArenaAnalytics.Colors;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
 local hasLoaded = false;
 
-function ArenaAnalytics:ColorText(text, color)
-    text = text or "";
-
-    if(not color) then
-        return text;
-    end
-
-    if(#color == 6) then
-        color = "ff" .. color;
-    end
-
-    return "|c" .. color .. text .. "|r"
-end
-
 function ArenaAnalytics:SetFrameText(frame, text, color)
     assert(frame and frame.SetText, "Invalid frame provided for SetText.");
 
-    text = ArenaAnalytics:ColorText(text, color);
+    text = Colors:ColorText(text, color);
     frame:SetText(text);
 end
 
@@ -83,12 +71,12 @@ function ArenaAnalyticsCreateText(parent, anchor, relativeFrame, relPoint, xOff,
 end
 
 local function CreateFilterTitle(filterFrame, text, info, offsetX, size)
-    text = ArenaAnalytics:ColorText(text, Constants.headerColor);
+    text = Colors:ColorText(text, Colors.headerColor);
 
     filterFrame.title = ArenaAnalyticsCreateText(filterFrame, "TOPLEFT", filterFrame, "TOPLEFT", offsetX or 2, 15, text, size);
 
     if(info) then
-        info = ArenaAnalytics:ColorText(info, Constants.infoColor);
+        info = Colors:ColorText(info, Colors.infoColor);
         filterFrame.title.info = ArenaAnalyticsCreateText(filterFrame, "TOPRIGHT", filterFrame, "TOPRIGHT", -5, 11, info, 8);
 
         if(not Options:Get("showCompDropdownInfoText")) then
@@ -120,13 +108,18 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.titleVersion = ArenaAnalyticsScrollFrame:CreateFontString(nil, "OVERLAY");
     ArenaAnalyticsScrollFrame.titleVersion:SetPoint("LEFT", ArenaAnalyticsScrollFrame.title, "RIGHT", 10, -1);
     ArenaAnalyticsScrollFrame.titleVersion:SetFont("Fonts\\FRIZQT__.TTF", 11, "");
-    ArenaAnalyticsScrollFrame.titleVersion:SetText("|cff909090v" .. API:GetAddonVersion() .. "|r");
+    ArenaAnalyticsScrollFrame.titleVersion:SetText(Colors:GetVersionText());
 
     ArenaAnalyticsScrollFrame.searchBox = CreateFrame("EditBox", "searchBox", ArenaAnalyticsScrollFrame, "SearchBoxTemplate")
     ArenaAnalyticsScrollFrame.searchBox:SetPoint("TOPLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 35, -47);
     ArenaAnalyticsScrollFrame.searchBox:SetSize(225, 25);
     ArenaAnalyticsScrollFrame.searchBox:SetAutoFocus(false);
     ArenaAnalyticsScrollFrame.searchBox:SetMaxBytes(1024);
+
+    -- Explicit to allow custom translations
+    if(ArenaAnalyticsScrollFrame.searchBox.Instructions) then
+        ArenaAnalyticsScrollFrame.searchBox.Instructions:SetText("Player Search");
+    end
 
     local searchTitle = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
     CreateFilterTitle(ArenaAnalyticsScrollFrame.searchBox, searchTitle, nil, -5);
@@ -136,7 +129,7 @@ function AAtable:OnLoad()
         Search:CommitSearch(self:GetText());
     end);
 
-    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEscapePressed", function(self) 
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnEscapePressed", function(self)
         self:SetText(Search:GetLastDisplay());
         self:ClearFocus();
     end);
@@ -151,7 +144,7 @@ function AAtable:OnLoad()
 
     ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextSet", function(self) 
         if(self:GetText() == "" and not Search:IsEmpty()) then
-            ArenaAnalytics:Log("Clearing search..");
+            Debug:Log("Clearing search..");
             Search:CommitSearch("");
             self:SetText("");
         end
@@ -178,7 +171,7 @@ function AAtable:OnLoad()
         if not enableOldSettings then
             Options:Open();
         else
-            if (not ArenaAnalyticsScrollFrame.settingsFrame:IsShown()) then  
+            if (not ArenaAnalyticsScrollFrame.settingsFrame:IsShown()) then
                 ArenaAnalyticsScrollFrame.settingsFrame:Show();
                 ArenaAnalyticsScrollFrame.allowReset:SetChecked(false);
                 ArenaAnalyticsScrollFrame.resetBtn:Disable();
@@ -190,24 +183,24 @@ function AAtable:OnLoad()
 
     -- Table headers
     local verticalPadding = -93;
-    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, verticalPadding, ArenaAnalytics:ColorText("Date", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 150, verticalPadding, ArenaAnalytics:ColorText("Map", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 210, verticalPadding, ArenaAnalytics:ColorText("Duration", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 330, verticalPadding, ArenaAnalytics:ColorText("Team", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 490, verticalPadding, ArenaAnalytics:ColorText("Rating", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 600, verticalPadding, ArenaAnalytics:ColorText("MMR", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 670, verticalPadding, ArenaAnalytics:ColorText("Enemy Team", Constants.headerColor));
-    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 830, verticalPadding, ArenaAnalytics:ColorText("Enemy MMR", Constants.headerColor));
+    ArenaAnalyticsScrollFrame.dateTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame,"BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 30, verticalPadding, Colors:ColorText("Date", Colors.headerColor));
+    ArenaAnalyticsScrollFrame.mapTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 150, verticalPadding, Colors:ColorText("Map", Colors.headerColor));
+    ArenaAnalyticsScrollFrame.durationTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 210, verticalPadding, Colors:ColorText("Duration", Colors.headerColor));
+    ArenaAnalyticsScrollFrame.teamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 330, verticalPadding, Colors:ColorText("Team", Colors.headerColor));
+    ArenaAnalyticsScrollFrame.ratingTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 490, verticalPadding, Colors:ColorText("Rating", Colors.headerColor));
+    ArenaAnalyticsScrollFrame.mmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 600, verticalPadding, Colors:ColorText("MMR", Colors.headerColor));
+    ArenaAnalyticsScrollFrame.enemyTeamTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 670, verticalPadding, Colors:ColorText("Enemy Team", Colors.headerColor));
+    ArenaAnalyticsScrollFrame.enemyMmrTitle = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "TOPLEFT", 830, verticalPadding, Colors:ColorText("Enemy MMR", Colors.headerColor));
 
     -- Recorded arena number and winrate
     ArenaAnalyticsScrollFrame.sessionStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 27, "");
 
     ArenaAnalyticsScrollFrame.overallStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOMLEFT", 30, 10, "");
 
-    local coloredSessionPrefix = ArenaAnalytics:ColorText("Session Duration: ", Constants.prefixColor);
+    local coloredSessionPrefix = Colors:ColorText("Session Duration: ", Colors.prefixColor);
     ArenaAnalyticsScrollFrame.sessionDuration = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 27, coloredSessionPrefix);
 
-    local selectedPrefixText = ArenaAnalytics:ColorText("Selected: ", Constants.prefixColor);
+    local selectedPrefixText = Colors:ColorText("Selected: ", Colors.prefixColor);
     ArenaAnalyticsScrollFrame.selectedStats = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMLEFT", ArenaAnalyticsScrollFrame, "BOTTOM", -65, 10, selectedPrefixText .. " (click matches to select)");
 
     Sessions:TryStartSessionDurationTimer();
@@ -252,7 +245,7 @@ function AAtable:OnLoad()
 
     -- Clear all filters
     ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:SetScript("OnClick", function() 
-        ArenaAnalytics:Log("Clearing filters..");
+        Debug:Log("Clearing filters..");
         Filters:ResetAll(IsShiftKeyDown());
     end);
 
@@ -357,9 +350,9 @@ function AAtable:CreateExportDialogFrame()
 			-- Garbage collect
 			self:SetText("");
             ArenaAnalyticsScrollFrame.exportDialogFrame = nil;
-            ArenaAnalytics:Log("Export Frame going away..")
+            Debug:Log("Export Frame going away..")
             collectgarbage("collect");
-            ArenaAnalytics:Log("Garbage Collection forced by export frame.");
+            Debug:Log("Garbage Collection forced by export frame.");
 		end);
 	end
 
@@ -496,7 +489,7 @@ end
 -- Forcefully clear and recreate the comp filters for new filters. Optionally staying visible.
 function AAtable:ForceRefreshFilterDropdowns()
     if(not hasLoaded) then
-        ArenaAnalytics:Log("ForceRefresh called before OnLoad. Skipped.");
+        Debug:Log("ForceRefresh called before OnLoad. Skipped.");
         return;
     end
 
@@ -524,14 +517,14 @@ local function CombineStatsText(total, wins, losses, draws)
     total = total or 0;
 
     local winrateText = total > 0 and math.floor(wins * 100 / total) or 0;
-    local winsText =  ArenaAnalytics:ColorText(wins, Constants.winColor);
-    local lossesText = ArenaAnalytics:ColorText(losses, Constants.lossColor);
+    local winsText =  Colors:ColorText(wins, Colors.winColor);
+    local lossesText = Colors:ColorText(losses, Colors.lossColor);
 
     local includeDraws = draws ~= nil; -- Add option?
-    local drawText = includeDraws and (" / " .. ArenaAnalytics:ColorText(draws, Constants.drawColor)) or "";
+    local drawText = includeDraws and (" / " .. Colors:ColorText(draws, Colors.drawColor)) or "";
 
     local valueText = total .. " " .. GetArenaText(total) .. "   " .. winsText .. " / " .. lossesText .. drawText .. "  " .. winrateText .. "% Winrate";
-    return ArenaAnalytics:ColorText(valueText, Constants.statsColor);
+    return Colors:ColorText(valueText, Colors.statsColor);
 end
 
 -- Updates the displayed data for a new match
@@ -580,7 +573,7 @@ function AAtable:HandleArenaCountChanged()
     -- Update displayed session stats text
     local _, expired = Sessions:GetLatestSession();
     local sessionText = expired and "Last session: " or "Current session: ";
-    sessionText = ArenaAnalytics:ColorText(sessionText, Constants.prefixColor);
+    sessionText = Colors:ColorText(sessionText, Colors.prefixColor);
 
     local valuesText = CombineStatsText(sessionGames, sessionWins, sessionLosses, sessionDraws);
     ArenaAnalyticsScrollFrame.sessionStats:SetText(sessionText .. valuesText);
@@ -590,7 +583,7 @@ function AAtable:HandleArenaCountChanged()
     local text = hasActiveFilters and "Filtered total: " or ("Total " .. GetArenaText(#ArenaAnalyticsDB) .. ": ");
 
     -- Color the text
-    text = ArenaAnalytics:ColorText(text, Constants.prefixColor);
+    text = Colors:ColorText(text, Colors.prefixColor);
 
     local valuesText = CombineStatsText(ArenaAnalytics.filteredMatchCount, wins, losses, draws);
     ArenaAnalyticsScrollFrame.overallStats:SetText(text .. valuesText);
@@ -632,7 +625,7 @@ function AAtable:UpdateSelected()
                 draws = draws + 1;
             end
         else
-            ArenaAnalytics:Log("Updating selected found index: ", index, " not found in filtered match history!");
+            Debug:Log("Updating selected found index: ", index, " not found in filtered match history!");
         end
     end
 
@@ -643,11 +636,11 @@ function AAtable:UpdateSelected()
         newSelectedText = CombineStatsText(total, wins, losses, draws);
         ArenaAnalyticsScrollFrame.clearSelected:Show();
     else
-        newSelectedText = ArenaAnalytics:ColorText("(click matches to select)", Constants.statsColor);
+        newSelectedText = Colors:ColorText("(click matches to select)", Colors.statsColor);
         ArenaAnalyticsScrollFrame.clearSelected:Hide();
     end
 
-    local selectedPrefixText = ArenaAnalytics:ColorText("Selected: ", Constants.prefixColor);
+    local selectedPrefixText = Colors:ColorText("Selected: ", Colors.prefixColor);
     ArenaAnalyticsScrollFrame.selectedStats:SetText(selectedPrefixText .. newSelectedText)
 end
 
@@ -688,9 +681,9 @@ function AAtable:RefreshLayout()
             local duration = ArenaMatch:GetDuration(match);
             local bracket = ArenaMatch:GetBracket(match);
 
-            ArenaAnalytics:SetFrameText(button.Date, Helpers:FormatDate(matchDate), Constants.valueColor);
-            ArenaAnalytics:SetFrameText(button.Map, map, Constants.valueColor);
-            ArenaAnalytics:SetFrameText(button.Duration, (duration and SecondsToTime(duration)), Constants.valueColor);
+            ArenaAnalytics:SetFrameText(button.Date, Helpers:FormatDate(matchDate), Colors.valueColor);
+            ArenaAnalytics:SetFrameText(button.Map, map, Colors.valueColor);
+            ArenaAnalytics:SetFrameText(button.Duration, (duration and SecondsToTime(duration)), Colors.valueColor);
 
             local teamIconsFrames = {button.Team1, button.Team2, button.Team3, button.Team4, button.Team5}
             local enemyTeamIconsFrames = {button.EnemyTeam1, button.EnemyTeam2, button.EnemyTeam3, button.EnemyTeam4, button.EnemyTeam5}
@@ -703,11 +696,11 @@ function AAtable:RefreshLayout()
             local outcome = ArenaMatch:GetMatchOutcome(match);
             local hex = nil;
             if(outcome == nil) then
-                hex = Constants.invalidColor;
+                hex = Colors.invalidColor;
             elseif(outcome == 2) then
-                hex = Constants.drawColor;
+                hex = Colors.drawColor;
             else
-                hex = (outcome == 1) and Constants.winColor or Constants.lossColor;
+                hex = (outcome == 1) and Colors.winColor or Colors.lossColor;
             end
 
             -- Party Rating & Delta
@@ -726,10 +719,10 @@ function AAtable:RefreshLayout()
             button.Rating:SetText("|c" .. hex .. (ratingText or "") .."|r");
 
             -- Party MMR
-            ArenaAnalytics:SetFrameText(button.MMR, (ArenaMatch:GetPartyMMR(match) or "-"), Constants.valueColor);
+            ArenaAnalytics:SetFrameText(button.MMR, (ArenaMatch:GetPartyMMR(match) or "-"), Colors.valueColor);
 
             -- Enemy team MMR
-            ArenaAnalytics:SetFrameText(button.EnemyMMR, (ArenaMatch:GetEnemyMMR(match) or "-"), Constants.valueColor);
+            ArenaAnalytics:SetFrameText(button.EnemyMMR, (ArenaMatch:GetEnemyMMR(match) or "-"), Colors.valueColor);
 
             local isSelected = Selection:isMatchSelected(matchIndex);
             button:SetAttribute("selected", isSelected);
@@ -816,6 +809,6 @@ function AAtable:SetLatestSessionDurationText(expired, startTime, endTime)
     local duration = startTime and endTime - startTime or nil;
 
     local text = expired and "Last Session Duration: " or "Session Duration: ";
-    text = ArenaAnalytics:ColorText(text, Constants.prefixColor);
-    ArenaAnalytics:SetFrameText(ArenaAnalyticsScrollFrame.sessionDuration, text .. formatSessionDuration(duration), Constants.statsColor)
+    text = Colors:ColorText(text, Colors.prefixColor);
+    ArenaAnalytics:SetFrameText(ArenaAnalyticsScrollFrame.sessionDuration, text .. formatSessionDuration(duration), Colors.statsColor)
 end

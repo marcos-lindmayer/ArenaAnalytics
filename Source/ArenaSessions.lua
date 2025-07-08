@@ -20,7 +20,7 @@ function Sessions:AssignSession(match)
 	end
 
 	ArenaMatch:SetSession(match, session);
-	ArenaAnalytics:Log("Assigned session:", session);
+	Debug:Log("Assigned session:", session);
 end
 
 function Sessions:RecomputeSessionsForMatchHistory()

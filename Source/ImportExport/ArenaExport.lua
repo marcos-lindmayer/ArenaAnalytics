@@ -3,6 +3,7 @@ local Export = ArenaAnalytics.Export;
 
 -- Local module aliases
 local AAtable = ArenaAnalytics.AAtable;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -96,7 +97,7 @@ local exportPrefix = "ArenaAnalytics_v2:" ..
 -- Returns a CSV-formatted string using ArenaAnalyticsDB info
 function Export:combineExportCSV()
     if(not ArenaAnalytics:HasStoredMatches()) then
-        ArenaAnalytics:Log("Export: No games to export!");
+        Debug:Log("Export: No games to export!");
         return "No games to export!";
     end
 
@@ -111,7 +112,7 @@ function Export:combineExportCSV()
 end
 
 function Export:addMatchesToExport(exportTable, nextIndex)
-    ArenaAnalytics:Log("Attempting export.. addMatchesToExport", nextIndex);
+    Debug:Log("Attempting export.. addMatchesToExport", nextIndex);
 
     nextIndex = nextIndex or 1;
     
@@ -177,7 +178,7 @@ local function formatNumber(num)
 end
 
 function Export:FinalizeExportCSV(exportTable)
-    ArenaAnalytics:Log("Attempting export.. FinalizeExportCSV");
+    Debug:Log("Attempting export.. FinalizeExportCSV");
 
     -- Show export with the new CSV string
     if (ArenaAnalytics:HasStoredMatches()) then
@@ -194,5 +195,5 @@ function Export:FinalizeExportCSV(exportTable)
 
     exportTable = nil;
     collectgarbage("collect");
-    ArenaAnalytics:Log("Garbage Collection forced by Export finalize.");
+    Debug:Log("Garbage Collection forced by Export finalize.");
 end

@@ -118,7 +118,7 @@ function Import:ProcessImportSource()
 end
 
 function Import:SetPastedInput(pasteBuffer)
-    ArenaAnalytics:Log("Finalizing import paste.");
+    Debug:Log("Finalizing import paste.");
 
     Import.raw = pasteBuffer and string.trim(table.concat(pasteBuffer)) or nil;
     Import:ProcessImportSource();
@@ -131,7 +131,7 @@ function Import:ParseRawData()
     end
 
     if(not Import.current or not Import.current.isValid or not Import.current.processorFunc) then
-        ArenaAnalytics:Log("Invalid data for import attempt.. Bailing out immediately..");
+        Debug:Log("Invalid data for import attempt.. Bailing out immediately..");
         Import:Reset();
         return;
     end
@@ -167,7 +167,7 @@ end
 -- Check a date for a duplicate, in case of repeating same import
 function Import:CheckDate(timestamp)
     if(not timestamp or timestamp == 0) then
-        ArenaAnalytics:LogError("Rejecting import arena for invalid date:", timestamp);
+        Debug:LogError("Rejecting import arena for invalid date:", timestamp);
         return false;
     end
 
@@ -225,7 +225,7 @@ function Import:ProcessImport()
 
         while GetTimePreciseSec() < batchEndTime do
             if(not Import.isImporting) then
-                ArenaAnalytics:Log("Import: Processor func missing, bailing out at index:", state.index + 1);
+                Debug:Log("Import: Processor func missing, bailing out at index:", state.index + 1);
                 Import:Finalize();
                 return;
             end
@@ -233,7 +233,7 @@ function Import:ProcessImport()
             local arenaString = iterator();
             if(state and state.index and state.index > 0) then -- First iteration is the format prefix, before arena index 1
                 if(not arenaString) then
-                    ArenaAnalytics:Log("Empty arenaString")
+                    Debug:Log("Empty arenaString")
                     Import:Finalize();
                     return;
                 end
@@ -241,7 +241,7 @@ function Import:ProcessImport()
                 local processedArena = Import.current.processorFunc(arenaString);
                 if(processedArena) then
                     Import:SaveArena(processedArena);
-                    TablePool:ReleaseNested(processedArena); -- Release nested or simple release?
+                    TablePool:Release(processedArena);
                 else
                     state.skippedArenaCount = state.skippedArenaCount + 1;
                 end
@@ -289,7 +289,7 @@ function Import:Finalize()
 
     local elapsedText = elapsed and format(" in %.1f seconds.", elapsed) or "";
     ArenaAnalytics:PrintSystem(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingCount), elapsedText));
-    ArenaAnalytics:Log(format("Import ignored %d arenas due to their date.", (state and state.skippedArenaCount or -1)));
+    Debug:Log(format("Import ignored %d arenas due to their date.", (state and state.skippedArenaCount or -1)));
 end
 
 function Import:SaveArena(arena)

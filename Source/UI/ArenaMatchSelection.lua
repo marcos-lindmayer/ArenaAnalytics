@@ -5,6 +5,7 @@ local Selection = ArenaAnalytics.Selection;
 local Options = ArenaAnalytics.Options;
 local AAtable = ArenaAnalytics.AAtable;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Debug = ArenaAnalytics.Debug;
 
 ------------------------------------------------------------------
 
@@ -114,7 +115,7 @@ local function selectRange(startIndex, endIndex, includeStartSession, includeEnd
     local maxIndex = max(startIndex, endIndex);
 
     if(not IsValidMatch(minIndex) or not IsValidMatch(maxIndex)) then
-        ArenaAnalytics:Log("Invalid filtered match index in selectRange! Selection ignored..");
+        Debug:Log("Invalid filtered match index in selectRange! Selection ignored..");
         return;
     end
 
@@ -136,7 +137,7 @@ end
 -- Helper function to select or deselect a session by index
 local function selectSessionByIndex(index, autoCommit, isDeselect)
     if(not IsValidMatch(index)) then
-        ArenaAnalytics:Log("Invalid filtered match index in selectSessionByIndex! Selection ignored..");
+        Debug:Log("Invalid filtered match index in selectSessionByIndex! Selection ignored..");
         return;
     end
 
@@ -196,7 +197,7 @@ end
 -- Main function to handle click events on match entries
 function Selection:handleMatchEntryClicked(key, isDoubleClick, index)    
     if(not IsValidMatch(index)) then
-        ArenaAnalytics:Log("Invalid filtered match index in handleMatchEntryClicked! Selection ignored..");
+        Debug:Log("Invalid filtered match index in handleMatchEntryClicked! Selection ignored..");
         return;
     end
 

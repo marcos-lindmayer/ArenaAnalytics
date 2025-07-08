@@ -7,7 +7,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
-local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -27,12 +27,12 @@ API.availableMaps = {
 };
 
 function API:IsRatedArena()
-    return API:IsInArena() and C_PvP.IsRatedArena() and not API:IsWargame() and not API:IsSkirmish();
+    return API:IsInArena() and C_PvP.IsRatedMap() and not API:IsWargame() and not API:IsSkirmish();
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
     if(not battlefieldId) then
-        ArenaAnalytics:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
+        Debug:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
         return nil;
     end
 
@@ -61,7 +61,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
     end
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
-    return rating, seasonPlayed;
+    return tonumber(rating), tonumber(seasonPlayed);
 end
 
 function API:GetPlayerScore(index)
@@ -151,7 +151,7 @@ function API:GetSpecialization(unitToken, explicit)
     -- Determine spec
     local _,classToken = UnitClass(unitToken);
     if(not classToken) then
-        ArenaAnalytics:LogWarning("API:GetSpecialization failed to retrieve class token. unitToken:", unitToken);
+        Debug:LogWarning("API:GetSpecialization failed to retrieve class token. unitToken:", unitToken);
         return nil;
     end
 
@@ -166,7 +166,7 @@ function API:GetSpecialization(unitToken, explicit)
 		if (id and pointsSpent) then
             local spec_id = API:GetMappedAddonSpecID(id);
             if(not spec_id) then
-                ArenaAnalytics:LogError("API:GetSpecialization failed to retrieve internal spec ID for:", id, classToken, i);
+                Debug:LogError("API:GetSpecialization failed to retrieve internal spec ID for:", id, classToken, i);
             end
 
             -- Update plausible preg flag

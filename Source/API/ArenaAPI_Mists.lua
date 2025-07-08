@@ -7,7 +7,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
-local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ end
 
 function API:GetBattlefieldStatus(battlefieldId)
     if(not battlefieldId) then
-        ArenaAnalytics:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
+        Debug:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
         return nil;
     end
 
@@ -68,8 +68,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
     end
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
-    ArenaAnalytics:LogGreen("API:GetPersonalRatedInfo", rating, seasonPlayed, bracketIndex);
-    return rating, seasonPlayed;
+    return tonumber(rating), tonumber(seasonPlayed);
 end
 
 function API:GetPlayerScore(index)
@@ -96,7 +95,7 @@ end
 
 function API:GetSpecialization(unitToken, explicit)
     if(unitToken ~= nil) then
-        ArenaAnalytics:Log("API:GetSpecialization", unitToken, explicit)
+        Debug:Log("API:GetSpecialization", unitToken, explicit)
     end
 
     if(explicit and not unitToken) then
@@ -105,7 +104,6 @@ function API:GetSpecialization(unitToken, explicit)
 
     unitToken = unitToken or "player";
     if(not UnitExists(unitToken)) then
-        ArenaAnalytics:LogWarning("Invalid Unit Token in API:GetSpecialization");
         return nil;
     end
 
@@ -126,7 +124,7 @@ function API:GetSpecialization(unitToken, explicit)
         return nil;
     end
 
-    ArenaAnalytics:LogGreen("API:GetSpecialization attempted to inspect spec!", unitToken, specID, API:GetMappedAddonSpecID(specID));
+    Debug:LogGreen("API:GetSpecialization attempted to inspect spec!", unitToken, specID, API:GetMappedAddonSpecID(specID));
     return API:GetMappedAddonSpecID(specID);
 end
 
@@ -136,54 +134,6 @@ function API:GetPlayerInfoByGUID(GUID)
 end
 
 API.maxRaceID = 70;
-
--- Internal Addon Spec ID to expansion spec IDs
---[[
-API.specMappingTable = {
-    [748] = 1, -- Restoration Druid
-    [750] = 2, -- Feral Druid
-    [752] = 3, -- Balance Druid
-
-    [831] = 11, -- Holy Paladin
-    [839] = 12, -- Protection Paladin
-    [855] = 14, -- Retribution Paladin
-
-    [262] = 21, -- Restoration Shaman
-    [261] = 22, -- Elemental Shaman
-    [263] = 23, -- Enhancement Shaman
-
-    [400] = 31, -- Unholy Death Knight
-    [399] = 32, -- Frost Death Knight
-    [398] = 33, -- Blood Death Knight
-
-    [811] = 41, -- Beast Mastery Hunter
-    [807] = 42, -- Marksmanship Hunter
-    [809] = 43, -- Survival Hunter
-
-    [823] = 51, -- Frost Mage
-    [851] = 52, -- Fire Mage
-    [799] = 53, -- Arcane Mage
-
-    [183] = 61, -- Subtlety Rogue
-    [182] = 62, -- Assassination Rogue
-    [181] = 63, -- Combat Rogue
-
-    [871] = 71, -- Affliction Warlock
-    [865] = 72, -- Destruction Warlock
-    [867] = 73, -- Demonology Warlock
-
-    [845] = 81, -- Protection Warrior
-    [746] = 82, -- Arms Warrior
-    [815] = 83, -- Fury Warrior
-
-    [760] = 91, -- Discipline Priest
-    [813] = 92, -- Holy Priest
-    [795] = 93, -- Shadow Priest
-
-    [270] = 101, -- Mistweaver Monk
-    [268] = 102, -- Brewmaster Monk
-    [269] = 103, -- Windwalker Monk
-};  --]]
 
 -- Internal Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
@@ -269,7 +219,10 @@ local function InitializeSpecOverrides()
 
         -- Warrior
         [82] = [[Interface\Icons\ability_warrior_savageblow]], -- Arms
-    }
+
+        -- Priest
+        [91] = [[Interface\Icons\spell_holy_powerwordshield]], -- Discipline
+    };
 end
 
 -------------------------------------------------------------------------

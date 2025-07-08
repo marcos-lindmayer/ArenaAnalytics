@@ -7,6 +7,7 @@ local Localization = ArenaAnalytics.Localization;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
 local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -81,7 +82,7 @@ local function ProcessTeam(players, cachedValues, isEnemyTeam)
 end
 
 function Import.ProcessNextMatch_ReflexArenas(arenaString)
-    ArenaAnalytics:Log("ProcessNextMatch_ReflexArenas", arenaString)
+    Debug:Log("ProcessNextMatch_ReflexArenas", arenaString)
     if(not arenaString) then
         return nil;
     end
@@ -90,13 +91,11 @@ function Import.ProcessNextMatch_ReflexArenas(arenaString)
     if(not IsValidArena(cachedValues)) then
         local index = Import.state and Import.state.index;
         ArenaAnalytics:PrintSystem("Import (Reflex): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);
-        TablePool:Release(cachedValues);
         return nil;
     end
 
     local date = tonumber(cachedValues[1]);
     if(not Import:CheckDate(date)) then
-        TablePool:Release(cachedValues);
         return nil;
     end
 
@@ -134,6 +133,5 @@ function Import.ProcessNextMatch_ReflexArenas(arenaString)
 
     newArena.isRated = Import:RetrieveBool(cachedValues[16]);   -- isRated (boolean)
 
-    TablePool:Release(cachedValues);
     return newArena;
 end

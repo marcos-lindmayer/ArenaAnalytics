@@ -10,6 +10,7 @@ local Filters = ArenaAnalytics.Filters;
 local Helpers = ArenaAnalytics.Helpers;
 local Debug = ArenaAnalytics.Debug;
 local Constants = ArenaAnalytics.Constants;
+local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
@@ -144,15 +145,15 @@ function ImportProgressFrame:EstimateRemainingTime(state, currentTime, percentag
     return ceil(estimatedTimeRemaining);
 end
 
-local function ColorText(textFormat, ...)
-    textFormat = ArenaAnalytics:ColorText(textFormat, Constants.prefixColor)
-    
+local function colorText(textFormat, ...)
+    textFormat = Colors:ColorText(textFormat, Colors.prefixColor)
+
     -- Gather the arguments into a table and color them with statsColor
     local coloredArgs = {...}
     for i = 1, #coloredArgs do
-        coloredArgs[i] = ArenaAnalytics:ColorText(coloredArgs[i], Constants.statsColor)
+        coloredArgs[i] = Colors:ColorText(coloredArgs[i], Colors.statsColor)
     end
-    
+
     -- Return the formatted string using the colored arguments
     return format(textFormat, unpack(coloredArgs))
 end
@@ -166,8 +167,8 @@ function ImportProgressFrame:UpdateTimeTexts(state, currentTime, percentage)
     -- Calculate estimated remaining time
     self.lastEstimatedTime = ImportProgressFrame:EstimateRemainingTime(state, currentTime, percentage);
 
-    local elapsedText = ColorText("Elapsed: %s", SecondsToTime(math.floor(elapsedTime)));
-    local remainingText = ColorText("Remaining: %s", (self.lastEstimatedTime > 1 and SecondsToTime(self.lastEstimatedTime) or "Few seconds"));
+    local elapsedText = colorText("Elapsed: %s", SecondsToTime(math.floor(elapsedTime)));
+    local remainingText = colorText("Remaining: %s", (self.lastEstimatedTime > 1 and SecondsToTime(self.lastEstimatedTime) or "Few seconds"));
 
     -- Update Progress Frame if it exists
     if(progressFrame) then
@@ -198,7 +199,7 @@ function ImportProgressFrame:Update()
     local currentTime = GetTimePreciseSec();
     local percentage = state.total > 0 and ((state.index / state.total)) or 0;
 
-    local progressText = ColorText("Imported: %s/%s  (%s%%)", state.index, state.total, floor(percentage*100));
+    local progressText = colorText("Imported: %s/%s  (%s%%)", state.index, state.total, floor(percentage*100));
 
     if(not self.lastTextUpdateTime or self.lastTextUpdateTime + 1 < currentTime) then
         ImportProgressFrame:UpdateTimeTexts(state, currentTime, percentage);

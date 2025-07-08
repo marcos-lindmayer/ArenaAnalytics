@@ -10,6 +10,7 @@ local GroupSorter = ArenaAnalytics.GroupSorter;
 local API = ArenaAnalytics.API;
 local Search = ArenaAnalytics.Search;
 local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -74,7 +75,7 @@ function ArenaMatch:FixRoundFormat(match)
         local roundData = round and round[roundKeys.data];
         if(roundData and roundData:find('-', 1, true)) then
             local newData = roundData:gsub('-', '|');
-            ArenaAnalytics:LogEscaped(newData, "  :  ", round[roundKeys.data]);
+            Debug:LogEscaped(newData, "  :  ", round[roundKeys.data]);
             round[roundKeys.data] = newData;
         end
     end
@@ -100,7 +101,7 @@ function ArenaMatch:AddWinsToRoundData(match)
             if(outcome ~= nil) then
                 -- Update round data
                 round[roundKeys.data] = ArenaMatch:MakeRoundData(team, enemy, firstDeath, duration, outcome);
-                ArenaAnalytics:LogEscaped("Converting data:", data, "To:", round[roundKeys.data]);
+                Debug:LogEscaped("Converting data:", data, "To:", round[roundKeys.data]);
             end
         end
     end
@@ -120,25 +121,23 @@ local function ToPositiveNumber(value, allowZero)
     if(value < 0) then
         return nil;
     elseif(value == 0) then
-        if(not allowZero) then
-            return nil;
-        end
-        return 0;
+        return allowZero and 0 or nil;
     end
 
     return value or nil;
 end
 
 local function ToNumericalBool(value, drawValue)
+    value = tonumber(value);
     if(value == nil) then
         return;
     end
 
     if(drawValue and value == drawValue) then
-        return tonumber(value);
+        return drawValue;
     end
 
-    return (value and value ~= 0) and 1 or 0;
+    return (value and value == 1) and 1 or 0;
 end
 
 -------------------------------------------------------------------------
@@ -153,17 +152,17 @@ end
 
 function ArenaMatch:SetTransientSeasonPlayed(match, value)
     assert(match);
-    ArenaAnalytics:Log("Assigning transient season played value:", value, "from:", match[matchKeys.transient_seasonPlayed]);
+    Debug:Log("Assigning transient season played value:", value, "from:", match[matchKeys.transient_seasonPlayed]);
     match[matchKeys.transient_seasonPlayed] = tonumber(value);
 end
 
 function ArenaMatch:GetSeasonPlayed(match)
-    return match and match[matchKeys.transient_seasonPlayed]
+    return match and match[matchKeys.transient_seasonPlayed];
 end
 
 function ArenaMatch:SetRequireRatingFix(match, value)
     assert(match);
-    ArenaAnalytics:Log("SetRequireRatingFix:", value, "from:", match[matchKeys.transient_requireRatingFix]);
+    Debug:Log("SetRequireRatingFix:", value, "from:", match[matchKeys.transient_requireRatingFix]);
     match[matchKeys.transient_requireRatingFix] = value and true or nil;
 end
 
@@ -194,7 +193,7 @@ function ArenaMatch:TryFixLastRating(match)
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
     local newRating,seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
     if(not seasonPlayed or (seasonPlayed - 1) < trackedSeasonPlayed) then
-        ArenaAnalytics:Log("ArenaMatch: Delaying rating fix - Season Played.", seasonPlayed, bracketIndex, trackedSeasonPlayed);
+        Debug:Log("ArenaMatch: Delaying rating fix - Season Played.", seasonPlayed, bracketIndex, trackedSeasonPlayed);
         return;
     end
 
@@ -204,7 +203,7 @@ function ArenaMatch:TryFixLastRating(match)
             local oldRating = ArenaMatch:GetPartyRating(match);
             local delta = oldRating and newRating - oldRating;
 
-            ArenaAnalytics:Log("ArenaMatch: Fixing rating from:", oldRating, "to:", newRating, delta);
+            Debug:Log("ArenaMatch: Fixing rating from:", oldRating, "to:", newRating, delta);
 
             ArenaMatch:SetPartyRating(match, newRating);
             ArenaMatch:SetPartyRatingDelta(match, delta);
@@ -222,7 +221,7 @@ function ArenaMatch:GetDate(match)
     if(not match) then 
         return nil 
     end;
-    
+
     local key = matchKeys.date;
     return match and tonumber(match[key]);
 end
@@ -250,7 +249,7 @@ function ArenaMatch:SetDuration(match, value)
     assert(match);
 
     local key = matchKeys.duration;
-    match[key] = ToPositiveNumber(value, true);
+    match[key] = ToPositiveNumber(value);
 end
 
 -------------------------------------------------------------------------
@@ -295,7 +294,7 @@ function ArenaMatch:GetMap(match, useShortName)
             return map;
         end
 
-        ArenaAnalytics:Log("ArenaMatch failed to get short name for map_id:", map_id);
+        Debug:Log("ArenaMatch failed to get short name for map_id:", map_id);
     end
 
     return Internal:GetMapName(map_id);
@@ -312,7 +311,7 @@ function ArenaMatch:SetMap(match, value)
     if(map_id) then
         match[matchKeys.map] = tonumber(map_id);
     else
-        ArenaAnalytics:LogError("ArenaMatch:SetMap failed to find map_id for value:", value);
+        Debug:LogError("ArenaMatch:SetMap failed to find map_id for value:", value);
 
         -- Store raw value to fix later
         match[matchKeys.map] = { raw=value };
@@ -593,7 +592,7 @@ function ArenaMatch:AddPlayer(match, player)
         player.name = name;
         player.realm = realm;
     else
-        ArenaAnalytics:Log("Warning: Adding player to stored match without name!");
+        Debug:Log("Warning: Adding player to stored match without name!");
     end
 
 
@@ -962,7 +961,7 @@ local function GetCompForSpecs(teamSpecs, requiredSize)
     end
 
     if(#teamSpecs ~= requiredSize) then
-        ArenaAnalytics:Log("GetCompForSpecs: Invalid team size.", #teamSpecs, requiredSize)
+        Debug:Log("GetCompForSpecs: Invalid team size.", #teamSpecs, requiredSize)
         return nil;
     end
 
@@ -1021,7 +1020,7 @@ function ArenaMatch:GetCompInfo(match, isEnemyTeam, roundIndex)
 
     if(ArenaMatch:IsShuffle(match)) then
         if(not roundIndex) then
-            ArenaAnalytics:Log("ArenaMatch:GetCompInfo called for a shuffle without provided round index!");
+            Debug:Log("ArenaMatch:GetCompInfo called for a shuffle without provided round index!");
             return;
         end
 
@@ -1065,7 +1064,7 @@ function ArenaMatch:UpdateComp(match, isEnemyTeam)
     match[key] = GetCompForSpecs(teamSpecs, requiredTeamSize);
 
     if(oldComp ~= match[key]) then
-        ArenaAnalytics:Log("Assigned comp to match:", match[key], "Old Comp:", oldComp, "IsEnemy:", isEnemyTeam);
+        Debug:Log("Assigned comp to match:", match[key], "Old Comp:", oldComp, "IsEnemy:", isEnemyTeam);
     end
 
     TablePool:Release(teamSpecs);
@@ -1182,6 +1181,10 @@ end
 
 -- Smart player name check
 function ArenaMatch:CheckPlayerName(player, searchValue, isExact)
+    if(not player or not searchValue) then
+        return false;
+    end
+
     local fullName;
     if(searchValue:find('-', 1, true)) then
         local name = ArenaAnalytics:GetName(player[playerKeys.name]);
@@ -1214,17 +1217,17 @@ function ArenaMatch:SetRounds(match, rounds)
     assert(not match[matchKeys.rounds]);
 
     if(not rounds or #rounds == 0) then
-        ArenaAnalytics:Log("ArenaMatch:SetRounds bailing out due to invalid incoming rounds:", rounds and #rounds);
+        Debug:Log("ArenaMatch:SetRounds bailing out due to invalid incoming rounds:", rounds and #rounds);
         return;
     end
 
     -- Only solo shuffle supports multiple rounds
     if(not ArenaMatch:IsShuffle(match)) then
-        ArenaAnalytics:Log("ArenaMatch:SetRounds skipping shuffle match type.", ArenaMatch:GetBracket(match));
+        Debug:Log("ArenaMatch:SetRounds skipping shuffle match type.", ArenaMatch:GetBracket(match));
         return;
     end
 
-    ArenaAnalytics:LogGreen("Setting shuffle rounds for match.", #rounds);
+    Debug:LogGreen("Setting shuffle rounds for match.", #rounds);
 
     ArenaMatch:SortGroups(match);
 
@@ -1381,7 +1384,7 @@ function ArenaMatch:ResortPlayers(match)
                 indexMapping[oldIndex] = newIndex;
                 player.oldIndex = nil; -- Clear temporary tag
             else
-                ArenaAnalytics:Log("ERROR: Failed to retrieve old index for player! Sorting is likely to have broken the match data!");
+                Debug:Log("ERROR: Failed to retrieve old index for player! Sorting is likely to have broken the match data!");
                 assert(false); -- Force the addon to crash, preventing it from saving the match wrongly
             end
         end

@@ -11,7 +11,8 @@ local API = ArenaAnalytics.API;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
 local ImportBox = ArenaAnalytics.ImportBox;
 local Debug = ArenaAnalytics.Debug;
-local Constants = ArenaAnalytics.Constants;
+local Commands = ArenaAnalytics.Commands;
+local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
@@ -31,7 +32,7 @@ end
 
 function Options:OpenCategory(frame)
     if(not frame or not frame.category) then
-        ArenaAnalytics:Log("Options: Invalid options frame, cannot open.");
+        Debug:Log("Options: Invalid options frame, cannot open.");
         return;
     end
 
@@ -65,7 +66,7 @@ local function AddSetting(setting, default)
 
     if(ArenaAnalyticsSharedSettingsDB[setting] == nil) then
         ArenaAnalyticsSharedSettingsDB[setting] = default;
-        ArenaAnalytics:Log("Added setting:", setting, default);
+        Debug:Log("Added setting:", setting, default);
     end
     assert(ArenaAnalyticsSharedSettingsDB[setting] ~= nil);
 
@@ -92,7 +93,7 @@ local hasOptionsLoaded = nil;
 function Options:LoadSettings()
     if hasOptionsLoaded then return end;
 
-    ArenaAnalytics:Log("Loading settings..");
+    Debug:Log("Loading settings..");
 
     -- General
     AddSetting("fullSizeSpecIcons", true);
@@ -174,7 +175,7 @@ function Options:LoadSettings()
     RemoveSetting("enableMoPHealerCharacterPanelFix");
 
     hasOptionsLoaded = true;
-    ArenaAnalytics:Log("Settings loaded successfully.");
+    Debug:Log("Settings loaded successfully.");
     return true;
 end
 
@@ -197,7 +198,7 @@ function Options:Get(setting)
     assert(setting);
 
     if(hasOptionsLoaded == false) then
-        ArenaAnalytics:Log("Force loaded settings to immediately get:", setting);
+        Debug:Log("Force loaded settings to immediately get:", setting);
         local successful = Options:LoadSettings();
         if not successful then return end;
     end
@@ -205,7 +206,7 @@ function Options:Get(setting)
     local value = ArenaAnalyticsSharedSettingsDB[setting];
 
     if(value == nil) then
-        ArenaAnalytics:Log("Setting not found: ", setting, value)
+        Debug:Log("Setting not found: ", setting, value)
         return nil;
     end
 
@@ -227,7 +228,7 @@ function Options:Set(setting, value)
 
     local oldValue = ArenaAnalyticsSharedSettingsDB[setting];
     ArenaAnalyticsSharedSettingsDB[setting] = value;
-    ArenaAnalytics:Log("Setting option:   ", setting, "  new:", value, "  old:", oldValue);
+    Debug:Log("Setting option:   ", setting, "  new:", value, "  old:", oldValue);
 
     HandleSettingsChanged();
 end
@@ -283,8 +284,8 @@ local function InitializeTab(parent)
     local addonNameText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     addonNameText:SetPoint("TOPLEFT", parent, "TOPLEFT", -5, 32)
     addonNameText:SetTextHeight(TabTitleSize);
-    addonNameText:SetText("Arena|cff00ccffAnalytics|r   |cff666666v" .. API:GetAddonVersion() .. "|r");
-    
+    addonNameText:SetText(Colors:GetTitle() .. "   " .. Colors:GetVersionText());
+
     -- Reset Y offset
     offsetY = 0;
 end
@@ -415,7 +416,7 @@ local function CreateInputBox(setting, parent, x, text, func)
 		inputBox:SetText(tonumber(Options:Get(setting)) or "");
         inputBox:SetCursorPosition(0);
 		inputBox:HighlightText(0,0);
-        
+
 		AAtable:CheckUnsavedWarningThreshold();
     end);
 
@@ -450,7 +451,7 @@ local function CreateDropdown(setting, parent, x, text, entries, func)
 
     local function IsSettingEntryChecked(dropdownContext)
         assert(dropdownContext ~= nil, "Invalid contextFrame");
-    
+
         return Options:Get(dropdownContext.key) == (dropdownContext.value or dropdownContext.label);
     end
 
@@ -522,7 +523,11 @@ function SetupTab_General()
     -- Title
     InitializeTab(ArenaAnalyticsOptionsFrame);
     local parent = ArenaAnalyticsOptionsFrame;
-    local offsetX = 20;    
+    if(not parent) then
+        return;
+    end
+
+    local offsetX = 20;
 
     parent.tabHeader = CreateHeader("General", TabHeaderSize, parent, nil, 15, -15);
 
@@ -569,10 +574,10 @@ function SetupTab_General()
 
         CreateSpace();
         CreateCheckbox("surrenderByMiddleMouseClick", parent, offsetX, "Surrender by middle mouse clicking the minimap icon.");
-        CreateCheckbox("enableSurrenderGoodGameCommand", parent, offsetX, "Register |cff00ccff/gg|r surrender command.", ArenaAnalytics.UpdateSurrenderCommands);
+        CreateCheckbox("enableSurrenderGoodGameCommand", parent, offsetX, "Register |cff00ccff/gg|r surrender command.", Commands.UpdateSurrenderCommands);
         CreateCheckbox("enableSurrenderAfkOverride", parent, offsetX, "Enable |cff00ccff/afk|r surrender override.", function()
             UpdateDoubleAfkState();
-            ArenaAnalytics.UpdateSurrenderCommands();
+            Commands.UpdateSurrenderCommands();
         end);
         CreateCheckbox("enableDoubleAfkToLeave", parent, offsetX*2, "Double |cff00ccff/afk|r to leave the arena.    |cffaaaaaa(Type |cff00ccff/afk|r twice within 5 seconds to confirm.)|r");
         UpdateDoubleAfkState();
@@ -626,7 +631,7 @@ function SetupTab_Filters()
     CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
     CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
         local info = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
-        info = ArenaAnalytics:ColorText(info, Constants.infoColor);
+        info = Colors:ColorText(info, Colors.infoColor);
 
         local function forceUpdateInfoText(frame)
             if(frame and frame.title and frame.title.info) then
@@ -664,7 +669,7 @@ function SetupTab_Search()
     CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
         if(Debug:Assert(ArenaAnalyticsScrollFrame.searchBox.title)) then
             local explicitEnemyText = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
-            ArenaAnalyticsScrollFrame.searchBox.title:SetText(explicitEnemyText or "");
+            ArenaAnalyticsScrollFrame.searchBox.title:SetText(Colors:ColorText(explicitEnemyText, Colors.headerColor));
         end
     end);
 end

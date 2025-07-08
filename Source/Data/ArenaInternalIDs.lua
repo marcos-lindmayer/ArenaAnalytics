@@ -6,6 +6,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local Constants = ArenaAnalytics.Constants;
 local Bitmap = ArenaAnalytics.Bitmap;
 local API = ArenaAnalytics.API;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 -- Maps
@@ -44,7 +45,7 @@ function Internal:GetMapToken(mapID)
     local token = mapID and mapTokens[mapID];
 
     if(not token) then
-        ArenaAnalytics:LogWarning("Failed to retrieve token for mapID:", mapID);
+        Debug:LogWarning("Failed to retrieve token for mapID:", mapID);
         return nil;
     end
 
@@ -59,7 +60,7 @@ local addonMapIDs = {
     [4]  =  { token = "RingOfValor", shortName = "RoV", name = "Ring of Valor" },
     [5]  =  { token = "DalaranArena", shortName = "DA", name = "Dalaran Arena" },
 
-    [6]  =  { token = "TigersPeak", shortName = "TTP", name = "The Tiger's Peak" },
+    [6]  =  { token = "TigersPeak", shortName = "TP", name = "The Tiger's Peak" },
     [7]  =  { token = "TolVironArena", shortName = "TVA", name = "Tol'Viron Arena" },
 
     [8]  =  { token = "AshamanesFall", shortName = "AF", name = "Ashamane's Fall" },
@@ -167,7 +168,7 @@ function Internal:GetAddonRaceIDByToken(token, factionIndex)
             if(not factionIndex or (id % 2 == factionIndex)) then
                 return tonumber(id);
             else
-                --ArenaAnalytics:Log("Internal:GetAddonRaceIDByToken rejected faction for:", token, factionIndex);
+                --Debug:Log("Internal:GetAddonRaceIDByToken rejected faction for:", token, factionIndex);
             end
         end
     end

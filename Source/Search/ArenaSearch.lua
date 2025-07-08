@@ -8,7 +8,7 @@ local Constants = ArenaAnalytics.Constants;
 local Bitmap = ArenaAnalytics.Bitmap;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -119,13 +119,13 @@ function Search:SetCurrentData(tokenizedSegments)
 end
 
 local function LogSearchData()
-    ArenaAnalytics:LogSpacer();
-    ArenaAnalytics:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
+    Debug:LogSpacer();
+    Debug:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
 
     for i,segment in ipairs(activeSearchData.segments) do
         for j,token in ipairs(segment.tokens) do
             assert(token and token.value);
-            ArenaAnalytics:Log("  Token:", j, "Segment:",i..":", token.value, (token.explicitType or ""), (token.exact and " exact" or ""), (token.negated and " Negated" or ""), (segment.isEnemyTeam or ""), (segment.inversed and "Inversed" or ""));
+            Debug:Log("  Token:", j, "Segment:",i..":", token.value, (token.explicitType or ""), (token.exact and " exact" or ""), (token.negated and " Negated" or ""), (segment.isEnemyTeam or ""), (segment.inversed and "Inversed" or ""));
         end
     end
 end
@@ -228,7 +228,7 @@ local function CheckTypeForPlayer(searchType, token, player)
             end
             return false;
         else
-            ArenaAnalytics:Log("Alts search without /");
+            Debug:Log("Alts search without /");
             return ArenaMatch:CheckPlayerName(player, token.value, token.exact);
         end
     elseif(searchType == "logical") then
@@ -258,7 +258,7 @@ local function CheckTokenForPlayer(token, playerInfo)
             return true;
         end
     else -- Loop through all types
-        ArenaAnalytics:Log("Looping through all types for search!");
+        Debug:Log("Looping through all types for search!");
 
         local types = { "name", "spec", "class", "race", "faction" }
         for _,searchType in ipairs(types) do
@@ -425,7 +425,7 @@ local function recursivelyMatchSegments(segmentMatches, segmentIndex, alreadyMat
 
     local segment = segmentMatches[segmentIndex];
     if(#segment == 0) then
-        ArenaAnalytics:Log("Recursion found empty segment matches")
+        Debug:Log("Recursion found empty segment matches")
         return false;
     end
 
@@ -443,7 +443,7 @@ local function recursivelyMatchSegments(segmentMatches, segmentIndex, alreadyMat
 end
 
 local function CheckAdvancedPass(match)
-    ArenaAnalytics:Log("Search: Checking advanced pass..")
+    Debug:Log("Search: Checking advanced pass..")
     local segmentMatches, playerMatches = {}, {}
 
     local matchedTables = {}
@@ -506,7 +506,7 @@ local function CheckSearchPassInternal(match)
     end
 
     if(match == nil) then
-        ArenaAnalytics:Log("Nil match reached search filter.")
+        Debug:Log("Nil match reached search filter.")
         return false;
     end
 
@@ -536,7 +536,7 @@ function Search:DoesMatchPassSearch(match)
 
     local result = CheckSearchPassInternal(match);
 
-    --ArenaAnalytics:Log("Search pass elapsed:", debugprofilestop());
+    --Debug:Log("Search pass elapsed:", debugprofilestop());
 
     return result;
 end

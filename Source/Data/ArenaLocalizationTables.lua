@@ -5,13 +5,14 @@ local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Helpers = ArenaAnalytics.Helpers;
 local API = ArenaAnalytics.API;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
 local classLookupTable = nil;
 function Localization:GetClassID(class)
     if(not classLookupTable) then
-        ArenaAnalytics:LogError("classLookupTable failed to initialize for Localization conversions.");
+        Debug:LogError("classLookupTable failed to initialize for Localization conversions.");
         return nil;
     end
 
@@ -23,13 +24,12 @@ function Localization:GetClassID(class)
     local class_id = class and classLookupTable[class];
 
     if(not class_id) then
-        ArenaAnalytics:LogWarning("Localization:GetSpecID failed to find ID for:", class);
+        Debug:LogWarning("Localization:GetSpecID failed to find ID for:", class);
     end
 
     return class_id;
 end
 
--- TODO: Implement
 local function InitializeLookupTable_Class()
     classLookupTable = {};
 
@@ -68,7 +68,7 @@ end
 local specLookupTable = nil;
 function Localization:GetSpecID(classToken, spec)
     if(not specLookupTable) then
-        ArenaAnalytics:LogError("specLookupTable failed to initialize for Localization conversions.");
+        Debug:LogError("specLookupTable failed to initialize for Localization conversions.");
         return nil;
     end
 
@@ -84,7 +84,7 @@ function Localization:GetSpecID(classToken, spec)
 
     -- Logging
     if(not spec_id) then
-        ArenaAnalytics:LogWarning("Localization:GetSpecID failed to find ID for:", classToken, spec);
+        Debug:LogWarning("Localization:GetSpecID failed to find ID for:", classToken, spec);
     end
 
     return spec_id;
@@ -104,8 +104,8 @@ local function InitializeLookupTable_Spec()
             local _,classToken = GetClassInfo(classIndex);
             if(classToken) then
                 classToken = Helpers:ToSafeLower(classToken);
-                specLookupTable[classToken] = specLookupTable[classToken] or {};
 
+                specLookupTable[classToken] = specLookupTable[classToken] or {};
                 local classTable = specLookupTable[classToken];
 
                 for specIndex=0, 4 do
@@ -115,9 +115,10 @@ local function InitializeLookupTable_Spec()
                             local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
                             specName = Helpers:SanitizeValue(specName);
 
+                            Debug:LogTemp("InitializeLookupTable_Spec", id, specName, specName and classTable[specName], specID, classIndex, specIndex);
                             if(id and specName and tonumber(classTable[specName]) == nil) then -- Prioritize known English IDs
                                 classTable[specName] = API:GetMappedAddonSpecID(id);
-                                ArenaAnalytics:LogTemp("InitializeLookupTable_Spec", classToken, specName, id, classTable[specName]);
+                                Debug:LogTemp("InitializeLookupTable_Spec", classToken, specName, id, classTable[specName]);
                             end
                         end
                     end
@@ -439,7 +440,7 @@ local raceMapping = {
 local raceLookupTable = nil;
 function Localization:GetRaceID(race, factionIndex)
     if(not raceLookupTable) then
-        ArenaAnalytics:LogError("raceLookupTable failed to initialize for Localization conversions.");
+        Debug:LogError("raceLookupTable failed to initialize for Localization conversions.");
         return nil;
     end
 
@@ -464,7 +465,7 @@ function Localization:GetRaceID(race, factionIndex)
 
     -- Logging
     if(not race_id) then
-        ArenaAnalytics:LogWarning("Localization:GetRaceID failed to find ID for:", race, factionIndex);
+        Debug:LogWarning("Localization:GetRaceID failed to find ID for:", race, factionIndex);
     end
 
     return race_id;

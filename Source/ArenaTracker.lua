@@ -13,14 +13,19 @@ local Inspection = ArenaAnalytics.Inspection;
 local Events = ArenaAnalytics.Events;
 local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
+local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 
 -------------------------------------------------------------------------
 
+ArenaAnalytics:InitializeTransientDB();
+local currentArena = ArenaAnalyticsTransientDB.currentArena;
+
 -- Arena variables
-local currentArena = {}
+local hasReceivedScore = false;
+local isActiveTracking = false;
 
 function ArenaTracker:GetCurrentArena()
-	return currentArena;
+	return ArenaAnalyticsTransientDB and ArenaAnalyticsTransientDB.currentArena;
 end
 
 function ArenaTracker:IsShuffle()
@@ -39,18 +44,40 @@ function ArenaTracker:IsSkirmish()
 	return currentArena.matchType == "skirmish";
 end
 
+function ArenaTracker:GetDeathData()
+	assert(currentArena);
+	if(type(currentArena.deathData) ~= "table") then
+		Debug:LogError("Force reset DeathData from non-table value!");
+		currentArena.deathData = TablePool:Acquire();
+	end
+	return currentArena.deathData;
+end
+
 -- Reset current arena values
 function ArenaTracker:Reset()
-	ArenaAnalytics:Log("Resetting current arena values..");
+	Debug:Log("Resetting current arena values..");
+
+	-- Setup base tables
+	ArenaAnalytics:InitializeTransientDB();
+	currentArena = ArenaAnalyticsTransientDB.currentArena;
+
+	-- Transient values (Reset by reload)
+	hasReceivedScore = false;
+	isActiveTracking = false;
 
 	-- Current Arena
+	currentArena.isTracking = nil;
+
+	currentArena.winner = nil; -- Raw winner team ID (2 = draw)
+
 	currentArena.battlefieldId = nil;
 	currentArena.mapId = nil;
 
-	currentArena.playerName = "";
+	currentArena.playerName = nil;
 
+	currentArena.hasStartTime = nil; -- Start time existed before fixing at the end
+	currentArena.hasRealStartTime = nil; -- Start time was set explicitly by gates opening
 	currentArena.startTime = nil;
-	currentArena.hasRealStartTime = nil;
 	currentArena.endTime = nil;
 
 	currentArena.oldRating = nil;
@@ -70,30 +97,58 @@ function ArenaTracker:Reset()
 	currentArena.bracket = nil; -- 2v2, 3v3, 5v5, shuffle
 	currentArena.bracketIndex = nil;
 
-	currentArena.players = TablePool:Acquire();
-
 	currentArena.ended = false;
 	currentArena.endedProperly = false;
-	currentArena.outcome = nil;
+	currentArena.outcome = nil; -- Relative outcome by the end
 
-	currentArena.round = TablePool:Acquire();
+	currentArena.players = TablePool:Acquire();
+	currentArena.deathData = TablePool:Acquire();
 	currentArena.committedRounds = TablePool:Acquire();
 
-	currentArena.deathData = TablePool:Acquire();
-
 	-- Current Round
+	currentArena.round = TablePool:Acquire();
+	currentArena.round.team = TablePool:Acquire();
 	currentArena.round.hasStarted = nil;
 	currentArena.round.startTime = nil;
-	currentArena.round.team = TablePool:Acquire();
 
-	ArenaAnalyticsDB.currentArena = currentArena;
+	currentArena.hasHandledEnter = nil;
 end
 
 function ArenaTracker:Clear()
-	ArenaAnalytics:Log("Clearing current arena.");
+	Debug:Log("Clearing current arena.");
 
-	ArenaAnalyticsDB.currentArena = nil;
-	currentArena = {};
+	ArenaTracker:Reset();
+
+	hasReceivedScore = false;
+	isActiveTracking = false;
+end
+
+-- Returns the season played expected once the active arena ends
+function ArenaTracker:GetSeasonPlayed(bracketIndex)
+    if(not API:IsInArena()) then
+        return nil;
+    end
+
+	bracketIndex = tonumber(bracketIndex or currentArena.bracketIndex);
+	if(not bracketIndex) then
+		return nil;
+	end
+
+	-- We can't determine season played, without a reliable state
+	if(not ArenaTracker:HasReliableOutcome()) then
+		return nil;
+	end
+
+    local _, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
+	if(type(seasonPlayed) ~= "number") then
+		return nil;
+	end
+
+    if(not API:GetWinner() and not currentArena.winner) then
+        seasonPlayed = seasonPlayed + 1;
+    end
+
+    return seasonPlayed;
 end
 
 -------------------------------------------------------------------------
@@ -101,7 +156,7 @@ end
 
 -- Get current player wins and all players summed wins
 function ArenaTracker:GetCurrentWins()
-	if(not ArenaTracker:IsShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
@@ -109,7 +164,7 @@ function ArenaTracker:GetCurrentWins()
 	for i=1, GetNumBattlefieldScores() do
 		local score = API:GetPlayerScore(i);
 		if(score and score.wins) then
-			if(score.name == currentArena.playerName) then
+			if(currentArena.playerName and score.name == currentArena.playerName) then
 				myWins = score.wins;
 			end
 
@@ -121,28 +176,30 @@ function ArenaTracker:GetCurrentWins()
 end
 
 function ArenaTracker:UpdateRoundTeam()
-	if(not ArenaTracker:IsShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
 	if(ArenaTracker:IsSameRoundTeam()) then
-		ArenaAnalytics:Log("Still same team, round team update delayed.");
+		Debug:Log("Still same team, round team update delayed.");
 		return;
 	end
 
-	TablePool:Release(currentArena.round.team)
+	wipe(currentArena.round.team)
 	currentArena.round.team = TablePool:Acquire();
 	for i=1, 2 do
 		local name = Helpers:GetUnitFullName("party"..i);
-		tinsert(currentArena.round.team, name);
-		ArenaAnalytics:Log("Adding team player:", name, #currentArena.round.team);
+		if(name) then
+			tinsert(currentArena.round.team, name);
+			Debug:Log("Adding team player:", name, #currentArena.round.team);
+		end
 	end
 
-	ArenaAnalytics:Log("UpdateRoundTeam", #currentArena.round.team);
+	Debug:Log("UpdateRoundTeam", #currentArena.round.team);
 end
 
 function ArenaTracker:RoundTeamContainsPlayer(playerName)
-	if(not ArenaTracker:IsShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
@@ -160,7 +217,7 @@ function ArenaTracker:RoundTeamContainsPlayer(playerName)
 end
 
 function ArenaTracker:IsSameRoundTeam()
-	if(not ArenaTracker:IsShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle()) then
 		return nil;
 	end
 
@@ -176,7 +233,7 @@ function ArenaTracker:IsSameRoundTeam()
 end
 
 function ArenaTracker:CommitCurrentRound(force)
-	if(not ArenaTracker:IsShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
@@ -185,12 +242,12 @@ function ArenaTracker:CommitCurrentRound(force)
 	end
 
 	-- Delay commit until team has changed, unless match ended.
-	if(not force and ArenaTracker:IsSameRoundTeam() and not GetBattlefieldWinner()) then
-		ArenaAnalytics:LogGreen("Delaying round commit. Team has not yet changed.");
+	if(not force and ArenaTracker:IsSameRoundTeam() and not API:GetWinner()) then
+		Debug:LogGreen("Delaying round commit. Team has not yet changed.");
 		return;
 	end
 
-	ArenaAnalytics:LogGreen("CommitCurrentRound triggered!")
+	Debug:LogGreen("CommitCurrentRound triggered!")
 
 	local startTime = currentArena.round.startTime;
 	local death, endTime = ArenaTracker:GetFirstDeathFromCurrentArena();
@@ -210,12 +267,12 @@ function ArenaTracker:CommitCurrentRound(force)
 	-- Get the total wins after current round
 	local myWins, totalWins = ArenaTracker:GetCurrentWins();
 	if(myWins == currentArena.round.wins and totalWins == currentArena.round.totalWins) then
-		ArenaAnalytics:LogGreen("Neither wins changed since last round. Assuming draw.");
+		Debug:LogGreen("Neither wins changed since last round. Assuming draw.");
 		roundData.outcome = 2;
 	else
 		local isWin = (myWins > currentArena.round.wins);
 		roundData.outcome = isWin and 1 or 0;
-		ArenaAnalytics:LogGreen("Outcome determined:", roundData.outcome, "New wins:", myWins, totalWins, "Old wins:", currentArena.round.wins, currentArena.round.totalWins, "Rounds played:", #currentArena.committedRounds);
+		Debug:LogGreen("Outcome determined:", roundData.outcome, "New wins:", myWins, totalWins, "Old wins:", currentArena.round.wins, currentArena.round.totalWins, "Rounds played:", #currentArena.committedRounds);
 	end
 
 	-- Fill round teams
@@ -226,7 +283,7 @@ function ArenaTracker:CommitCurrentRound(force)
 		end
 	end
 
-	ArenaAnalytics:LogGreen("Committed round:!", roundData.duration, roundData.firstDeath, #roundData.team, #roundData.enemy, #currentArena.players);
+	Debug:LogGreen("Committed round:!", roundData.duration, roundData.firstDeath, #roundData.team, #roundData.enemy, #currentArena.players);
 	tinsert(currentArena.committedRounds, roundData);
 
 	-- Reset currentArena round data
@@ -241,8 +298,8 @@ function ArenaTracker:CommitCurrentRound(force)
 	currentArena.round.totalWins = totalWins;
 
 	-- Make sure we update the team, if we're not done playing.
-	if(not GetBattlefieldWinner()) then
-		ArenaAnalytics:LogGreen("Round commit forcing team update!");
+	if(not API:GetWinner()) then
+		Debug:LogGreen("Round commit forcing team update!");
 		ArenaTracker:UpdateRoundTeam();
 	end
 end
@@ -258,17 +315,16 @@ function ArenaTracker:IsTrackingArena()
 	return currentArena.mapId ~= nil;
 end
 
-function ArenaTracker:GetArenaEndedProperly()
-	return currentArena.endedProperly;
+function ArenaTracker:IsTrackingShuffle()
+	return ArenaTracker:IsTrackingArena() and ArenaTracker:IsShuffle();
 end
 
--- TEMP (?)
-function ArenaTracker:SetNotEnded()
-	currentArena.ended = false;
+function ArenaTracker:GetArenaEndedProperly()
+	return currentArena and currentArena.endedProperly;
 end
 
 function ArenaTracker:HasMapData()
-	return currentArena.mapId ~= nil;
+	return currentArena and currentArena.mapId ~= nil;
 end
 
 function ArenaTracker:GetPlayer(playerID)
@@ -304,7 +360,7 @@ end
 
 function ArenaTracker:GetShuffleOutcome()
 	if(currentArena.committedRounds) then
-		local wins = 0;
+		local roundWins = 0;
 
         -- Iterate through all the rounds
         for _, round in ipairs(currentArena.committedRounds) do
@@ -312,76 +368,170 @@ function ArenaTracker:GetShuffleOutcome()
             if(round.firstDeath) then
                 for _, enemyPlayer in ipairs(round.enemy) do
                     if enemyPlayer == round.firstDeath then
-                        wins = wins + 1;
+                        roundWins = roundWins + 1;
 						break;
                     end
                 end
             end
         end
 
-        if(wins == 3) then
+        if(roundWins == 3) then
 			-- Draw
 			return 2; 
 		else
-			return wins > 3 and 1 or 0;
+			return roundWins > 3 and 1 or 0;
 		end
 	end
 
 	return nil;
 end
 
-function ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracketIndex)
+-- TODO: Compare teams and enemies for known players, and perhaps startTime being within an hour?
+function ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracketIndex, isScoreEvent)
 	if(not API:IsInArena()) then
-		ArenaAnalytics:Log("IsTrackingCurrentArena: Not in arena.")
+		Debug:Log("IsTrackingCurrentArena: Not in arena.");
 		return false;
 	end
-	
-	local arena = ArenaAnalyticsDB.currentArena;
+
+	local arena = ArenaAnalyticsTransientDB.currentArena;
 	if(not arena) then
-		ArenaAnalytics:Log("IsTrackingCurrentArena: No existing arena.", arena, ArenaAnalyticsDB.currentArena);
+		Debug:Log("IsTrackingCurrentArena: No existing arena.", arena, ArenaAnalyticsTransientDB.currentArena);
 		return false;
 	end
 
-	if(arena.bracketIndex ~= bracketIndex) then
-		ArenaAnalytics:Log("IsTrackingCurrentArena: New bracket.");
+	if(not arena.mapId or arena.mapId ~= API:GetCurrentMapID()) then
+		Debug:Log("IsTrackingCurrentArena: Not tracking arena.");
 		return false;
 	end
 
-	if(arena.battlefieldId ~= battlefieldId) then
-		ArenaAnalytics:Log("IsTrackingCurrentArena: New battlefield id.");
+	battlefieldId = battlefieldId or API:GetActiveBattlefieldID();
+	if(not battlefieldId or arena.battlefieldId ~= battlefieldId) then
+		Debug:Log("IsTrackingCurrentArena: New or missing battlefield id.");
 		return false;
 	end
 
-	if(arena.isRated) then
-		if(not arena.seasonPlayed) then
-			ArenaAnalytics:Log("IsTrackingCurrentArena: Existing rated arena has no season played.", arena.seasonPlayed)
+	local _, bracket = API:GetBattlefieldStatus(battlefieldId); -- RELOAD ISSUE
+	if(not bracket or arena.bracket ~= bracket) then
+		Debug:Log("IsTrackingCurrentArena: New or missing bracket.", bracket, arena.bracket);
+		return false;
+	end
+
+	if(arena.startTime) then
+		local trackingAge = (time() - arena.startTime);
+		if(trackingAge > 3600) then
+			Debug:Log("IsTrackingCurrentArena: Old tracking expired. Tracked age:", trackingAge);
 			return false;
 		end
+	end
 
-		local _, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
-		local trackedSeasonPlayed = arena.seasonPlayed - (arena.endedProperly and 1 or 0);
-		if(not seasonPlayed or seasonPlayed ~= trackedSeasonPlayed) then
-			ArenaAnalytics:Log("IsTrackingCurrentArena: Invalid season played, or mismatch to tracked value.", seasonPlayed, arena.seasonPlayed)
+	-- TODO: Compare known players (team and enemies) between current and existing tracking
+
+	-- Skipped if arena.seasonPlayed or seasonPlayed are missing
+	if(arena.matchType == "rated" and arena.seasonPlayed) then
+		local seasonPlayed = ArenaTracker:GetSeasonPlayed(bracketIndex);
+		if(seasonPlayed and seasonPlayed ~= arena.seasonPlayed) then
+			Debug:Log("IsTrackingCurrentArena: Invalid season played, or mismatch to tracked value.", seasonPlayed, arena.seasonPlayed);
 			return false;
 		end
 	end
 
-	ArenaAnalytics:Log("IsTrackingCurrentArena: Arena alrady tracked")
+	Debug:Log("IsTrackingCurrentArena: Arena alrady tracked")
 	return true;
+end
+
+function ArenaTracker:HandleArenaMessages(msg)
+	if(not msg or not ArenaTracker:IsTrackingArena()) then
+		return;
+	end
+
+	local isStart, timeTillStart = Constants:CheckTimerMessage(msg);
+
+	if(not timeTillStart) then
+		Debug:LogWarning("HandleArenaMessages missing:", msg);
+		return;
+	else
+		Debug:LogGreen("HandleArenaMessages:", msg);
+	end
+
+	if(not currentArena.hasRealStartTime) then
+		local newTime = (time() + timeTillStart);
+
+		if(currentArena.startTime) then
+			Debug:LogGreen("Start Time changed by broadcast message:", currentArena.startTime, newTime, newTime - time());
+		end
+
+		currentArena.startTime = newTime;
+	end
+
+	-- Trigger Start handling logic
+	if(isStart == 0) then
+		ArenaTracker:HandleArenaStart(msg);
+	end
+end
+
+function ArenaTracker:HandleRatedUpdate()
+	if(not API:IsInArena() or not ArenaTracker:IsTrackingArena()) then
+		return;
+	end
+
+	if(currentArena.bracketIndex == nil) then
+		return;
+	end
+
+	-- Get the season played including current match
+	local postMatchSeasonPlayed = ArenaTracker:GetSeasonPlayed(currentArena.bracketIndex);
+	if(not postMatchSeasonPlayed) then
+		return;
+	end
+
+	-- Get the current and last rating relative to post match season played
+	local rating, lastRating = ArenaRatedInfo:GetRatedInfo(currentArena.bracketIndex, postMatchSeasonPlayed);
+	if(not rating and not lastRating) then
+		return;
+	end
+
+	currentArena.rating = currentArena.rating or rating; -- Assumed nil during the arena
+	currentArena.oldRating = lastRating;
+end
+
+function ArenaTracker:HandleScoreUpdate()
+	hasReceivedScore = true;
+	currentArena.winner = API:GetWinner() or currentArena.winner;
+	currentArena.seasonPlayed = ArenaTracker:GetSeasonPlayed();
+end
+
+function ArenaTracker:HasReliableOutcome()
+	if(currentArena.winner ~= nil) then
+		return true;
+	end
+
+	local winner = API:GetWinner();
+	if(winner ~= nil) then
+		return true;
+	end
+
+	-- Assume we'll stay up to date after receiving the score since last reload
+	if(hasReceivedScore) then
+		return true;
+	end
+
+	return false;
 end
 
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
 function ArenaTracker:HandleArenaEnter()
-	if(ArenaTracker:IsTrackingArena()) then
-		ArenaAnalytics:Log("HandleArenaEnter: Already tracking arena");
+	if(isActiveTracking and ArenaTracker:IsTrackingArena()) then
+		Debug:LogGreen("HandleArenaEnter: Already tracking arena!");
 		return;
 	end
 
-	Events:RegisterArenaEvents();
+	isActiveTracking = true;
+
+	Debug:LogTemp("HandleArenaEnter");
 
 	-- Retrieve current arena info
-	local battlefieldId = API:GetActiveBattlefieldID();
+	local battlefieldId = currentArena.battlefieldId or API:GetActiveBattlefieldID();
 	if(not battlefieldId) then
 		return;
 	end
@@ -389,29 +539,26 @@ function ArenaTracker:HandleArenaEnter()
 	local status, bracket, teamSize, matchType = API:GetBattlefieldStatus(battlefieldId);
 	local bracketIndex = ArenaAnalytics:GetAddonBracketIndex(bracket);
 
+	ArenaTracker:HandleScoreUpdate();
+
 	if(not ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracketIndex)) then
+		Debug:Log("HandleArenaEnter resetting currentArena");
 		ArenaTracker:Reset();
 	else
-		ArenaAnalytics:LogGreen("Keeping existing tracking!");
-		currentArena = ArenaAnalyticsDB.currentArena;
+		Debug:LogGreen("Keeping existing tracking!", currentArena.oldRating, currentArena.startTime, currentArena.hasRealStartTime, time());
 	end
 
+	currentArena.isTracking = true;
 	currentArena.battlefieldId = battlefieldId;
 
 	-- Bail out if it ended by now
 	if (status ~= "active" or not teamSize) then
-		ArenaAnalytics:Log("HandleArenaEnter bailing out. Status:", status, "Team Size:", teamSize);
-		return false
+		Debug:Log("HandleArenaEnter bailing out. Status:", status, "Team Size:", teamSize);
+		return false;
 	end
 
 	-- Update start time immediately, might be overridden by gates open if it hasn't happened yet.
-	if(not currentArena.hasRealStartTime) then
-		currentArena.startTime = time();
-	end
-
-	if(not currentArena.battlefieldId) then
-		ArenaAnalytics:Log("ERROR: Invalid Battlefield ID in HandleArenaEnter");
-	end
+	currentArena.startTime = tonumber(currentArena.startTime) or time();
 
 	currentArena.playerName = Helpers:GetPlayerName();
 
@@ -421,27 +568,29 @@ function ArenaTracker:HandleArenaEnter()
 	currentArena.bracket = bracket;
 	currentArena.bracketIndex = bracketIndex;
 
-	ArenaAnalytics:Log("TeamSize:", teamSize, currentArena.size, "Bracket:", bracket);
+	Debug:Log("TeamSize:", teamSize, currentArena.size, "Bracket:", bracket);
 
 	if(ArenaTracker:IsRated()) then
-		local oldRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
-		if(GetBattlefieldWinner()) then
-			currentArena.seasonPlayed = seasonPlayed and seasonPlayed - 1; -- Season Played during the match
-		else
-			currentArena.oldRating = oldRating;
-			currentArena.seasonPlayed = seasonPlayed;
+		currentArena.seasonPlayed = ArenaTracker:GetSeasonPlayed(); -- Season Played during the match
+		local rating, lastRating = ArenaRatedInfo:GetRatedInfo(bracketIndex, currentArena.seasonPlayed);
+
+		Debug:LogTemp("Active arena season played:", currentArena.seasonPlayed);
+
+		if(not API:GetWinner()) then
+			currentArena.oldRating = lastRating;
+			Debug:LogTemp("Setting old rating and seasonPlayed on arena enter:", currentArena.oldRating, currentArena.seasonPlayed);
 		end
 	end
 
 	-- Add self
-	if (not ArenaTracker:IsTrackingPlayer(currentArena.playerName)) then
+	if (currentArena.playerName and not ArenaTracker:IsTrackingPlayer(currentArena.playerName)) then
 		-- Add player
 		local GUID = UnitGUID("player");
 		local name = currentArena.playerName;
 		local race_id = Helpers:GetUnitRace("player");
 		local class_id = Helpers:GetUnitClass("player");
 		local spec_id = API:GetSpecialization() or class_id;
-		ArenaAnalytics:Log("Using MySpec:", spec_id);
+		Debug:Log("Using MySpec:", spec_id);
 
 		local player = ArenaTracker:CreatePlayerTable(false, GUID, name, race_id, spec_id);
 		table.insert(currentArena.players, player);
@@ -452,10 +601,15 @@ function ArenaTracker:HandleArenaEnter()
 	end
 
 	currentArena.mapId = API:GetCurrentMapID();
-	ArenaAnalytics:Log("Match entered! Tracking mapId: ", currentArena.mapId);
+	Debug:Log("Match entered! Tracking mapId: ", currentArena.mapId);
 
-	ArenaTracker:HandlePartyUpdate();
+	ArenaTracker:ForceTeamsUpdate();
 
+	currentArena.hasHandledEnter = true;
+
+	Events:RegisterArenaEvents();
+
+	RequestRatedInfo();
 	RequestBattlefieldScoreData();
 end
 
@@ -467,52 +621,51 @@ function ArenaTracker:HandleArenaStart(...)
 	local myWins, totalWins = ArenaTracker:GetCurrentWins();
 	currentArena.round.wins = myWins;
 	currentArena.round.totalWins = totalWins;
-	ArenaAnalytics:LogGreen("Assigned round wins:", myWins, totalWins);
+	Debug:LogGreen("Assigned round wins:", myWins, totalWins);
 
 	ArenaTracker:FillMissingPlayers();
-	ArenaTracker:HandleOpponentUpdate();
-	ArenaTracker:HandlePartyUpdate();
+	ArenaTracker:ForceTeamsUpdate();
 	ArenaTracker:UpdateRoundTeam();
 
 	currentArena.round.startTime = time();
 	currentArena.round.hasStarted = true;
 
-	ArenaAnalytics:LogGreen("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
+	Debug:LogGreen("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
 end
 
 function ArenaTracker:CheckRoundEnded()
-	if(not API:IsInArena() or not ArenaTracker:IsShuffle()) then
+	if(not API:IsInArena() or not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
 	if(not ArenaTracker:IsTrackingArena() or not currentArena.round.hasStarted) then
-		ArenaAnalytics:Log("CheckRoundEnded called while not tracking arena, or without active shuffle round.", currentArena.round.hasStarted);
+		Debug:Log("CheckRoundEnded called while not tracking arena, or without active shuffle round.", currentArena.round.hasStarted);
 		return;
 	end
 
 	-- Check if this is a new round
 	if(#currentArena.round.team ~= 2) then
-		ArenaAnalytics:Log("CheckRoundEnded missing players.");
+		Debug:Log("CheckRoundEnded missing players.");
 		return;
 	end
 
 	-- Team remains same, thus round has not changed.
 	if(ArenaTracker:IsSameRoundTeam()) then
-		ArenaAnalytics:Log("CheckRoundEnded has same team.");
+		Debug:Log("CheckRoundEnded has same team.");
 		return;
 	end
 
-	ArenaAnalytics:Log("CheckRoundEnded");
+	Debug:Log("CheckRoundEnded");
 	ArenaTracker:HandleRoundEnd();
 end
 
 -- Solo Shuffle specific round end
 function ArenaTracker:HandleRoundEnd(force)
-	if(not API:IsInArena() or not ArenaTracker:IsShuffle()) then
+	if(not API:IsInArena() or not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
-	ArenaAnalytics:Log("HandleRoundEnd!", #currentArena.players);
+	Debug:Log("HandleRoundEnd!", #currentArena.players);
 
 	ArenaTracker:CommitCurrentRound(force);
 end
@@ -520,16 +673,26 @@ end
 -- Gets arena information when it ends and the scoreboard is shown
 -- Matches obtained info with previously collected player values
 function ArenaTracker:HandleArenaEnd()
+	if(not ArenaTracker:IsTrackingArena()) then
+		Debug:LogWarning("ArenaTracker:HandleArenaEnd skipped: Not tracking arena.");
+		return;
+	end
+
+	if(not currentArena.hasHandledEnter) then
+		-- Not ready to end before start
+		--return;
+	end
+
 	currentArena.endedProperly = true;
 	currentArena.ended = true;
-	currentArena.endTime = time();
+	currentArena.endTime = tonumber(currentArena.endTime) or time();
 
-	ArenaAnalytics:Log("HandleArenaEnd!", #currentArena.players);
+	Debug:Log("HandleArenaEnd!", #currentArena.players, currentArena.startTime, currentArena.endTime);
 
 	-- Solo Shuffle
 	ArenaTracker:HandleRoundEnd(true);
 
-	local winner = GetBattlefieldWinner();
+	local winner = API:GetWinner();
 	local players = {};
 
 	-- Figure out how to default to nil, without failing to count losses.
@@ -539,14 +702,16 @@ function ArenaTracker:HandleArenaEnd()
 	ArenaTracker:CommitDeaths();
 	wipe(currentArena.deathData);
 
+	local isShuffle = ArenaTracker:IsShuffle();
+
 	for i=1, GetNumBattlefieldScores() do
-		local score = API:GetPlayerScore(i);
+		local score = API:GetPlayerScore(i) or {};
 
 		-- Find or add player
 		local player = ArenaTracker:GetPlayer(score.name);
 		if(not player) then
 			-- Use scoreboard info
-			ArenaAnalytics:Log("Creating new player by scoreboard:", score.name);
+			Debug:Log("Creating new player by scoreboard:", score.name);
 			player = ArenaTracker:CreatePlayerTable(nil, nil, score.name);
 		end
 
@@ -566,32 +731,33 @@ function ArenaTracker:HandleArenaEnd()
 			player.mmrDelta = score.mmrDelta;
 		end
 
-		if(ArenaTracker:IsShuffle()) then
+		if(isShuffle) then
 			player.wins = score.wins or 0;
 		end
 
 		if(player.name) then
 			-- First Death
-			if(not ArenaTracker:IsShuffle() and player.name == firstDeath) then
+			if(not isShuffle and player.name == firstDeath) then
 				player.isFirstDeath = true;
 			end
 
-			if (player.name == currentArena.playerName) then
+			if (currentArena.playerName and player.name == currentArena.playerName) then
 				myTeamIndex = player.teamIndex;
 				player.isSelf = true;
-			elseif(ArenaTracker:IsShuffle()) then
+			elseif(isShuffle) then
+				-- Everyone else is an opponent in shuffle (1v5)
 				player.isEnemy = true;
 			end
 
 			table.insert(players, player);
 		else
-			ArenaAnalytics:Log("Tracker: Invalid player name, player will not be stored!");
+			Debug:LogWarning("Tracker: Invalid player name, player will not be stored!");
 		end
 
 		TablePool:Release(score);
 	end
 
-	if(ArenaTracker:IsShuffle()) then
+	if(ArenaTracker:IsTrackingShuffle()) then
 		-- Determine match outcome
 		currentArena.outcome = ArenaTracker:GetShuffleOutcome()
 	else
@@ -620,7 +786,7 @@ function ArenaTracker:HandleArenaEnd()
 
 	currentArena.players = players;
 
-	ArenaAnalytics:Log("Match ended!", #currentArena.players, "players tracked.");
+	Debug:Log("Match ended!", #currentArena.players, "players tracked.");
 end
 
 -- Player left an arena (Zone changed to non-arena with valid arena data)
@@ -635,42 +801,50 @@ function ArenaTracker:HandleArenaExit()
 	-- Solo Shuffle
 	ArenaTracker:HandleRoundEnd(true);
 
-	currentArena.endTime = currentArena.endTime or time();
+	currentArena.hasStartTime = Helpers:IsPositiveNumber(currentArena.startTime);
+	currentArena.startTime = tonumber(currentArena.startTime) or time();
+	currentArena.endTime = tonumber(currentArena.endTime) or time();
 
 	if(not currentArena.endedProperly) then
 		currentArena.ended = true;
-		currentArena.outcome = false;
+		currentArena.outcome = 0;
 
-		ArenaAnalytics:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
+		Debug:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
 	end
 
-	ArenaAnalytics:Log("Exited Arena:", API:GetPersonalRatedInfo(currentArena.bracketIndex));
+	Debug:Log("Exited Arena:", API:GetPersonalRatedInfo(currentArena.bracketIndex));
 
 	if(ArenaTracker:IsRated() and not currentArena.partyRating) then
 		local newRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
-		if(newRating and seasonPlayed) then
+		if(newRating and currentArena.seasonPlayed) then
 			local oldRating = currentArena.oldRating;
 			if(not oldRating) then
 				local season = API:GetCurrentSeason();
-				oldRating = ArenaAnalytics:GetLatestRating(currentArena.bracketIndex, season, (seasonPlayed - 1));
-				ArenaAnalytics:LogWarning("Fixed missing old rating:", oldRating, currentArena.bracketIndex, season, seasonPlayed);
+				local lastSeasonPlayed = currentArena.seasonPlayed - 1;
+
+				local rating, lastRating = ArenaRatedInfo:GetRatedInfo(currentArena.bracketIndex, currentArena.seasonPlayed);
+
+				oldRating = lastRating or ArenaAnalytics:GetLatestRating(currentArena.bracketIndex, season, lastSeasonPlayed); -- TODO: Validate this
+				Debug:LogWarning("Fixed missing old rating:", oldRating, "bracketIndex:", currentArena.bracketIndex, "season:", season, "seasonPlayed:", currentArena.seasonPlayed);
 			end
 
 			currentArena.partyRating = newRating;
 			currentArena.partyRatingDelta = oldRating and newRating - oldRating or nil;
+			Debug:LogGreen("Setting party rating delta:", currentArena.partyRatingDelta, oldRating, newRating);
 		else
-			ArenaAnalytics:Log("Warning: Nil current rating retrieved from API upon leaving arena.");
+			Debug:Log("Warning: Nil current rating retrieved from API upon leaving arena.");
 		end
 
+		Debug:LogTemp("ArenaExit season played:", currentArena.seasonPlayed, seasonPlayed);
 		if(currentArena.seasonPlayed) then
-			if(seasonPlayed and seasonPlayed < (currentArena.seasonPlayed + 1)) then
+			if(seasonPlayed and seasonPlayed < currentArena.seasonPlayed) then
 				-- Rating has updated, no longer needed to store transient Season Played for fixup.
 				currentArena.requireRatingFix = true;
 			else
-				ArenaAnalytics:Log("Tracker: Invalid or up to date seasonPlayed.", seasonPlayed, currentArena.seasonPlayed);
+				Debug:Log("Tracker: Invalid or up to date seasonPlayed.", seasonPlayed, currentArena.seasonPlayed);
 			end
 		else
-			ArenaAnalytics:Log("Tracker: No season played stored on currentArena");
+			Debug:Log("Tracker: No season played stored on currentArena.");
 		end
 	end
 
@@ -683,7 +857,7 @@ end
 -- If spec and GUID are passed, include them when creating the player table
 function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 	if(not currentArena.size) then
-		ArenaAnalytics:Log("FillMissingPlayers missing size.");
+		Debug:Log("FillMissingPlayers missing size.");
 		return;
 	end
 
@@ -709,6 +883,7 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 					table.insert(currentArena.players, player);
 
 					if(not isEnemy and Inspection and Inspection.RequestSpec) then
+						Debug:Log(unitToken, GUID);
 						Inspection:RequestSpec(unitToken);
 					end
 				end
@@ -736,10 +911,33 @@ function ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, spec_id, k
 	};
 end
 
+local function hasValidDeathData(playerGUID)
+	local deathData = ArenaTracker:GetDeathData();
+
+	local existingData = deathData[playerGUID];
+	if(type(existingData) == "table" and tonumber(existingData.time) and existingData.name) then
+		return true;
+	end
+
+	return false;
+end
+
+local function removeDeath(playerGUID)
+	local deathData = ArenaTracker:GetDeathData();
+	deathData[playerGUID] = nil;
+end
+
 -- Called from unit actions, to remove false deaths
 local function tryRemoveFromDeaths(playerGUID, spell)
-	local existingData = currentArena.deathData[playerGUID];
-	if(existingData ~= nil) then
+	if(not hasValidDeathData(playerGUID)) then
+		removeDeath(playerGUID);
+		return;
+	end
+
+	local deathData = ArenaTracker:GetDeathData();
+	local existingData = deathData[playerGUID];
+
+	if(existingData) then
 		local timeSinceDeath = time() - existingData.time;
 
 		local minimumDelay = existingData.isHunter and 2 or 10;
@@ -747,9 +945,9 @@ local function tryRemoveFromDeaths(playerGUID, spell)
 			minimumDelay = minimumDelay + 5;
 		end
 
-		if(timeSinceDeath > 0) then
-			ArenaAnalytics:Log("Removed death by post-death action: ", spell, " for player: ",currentArena.deathData[playerGUID].name, " Time since death: ", timeSinceDeath);
-			currentArena.deathData[playerGUID] = nil;
+		if(timeSinceDeath > minimumDelay) then
+			Debug:Log("Removed death by post-death action: ", spell, " for player: ", existingData.name, " Time since death: ", timeSinceDeath);
+			removeDeath(playerGUID);
 		end
 	end
 end
@@ -760,33 +958,42 @@ local function handlePlayerDeath(playerGUID, isKillCredit)
 		return;
 	end
 
-	currentArena.deathData[playerGUID] = currentArena.deathData[playerGUID] or TablePool:Acquire();
-
 	local class, race, name, realm = API:GetPlayerInfoByGUID(playerGUID);
+	if(name == nil or name == "") then
+		ArenaAnalytics:LogError("Invalid name of dead player. Skipping..");
+		return;
+	end
+
 	if(not realm or realm == "") then
 		name = Helpers:ToFullName(name);
 	else
 		name = name .. "-" .. realm;
 	end
 
-	ArenaAnalytics:Log("Player Kill!", isKillCredit, name);
+	Debug:Log("Player Kill!", isKillCredit, name);
 
 	-- Store death
-	currentArena.deathData[playerGUID] = {
-		time = time(), 
-		name = name,
-		isHunter = (class == "HUNTER") or nil,
-		hasKillCredit = isKillCredit or currentArena.deathData[playerGUID].hasKillCredit,
-	};
+	local deathData = ArenaTracker:GetDeathData();
+	local death = deathData[playerGUID] or TablePool:Acquire();
+	death.time = time();
+	death.name = name;
+	death.isHunter = (class == "HUNTER") or nil;
+	death.hasKillCredit = isKillCredit or death.hasKillCredit;
 
-	if(ArenaTracker:IsShuffle() and (isKillCredit or class ~= "HUNTER")) then
+	-- Validate that this is always true
+	Debug:Assert(type(death) == "table");
+
+	deathData[playerGUID] = death;
+
+	if(ArenaTracker:IsTrackingShuffle() and (isKillCredit or class ~= "HUNTER")) then
 		C_Timer.After(0, ArenaTracker.HandleRoundEnd);
 	end
 end
 
 -- Commits current deaths to player stats (May be overridden by scoreboard, if value is trusted for the expansion)
 function ArenaTracker:CommitDeaths()
-	for GUID,data in pairs(currentArena.deathData) do
+	local deathData = ArenaTracker:GetDeathData();
+	for GUID,data in pairs(deathData) do
 		local player = ArenaTracker:GetPlayer(GUID);
 		if(player and data) then
 			-- Increment deaths
@@ -797,24 +1004,31 @@ end
 
 -- Fetch the real first death when saving the match
 function ArenaTracker:GetFirstDeathFromCurrentArena()
-	if(currentArena.deathData == nil) then
+	local deathData = ArenaTracker:GetDeathData();
+	if(deathData == nil) then
 		return;
 	end
 
 	local bestKey, bestTime;
-	for key,data in pairs(currentArena.deathData) do
-		if(bestTime == nil or data.time < bestTime) then
-			bestKey = key;
-			bestTime = data.time;
+	for key,data in pairs(deathData) do
+		if(key and type(data) == "table" and data.time) then
+			if(bestTime == nil or data.time < bestTime) then
+				bestKey = key;
+				bestTime = data.time;
+			end
+		else
+			local player = ArenaTracker:GetPlayer(key);
+			Debug:LogError("Invalid death data found:", key, player and player.name, type(data));
+			Debug:LogTable(deathData);
 		end
 	end
 
-	if(not bestKey or not currentArena.deathData[bestKey]) then
-		ArenaAnalytics:Log("Death data missing from currentArena.");
+	if(not bestKey or not deathData[bestKey]) then
+		Debug:Log("Death data missing from currentArena.");
 		return nil;
 	end
 
-	local firstDeathData = currentArena.deathData[bestKey];
+	local firstDeathData = deathData[bestKey];
 	return firstDeathData.name, firstDeathData.time;
 end
 
@@ -827,6 +1041,8 @@ function ArenaTracker:HandleOpponentUpdate()
 
 	-- If API exist to get opponent spec, use it
 	if(GetArenaOpponentSpec) then
+		Debug:LogTemp("HandleOpponentUpdate")
+
 		for i = 1, currentArena.size do
 			local unitToken = "arena"..i;
 			local player = ArenaTracker:GetPlayer(unitToken);
@@ -852,16 +1068,20 @@ function ArenaTracker:HandlePartyUpdate()
 		local player = ArenaTracker:GetPlayer(UnitGUID(unitToken));
 		if(player and not Helpers:IsSpecID(player.spec)) then
 			if(Inspection and Inspection.RequestSpec) then
-				ArenaAnalytics:Log("Tracker: HandlePartyUpdate requesting spec:", unitToken);
+				Debug:Log("Tracker: HandlePartyUpdate requesting spec:", unitToken, UnitGUID(unitToken));
 				Inspection:RequestSpec(unitToken);
 			end
 		end
 	end
 
-	if(ArenaTracker:IsShuffle()) then
-		ArenaTracker:CheckRoundEnded();
-		ArenaTracker:UpdateRoundTeam();
-	end
+	-- Internal IsTrackingShuffle() check
+	ArenaTracker:CheckRoundEnded();
+	ArenaTracker:UpdateRoundTeam();
+end
+
+function ArenaTracker:ForceTeamsUpdate()
+	ArenaTracker:HandleOpponentUpdate();
+	ArenaTracker:HandlePartyUpdate();
 end
 
 -- Attempts to get initial data on arena players:
@@ -924,7 +1144,7 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	end
 
 	-- Only players matter for spec detection
-	if (not string.find(sourceGUID, "Player-", 1, true)) then
+	if (not sourceGUID or not sourceGUID:find("Player-", 1, true)) then
 		return;
 	end
 
@@ -948,9 +1168,9 @@ function ArenaTracker:OnSpecDetected(playerID, spec_id)
 	end
 
 	if(not Helpers:IsSpecID(player.spec) or player.spec == 13) then -- Preg doesn't count as a known spec
-		ArenaAnalytics:Log("Assigning spec: ", spec_id, " for player: ", player.name);
+		Debug:Log("Assigning spec: ", spec_id, " for player: ", player.name);
 		player.spec = spec_id;
 	elseif(player.spec) then
-		ArenaAnalytics:Log("Tracker: Keeping old spec:", player.spec, " for player: ", player.name);
+		Debug:Log("Tracker: Keeping old spec:", player.spec, " for player: ", player.name);
 	end
 end

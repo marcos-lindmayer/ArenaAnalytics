@@ -2,15 +2,11 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Helpers = ArenaAnalytics.Helpers;
 
 -- Local module aliases
-local Filters = ArenaAnalytics.Filters;
-local AAtable = ArenaAnalytics.AAtable;
-local Tooltips = ArenaAnalytics.Tooltips;
-local Export = ArenaAnalytics.Export;
 local API = ArenaAnalytics.API;
 local Internal = ArenaAnalytics.Internal;
-local Localization = ArenaAnalytics.Localization;
 local Options = ArenaAnalytics.Options;
-local Constants = ArenaAnalytics.Constants;
+local Colors = ArenaAnalytics.Colors;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 -- General Helpers
@@ -36,6 +32,10 @@ function Helpers:SanitizeValue(value)
         value = value:gsub(" ", ""):lower();
     end
     return value;
+end
+
+function Helpers:IsPositiveNumber(value)
+    return tonumber(value) and tonumber(value) > 0;
 end
 
 function Helpers:DeepCopy(original)
@@ -155,7 +155,7 @@ function Helpers:FormatNumber(value, forceExact)
         end
     end
 
-    return ArenaAnalytics:ColorText(value, Constants.statsColor);
+    return Colors:ColorText(value, Colors.statsColor);
 end
 
 function Helpers:FormatDate(value)
@@ -228,7 +228,7 @@ function Helpers:GetUnitFullName(unitToken)
     end
 
     if(not realm) then
-        ArenaAnalytics:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm!");
+        Debug:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm!");
         return name;
     end
 

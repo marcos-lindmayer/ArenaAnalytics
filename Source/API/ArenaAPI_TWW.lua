@@ -8,6 +8,7 @@ local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
 local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -51,7 +52,7 @@ end
 
 function API:GetBattlefieldStatus(battlefieldId)
     if(not battlefieldId) then
-        ArenaAnalytics:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
+        Debug:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
         return nil;
     end
 
@@ -85,7 +86,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
     end
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
-    return rating, seasonPlayed;
+    return tonumber(rating), tonumber(seasonPlayed);
 end
 
 function API:GetPlayerScore(index)
@@ -249,6 +250,9 @@ local function InitializeSpecOverrides()
 
         -- Warrior
         [82] = [[Interface\Icons\ability_warrior_savageblow]], -- Arms
+
+        -- Priest
+        [91] = [[Interface\Icons\spell_holy_powerwordshield]], -- Discipline
     };
 end
 

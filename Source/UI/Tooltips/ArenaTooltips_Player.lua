@@ -13,6 +13,7 @@ local Internal = ArenaAnalytics.Internal;
 local Options = ArenaAnalytics.Options;
 local Constants = ArenaAnalytics.Constants;
 local Debug = ArenaAnalytics.Debug;
+local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
@@ -90,7 +91,7 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
 
                 isLeft = true;
             else
-                ArenaAnalytics:Log("Ignoring number stat spacer", value)
+                Debug:Log("Ignoring number stat spacer", value)
             end
         else
             local column = isLeft and container.leftColumn or container.rightColumn;
@@ -182,7 +183,7 @@ local function GetOrCreateSingleton()
         self.quickSearchContainer:SetPoint("TOPLEFT", self.statsContainer, "BOTTOMLEFT");
         self.quickSearchContainer:SetHeight(0);
 
-        ArenaAnalytics:Log("Created new Player Tooltip singleton!");
+        Debug:Log("Created new Player Tooltip singleton!");
 
         -- Update quick search tips
         PlayerTooltip:UpdateQuickSearchTips();
@@ -236,8 +237,8 @@ function PlayerTooltip:UpdateQuickSearchTips()
 
     local function TryInsertShortcut(descriptor, shortcut, forced)
         if(forced or shortcut and shortcut ~= "None") then
-            descriptor = ArenaAnalytics:ColorText(descriptor, Constants.prefixColor);
-            shortcut = ArenaAnalytics:ColorText(shortcut, Constants.statsColor);
+            descriptor = Colors:ColorText(descriptor, Colors.prefixColor);
+            shortcut = Colors:ColorText(shortcut, Colors.statsColor);
 
             tinsert(entries, descriptor..shortcut);
         end
@@ -309,7 +310,7 @@ function PlayerTooltip:SetInfo(race_id, spec_id)
     local race = Internal:GetRace(race_id);
     if(race) then
         local factionColor = Internal:GetRaceFactionColor(race_id);
-        race = ArenaAnalytics:ColorText(race, factionColor);
+        race = Colors:ColorText(race, factionColor);
     end
 
     local class, spec = Internal:GetClassAndSpec(spec_id);
@@ -323,7 +324,7 @@ function PlayerTooltip:SetInfo(race_id, spec_id)
 
     if(specialization ~= "") then
         local color = Internal:GetClassColor(spec_id) or "ffffff";
-        specialization = ArenaAnalytics:ColorText(specialization, color);
+        specialization = Colors:ColorText(specialization, color);
     end
 
     local text = race and string.format("%s  %s", race, specialization) or specialization;
@@ -348,14 +349,12 @@ end
 
 function PlayerTooltip:ClearStats()
     local self = GetOrCreateSingleton(); -- Tooltip singleton
-
-    TablePool:Release(self.stats);
-    self.stats = TablePool:Acquire();
+    wipe(self.stats);
 end
 
 function PlayerTooltip:AddStatistic(prefix, text)
-    prefix = ArenaAnalytics:ColorText(prefix, Constants.prefixColor);
-    text = ArenaAnalytics:ColorText(text, Constants.statsColor);
+    prefix = Colors:ColorText(prefix, Colors.prefixColor);
+    text = Colors:ColorText(text, Colors.statsColor);
 
     local self = GetOrCreateSingleton(); -- Tooltip singleton
     tinsert(self.stats, prefix .. text);
@@ -376,12 +375,12 @@ function PlayerTooltip:AddRatingStatistic(prefix, value, delta)
 
         if(delta > 0) then
             delta = "+"..delta;
-            hex = Constants.winColor;
+            hex = Colors.winColor;
         else
-            hex = (delta < 0) and Constants.lossColor or Constants.drawColor;
+            hex = (delta < 0) and Colors.lossColor or Colors.drawColor;
         end
 
-        text = text .. ArenaAnalytics:ColorText(" ("..delta..")", hex);
+        text = text .. Colors:ColorText(" ("..delta..")", hex);
     end
 
     PlayerTooltip:AddStatistic(prefix, text);

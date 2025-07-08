@@ -1,0 +1,70 @@
+local _, ArenaAnalytics = ...; -- Namespace
+
+-------------------------------------------------------------------------
+-- Declare Module Namespaces
+
+ArenaAnalytics.Colors = {};
+ArenaAnalytics.Prints = {};
+ArenaAnalytics.Debug = {};
+ArenaAnalytics.Constants = {};
+ArenaAnalytics.Commands = {};
+
+ArenaAnalytics.Constants = {};
+ArenaAnalytics.SpecSpells = {};
+ArenaAnalytics.Localization = {};
+ArenaAnalytics.Internal = {};
+ArenaAnalytics.Bitmap = {};
+ArenaAnalytics.TablePool = {};
+
+ArenaAnalytics.Helpers = {};
+ArenaAnalytics.API = {};
+ArenaAnalytics.Inspection = {};
+
+ArenaAnalytics.AAtable = {};
+ArenaAnalytics.Selection = {};
+ArenaAnalytics.ArenaIcon = {};
+ArenaAnalytics.Tooltips = {};
+ArenaAnalytics.ShuffleTooltip = {};
+ArenaAnalytics.PlayerTooltip = {};
+ArenaAnalytics.ImportProgressFrame = {};
+
+ArenaAnalytics.Dropdown = {};
+ArenaAnalytics.Dropdown.List = {};
+ArenaAnalytics.Dropdown.Button = {};
+ArenaAnalytics.Dropdown.EntryFrame = {};
+ArenaAnalytics.Dropdown.Display = {};
+
+ArenaAnalytics.Options = {};
+ArenaAnalytics.AAmatch = {};
+ArenaAnalytics.Events = {};
+ArenaAnalytics.ArenaTracker = {};
+ArenaAnalytics.ArenaRatedInfo = {};
+ArenaAnalytics.Sessions = {};
+ArenaAnalytics.ArenaMatch = {};
+ArenaAnalytics.GroupSorter = {};
+
+ArenaAnalytics.Search = {};
+ArenaAnalytics.Filters = {};
+ArenaAnalytics.FilterTables = {};
+
+ArenaAnalytics.Export = {};
+ArenaAnalytics.Import = {};
+ArenaAnalytics.ImportBox = {};
+ArenaAnalytics.VersionManager = {};
+
+
+-------------------------------------------------------------------------
+-- Local module aliases
+
+local Options = ArenaAnalytics.Options;
+
+-------------------------------------------------------------------------
+
+-- This is safe to call early, but Options may not have assigned defaults yet.
+function Options:GetSafe(setting)
+    if(Options and Options.Get) then
+        return Options:Get(setting);
+    end
+
+    return setting and ArenaAnalyticsSharedSettingsDB[setting];
+end

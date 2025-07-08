@@ -20,6 +20,7 @@ local Debug = ArenaAnalytics.Debug;
 VersionManager.newDetectedVersion = false;
 VersionManager.latestFormatVersion = 4;
 
+-- TODO: Fix & Validate this function
 -- Compare two version strings. Returns -1 if version is lower, 0 if equal, 1 if higher.
 function VersionManager:compareVersions(version, otherVersion)
     otherVersion = otherVersion or API:GetAddonVersion();
@@ -61,6 +62,10 @@ function VersionManager:compareVersions(version, otherVersion)
     return 0;
 end
 
+-- Removed from SavedVariables. Avoid affecting global variables of other addons.
+local MatchHistoryDB = nil; 
+local ArenaAnalyticsRealmsDB = nil;
+
 function VersionManager:HasOldData()
     -- Original format of ArenaAnalyticsDB (Outdated as of 0.3.0)
     if(ArenaAnalyticsDB) then
@@ -89,7 +94,7 @@ function VersionManager:OnInit()
         -- Force early init, to ensure the internal tables are valid.
         Internal:Initialize();
 
-        ArenaAnalytics:Log("Converting old data...")
+        Debug:Log("Converting old data...")
 
         VersionManager:convertArenaAnalyticsDBToMatchHistoryDB() -- 0.3.0
         VersionManager:renameMatchHistoryDBKeys(); -- 0.5.0
@@ -147,9 +152,9 @@ local function convertFormatedDurationToSeconds(inDuration)
         return tonumber(inDuration);
     end
 
-    ArenaAnalytics:LogTemp(inDuration, type(inDuration));
+    Debug:LogTemp(inDuration, type(inDuration));
 
-    if(inDuration ~= nil and inDuration ~= "") then
+    if(inDuration and inDuration ~= "") then
         -- Sanitize the formatted time string
         inDuration = inDuration:lower();
         inDuration = inDuration:gsub("%s+", "");
@@ -168,7 +173,7 @@ local function convertFormatedDurationToSeconds(inDuration)
             -- Get seconds before "sec
             seconds = tonumber(inDuration:match("(.*)sec")) or 0;
         else
-            ArenaAnalytics:LogError("Converting duration failed (:", inDuration, ")");
+            Debug:LogError("Converting duration failed (:", inDuration, ")");
         end
 
         return 60*minutes + seconds;
@@ -354,7 +359,7 @@ local function convertCompToShortFormat(comp, bracketKey)
 end
 
 local function getFullFirstDeathName(firstDeathName, team, enemyTeam)
-    if(firstDeathName == nil or #firstDeathName < 3) then
+    if(not firstDeathName or #firstDeathName < 3) then
         return nil;
     end
 
@@ -372,7 +377,7 @@ local function getFullFirstDeathName(firstDeathName, team, enemyTeam)
         end
     end
 
-    ArenaAnalytics:Log("getFullDeathName failed to find matching player name.", firstDeathName);
+    Debug:Log("getFullDeathName failed to find matching player name.", firstDeathName);
     return nil;
 end
 
@@ -382,12 +387,12 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
 
     local oldTotal = (ArenaAnalyticsDB["2v2"] and #ArenaAnalyticsDB["2v2"] or 0) + (ArenaAnalyticsDB["3v3"] and #ArenaAnalyticsDB["3v3"] or 0) + (ArenaAnalyticsDB["5v5"] and #ArenaAnalyticsDB["5v5"] or 0);
     if(oldTotal == 0) then
-        ArenaAnalytics:Log("No old ArenaAnalyticsDB data found.")
+        Debug:Log("No old ArenaAnalyticsDB data found.")
         return;
     end
 
     if(#MatchHistoryDB > 0) then
-        ArenaAnalytics:Log("Non-empty MatchHistoryDB.");
+        Debug:Log("Non-empty MatchHistoryDB.");
         return;
     end
 
@@ -419,7 +424,7 @@ function VersionManager:convertArenaAnalyticsDBToMatchHistoryDB()
                     ["firstDeath"] = getFullFirstDeathName(arena["firstDeath"], team, enemyTeam)
                 }
 
-                ArenaAnalytics:Log("Adding arena from ArenaAnalyticsDB (Old format)", #MatchHistoryDB)
+                Debug:Log("Adding arena from ArenaAnalyticsDB (Old format)", #MatchHistoryDB)
                 table.insert(MatchHistoryDB, updatedArenaData);
             end
         end
@@ -468,9 +473,9 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
     if(not MatchHistoryDB or #MatchHistoryDB == 0) then
         return;
     end
-    
+
     if(ArenaAnalyticsDB and #ArenaAnalyticsDB > 0) then
-        ArenaAnalytics:Log("Version Control: Non-empty ArenaAnalyticsDB.");
+        Debug:Log("Version Control: Non-empty ArenaAnalyticsDB.");
         return;
     end
 
@@ -482,21 +487,21 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
         if(race_id) then
             race = race_id;
         else
-            ArenaAnalytics:Log("Failed to find race_id when converting race:", race);
+            Debug:Log("Failed to find race_id when converting race:", race);
         end
 
         local class_id = Localization:GetClassID(class);
         if(class_id) then
             class = class_id;
         else
-            ArenaAnalytics:Log("Failed to find class_id when converting class:", class);
+            Debug:Log("Failed to find class_id when converting class:", class);
         end
 
         local spec_id = Internal:GetSpecFromSpecString(class, spec);
         if(spec_id) then
             spec = spec_id;
         else
-            ArenaAnalytics:Log("Failed to find spec_id when converting class:", class, "spec:", spec);
+            Debug:Log("Failed to find spec_id when converting class:", class, "spec:", spec);
         end
 
         return race, tonumber(spec) or tonumber(class);
@@ -580,7 +585,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
     if(myName) then
         selfNames[myName] = true;
     else
-        ArenaAnalytics:Log("Failed to get local player name. Versioning called too early.");
+        Debug:Log("Failed to get local player name. Versioning called too early.");
     end
 
     -- Attempt retroactively assigning player names
@@ -646,19 +651,19 @@ function VersionManager:RevertIndexBasedNameAndRealm()
 		ArenaAnalyticsRealmsDB = nil;
 
         -- Logging
-		ArenaAnalytics:Log("Converted ArenaAnalyticsRealmsDB:", #ArenaAnalyticsDB.realms);
+		Debug:Log("Converted ArenaAnalyticsRealmsDB:", #ArenaAnalyticsDB.realms);
 	end
 
     -- Convert realms DB to final DB
     if(#ArenaAnalyticsDB.realms == 1 and ArenaAnalyticsDB.Realms and #ArenaAnalyticsDB.Realms > 0) then
-        ArenaAnalytics:Log("Deep copying ArenaAnalyticsDB.Realms", #ArenaAnalyticsDB.Realms);
+        Debug:Log("Deep copying ArenaAnalyticsDB.Realms", #ArenaAnalyticsDB.Realms);
         ArenaAnalyticsDB.realms = Helpers:DeepCopy(ArenaAnalyticsDB.Realms) or {};
         ArenaAnalyticsDB.Realms = nil;
     end
 
     -- Convert names DB to final DB
     if(#ArenaAnalyticsDB.names == 1 and ArenaAnalyticsDB.Names and #ArenaAnalyticsDB.Names > 0) then
-        ArenaAnalytics:Log("Deep copying ArenaAnalyticsDB.Names", #ArenaAnalyticsDB.Names);
+        Debug:Log("Deep copying ArenaAnalyticsDB.Names", #ArenaAnalyticsDB.Names);
         ArenaAnalyticsDB.names = Helpers:DeepCopy(ArenaAnalyticsDB.Names) or {};
         ArenaAnalyticsDB.Names = nil;
     end
@@ -678,7 +683,7 @@ function VersionManager:RevertIndexBasedNameAndRealm()
 
                     -- If either name or realm requires reverting
                     if(type(name) == "number" or type(realm) == "number") then
-                        ArenaAnalytics:Log("Reverting player names:", name, realm);
+                        Debug:Log("Reverting player names:", name, realm);
 
                         if(type(name) == "number") then
                             name = ArenaAnalytics:GetName(name, true);
@@ -688,7 +693,7 @@ function VersionManager:RevertIndexBasedNameAndRealm()
                             realm = ArenaAnalytics:GetRealm(realm, true);
                         end
 
-                        ArenaAnalytics:Log("   Reverted player names:", name, realm);
+                        Debug:Log("   Reverted player names:", name, realm);
                     end
 
                     player[oldPlayerKeys.name] = name;
@@ -763,10 +768,10 @@ function VersionManager:ConvertRoundAndPlayerFormat()
                 for i,player in ipairs(team) do
                     local newDataString = ToPlayerData(player, isEnemy);
 
-                    ArenaAnalytics:LogEscaped("ConvertPlayerValues:", i, newDataString);
+                    Debug:LogEscaped("ConvertPlayerValues:", i, newDataString);
 
                     if(newDataString == "") then
-                        ArenaAnalytics:Log("ERROR: Converting player values added empty player value string!");
+                        Debug:Log("ERROR: Converting player values added empty player value string!");
                     end
 
                     -- Actual conversion NYI!
@@ -776,11 +781,11 @@ function VersionManager:ConvertRoundAndPlayerFormat()
                 end
             end
 
-            ArenaAnalytics:Log("ConvertPlayerValues", #newTeam)
+            Debug:Log("ConvertPlayerValues", #newTeam)
             if(#newTeam > 0) then
                 local teamKey = isEnemy and ArenaMatch.matchKeys.enemy_team or ArenaMatch.matchKeys.team;
                 for i,player in ipairs(newTeam) do
-                    ArenaAnalytics:LogEscaped("     ", i, player);
+                    Debug:LogEscaped("     ", i, player);
                 end
 
                 match[teamKey] = newTeam;

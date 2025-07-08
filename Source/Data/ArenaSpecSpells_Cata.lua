@@ -1,6 +1,9 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
 local SpecSpells = ArenaAnalytics.SpecSpells;
 
+-- Local module aliases
+local Debug = ArenaAnalytics.Debug;
+
 -------------------------------------------------------------------------
 
 local specSpells = {
@@ -292,7 +295,7 @@ local debugSpells = {
 
 function SpecSpells:GetSpec(spellID)
     if(debugSpells[spellID]) then
-        ArenaAnalytics:Log("SpecSpells:GetSpec identified debug spell:", spellID, "for spec:", debugSpells[spellID]);
+        Debug:Log("SpecSpells:GetSpec identified debug spell:", spellID, "for spec:", debugSpells[spellID]);
     end
 
     return specSpells[spellID];

@@ -2,10 +2,9 @@ local _, ArenaAnalytics = ... -- Addon Namespace
 local Search = ArenaAnalytics.Search;
 
 -- Local module aliases
-local Options = ArenaAnalytics.Options;
-local Constants = ArenaAnalytics.Constants;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 -- Search Lookup Tables
@@ -286,19 +285,19 @@ local SearchTokenTypeTable = {
 
 function Search:GetShortValueName(typeKey, valueKey)
     if(not typeKey or not valueKey) then
-        ArenaAnalytics:Log("GetShortValueName called with invalid params:", typeKey, valueKey);
+        Debug:Log("GetShortValueName called with invalid params:", typeKey, valueKey);
         return nil;
     end
 
     local typeTable = SearchTokenTypeTable[typeKey];
     if(not typeTable or not typeTable.values) then
-        ArenaAnalytics:Log("GetShortValueName missing typeTable for params:", typeKey, valueKey);
+        Debug:Log("GetShortValueName missing typeTable for params:", typeKey, valueKey);
         return nil;
     end
 
     local valueTable = typeTable.values[valueKey];
     if(not valueTable) then
-        ArenaAnalytics:Log("GetShortValueName missing valueTable for params:", typeKey, valueKey);
+        Debug:Log("GetShortValueName missing valueTable for params:", typeKey, valueKey);
         return nil;
     end
 
@@ -384,7 +383,7 @@ function Search:FindSearchValueDataForToken(token)
     -- Evaluate best match so far, if any.
     if(bestMatch) then
         local shortName = Search:GetShortValueName(bestMatch.typeKey, bestMatch.valueKey);
-        ArenaAnalytics:Log("Search best match:", bestMatch.typeKey, bestMatch.valueKey, bestMatch.noSpace, shortName);
+        Debug:Log("Search best match:", bestMatch.typeKey, bestMatch.valueKey, bestMatch.noSpace, shortName);
 
         return bestMatch.typeKey, bestMatch.valueKey, bestMatch.noSpace, shortName;
     end

@@ -8,9 +8,9 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Tooltips = ArenaAnalytics.Tooltips;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local Internal = ArenaAnalytics.Internal;
-local Options = ArenaAnalytics.Options;
-local Constants = ArenaAnalytics.Constants;
 local TablePool = ArenaAnalytics.TablePool;
+local Colors = ArenaAnalytics.Colors;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@ local function CreateRoundEntryFrame(index, parent)
     -- Add a label for the round number
     newFrame.roundText = newFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
     newFrame.roundText:SetPoint("LEFT", newFrame, "LEFT", 10, 0);
-    ArenaAnalytics:SetFrameText(newFrame.roundText, ((index or "?") .. ":"), Constants.valueColor)
+    ArenaAnalytics:SetFrameText(newFrame.roundText, ((index or "?") .. ":"), Colors.valueColor)
 
     -- Duration
     newFrame.duration = newFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
@@ -74,7 +74,7 @@ local function CreateRoundEntryFrame(index, parent)
     -- Separator
     newFrame.separator = newFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal");
     newFrame.separator:SetPoint("CENTER", newFrame, -40, 0);
-    ArenaAnalytics:SetFrameText(newFrame.separator, "  vs  ", Constants.valueColor);
+    ArenaAnalytics:SetFrameText(newFrame.separator, "  vs  ", Colors.valueColor);
 
     -- Teams
     newFrame.team = {};
@@ -107,7 +107,7 @@ local function CreateRoundEntryFrame(index, parent)
     function newFrame:SetData(team, enemy, firstDeath, duration, outcome, selfPlayer, players)
         self:SetOutcomeColor(outcome);
 
-        ArenaAnalytics:SetFrameText(self.duration, (duration and SecondsToTime(duration)), Constants.valueColor);
+        ArenaAnalytics:SetFrameText(self.duration, (duration and SecondsToTime(duration)), Colors.valueColor);
 
         for i=2, 0, -1 do
             local spec_id, isFirstDeath;
@@ -173,7 +173,7 @@ local function GetOrCreateSingleton()
         self.frame = Helpers:CreateDoubleBackdrop(ArenaAnalyticsScrollFrame, self.name, "TOOLTIP")
         self.frame:SetSize(320, 1);
 
-        self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, ArenaAnalytics:ColorText("Solo Shuffle", Constants.valueColor), 18);
+        self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, Colors:ColorText("Solo Shuffle", Colors.valueColor), 18);
         self.winsText = ArenaAnalyticsCreateText(self.frame, "TOPRIGHT", self.frame, "TOPRIGHT", -10, -10, "", 15);
 
         self.rounds = {}
@@ -184,7 +184,7 @@ local function GetOrCreateSingleton()
 
         self.bottomStatTexts = {}
 
-        ArenaAnalytics:Log("Created new Shuffle Tooltip singleton!");
+        Debug:Log("Created new Shuffle Tooltip singleton!");
     end
 
     assert(tooltipSingleton);
@@ -199,8 +199,7 @@ local function ClearBottomStats()
         self.bottomStatTexts[i] = nil;
     end
 
-    TablePool:Release(self.bottomStatTexts);
-    self.bottomStatTexts = TablePool:Acquire();
+    wipe(self.bottomStatTexts);
 end
 
 local function AddBottomStat(prefix, name, value, spec_id)
@@ -210,13 +209,13 @@ local function AddBottomStat(prefix, name, value, spec_id)
 
     local self = GetOrCreateSingleton(); -- Tooltip singleton
 
-    prefix = ArenaAnalytics:ColorText(prefix, Constants.prefixColor);
-    value = ArenaAnalytics:ColorText(value, Constants.statsColor);
+    prefix = Colors:ColorText(prefix, Colors.prefixColor);
+    value = Colors:ColorText(value, Colors.statsColor);
 
     -- Player Name
     if(name) then
         local classColor = Internal:GetClassColor(spec_id);
-        name = ArenaAnalytics:ColorText(name, classColor);
+        name = Colors:ColorText(name, classColor);
     end
 
     local yOffset = #self.bottomStatTexts * 15 + 10;
@@ -307,7 +306,7 @@ function ShuffleTooltip:SetMatch(match)
     AddBottomStat("Most Deaths:", name, value, spec_id);
 
     -- Most Wins
-    local winsTable = {}
+    local winsTable = TablePool:Acquire();
     local function AddWins(player, playerIndex)
         local wins = player and ArenaMatch:GetPlayerVariableStats(player);
         if(wins) then
@@ -326,13 +325,16 @@ function ShuffleTooltip:SetMatch(match)
     TablePool:Release(deaths);
     TablePool:Release(winsTable);
 
+    deaths = nil;
+    winsTable = nil;
+
     -- Win color
-    local hex = Constants.invalidColor;
+    local hex = Colors.invalidColor;
     if(wins ~= nil) then
         if(wins == 3) then
-            hex = Constants.drawColor;
+            hex = Colors.drawColor;
         else
-            hex = (wins > 3) and Constants.winColor or Constants.lossColor;
+            hex = (wins > 3) and Colors.winColor or Colors.lossColor;
         end
     end
 

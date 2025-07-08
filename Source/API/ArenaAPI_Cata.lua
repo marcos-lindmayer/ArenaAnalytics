@@ -7,6 +7,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -26,12 +27,12 @@ API.availableMaps = {
 };
 
 function API:IsRatedArena()
-    return API:IsInArena() and not API:IsWargame() and not API:IsSkirmish();
+    return API:IsInArena() and C_PvP.IsRatedMap() and not API:IsWargame() and not API:IsSkirmish();
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
     if(not battlefieldId) then
-        ArenaAnalytics:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
+        Debug:LogError("API:GetBattlefieldStatus called with invalid battlefieldId.");
         return nil;
     end
 
@@ -60,7 +61,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
     end
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
-    return rating, seasonPlayed;
+    return tonumber(rating), tonumber(seasonPlayed);
 end
 
 function API:GetPlayerScore(index)
@@ -115,7 +116,7 @@ function API:GetSpecialization(unitToken, explicit)
             local spec_id = API:GetMappedAddonSpecID(id);
             if(not spec_id) then
                 local _,classToken = UnitClass(unitToken);
-                ArenaAnalytics:LogError("API:GetSpecialization failed to retrieve internal spec ID for:", id, classToken, i);
+                Debug:LogError("API:GetSpecialization failed to retrieve internal spec ID for:", id, classToken, i);
             end
 
             if(pointsSpent > currentSpecPoints) then
@@ -201,7 +202,10 @@ local function InitializeSpecOverrides()
 
         -- Warrior
         [82] = [[Interface\Icons\ability_warrior_savageblow]], -- Arms
-    }
+
+        -- Priest
+        [91] = [[Interface\Icons\spell_holy_powerwordshield]], -- Discipline
+    };
 end
 
 -------------------------------------------------------------------------

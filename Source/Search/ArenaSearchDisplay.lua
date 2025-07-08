@@ -2,8 +2,7 @@ local _, ArenaAnalytics = ... -- Addon Namespace
 local Search = ArenaAnalytics.Search;
 
 -- Local module aliases
-local Options = ArenaAnalytics.Options;
-local Constants = ArenaAnalytics.Constants;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 -- Search Colors
@@ -58,7 +57,7 @@ function Search:SetCurrentDisplay()
         searchBox:SetText(newDisplay);
         searchBox:SetCursorPosition(newCaretPosition or #newDisplay);
     else
-        ArenaAnalytics:LogWarning("Mising search box");
+        Debug:LogWarning("Mising search box");
     end
 end
 

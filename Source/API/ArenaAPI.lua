@@ -6,6 +6,7 @@ local API = ArenaAnalytics.API;
 local Internal = ArenaAnalytics.Internal;
 local Constants = ArenaAnalytics.Constants;
 local Options = ArenaAnalytics.Options;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -27,6 +28,10 @@ API.classTokens = {
     "EVOKER",       -- Dragonflight
 };
 
+function API:CanInspect(unitToken)
+    return unitToken and CheckInteractDistance(unitToken, 1) and CanInspect(unitToken);
+end
+
 function API:GetClassToken(index)
     index = tonumber(index);
     return index and API.classTokens[index];
@@ -46,12 +51,13 @@ end
 function API:GetActiveBattlefieldID()
     for index = 1, GetMaxBattlefieldID() do
         local status = API:GetBattlefieldStatus(index);
+        Debug:LogTemp("battlefield status:", index, status);
         if status == "active" then
-			ArenaAnalytics:Log("Found battlefield ID ", index);
+			Debug:Log("Found battlefield ID ", index);
             return index;
         end
     end
-	ArenaAnalytics:Log("Failed to find battlefield ID");
+	Debug:Log("Failed to find battlefield ID");
 end
 
 -- Unused
@@ -70,6 +76,19 @@ end
 -- TODO: Custom off season logic?
 function API:GetCurrentSeason()
     return GetCurrentArenaSeason();
+end
+
+function API:GetWinner()
+    if(not API:IsInArena()) then
+        return nil;
+    end
+
+    local winner = GetBattlefieldWinner();
+    if(winner == 255) then
+        return 2; -- Draw
+    end
+
+    return tonumber(winner);
 end
 
 function API:GetCurrentMapID()
@@ -94,19 +113,21 @@ function API:IsSoloShuffle()
 end
 
 function API:DetermineMatchType()
-    if(not API:IsInArena()) then
-        return "none";
+    if(API:IsInArena()) then
+        if(API:IsRatedArena()) then
+            return "rated";
+        end
+
+        if(API:IsWargame()) then
+            return "wargame";
+        end
+
+        if(API:IsSkirmish()) then
+            return "skirmish";
+        end
     end
 
-	if(API:IsRatedArena()) then
-		return "rated";
-	end
-
-    if(API:IsWargame()) then
-		return "wargame";
-	end
-
-    return "skirmish";
+    return "none";
 end
 
 function API:DetermineBracket(teamSize)
@@ -171,19 +192,19 @@ function API:UpdateDialogueVolume()
         if(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue == nil) then
             local previousValue = tonumber(GetCVar("Sound_DialogVolume"));
             if(previousValue ~= 0) then
-                ArenaAnalytics:Log("Muted dialogue sound.");
+                Debug:Log("Muted dialogue sound.");
                 SetCVar("Sound_DialogVolume", 0);
                 local newValue = tonumber(GetCVar("Sound_DialogVolume"));
                 if(tonumber(newValue) == 0) then
                     ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = previousValue;
-                    ArenaAnalytics:LogGreen("previousDialogMuteValue set to previous value:", previousValue);
+                    Debug:LogGreen("previousDialogMuteValue set to previous value:", previousValue);
                 end
             end
         end
     elseif(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue ~= nil) then
         if(tonumber(GetCVar("Sound_DialogVolume")) == 0) then
             SetCVar("Sound_DialogVolume", ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
-            ArenaAnalytics:Log("Unmuted dialogue sound.");
+            Debug:Log("Unmuted dialogue sound.");
         end
 
         ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = nil;
@@ -218,7 +239,7 @@ end
 
 function API:GetMappedAddonSpecID(specID)
     if(not API.specMappingTable) then
-        ArenaAnalytics:Log("GetMappedAddonSpecID: Failed to find specMappingTable. Ignoring spec:", specID);
+        Debug:Log("GetMappedAddonSpecID: Failed to find specMappingTable. Ignoring spec:", specID);
         return nil;
     end
 
@@ -226,7 +247,7 @@ function API:GetMappedAddonSpecID(specID)
 
     local spec_id = specID and tonumber(API.specMappingTable[specID]);
     if(not spec_id) then
-        ArenaAnalytics:Log("Failed to find spec_id for:", specID, type(specID));
+        Debug:Log("Failed to find spec_id for:", specID, type(specID));
         return nil;
     end
 

@@ -2,9 +2,10 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local AAmatch = ArenaAnalytics.AAmatch;
 
 -- Local module aliases
-local Constants = ArenaAnalytics.Constants;
+local Dropdown = ArenaAnalytics.Dropdown;
+local Selection = ArenaAnalytics.Selection;
+local Tooltips = ArenaAnalytics.Tooltips;
 local Bitmap = ArenaAnalytics.Bitmap;
-local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local Filters = ArenaAnalytics.Filters;
 local AAtable = ArenaAnalytics.AAtable;
 local API = ArenaAnalytics.API;
@@ -15,11 +16,36 @@ local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Sessions = ArenaAnalytics.Sessions;
 local Debug = ArenaAnalytics.Debug;
+local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
 local matchTypes = { "rated", "skirmish", "wargame" };
 local brackets = { "2v2", "3v3", "5v5", "shuffle" };
+
+-- Toggles addOn view/hide (Global to allow XML access)
+function ArenaAnalyticsToggle()
+    if (not ArenaAnalyticsScrollFrame:IsShown()) then
+        Selection:ClearSelectedMatches();
+
+        Filters:Refresh(function()
+            AAtable:RefreshLayout();
+        end);
+
+        Dropdown:CloseAll();
+        Tooltips:HideAll();
+
+        ArenaAnalyticsScrollFrame:Show();
+    else
+        ArenaAnalyticsScrollFrame:Hide();
+    end
+end
+
+function ArenaAnalyticsOpenOptions()
+    if(Options.Open) then
+        Options:Open();
+    end
+end
 
 function ArenaAnalytics:GetAddonBracketIndex(bracket)
 	if(bracket) then
@@ -58,22 +84,18 @@ end
 -------------------------------------------------------------------------
 
 local function ShouldAttemptVersionControl()
-	if(not ArenaAnalyticsDB or #ArenaAnalyticsDB > 0) then
-		return true;
-	end
+	return false; -- Disable version control for now
+end
 
-	if(MatchHistoryDB) then
-		return true;
-	end
-
-	if(ArenaAnalyticsDB["2v2"] or ArenaAnalyticsDB["3v3"] or ArenaAnalyticsDB["5v5"]) then
-		return true;
-	end
-
-	return false;
+function ArenaAnalytics:InitializeTransientDB()
+	ArenaAnalyticsTransientDB = ArenaAnalyticsTransientDB or {};
+	ArenaAnalyticsTransientDB.currentArena = ArenaAnalyticsTransientDB.currentArena or {};
+	ArenaAnalyticsTransientDB.ratedInfo = ArenaAnalyticsTransientDB.ratedInfo or {};
 end
 
 function ArenaAnalytics:InitializeArenaAnalyticsDB()
+	ArenaAnalytics:InitializeTransientDB();
+
 	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
 	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
 	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
@@ -97,7 +119,8 @@ end
 function ArenaAnalytics:PurgeArenaAnalyticsDB()
 	Import:Cancel();
 
-	local function purge()
+	-- Give Import a frame to cancel
+	C_Timer.After(0, function()
 		ArenaAnalyticsDB = {};
 		ArenaAnalytics:InitializeArenaAnalyticsDB();
 
@@ -106,16 +129,13 @@ function ArenaAnalytics:PurgeArenaAnalyticsDB()
 		ArenaAnalytics.Filters:Refresh();
 
 		ArenaAnalytics:PrintSystem("Match history purged!");
-	end
-
-	-- Give Import a frame to cancel
-	C_Timer.After(0, purge);
+	end);
 end
 
 function ArenaAnalytics:ShowPurgeConfirmationDialog()
 	if(not StaticPopupDialogs["CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY"]) then
 		StaticPopupDialogs["CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY"] = {
-			text = "Do you want to purge the |cff00ccffArenaAnalytics|r match history?\nThis deletes all stored matches permanently!\n\nType |cffff0000DELETE|r into the field to confirm.",
+			text = "Do you want to purge the " .. Colors:GetTitle() .. "match history?\nThis deletes all stored matches permanently!\n\nType " .. Colors:ColorText("DELETE", Colors.red) .. " into the field to confirm.",
 			button1 = "Purge",
 			button2 = "Cancel",
 			OnAccept = function(self)
@@ -175,7 +195,7 @@ function ArenaAnalytics:GetNameIndex(name)
 	end
 
 	tinsert(ArenaAnalyticsDB.names, name);
-	ArenaAnalytics:Log("Cached new name:", name, "at index:", #ArenaAnalyticsDB.names);
+	Debug:Log("Cached new name:", name, "at index:", #ArenaAnalyticsDB.names);
 	return #ArenaAnalyticsDB.names;
 end
 
@@ -211,7 +231,7 @@ function ArenaAnalytics:GetRealmIndex(realm)
 	end
 
 	tinsert(ArenaAnalyticsDB.realms, realm);
-	ArenaAnalytics:Log("Cached new realm:", realm, "at index:", #ArenaAnalyticsDB.realms);
+	Debug:Log("Cached new realm:", realm, "at index:", #ArenaAnalyticsDB.realms);
 	return #ArenaAnalyticsDB.realms;
 end
 
@@ -496,7 +516,7 @@ function ArenaAnalytics:ResortGroupsInMatchHistory()
 		end
 	end
 
-	ArenaAnalytics:Log("ArenaAnalytics:ResortGroupsInMatchHistory", debugprofilestop())
+	Debug:Log("ArenaAnalytics:ResortGroupsInMatchHistory", debugprofilestop())
 end
 
 local eventTracker = {
@@ -554,6 +574,9 @@ end
 -- Returns last saved rating on selected bracket (teamSize)
 function ArenaAnalytics:GetLatestRating(bracketIndex, explicitSeason, explicitSeasonPlayed)
 	bracketIndex = tonumber(bracketIndex);
+	explicitSeason = tonumber(explicitSeason);
+	explicitSeasonPlayed = tonumber(explicitSeasonPlayed);
+
 	if(bracketIndex) then
 		for i = #ArenaAnalyticsDB, 1, -1 do
 			local match = ArenaAnalytics:GetMatch(i);
@@ -572,7 +595,7 @@ function ArenaAnalytics:GetLatestRating(bracketIndex, explicitSeason, explicitSe
 		end
 	end
 
-	return 0;
+	return nil;
 end
 
 function ArenaAnalytics:TryFixLastMatchRating()
@@ -592,13 +615,6 @@ end
 -- Calculates arena duration, turns arena data into friendly strings, adds it to ArenaAnalyticsDB
 -- and triggers a layout refresh on ArenaAnalytics.AAtable
 function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
-	local hasStartTime = tonumber(newArena.startTime) and newArena.startTime > 0;
-	if(not hasStartTime) then
-		-- At least get an estimate for the time of the match this way.
-		newArena.startTime = time();
-		ArenaAnalytics:Log("Warning: Start time overridden upon inserting arena.");
-	end
-
 	-- Calculate arena duration
 	if(newArena.isShuffle) then
 		newArena.duration = 0;
@@ -611,31 +627,28 @@ function ArenaAnalytics:InsertArenaToMatchHistory(newArena)
 			end
 		end
 
-		ArenaAnalytics:Log("Shuffle combined duration:", newArena.duration);
-	else
-		if (hasStartTime) then
-			newArena.endTime = newArena.endTime or time();
-			local duration = (newArena.endTime - newArena.startTime);
-			duration = duration < 0 and 0 or duration;
-			newArena.duration = duration;
-		else
-			ArenaAnalytics:Log("Force fixed start time at match end.");
-			newArena.duration = 0;
+		Debug:Log("Shuffle combined duration:", newArena.duration);
+	elseif(newArena.hasStartTime and Helpers:IsPositiveNumber(newArena.startTime)) then
+		newArena.endTime = tonumber(newArena.endTime) or time();
+		if(newArena.startTime < newArena.endTime) then
+			newArena.duration = newArena.endTime - newArena.startTime;
 		end
 	end
 
+	Debug:Log("Duration for new arena:", newArena.duration, newArena.hasStartTime, newArena.hasRealStartTime, newArena.startTime, newArena.endTime);
+
 	local season = API:GetCurrentSeason();
 	if (not season or season == 0) then
-		ArenaAnalytics:Log("Failed to get valid season for new match.");
+		Debug:Log("Failed to get valid season for new match.");
 	end
 
 	-- Setup table data to insert into ArenaAnalyticsDB
 	local arenaData = { }
-	ArenaMatch:SetDate(arenaData, newArena.startTime);
+	ArenaMatch:SetDate(arenaData, newArena.startTime or time());
 	ArenaMatch:SetDuration(arenaData, newArena.duration);
 	ArenaMatch:SetMap(arenaData, newArena.mapId);
 
-	ArenaAnalytics:Log("Bracket:", newArena.bracketIndex, newArena.bracket, "MatchType:", newArena.matchType);
+	Debug:Log("Bracket:", newArena.bracketIndex, newArena.bracket, "MatchType:", newArena.matchType);
 	ArenaMatch:SetBracketIndex(arenaData, newArena.bracketIndex);
 
 	ArenaMatch:SetMatchType(arenaData, newArena.matchType);

@@ -2,9 +2,8 @@ local _, ArenaAnalytics = ... -- Addon Namespace
 local Search = ArenaAnalytics.Search;
 
 -- Local module aliases
-local Options = ArenaAnalytics.Options;
-local Constants = ArenaAnalytics.Constants;
 local Helpers = ArenaAnalytics.Helpers;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 -- Search Parsing Logic
@@ -82,7 +81,7 @@ function Search:CreateToken(raw, isExact)
             newToken.noSpace = true;
 
             if(Search.isCommitting) then
-                ArenaAnalytics:Log("Search: Forced fallback to name search type.");
+                Debug:Log("Search: Forced fallback to name search type.");
             end
         end
     end
@@ -106,7 +105,7 @@ function Search:CreateToken(raw, isExact)
         newToken.value = Helpers:ToSafeNumber(newToken.value) or Helpers:ToSafeLower(newToken.value);
     end
 
-    --ArenaAnalytics:Log("Created Token: ", newToken.explicitType, newToken.value, newToken.raw)
+    --Debug:Log("Created Token: ", newToken.explicitType, newToken.value, newToken.raw)
     return newToken;
 end
 

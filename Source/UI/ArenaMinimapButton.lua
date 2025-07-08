@@ -15,13 +15,13 @@ end
 local function OnClick(button)
     if(button == "RightButton") then
         -- Open ArenaAnalytics Options
-        ArenaAnalytics:OpenOptions();
+        ArenaAnalyticsOpenOptions();
     elseif(button == "MiddleButton") then
         if(GetOption("surrenderByMiddleMouseClick")) then
             ArenaAnalytics.API:TrySurrenderArena();
         end
     else
-        ArenaAnalytics:Toggle();
+        ArenaAnalyticsToggle();
     end
 end
 
@@ -76,7 +76,6 @@ local function UpdateMinimapButtonPosition()
 end
 
 function MinimapButton:Create()
-	-- Create minimap button -- Credit to Leatrix
 	minimapButton = CreateFrame("Button", "ArenaAnalyticsMinimapButton", Minimap);
 	minimapButton:SetParent(Minimap);
 	minimapButton:SetFrameStrata("HIGH");

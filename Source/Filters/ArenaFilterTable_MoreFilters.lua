@@ -5,6 +5,7 @@ local FilterTables = ArenaAnalytics.FilterTables;
 local API = ArenaAnalytics.API;
 local Filters = ArenaAnalytics.Filters;
 local Internal = ArenaAnalytics.Internal;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -18,7 +19,7 @@ local function GenerateSeasonData()
     latestSeason =  math.max(currentSeason, latestSeason, 0);
 
     if(latestSeason == nil or latestSeason == 0) then
-        ArenaAnalytics:Log("Invalid latest season. Unable to add seasons");
+        Debug:Log("Invalid latest season. Unable to add seasons");
         return;
     end
 

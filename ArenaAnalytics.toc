@@ -6,10 +6,15 @@
 ## IconTexture: Interface\Icons\achievement_arena_3v3_7
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsSharedSettingsDB
-## SavedVariablesPerCharacter: MatchHistoryDB, ArenaAnalyticsRealmsDB, ArenaAnalyticsDB, ArenaAnalyticsMapIconPos
+## SavedVariablesPerCharacter: ArenaAnalyticsDB, ArenaAnalyticsTransientDB, ArenaAnalyticsMapIconPos
 
 
+Source/ArenaModules.lua
+Source/ArenaColors.lua
+Source/ArenaPrints.lua
 Source/ArenaDebugging.lua
+Source/ArenaCommands.lua
+
 Source/UI/ArenaMinimapButton.lua
 Source/init.lua
 
@@ -19,6 +24,7 @@ Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
 Source/ArenaEvents.lua
 Source/ArenaTracker.lua
+Source/ArenaRatedInfo.lua
 Source/ArenaSessions.lua
 Source/ArenaVersionManager.lua
 Source/ArenaTablePool.lua

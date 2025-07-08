@@ -89,7 +89,7 @@ function Filters:Set(filter, value)
         Filters:Reset("Filter_EnemyComp");
     end
 
-    --ArenaAnalytics:Log("Setting filter:", filter, "to value:", (type(value) == "string" and value:gsub("|", "||") or "nil"));
+    --Debug:Log("Setting filter:", filter, "to value:", (type(value) == "string" and value:gsub("|", "||") or "nil"));
     currentFilters[filter] = value;
 
     Filters:Refresh();
@@ -118,7 +118,7 @@ function Filters:ResetAll(skipOverrides)
     changed = Search:Reset() or changed;
 
     if(changed) then
-        ArenaAnalytics:Log("Filters has been reset. Refreshing.");
+        Debug:Log("Filters has been reset. Refreshing.");
         Filters:Refresh();
     end
 end
@@ -129,7 +129,7 @@ function Filters:IsFilterActive(filter, ignoreOverrides)
         return current ~= Filters:GetDefault(filter, ignoreOverrides);
     end
 
-    ArenaAnalytics:Log("isFilterActive failed to find filter: ", filter);
+    Debug:Log("isFilterActive failed to find filter: ", filter);
     return false;
 end
 
@@ -236,11 +236,11 @@ local function doesMatchPassFilter_Season(match)
     if(season == "All") then
         return true;
     end
-    
+
     if(season == "Current Season") then
         return ArenaMatch:GetSeason(match) == API:GetCurrentSeason();
     end
-    
+
     return ArenaMatch:GetSeason(match) == tonumber(season);
 end
 
@@ -336,7 +336,7 @@ end
 local transientCompData = TablePool:Acquire();
 
 local function ResetTransientCompData()
-    TablePool:ReleaseNested(transientCompData);
+    TablePool:Release(transientCompData);
 
     transientCompData = {
         Filter_Comp = { ["All"] = {} },
@@ -485,7 +485,7 @@ Filters.isRefreshing = nil;
 -- Returns matches applying current match filters
 function Filters:Refresh(onCompleteFunc)
     if(Filters.isRefreshing) then
-        ArenaAnalytics:Log("Refreshing called while locked. Has onComplete: ", onCompleteFunc ~= nil);
+        Debug:Log("Refreshing called while locked. Has onComplete: ", onCompleteFunc ~= nil);
         return;
     end
     Filters.isRefreshing = true;
@@ -518,7 +518,7 @@ function Filters:Refresh(onCompleteFunc)
         -- Log timing
         local newTime = GetTimePreciseSec();
         local elapsed = 1000 * (newTime - startTime);
-        ArenaAnalytics:Log("Refreshed filters in:", elapsed, "ms.");
+        Debug:Log("Refreshed filters in:", elapsed, "ms.");
 
         Filters.isRefreshing = nil;
     end

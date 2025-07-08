@@ -10,6 +10,7 @@ local API = ArenaAnalytics.API;
 local ShuffleTooltip = ArenaAnalytics.ShuffleTooltip;
 local Constants = ArenaAnalytics.Constants;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
+local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
@@ -20,13 +21,17 @@ function Tooltips:HideAll()
 end
 
 function Tooltips:DrawMinimapTooltip(frame)
+    if(not ArenaAnalyticsMinimapButton) then
+        return;
+    end
+
     Tooltips:HideAll();
 
     GameTooltip:SetOwner(ArenaAnalyticsMinimapButton, "ANCHOR_NONE");
     GameTooltip:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT")
-    GameTooltip:AddDoubleLine(ArenaAnalytics:GetTitleColored(true), "|cff666666v" .. API:GetAddonVersion() .. "|r");
-    GameTooltip:AddLine("|cffBBBBBB" .. "Left Click|r" .. " to toggle ArenaAnalytics");
-    GameTooltip:AddLine("|cffBBBBBB" .. "Right Click|r".. " to open Options");
+    GameTooltip:AddDoubleLine(Colors:GetTitle(true), Colors:GetVersionText());
+    GameTooltip:AddLine("|c" .. Colors.infoColor .. "Left Click|r" .. " to toggle ArenaAnalytics");
+    GameTooltip:AddLine("|c" .. Colors.infoColor .. "Right Click|r".. " to open Options");
     GameTooltip:Show();
 end
 
@@ -39,18 +44,18 @@ function Tooltips:DrawOptionTooltip(frame, tooltip)
 
     -- Set the owner of the tooltip to the frame and anchor it at the cursor
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT");
-    
+
     -- Clear previous tooltip content
     GameTooltip:ClearLines();
-    
+
     -- Add the title with a larger font size
     GameTooltip:AddLine(name, 1, 1, 1, true);
     GameTooltipTextLeft1:SetFont(GameTooltipTextLeft1:GetFont(), 13);
-    
+
     -- Add the description with a smaller font size
     GameTooltip:AddLine(description, nil, nil, nil, true);
     GameTooltipTextLeft2:SetFont(GameTooltipTextLeft2:GetFont(), 11);
-    
+
     -- Width
     GameTooltip:SetWidth(500);
 
@@ -66,7 +71,7 @@ local function TryAddQuickSearchShortcutTips()
     if(not Options:Get("searchShowTooltipQuickSearch")) then
         return;
     end
-        
+
     if(not IsShiftKeyDown()) then
         return;
     end
