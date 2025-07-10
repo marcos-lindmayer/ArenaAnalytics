@@ -3,6 +3,7 @@ local Debug = ArenaAnalytics.Debug;
 
 -- Local module aliases
 local Colors = ArenaAnalytics.Colors;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -60,7 +61,10 @@ end
 -- Assert if debug is enabled. Returns value to allow wrapping within if statements.
 function Debug:Assert(value, msg)
 	if(Debug:GetDebugLevel() > 0) then
-		assert(value, "Debug Assertion failed! " .. (msg or ""));
+        if(not value) then
+            Debug:LogError("Assert failed:", msg or "-")
+            assert(value, "Debug Assertion failed! " .. (msg or ""));
+        end
 	end
 	return value;
 end
@@ -216,7 +220,7 @@ function Debug:PrintScoreboardStats(numPlayers)
                     end
                     statIDs[stat.pvpStatID] = stat.name;
                 end
-                
+
                 if(stat.name) then
                     if(statIDs[stat.name] and statIDs[stat.name] ~= stat.pvpStatID) then
                         Debug:Log("New stat ID for name!", stat.pvpStatID, stat.name);
@@ -241,8 +245,12 @@ function Debug:NotifyInspectSpec(unitToken)
         return;
     end
 
+    if(API:IsInArena()) then
+        return;
+    end
+
     unitToken = unitToken or "target";
-    if(not ArenaAnalytics.API:CanInspect(unitToken)) then
+    if(not API:CanInspect(unitToken)) then
         return;
     end
 
@@ -267,12 +275,12 @@ function Debug:HandleDebugInspect(GUID)
 
     local spec2 = GetInspectSpecialization(lastInspectUnitToken);
 
-    Debug:Log("HandleDebugInspect:", spec, spec2, ArenaAnalytics.API:GetSpecialization(lastInspectUnitToken));
+    Debug:Log("HandleDebugInspect:", spec, spec2, API:GetSpecialization(lastInspectUnitToken));
 end
 
 -------------------------------------------------------------------------
 
-function Debug:Init()
+function Debug:Initialize()
     local debugLevel = Debug:GetDebugLevel();
 	if(debugLevel > 0) then
         Debug:LogForced(string.format("Debugging Enabled at level: %d!  %s", debugLevel, Colors:ColorText("/aa debug to disable.", Colors.infoColor)));

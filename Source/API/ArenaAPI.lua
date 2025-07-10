@@ -29,7 +29,13 @@ API.classTokens = {
 };
 
 function API:CanInspect(unitToken)
-    return unitToken and CheckInteractDistance(unitToken, 1) and CanInspect(unitToken);
+    -- TODO: Validate that this is allowed in all versions (To avoid inspect error message)
+    if(not InCombatLockdown() and not CheckInteractDistance(unitToken, 1)) then
+        Debug:Log("Inspection skipped due to out of combat interact distance.");
+        return;
+    end
+
+    return unitToken ~= nil; --and CanInspect(unitToken);
 end
 
 function API:GetClassToken(index)
@@ -188,8 +194,10 @@ end
 -------------------------------------------------------------------------
 
 function API:UpdateDialogueVolume()
+    local hasPreviousValue = type(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue) ~= "number"
+
     if(API:IsInArena() and Options:Get("muteArenaDialogSounds")) then
-        if(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue == nil) then
+        if(not hasPreviousValue) then
             local previousValue = tonumber(GetCVar("Sound_DialogVolume"));
             if(previousValue ~= 0) then
                 Debug:Log("Muted dialogue sound.");
@@ -201,7 +209,7 @@ function API:UpdateDialogueVolume()
                 end
             end
         end
-    elseif(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue ~= nil) then
+    elseif(hasPreviousValue) then
         if(tonumber(GetCVar("Sound_DialogVolume")) == 0) then
             SetCVar("Sound_DialogVolume", ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
             Debug:Log("Unmuted dialogue sound.");

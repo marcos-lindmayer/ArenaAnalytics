@@ -54,7 +54,7 @@ function ArenaRatedInfo:UpdateRatedInfo()
 
 	for bracketIndex=1, 4 do
 		local rating, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
-		UpdateBracketCachedRatings(bracketIndex, seasonPlayed, rating)
+		UpdateBracketCachedRatings(bracketIndex, seasonPlayed, rating);
 	end
 end
 

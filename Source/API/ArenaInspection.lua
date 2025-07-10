@@ -52,12 +52,10 @@ local function getPartyUnitToken(GUID)
     for i=1, 4 do
         local unitToken = "party"..i;
         if(UnitGUID(unitToken) == GUID) then
-            Debug:Log("getPartyUnitToken", unitToken);
             return unitToken;
         end
     end
 
-    Debug:Log("getPartyUnitToken invalid.", GUID == nil);
     return nil;
 end
 
@@ -216,7 +214,7 @@ end
 function Inspection:Clear()
     Inspection:CancelTimer();
     queue = {};
-    
+
     if(currentInspectGUID) then
         ClearInspectPlayer();
     end

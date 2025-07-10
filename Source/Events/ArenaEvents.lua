@@ -9,22 +9,24 @@ local Inspection = ArenaAnalytics.Inspection;
 local Options = ArenaAnalytics.Options;
 local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 local Debug = ArenaAnalytics.Debug;
+local Initialization = ArenaAnalytics.Initialization;
 
 -------------------------------------------------------------------------
 
 local arenaEventsRegistered = false;
 
 local eventFrames = {
-	onLoadFrame = CreateFrame("Frame"),
+	initEventFrame = CreateFrame("Frame"),
 	globalEventFrame = CreateFrame("Frame"),
 	arenaEventFrame = CreateFrame("Frame"),
-}
-
+};
 
 local loadEvents = {
+	"ADDON_LOADED",
+	"VARIABLES_LOADED",
 	"PLAYER_LOGIN",
 	"PLAYER_ENTERING_WORLD",
-	"VARIABLES_LOADED",
+	"UPDATE_BATTLEFIELD_STATUS", -- Experiment
 };
 
 local arenaEvents = {
@@ -40,10 +42,10 @@ local arenaEvents = {
 };
 
 local globalEvents = {
-	"UPDATE_BATTLEFIELD_STATUS",
-	"ZONE_CHANGED_NEW_AREA",
+	--"UPDATE_BATTLEFIELD_STATUS",
+	--"ZONE_CHANGED_NEW_AREA",
 	"PVP_RATED_STATS_UPDATE",
-	"UPDATE_BATTLEFIELD_SCORE",
+	"UPDATE_BATTLEFIELD_STATUS",
 
 	--"INSPECT_READY", -- Used when testing inspection
 };
@@ -77,148 +79,108 @@ local function useFallbackLoadTimer()
 	-- If all load events hapened, and API still fails, then start a 1 sec timer loop until they work?
 end
 
-local function HandleLoadEvent(_, eventType, ...)
-	if(not isLoaded()) then
-		Debug:LogWarning("HandleLoadEvent called before isLoaded() is true.", eventType);
-		return
-	end
+local function HandleZoneChanged(isLoad)
+	-- Optionally mute/revert dialogue volume
+	API:UpdateDialogueVolume();
 
-	Debug:LogGreen("HandleLoadEvent:", eventType, ..., "||||", API:GetActiveBattlefieldID());
-	Events:OnLoad();
-end
-
--- Post initialization
-local hasLoaded = false;
-function Events:OnLoad()
-	if(hasLoaded) then
-		return;
-	end
-	hasLoaded = true;
-
-	Events:UnregisterLoadEvents();
-	Events:RegisterGlobalEvents();
-
-	-- Request events, in case critical events fired before loading in
-	C_Timer.After(0, function() RequestRatedInfo() end);
+	Debug:LogGreen("HandleZoneChanged triggered", API:IsInArena(), ArenaTracker:IsTrackingArena());
 
 	if(API:IsInArena()) then
-		Debug:Log("Requesting RequestBattlefieldScoreData")
-		C_Timer.After(0, function() RequestBattlefieldScoreData() end);
+		ArenaTracker:HandleArenaEnter(isLoad);
+	else
+		Events:UnregisterArenaEvents();
 
-		-- TESTING - Request appears to be failing.
-		ArenaAnalytics.ArenaTracker:HandleArenaEnter();
+		-- Handle exit here?
+		if(ArenaTracker:IsTrackingArena()) then
+			Debug:LogTemp("Zone changed calling HandleExit!");
+			C_Timer.After(1, ArenaTracker.HandleArenaExit);
+		end
 
-	elseif(ArenaTracker:IsTrackingArena()) then
-		-- Clear outdated arena tracking
-		ArenaTracker:HandleArenaExit();
+		-- Clear the flag signifying that a current arena was loaded into after login or reload
+		ArenaAnalytics.loadedIntoArena = nil;
 	end
 end
 
-local hasZoneChanged = false;
-local function HandleZoneChanged()
-	hasZoneChanged = true;
-	RequestRatedInfo();
+-- Manual management of zone change, counting only between arena and non-arena
+Events.wasInArena = nil;
+function Events:HandleStatusUpdate(isLoad)
+	local isInArena = API:IsInArena();
+
+	if(Events.wasInArena ~= isInArena) then
+		Events.wasInArena = isInArena;
+
+		HandleZoneChanged(isLoad);
+	end
 end
 
 local function HandleRatedUpdate(...)
 	ArenaAnalytics:TryFixLastMatchRating();
 	ArenaRatedInfo:UpdateRatedInfo();
 
-	-- Enter/Exit
-	if(hasZoneChanged) then
-		hasZoneChanged = false;
-
-		Debug:LogGreen("HandleRatedUpdate", API:IsInArena(), ArenaTracker:IsTrackingArena());
-
-		if (API:IsInArena()) then
-			-- Internal checks for existing tracking
-			if(not ArenaTracker:IsTrackingArena()) then
-				ArenaTracker:HandleArenaEnter();
-			end
-		else -- Not in arena
-			Events:UnregisterArenaEvents();
-			if(ArenaTracker:IsTrackingArena()) then
-				C_Timer.After(0, ArenaTracker.HandleArenaExit);
-			end
-		end
-	end
-
 	ArenaTracker:HandleRatedUpdate();
 end
 
-local function HandleBattlefieldScore(...)
-	Debug:Log("Events HandleBattlefieldScore triggered.");
-
-	if(API:IsInArena()) then
-		ArenaTracker:HandleScoreUpdate();
-	end
-end
-
 -- Assigns behaviour for "global" events
--- UPDATE_BATTLEFIELD_STATUS: Begins arena tracking and arena events if inside arena
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
-local function HandleGlobalEvent(_, eventType, ...)
-	Debug:LogTemp(eventType, "GetPersonalRatedInfo", API:GetPersonalRatedInfo(1), API:IsInArena());
+function Events:HandleGlobalEvent(event, ...)
+	Debug:LogTemp("Global:", event, API:IsInArena(), ...);
 
 	-- Inspect debugging
-	if(eventType == "INSPECT_READY") then
+	if(event == "INSPECT_READY") then
 		if(Debug.HandleDebugInspect) then
 			Debug:HandleDebugInspect(...);
 		end
 		return;
 	end
 
-	if(eventType == "PVP_RATED_STATS_UPDATE") then
+	if(event == "PVP_RATED_STATS_UPDATE") then
 		HandleRatedUpdate(...);
-	elseif(eventType == "ZONE_CHANGED_NEW_AREA") then
-		API:UpdateDialogueVolume();
-		HandleZoneChanged();
-
-	elseif (eventType == "UPDATE_BATTLEFIELD_STATUS" or eventType == "UPDATE_BATTLEFIELD_SCORE") then
-		HandleBattlefieldScore(...);
+	elseif(event == "ZONE_CHANGED_NEW_AREA") then
+		--C_Timer.After(0, HandleZoneChanged);
+	elseif(event == "UPDATE_BATTLEFIELD_STATUS") then
+		Events:HandleStatusUpdate();
 	end
 end
 
 -- Assigns behaviour for each arena event
--- UPDATE_BATTLEFIELD_SCORE: the arena ended, final info is grabbed and stored
--- UNIT_AURA, COMBAT_LOG_EVENT_UNFILTERED, ARENA_OPPONENT_UPDATE: try to get more arena information (players, specs, etc)
+-- UPDATE_BATTLEFIELD_SCORE: The arena may have ended, final info is grabbed and stored
+-- UNIT_AURA, COMBAT_LOG_EVENT_UNFILTERED, ARENA_OPPONENT_UPDATE: Try to get more arena information (players, specs, etc)
 -- CHAT_MSG_BG_SYSTEM_NEUTRAL: Detect if the arena started
-local function HandleArenaEvent(_, eventType, ...)
+function Events:HandleArenaEvent(event, ...)
 	if (not API:IsInArena() or not ArenaTracker:IsTrackingArena()) then
 		return;
 	end
 
-	if (eventType == "UPDATE_BATTLEFIELD_SCORE") then
+	if (event == "UPDATE_BATTLEFIELD_SCORE") then
 		ArenaTracker:HandleScoreUpdate();
 
 		if(API:GetWinner() ~= nil) then
-			Events:UnregisterArenaEvents();
 			C_Timer.After(0, ArenaTracker.HandleArenaEnd);
 		end
 
-	elseif(eventType == "PVP_RATED_STATS_UPDATE") then
+	elseif(event == "PVP_RATED_STATS_UPDATE") then
 		C_Timer.After(0, ArenaTracker.HandleRatedUpdate);
 		ArenaTracker:CheckRoundEnded();
 
-	elseif (eventType == "UNIT_AURA") then
+	elseif (event == "UNIT_AURA") then
 		ArenaTracker:ProcessUnitAuraEvent(...);
 
-	elseif(eventType == "COMBAT_LOG_EVENT_UNFILTERED") then
+	elseif(event == "COMBAT_LOG_EVENT_UNFILTERED") then
 		ArenaTracker:ProcessCombatLogEvent(...);
 
-	elseif(eventType == "ARENA_OPPONENT_UPDATE" or eventType == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
+	elseif(event == "ARENA_OPPONENT_UPDATE" or event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS") then
 		ArenaTracker:HandleOpponentUpdate();
 
-	elseif(eventType == "GROUP_ROSTER_UPDATE") then
+	elseif(event == "GROUP_ROSTER_UPDATE") then
 		ArenaTracker:HandlePartyUpdate();
 
-	elseif (eventType == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
+	elseif (event == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
 		local msg = ...;
 		ArenaTracker:HandleArenaMessages(msg);
 
-	elseif(eventType == "INSPECT_READY") then
+	elseif(event == "INSPECT_READY") then
 		if(API.enableInspection and Inspection and Inspection.HandleInspectReady) then
-			Debug:Log(eventType, "triggered!");
+			Debug:Log(event, "triggered!");
 			Inspection:HandleInspectReady(...);
 		end
 	end
@@ -265,35 +227,24 @@ end
 
 -- Custom OnLoad event handling
 function Events:RegisterLoadEvents()
-	if(eventFrames.onLoadFrame) then
-		registerEvents(eventFrames.onLoadFrame, loadEvents, HandleLoadEvent);
+	if(eventFrames.initEventFrame) then
+		registerEvents(eventFrames.initEventFrame, loadEvents, Events.HandleLoadEvents);
 	end
 end
 
 function Events:UnregisterLoadEvents()
-	--unregisterEvents(eventFrames.onLoadFrame, loadEvents);
-	--eventFrames.onLoadFrame = nil;
+	--unregisterEvents(eventFrames.initEventFrame, loadEvents);
+	--eventFrames.initEventFrame = nil;
 end
 
 -- Creates "global" events
 function Events:RegisterGlobalEvents()
-	registerEvents(eventFrames.globalEventFrame, globalEvents, HandleGlobalEvent);
+	registerEvents(eventFrames.globalEventFrame, globalEvents, Events.HandleGlobalEvent);
 end
 
 -- Adds events used inside arenas
 function Events:RegisterArenaEvents()
-	registerEvents(eventFrames.arenaEventFrame, arenaEvents, HandleArenaEvent);
-
-	if(not arenaEventsRegistered) then
-		for _,event in ipairs(arenaEvents) do
-			if(C_EventUtils.IsEventValid(event)) then
-				eventFrames.arenaEventFrame:RegisterEvent(event);
-			end
-		end
-
-		eventFrames.arenaEventFrame:SetScript("OnEvent", HandleArenaEvent);
-		arenaEventsRegistered = true;
-	end
+	registerEvents(eventFrames.arenaEventFrame, arenaEvents, Events.HandleArenaEvent);
 end
 
 -- Removes events used inside arenas
@@ -305,4 +256,42 @@ end
 
 function Events:Initialize()
 	Events:RegisterLoadEvents();
+end
+
+-- Process load events before directing them towards Initialization flow in sanitized form
+function Events:HandleLoadEvents(event, ...)
+	if(event == "ADDON_LOADED") then
+		local name = ...;
+		if(name ~= "ArenaAnalytics") then
+			return;
+		end
+	elseif(event == "PLAYER_ENTERING_WORLD") then
+		local isLogin, isReload = ...;
+		if(not isLogin and not isReload) then
+			-- Zone change does not qualify as an initialization event
+			return;
+		end
+	elseif(event == "UPDATE_BATTLEFIELD_STATUS" and not API:IsInArena()) then
+		-- We don't care about UPDATE_BATTLEFIELD_STATUS outside of arena.
+		return;
+	end
+
+	Initialization:HandleLoadEvents(event, ...);
+end
+
+-- Post initialization
+local hasLoaded = false;
+function Events:OnLoad()
+	if(hasLoaded) then
+		return;
+	end
+	hasLoaded = true;
+
+	Debug:LogGreen("Events:OnLoad() triggered!");
+	Events.wasInArena = API:IsInArena();
+
+	Events:RegisterGlobalEvents();
+
+	-- Request events, in case critical events fired before loading in
+	RequestRatedInfo();
 end

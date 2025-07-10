@@ -37,11 +37,12 @@ ArenaAnalytics.Dropdown.Display = {};
 ArenaAnalytics.Options = {};
 ArenaAnalytics.AAmatch = {};
 ArenaAnalytics.Events = {};
-ArenaAnalytics.ArenaTracker = {};
 ArenaAnalytics.ArenaRatedInfo = {};
 ArenaAnalytics.Sessions = {};
 ArenaAnalytics.ArenaMatch = {};
 ArenaAnalytics.GroupSorter = {};
+
+ArenaAnalytics.ArenaTracker = {};
 
 ArenaAnalytics.Search = {};
 ArenaAnalytics.Filters = {};
@@ -51,6 +52,8 @@ ArenaAnalytics.Export = {};
 ArenaAnalytics.Import = {};
 ArenaAnalytics.ImportBox = {};
 ArenaAnalytics.VersionManager = {};
+
+ArenaAnalytics.Initialization = {};
 
 
 -------------------------------------------------------------------------
@@ -66,5 +69,5 @@ function Options:GetSafe(setting)
         return Options:Get(setting);
     end
 
-    return setting and ArenaAnalyticsSharedSettingsDB[setting];
+    return setting and ArenaAnalyticsSharedSettingsDB and ArenaAnalyticsSharedSettingsDB[setting];
 end

@@ -107,7 +107,7 @@ local arenaMessages = {
 
 -- Check if a message indicates the match has started (0 seconds)
 function Constants:CheckTimerMessage(msg)
-    local timeTillStart = tonumber(arenaMessages[msg]);
+    local timeTillStart = msg and tonumber(arenaMessages[msg]);
     local isStart = (timeTillStart == 0);
 
     Debug:Log("ParseArenaTimerMessages message passed:", msg, timeTillStart, isStart);

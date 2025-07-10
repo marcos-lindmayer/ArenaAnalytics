@@ -1,0 +1,149 @@
+local _, ArenaAnalytics = ... -- Namespace
+local ArenaTracker = ArenaAnalytics.ArenaTracker;
+
+-- Local module aliases
+local AAmatch = ArenaAnalytics.AAmatch;
+local Constants = ArenaAnalytics.Constants;
+local SpecSpells = ArenaAnalytics.SpecSpells;
+local API = ArenaAnalytics.API;
+local Helpers = ArenaAnalytics.Helpers;
+local Internal = ArenaAnalytics.Internal;
+local Localization = ArenaAnalytics.Localization;
+local Inspection = ArenaAnalytics.Inspection;
+local Events = ArenaAnalytics.Events;
+local TablePool = ArenaAnalytics.TablePool;
+local Debug = ArenaAnalytics.Debug;
+local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
+
+-------------------------------------------------------------------------
+-- ArenaTracker subsection
+-- Responsible for dealing with loading into an arena.
+-------------------------------------------------------------------------
+
+local currentArena = {};
+function ArenaTracker:InitializeSubmodule_End()
+    currentArena = ArenaAnalyticsTransientDB.currentArena;
+end
+
+-- Gets arena information when it ends and the scoreboard is shown
+-- Matches obtained info with previously collected player values
+function ArenaTracker:HandleArenaEnd()
+	if(not ArenaTracker:IsTrackingArena()) then
+		Debug:LogWarning("ArenaTracker:HandleArenaEnd skipped: Not tracking arena.");
+		return;
+	end
+
+	Events:UnregisterArenaEvents();
+
+	-- We already got here
+	if(currentArena.endedProperly) then
+		Debug:LogWarning("HandleArenaEnd called more than once.");
+		return;
+	end
+
+	currentArena.endedProperly = true;
+	currentArena.ended = true;
+	currentArena.endTime = tonumber(currentArena.endTime) or time();
+
+	Debug:LogGreen("HandleArenaEnd!", #currentArena.players, currentArena.startTime, currentArena.endTime);
+	Debug:LogTable(currentArena.deathData);
+
+	-- Solo Shuffle
+	ArenaTracker:HandleRoundEnd(true);
+
+	local winner = API:GetWinner();
+	local players = {};
+
+	-- Figure out how to default to nil, without failing to count losses.
+	local myTeamIndex = nil;
+
+	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
+	ArenaTracker:CommitDeaths();
+	wipe(currentArena.deathData);
+
+	local isShuffle = ArenaTracker:IsShuffle();
+
+	for i=1, GetNumBattlefieldScores() do
+		local score = API:GetPlayerScore(i) or {};
+
+		-- Find or add player
+		local player = ArenaTracker:GetPlayer(score.name);
+		if(not player) then
+			-- Use scoreboard info
+			Debug:Log("Creating new player by scoreboard:", score.name);
+			player = ArenaTracker:CreatePlayerTable(nil, nil, score.name);
+		end
+
+		-- Fill missing data
+		player.teamIndex = score.team;
+		player.spec = Helpers:IsSpecID(player.spec) and player.spec or score.spec;
+		player.race = player.race or score.race;
+		player.kills = score.kills;
+		player.deaths = API.trustScoreboardDeaths and score.deaths or player.deaths or 0;
+		player.damage = score.damage;
+		player.healing = score.healing;
+
+		if(ArenaTracker:IsRated()) then
+			player.rating = score.rating;
+			player.ratingDelta = score.ratingDelta;
+			player.mmr = score.mmr;
+			player.mmrDelta = score.mmrDelta;
+		end
+
+		if(isShuffle) then
+			player.wins = score.wins or 0;
+		end
+
+		if(player.name) then
+			-- First Death
+			if(not isShuffle and player.name == firstDeath) then
+				player.isFirstDeath = true;
+			end
+
+			if (currentArena.playerName and player.name == currentArena.playerName) then
+				myTeamIndex = player.teamIndex;
+				player.isSelf = true;
+			elseif(isShuffle) then
+				-- Everyone else is an opponent in shuffle (1v5)
+				player.isEnemy = true;
+			end
+
+			table.insert(players, player);
+		else
+			Debug:LogWarning("Tracker: Invalid player name, player will not be stored!");
+		end
+
+		TablePool:Release(score);
+	end
+
+	if(ArenaTracker:IsTrackingShuffle()) then
+		-- Determine match outcome
+		currentArena.outcome = ArenaTracker:GetShuffleOutcome()
+	else
+		-- Assign isEnemy value
+		for _,player in ipairs(players) do
+			if(player and player.teamIndex) then
+				player.isEnemy = (player.teamIndex ~= myTeamIndex);
+			end
+		end
+
+		-- Assign Winner
+		if(winner == 255) then
+			currentArena.outcome = 2;
+		elseif(winner ~= nil) then
+			currentArena.outcome = (myTeamIndex == winner) and 1 or 0;
+		end
+	end
+
+	-- Process ranked information
+	if (ArenaTracker:IsRated() and myTeamIndex) then
+		local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
+
+		currentArena.partyMMR = API:GetTeamMMR(myTeamIndex);
+		currentArena.enemyMMR = API:GetTeamMMR(otherTeamIndex);
+	end
+
+	currentArena.players = players;
+
+	Debug:Log("Match ended!", #currentArena.players, "players tracked.");
+end

@@ -94,8 +94,6 @@ function ArenaAnalytics:InitializeTransientDB()
 end
 
 function ArenaAnalytics:InitializeArenaAnalyticsDB()
-	ArenaAnalytics:InitializeTransientDB();
-
 	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
 	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
 	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
@@ -518,20 +516,6 @@ function ArenaAnalytics:ResortGroupsInMatchHistory()
 
 	Debug:Log("ArenaAnalytics:ResortGroupsInMatchHistory", debugprofilestop())
 end
-
-local eventTracker = {
-	["UPDATE_BATTLEFIELD_STATUS"] = false, 
-	["ZONE_CHANGED_NEW_AREA"] = false, 
-	["CHAT_MSG_ADDON"] = false,
-	["ArenaEvents"] = {
-		["UPDATE_BATTLEFIELD_SCORE"] = false, 
-		["UNIT_AURA"] = false, 
-		["CHAT_MSG_BG_SYSTEM_NEUTRAL"] = false, 
-		["COMBAT_LOG_EVENT_UNFILTERED"] = false,
-		["ARENA_OPPONENT_UPDATE"] = false
-	},
-	["ArenaEventsAdded"] = false
-}
 
 function ArenaAnalytics:HasStoredMatches()
 	return (ArenaAnalyticsDB ~= nil and #ArenaAnalyticsDB > 0);

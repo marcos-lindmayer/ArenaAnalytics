@@ -7,6 +7,28 @@ local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
+-- Evaluate this, consider use cases for refactoring or clearing it
+function Prints:PrintRaw(prefix, ...)
+	prefix = tostring(prefix);
+
+	if(not Options:GetSafe("printAsSystem")) then
+		if(prefix and #prefix > 0) then
+			print(prefix, ...);
+		else
+			print(...);
+		end
+	else
+		local params = {...};
+		for key in pairs(params) do
+			if(params[key] == nil) then
+				params[key] = "nil";
+			end
+		end
+
+		SendSystemMessage((prefix or "") .. Colors:ColorText(table.concat(params, " "), Colors.white))
+	end
+end
+
 function ArenaAnalytics:Print(...)
     local prefix = Colors:ColorText("ArenaAnalytics: ", Colors.themeColor);
 	print(prefix, ...);
@@ -43,16 +65,16 @@ end
 
 function Prints:PrintWelcomeMessage()
 	local welcomeMessageSeed = random(1, 10000);
-	local text;
 
 	local name = UnitNameUnmodified("player");
 
-	if(welcomeMessageSeed < 10) then
+	local text;
+	if(welcomeMessageSeed < 13) then
 		text = format("You're being tracked, %s.", name);
-	elseif(welcomeMessageSeed < 100) then
-		text = format("Have a wonderful day, %s!", name);
 	elseif(welcomeMessageSeed == 213) then
 		text = format("I'm watching you, %s!", name);
+	elseif(welcomeMessageSeed < 100) then
+		text = format("Have a wonderful day, %s!", name);
 	else
 		text = format("Tracking arena games, glhf %s!!", name);
 	end

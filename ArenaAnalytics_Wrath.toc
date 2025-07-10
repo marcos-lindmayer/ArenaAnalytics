@@ -15,18 +15,24 @@ Source/ArenaDebugging.lua
 Source/ArenaCommands.lua
 
 Source/UI/ArenaMinimapButton.lua
-Source/init.lua
 
 Source/ArenaAnalytics.lua
 Source/ArenaOptions.lua
 Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
-Source/ArenaEvents.lua
-Source/ArenaTracker.lua
+Source/Events/ArenaEvents.lua
 Source/ArenaRatedInfo.lua
 Source/ArenaSessions.lua
 Source/ArenaVersionManager.lua
 Source/ArenaTablePool.lua
+
+Source/Tracker/ArenaTracker.lua
+Source/Tracker/ArenaTracker_Enter.lua
+Source/Tracker/ArenaTracker_Start.lua
+Source/Tracker/ArenaTracker_GatesOpened.lua
+Source/Tracker/ArenaTracker_End.lua
+Source/Tracker/ArenaTracker_Exit.lua
+Source/Tracker/ArenaTracker_Shuffle.lua
 
 Source/API/ArenaHelpers.lua
 Source/API/ArenaAPI.lua
@@ -74,3 +80,5 @@ Source/UI/Dropdowns/ArenaDropdownList.lua
 Source/UI/Dropdowns/ArenaDropdownEntry.lua
 Source/UI/Dropdowns/ArenaDropdownButton.lua
 Source/UI/Dropdowns/ArenaDropdownDisplay.lua
+
+Source/init.lua

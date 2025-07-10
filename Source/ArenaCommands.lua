@@ -146,8 +146,9 @@ Commands.list = {
 		ArenaAnalytics:Print(" ================================================ ");
 
 		if(API:IsInArena()) then
-			Debug:Log("Requesting RequestBattlefieldScoreData")
-			C_Timer.After(0, function() RequestBattlefieldScoreData() end);
+			--Debug:LogTemp("Requesting RequestBattlefieldScoreData")
+			--RequestBattlefieldScoreData();
+			Debug:Log("BattlefieldID", API:GetActiveBattlefieldID());
 		end
 
 		Debug:LogTable(ArenaTracker:GetCurrentArena());
@@ -250,21 +251,6 @@ function Commands:Initialize()
 	SLASH_ArenaAnalyticsCommands2 = "/ArenaAnalytics";
 	SlashCmdList.ArenaAnalyticsCommands = handleSlashCommands;
 
-	if(API:HasSurrenderAPI()) then
-		-- Override /afk to surrender in arenas
-		SlashCmdList.CHAT_AFK = function(message)
-			local surrendered = API:TrySurrenderArena("afk");
-			if(surrendered == nil) then
-				-- Fallback to base /afk
-				SendChatMessage(message, "AFK");
-			end
-		end
-
-		-- /gg to surrender
-		SLASH_ArenaAnalyticsSurrender1 = "/gg";
-		SlashCmdList.ArenaAnalyticsSurrender = function(msg)
-			Debug:Log("/gg triggered.");
-			API:TrySurrenderArena("gg");
-		end
-	end
+	-- Update /afk and /gg for surrender, if the game version supports it
+	Commands.UpdateSurrenderCommands();
 end
