@@ -8,7 +8,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
 local GroupSorter = ArenaAnalytics.GroupSorter;
 local API = ArenaAnalytics.API;
-local Search = ArenaAnalytics.Search;
+local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
 
@@ -162,7 +162,7 @@ end
 
 function ArenaMatch:SetRequireRatingFix(match, value)
     assert(match);
-    Debug:Log("SetRequireRatingFix:", value, "from:", match[matchKeys.transient_requireRatingFix]);
+    Debug:LogWarning("SetRequireRatingFix:", value, "from:", match[matchKeys.transient_requireRatingFix]);
     match[matchKeys.transient_requireRatingFix] = value and true or nil;
 end
 
@@ -191,24 +191,33 @@ function ArenaMatch:TryFixLastRating(match)
     end
 
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
-    local newRating,seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
-    if(not seasonPlayed or (seasonPlayed - 1) < trackedSeasonPlayed) then
-        Debug:Log("ArenaMatch: Delaying rating fix - Season Played.", seasonPlayed, bracketIndex, trackedSeasonPlayed);
+    local currentSeasonPlayed = API:GetSeasonPlayed(bracketIndex);
+
+    if(not currentSeasonPlayed or currentSeasonPlayed < trackedSeasonPlayed) then
+        Debug:Log("ArenaMatch: Delaying rating fix - Season Played.", bracketIndex, currentSeasonPlayed, trackedSeasonPlayed);
         return;
     end
 
-    if((seasonPlayed - 1) == trackedSeasonPlayed) then
-        if(newRating) then
-            -- Fix rating
-            local oldRating = ArenaMatch:GetPartyRating(match);
-            local delta = oldRating and newRating - oldRating;
-
-            Debug:Log("ArenaMatch: Fixing rating from:", oldRating, "to:", newRating, delta);
-
-            ArenaMatch:SetPartyRating(match, newRating);
-            ArenaMatch:SetPartyRatingDelta(match, delta);
-        end
+    if(not ArenaRatedInfo:HasRating(bracketIndex, trackedSeasonPlayed)) then
+        return;
     end
+
+    local newRating, oldRating = ArenaRatedInfo:GetRatedInfo(bracketIndex, trackedSeasonPlayed);
+    if(not newRating) then
+        if(currentSeasonPlayed > trackedSeasonPlayed) then
+            -- Lacking data, and already passed the match. We cannot recover.
+            ArenaMatch:ClearTransientValues(match);
+            return;
+        end
+
+        return; -- No data found to fix rating
+    end
+
+    oldRating = oldRating or ArenaMatch:GetPartyRating(match);
+    local delta = oldRating and newRating - oldRating;
+
+    ArenaMatch:SetPartyRating(match, newRating);
+    ArenaMatch:SetPartyRatingDelta(match, delta);
 
     -- Clear transient values
     ArenaMatch:ClearTransientValues(match);

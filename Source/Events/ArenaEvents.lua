@@ -117,8 +117,8 @@ function Events:CheckZoneChanged(isLoad)
 end
 
 local function HandleRatedUpdate(...)
-	ArenaAnalytics:TryFixLastMatchRating();
 	ArenaRatedInfo:UpdateRatedInfo();
+	ArenaAnalytics:TryFixLastMatchRating();
 
 	ArenaTracker:HandlePreTrackingRatedEvent();
 end

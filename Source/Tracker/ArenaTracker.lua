@@ -219,7 +219,7 @@ function ArenaTracker:GetSeasonPlayed(bracketIndex)
 		return nil;
 	end
 
-    local _, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
+	local seasonPlayed = API:GetSeasonPlayed(bracketIndex);
 	if(not seasonPlayed) then
 		return nil;
 	end

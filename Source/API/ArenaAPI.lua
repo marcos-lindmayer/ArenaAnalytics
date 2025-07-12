@@ -84,6 +84,11 @@ function API:GetCurrentSeason()
     return GetCurrentArenaSeason();
 end
 
+function API:GetSeasonPlayed(bracketIndex)
+    local _, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
+    return seasonPlayed;
+end
+
 function API:GetWinner()
     if(not API:IsInArena()) then
         return nil;
