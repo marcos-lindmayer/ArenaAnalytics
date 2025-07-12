@@ -60,17 +60,19 @@ function ArenaTracker:HandleArenaGatesOpened(...)
 	currentArena.startTime = time();
 	currentArena.hasRealStartTime = true; -- The start time has been set by gates opened
 
-	local myWins, totalWins = ArenaTracker:GetCurrentWins();
-	currentArena.round.wins = myWins;
-	currentArena.round.totalWins = totalWins;
-	Debug:LogGreen("Assigned round wins:", myWins, totalWins);
-
 	ArenaTracker:FillMissingPlayers();
 	ArenaTracker:ForceTeamsUpdate();
 	ArenaTracker:UpdateRoundTeam();
 
-	currentArena.round.startTime = time();
-	currentArena.round.hasStarted = true;
+	if(ArenaTracker:IsTrackingShuffle()) then
+		local myWins, totalWins = ArenaTracker:GetCurrentWins();
+		currentArena.round.wins = myWins;
+		currentArena.round.totalWins = totalWins;
+		Debug:Log("Assigned round wins:", myWins, totalWins);
+
+		currentArena.round.startTime = time();
+		currentArena.round.hasStarted = true;
+	end
 
 	Debug:LogGreen("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
 end

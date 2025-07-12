@@ -27,31 +27,34 @@ end
 
 -- Begins capturing data for the current arena
 -- Gets arena player, size, map, ranked/skirmish
-function ArenaTracker:HandleArenaStart()
-	if(ArenaTracker:IsTrackingArena()) then
-		Debug:LogGreen("HandleArenaStart: Already tracking arena!");
+function ArenaTracker:HandleArenaStart(stateData)
+	local battlefieldId = stateData.battlefieldId;
+	if(not battlefieldId) then
+		Debug:LogError("HandleArenaStart called for invalid battlefieldId!");
 		return;
 	end
 
-	Debug:LogGreen("HandleArenaStart");
-
-	-- Retrieve current arena info
-	local battlefieldId = currentArena.battlefieldId or API:GetActiveBattlefieldID();
-	if(not battlefieldId) then
+	if(ArenaTracker:IsTrackingArena()) then
+		Debug:Log("HandleArenaStart: Already tracking arena!");
 		return;
 	end
 
 	local status, bracket, teamSize, matchType = API:GetBattlefieldStatus(battlefieldId);
 	local bracketIndex = ArenaAnalytics:GetAddonBracketIndex(bracket);
 
-	ArenaTracker:HandleScoreUpdate();
-
-	if(not ArenaTracker:IsTrackingCurrentArena(battlefieldId, bracketIndex)) then
-		Debug:Log("HandleArenaStart resetting currentArena");
-		ArenaTracker:Reset();
-	else
-		Debug:LogGreen("Keeping existing tracking!", currentArena.oldRating, currentArena.startTime, currentArena.hasRealStartTime, time());
+	-- Bail out if it ended by now
+	if (status ~= "active" or not teamSize) then
+		Debug:LogError("HandleArenaStart bailing out. Status:", status, "Team Size:", teamSize);
+		return;
 	end
+
+	if(not ArenaTracker:IsInState("Pending")) then
+		return;
+	end
+
+	ArenaTracker:SetState("Starting");
+
+	Debug:LogGreen("HandleArenaStart:     ", stateData.bracket, stateData.matchType, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
 
 	-- DB and transient versions
 	currentArena.isTracking = true;
@@ -59,16 +62,11 @@ function ArenaTracker:HandleArenaStart()
 
 	currentArena.battlefieldId = battlefieldId;
 
-	-- Bail out if it ended by now
-	if (status ~= "active" or not teamSize) then
-		Debug:Log("HandleArenaStart bailing out. Status:", status, "Team Size:", teamSize);
-		return false;
-	end
-
 	-- Update start time immediately, might be overridden by gates open if it hasn't happened yet.
 	currentArena.startTime = tonumber(currentArena.startTime) or time();
 
 	currentArena.playerName = Helpers:GetPlayerName();
+	currentArena.mySpec = stateData.mySpec or API:GetSpecialization();
 
 	currentArena.size = teamSize;
 
@@ -79,15 +77,7 @@ function ArenaTracker:HandleArenaStart()
 	Debug:Log("TeamSize:", teamSize, currentArena.size, "Bracket:", bracket);
 
 	if(ArenaTracker:IsRated()) then
-		currentArena.seasonPlayed = ArenaTracker:GetSeasonPlayed(currentArena.bracketIndex); -- Season Played during the match
-		local rating, lastRating = ArenaRatedInfo:GetRatedInfo(bracketIndex, currentArena.seasonPlayed);
-
-		Debug:LogTemp("Active arena season played:", currentArena.seasonPlayed);
-
-		if(not API:GetWinner()) then
-			currentArena.oldRating = lastRating;
-			Debug:LogTemp("Setting old rating and seasonPlayed on arena start:", currentArena.oldRating, currentArena.seasonPlayed);
-		end
+		currentArena.seasonPlayed = stateData.seasonPlayed; -- Post match season played
 	end
 
 	-- Add self
@@ -97,7 +87,7 @@ function ArenaTracker:HandleArenaStart()
 		local name = currentArena.playerName;
 		local race_id = Helpers:GetUnitRace("player");
 		local class_id = Helpers:GetUnitClass("player");
-		local spec_id = API:GetSpecialization() or class_id;
+		local spec_id = currentArena.mySpec or class_id;
 		Debug:Log("Using MySpec:", spec_id);
 
 		local player = ArenaTracker:CreatePlayerTable(false, GUID, name, race_id, spec_id);
@@ -113,9 +103,11 @@ function ArenaTracker:HandleArenaStart()
 
 	ArenaTracker:ForceTeamsUpdate();
 
+	ArenaTracker:SetState("Active");
 	Events:RegisterArenaEvents();
 
-	-- TODO: Determine if this fits updated init flow
-	RequestRatedInfo();
-	RequestBattlefieldScoreData();
+	-- End immediately
+	if(API:GetWinner() ~= nil) then
+		ArenaTracker:HandleArenaEnd(); -- TODO: Consider 1 frame delay?
+	end
 end

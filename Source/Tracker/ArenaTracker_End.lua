@@ -25,6 +25,7 @@ function ArenaTracker:InitializeSubmodule_End()
     currentArena = ArenaAnalyticsTransientDB.currentArena;
 end
 
+
 -- Gets arena information when it ends and the scoreboard is shown
 -- Matches obtained info with previously collected player values
 function ArenaTracker:HandleArenaEnd()
@@ -35,9 +36,14 @@ function ArenaTracker:HandleArenaEnd()
 
 	Events:UnregisterArenaEvents();
 
-	-- We already got here
+	-- Not ready to end yet
+	if(not ArenaTracker:IsInState("Active")) then
+		return;
+	end
+
+	ArenaTracker:SetState("Ended");
+
 	if(currentArena.endedProperly) then
-		Debug:LogWarning("HandleArenaEnd called more than once.");
 		return;
 	end
 
@@ -52,6 +58,10 @@ function ArenaTracker:HandleArenaEnd()
 	ArenaTracker:HandleRoundEnd(true);
 
 	local winner = API:GetWinner();
+
+	-- TODO: Get rated info and validate season played to be post match season played
+	RequestRatedInfo();
+
 	local players = {};
 
 	-- Figure out how to default to nil, without failing to count losses.

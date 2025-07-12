@@ -439,10 +439,10 @@ end
 -- Enemy Rating (9)
 
 function ArenaMatch:GetEnemyRating(match)
-    if(not match) then 
-        return nil 
-    end;
-    
+    if(not match) then
+        return nil;
+    end
+
     local key = matchKeys.enemy_rating;
     return match and tonumber(match[key]);
 end

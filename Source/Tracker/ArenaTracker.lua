@@ -17,6 +17,73 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 
 -------------------------------------------------------------------------
 
+ArenaTracker.States = {
+	None = 1,		-- Not in arena and not tracking
+	Pending = 2,	-- Tracking is starting up, awaiting data 
+	Starting = 3,	-- 
+	Active = 4,		-- Arena is actively being tracked
+	Ended = 5,		-- HandleArenaEnd has been triggered
+};
+
+-- Reverse lookup for numeric → string
+ArenaTracker.TrackingStateNames = {}
+for name, num in pairs(ArenaTracker.States) do
+	ArenaTracker.TrackingStateNames[num] = name;
+end
+
+ArenaTracker.state = ArenaTracker.States.None;
+
+-- Converts string → numeric tracking state
+function ArenaTracker:ToState(value)
+	local state = nil;
+
+	if(type(value) == "number") then
+		assert(self.TrackingStateNames[value], "Invalid ");
+		return value;
+	end
+
+	state = value and self.States[value];
+
+	assert(state, "Invalid state name: " .. (value or "nil"));
+	return state;
+end
+
+-- Gets numeric state
+function ArenaTracker:GetCurrentState()
+	return self.state;
+end
+
+function ArenaTracker:GetState(stateName)
+	if(not stateName) then
+		return self.state;
+	end
+
+	return self.States[stateName] or "Invalid";
+end
+
+-- Converts numeric → string tracking state
+function ArenaTracker:GetStateName(stateNum)
+	stateNum = stateNum or self.state;
+	return self.TrackingStateNames[stateNum] or "Invalid";
+end
+
+-- Sets the current tracking state by string name
+function ArenaTracker:SetState(stateName)
+	local stateNum = self:ToState(stateName);
+	self.lastState = self.state;
+	self.state = stateNum;
+
+	Debug:Log("Setting tracking state:", self.state, stateName, "lastState:", self.lastState, ArenaTracker:GetStateName(self.lastState));
+end
+
+-- Checks if state matches a given name
+function ArenaTracker:IsInState(stateName)
+	Debug:Log("Setting tracking state:", self.lastState, self.state, self:ToState(stateName));
+	return self.state == self:ToState(stateName);
+end
+
+-------------------------------------------------------------------------
+
 local currentArena = {}; -- Not yet initialized
 
 local function ReinitializeCurrentArena()
@@ -25,8 +92,8 @@ local function ReinitializeCurrentArena()
 end
 
 -- Arena variables
-ArenaTracker.hasReceivedScore = false;
-ArenaTracker.isTracking = false;
+ArenaTracker.hasReceivedScore = nil;
+ArenaTracker.isTracking = nil;
 
 function ArenaTracker:GetCurrentArena()
 	return ArenaAnalyticsTransientDB and ArenaAnalyticsTransientDB.currentArena;
@@ -75,6 +142,7 @@ function ArenaTracker:Reset()
 	currentArena.mapId = nil;
 
 	currentArena.playerName = nil;
+	currentArena.mySpec = nil;
 
 	currentArena.hasStartTime = nil; -- Start time existed before fixing at the end
 	currentArena.hasRealStartTime = nil; -- Start time was set explicitly by gates opening
@@ -116,10 +184,23 @@ end
 function ArenaTracker:Clear()
 	Debug:Log("Clearing current arena.");
 
-	ArenaTracker:Reset();
+	ArenaTracker.hasReceivedScore = nil;
+	ArenaTracker.isTracking = nil;
+	ArenaTracker:SetState("None");
 
-	ArenaTracker.hasReceivedScore = false;
-	ArenaTracker.isTracking = false;
+	ArenaTracker:Reset();
+end
+
+function ArenaTracker:HasReliableOutcome()
+	if(currentArena.winner ~= nil) then
+		return true;
+	end
+
+	if(API:GetWinner() ~= nil) then
+		return true;
+	end
+
+	return false;
 end
 
 -- Returns the season played expected once the active arena ends
@@ -139,7 +220,7 @@ function ArenaTracker:GetSeasonPlayed(bracketIndex)
 	end
 
     local _, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
-	if(type(seasonPlayed) ~= "number") then
+	if(not seasonPlayed) then
 		return nil;
 	end
 
@@ -147,6 +228,9 @@ function ArenaTracker:GetSeasonPlayed(bracketIndex)
         seasonPlayed = seasonPlayed + 1;
     end
 
+	if(seasonPlayed < currentArena.seasonPlayed) then
+		Debug:LogError("ArenaTracker:GetSeasonPlayed", seasonPlayed, API:GetWinner(), currentArena.winner, currentArena.seasonPlayed);
+	end
     return seasonPlayed;
 end
 
@@ -200,53 +284,36 @@ function ArenaTracker:HasSpec(GUID)
 	return player and Helpers:IsSpecID(player.spec);
 end
 
-function ArenaTracker:HandleRatedUpdate()
-	if(not API:IsInArena() or not ArenaTracker:IsTrackingArena()) then
-		return;
-	end
-
-	if(currentArena.bracketIndex == nil) then
-		return;
-	end
-
-	-- Get the season played including current match
-	local postMatchSeasonPlayed = ArenaTracker:GetSeasonPlayed(currentArena.bracketIndex);
-	if(not postMatchSeasonPlayed) then
-		return;
-	end
-
-	-- Get the current and last rating relative to post match season played
-	local rating, lastRating = ArenaRatedInfo:GetRatedInfo(currentArena.bracketIndex, postMatchSeasonPlayed);
-	if(not rating and not lastRating) then
-		return;
-	end
-
-	currentArena.rating = currentArena.rating or rating; -- Assumed nil during the arena
-	currentArena.oldRating = lastRating;
-end
-
 function ArenaTracker:HandleScoreUpdate()
+	if(not API:IsInArena()) then
+		return;
+	end
+
+	ArenaTracker:HandlePreTrackingScoreEvent();
+
+	if(not ArenaTracker:IsTrackingArena()) then
+		return;
+	end
+
 	ArenaTracker.hasReceivedScore = true;
 	currentArena.winner = API:GetWinner() or currentArena.winner;
-	currentArena.seasonPlayed = ArenaTracker:GetSeasonPlayed();
 end
 
-function ArenaTracker:HasReliableOutcome()
+function ArenaTracker:HandleRatedUpdate()
+	if(not API:IsInArena()) then
+		return;
+	end
+
+	ArenaTracker:HandlePreTrackingRatedEvent();
+
+	if(not ArenaTracker:IsTrackingArena()) then
+		return;
+	end
+
+	-- We can't trust seasonPlayed from ratedInfo before we know of a winner
 	if(currentArena.winner ~= nil) then
-		return true;
+		currentArena.seasonPlayed = ArenaTracker:GetSeasonPlayed(currentArena.bracketIndex) or currentArena.seasonPlayed;
 	end
-
-	local winner = API:GetWinner();
-	if(winner ~= nil) then
-		return true;
-	end
-
-	-- Assume we'll stay up to date after receiving the score since last reload
-	if(ArenaTracker.hasReceivedScore) then
-		return true;
-	end
-
-	return false;
 end
 
 -- Search for missing members of group (party or arena), 
@@ -578,6 +645,8 @@ end
 
 function ArenaTracker:Initialize()
 	ReinitializeCurrentArena();
+
+	ArenaTracker:SetState("None");
 
 	-- Initialize submodules
 	ArenaTracker:InitializeSubmodule_Enter();

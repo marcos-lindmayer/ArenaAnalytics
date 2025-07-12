@@ -90,7 +90,15 @@ end
 function ArenaAnalytics:InitializeTransientDB()
 	ArenaAnalyticsTransientDB = ArenaAnalyticsTransientDB or {};
 	ArenaAnalyticsTransientDB.currentArena = ArenaAnalyticsTransientDB.currentArena or {};
+
 	ArenaAnalyticsTransientDB.ratedInfo = ArenaAnalyticsTransientDB.ratedInfo or {};
+
+	local currentSeason = API:GetCurrentSeason();
+	if(currentSeason) then
+		if(currentSeason ~= ArenaAnalyticsTransientDB.ratedInfo.seasonPlayed) then
+			ArenaAnalyticsTransientDB.ratedInfo = {}; -- Force reset invalid season data
+		end
+	end
 end
 
 function ArenaAnalytics:InitializeArenaAnalyticsDB()

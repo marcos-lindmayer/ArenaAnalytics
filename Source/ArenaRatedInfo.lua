@@ -16,6 +16,11 @@ local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
+local function GetBracketRatedInfo(bracketIndex)
+	ArenaAnalyticsTransientDB.ratedInfo[bracketIndex] = ArenaAnalyticsTransientDB.ratedInfo[bracketIndex] or {};
+	return ArenaAnalyticsTransientDB.ratedInfo[bracketIndex];
+end
+
 -- Fix to deal deal with missed arenas (Clear & start over if seasonPlayed is nil or outdated)
 local function UpdateBracketCachedRatings(bracketIndex, seasonPlayed, rating)
 	bracketIndex = tonumber(bracketIndex);
@@ -26,8 +31,12 @@ local function UpdateBracketCachedRatings(bracketIndex, seasonPlayed, rating)
 		return;
 	end
 
-	ArenaAnalyticsTransientDB.ratedInfo[bracketIndex] = ArenaAnalyticsTransientDB.ratedInfo[bracketIndex] or {};
-	local ratedInfo = ArenaAnalyticsTransientDB.ratedInfo[bracketIndex];
+	local ratedInfo = GetBracketRatedInfo(bracketIndex);
+
+	-- Store the last season played known from outside arenas (May update twice after early leaves)
+	if(not API:IsInArena()) then
+		ratedInfo.lastWorldSeasonPlayed = seasonPlayed;
+	end
 
 	if(not ratedInfo.seasonPlayed or (seasonPlayed - 1 > ratedInfo.seasonPlayed)) then
 		ratedInfo.seasonPlayed = seasonPlayed;
@@ -65,7 +74,7 @@ function ArenaRatedInfo:GetRatedInfo(bracketIndex, seasonPlayed)
 		return nil;
 	end
 
-	local ratedInfo = ArenaAnalyticsTransientDB.ratedInfo[bracketIndex];
+	local ratedInfo = GetBracketRatedInfo(bracketIndex);
 	if(not ratedInfo) then
 		Debug:LogWarning("ArenaRatedInfo:GetRatedInfo called for bracket:", bracketIndex, "with no cached values.");
 		return nil;

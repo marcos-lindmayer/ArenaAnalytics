@@ -135,7 +135,7 @@ Commands.list = {
 
 		if(API and API.IsInArena()) then
 			ArenaAnalytics:Print("Arena Map ID:", API:GetCurrentMapID(), GetZoneText());
-			ArenaAnalytics:Print("BattlefieldWinner", API:GetWinner());
+			ArenaAnalytics:Print("BattlefieldWinner", API:GetWinner(), ArenaTracker:GetSeasonPlayed());
 		end
 		print(" ");
 	end,

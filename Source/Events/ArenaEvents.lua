@@ -42,8 +42,7 @@ local arenaEvents = {
 };
 
 local globalEvents = {
-	--"UPDATE_BATTLEFIELD_STATUS",
-	--"ZONE_CHANGED_NEW_AREA",
+	"UPDATE_BATTLEFIELD_SCORE",
 	"PVP_RATED_STATS_UPDATE",
 	"UPDATE_BATTLEFIELD_STATUS",
 
@@ -93,7 +92,7 @@ local function HandleZoneChanged(isLoad)
 		-- Handle exit here?
 		if(ArenaTracker:IsTrackingArena()) then
 			Debug:LogTemp("Zone changed calling HandleExit!");
-			C_Timer.After(1, ArenaTracker.HandleArenaExit);
+			C_Timer.After(0, ArenaTracker.HandleArenaExit);
 		end
 
 		-- Clear the flag signifying that a current arena was loaded into after login or reload
@@ -102,12 +101,16 @@ local function HandleZoneChanged(isLoad)
 end
 
 -- Manual management of zone change, counting only between arena and non-arena
-Events.wasInArena = nil;
-function Events:HandleStatusUpdate(isLoad)
+ArenaAnalytics.wasInArena = nil;
+function Events:CheckZoneChanged(isLoad)
 	local isInArena = API:IsInArena();
 
-	if(Events.wasInArena ~= isInArena) then
-		Events.wasInArena = isInArena;
+	if(not isInArena) then
+		ArenaAnalytics.hasMatchEnded = false;
+	end
+
+	if(ArenaAnalytics.wasInArena ~= isInArena) then
+		ArenaAnalytics.wasInArena = isInArena;
 
 		HandleZoneChanged(isLoad);
 	end
@@ -117,14 +120,12 @@ local function HandleRatedUpdate(...)
 	ArenaAnalytics:TryFixLastMatchRating();
 	ArenaRatedInfo:UpdateRatedInfo();
 
-	ArenaTracker:HandleRatedUpdate();
+	ArenaTracker:HandlePreTrackingRatedEvent();
 end
 
 -- Assigns behaviour for "global" events
 -- ZONE_CHANGED_NEW_AREA: Tracks if player left the arena before it ended
 function Events:HandleGlobalEvent(event, ...)
-	Debug:LogTemp("Global:", event, API:IsInArena(), ...);
-
 	-- Inspect debugging
 	if(event == "INSPECT_READY") then
 		if(Debug.HandleDebugInspect) then
@@ -135,10 +136,11 @@ function Events:HandleGlobalEvent(event, ...)
 
 	if(event == "PVP_RATED_STATS_UPDATE") then
 		HandleRatedUpdate(...);
-	elseif(event == "ZONE_CHANGED_NEW_AREA") then
-		--C_Timer.After(0, HandleZoneChanged);
+	elseif(event == "UPDATE_BATTLEFIELD_SCORE") then
+		Events:CheckZoneChanged();
+		ArenaTracker:HandlePreTrackingScoreEvent(...);
 	elseif(event == "UPDATE_BATTLEFIELD_STATUS") then
-		Events:HandleStatusUpdate();
+		Events:CheckZoneChanged();
 	end
 end
 
@@ -159,7 +161,7 @@ function Events:HandleArenaEvent(event, ...)
 		end
 
 	elseif(event == "PVP_RATED_STATS_UPDATE") then
-		C_Timer.After(0, ArenaTracker.HandleRatedUpdate);
+		ArenaTracker:HandleRatedUpdate();
 		ArenaTracker:CheckRoundEnded();
 
 	elseif (event == "UNIT_AURA") then
@@ -288,7 +290,7 @@ function Events:OnLoad()
 	hasLoaded = true;
 
 	Debug:LogGreen("Events:OnLoad() triggered!");
-	Events.wasInArena = API:IsInArena();
+	ArenaAnalytics.wasInArena = API:IsInArena();
 
 	Events:RegisterGlobalEvents();
 

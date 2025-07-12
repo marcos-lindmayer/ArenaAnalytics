@@ -54,12 +54,11 @@ local initializationStages = {
 local stages = {};
 
 function Initialization:HandleLoadEvents(event, ...)
+	assert(event);
+
 	if(Initialization.hasLoaded) then
 		return;
 	end
-
-	assert(event);
-	Debug:LogGreen("Initialization:HandleLoadEvents", event, ...);
 
 	if(Initialization.receivedEvents[event]) then
 		Debug:LogError("Initialization event received twice:", event, "!", ...);
@@ -156,17 +155,13 @@ end
 -- Initiate tracking if in arena, otherwise skip
 function stages.Step5_InitiateTracking()
 	Initialization:InitiateStep(5);
-	Debug:LogGreen("Step5_InitiateTracking()", API:IsInArena());
+	Debug:LogTemp("Step5_InitiateTracking()", API:IsInArena());
 
 	-- Force a status update and set initial wasInArena
-	Events:HandleStatusUpdate(true);
+	Events:CheckZoneChanged(true);
 
 	if(API:IsInArena()) then
 		ArenaAnalytics.loadedIntoArena = true; -- Limit Events module from entering the arena
-
-		--Debug:Log("Step5_InitiateTracking() triggering HandleArenaEnter()");
-		--C_Timer.After(1, function() ArenaTracker:HandleArenaEnter(true) end);
-		--ArenaTracker:HandleArenaEnter(true);
 	else
 		Debug:Log("Step5_InitiateTracking() triggering ArenaTracker:Clear()");
 		ArenaTracker:Clear();

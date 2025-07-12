@@ -197,7 +197,6 @@ local function GetQuickSearchTokens(player, team, btn)
     -- Team
     local newSimpleTeamToken = nil;
     if(CheckShortcut(Options:Get("quickSearchAction_ClickedTeam"), btn)) then
-        Debug:Log("Team of clicked player!", team);
         newSimpleTeamToken = Search:CreateToken(Helpers:ToSafeLower(team));
     elseif(CheckShortcut(Options:Get("quickSearchAction_Team"), btn)) then
         newSimpleTeamToken = Search:CreateToken("team");

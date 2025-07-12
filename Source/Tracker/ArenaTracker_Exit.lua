@@ -50,6 +50,7 @@ function ArenaTracker:HandleArenaExit()
 		Debug:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
 	end
 
+	-- TODO: FIX using dedicated module
 	-- Rated match
 	if(ArenaTracker:IsRated() and not currentArena.partyRating) then
 		local newRating, seasonPlayed = API:GetPersonalRatedInfo(currentArena.bracketIndex);
