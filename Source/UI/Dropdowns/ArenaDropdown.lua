@@ -130,13 +130,15 @@ function Dropdown:Create(parent, dropdownType, frameName, config, width, height,
     return self;
 end
 
-function Dropdown:Refresh()
+function Dropdown:Refresh(skipRefreshAll)
     assert(self, "Invalid instance provided. Call Dropdown:RefreshAll() for a static alternative.");
     if(self.selected) then
         self.selected:Refresh();
     end
-    
-    Dropdown:RefreshAll();
+
+    if(not skipRefreshAll) then
+        Dropdown:RefreshAll();
+    end
 end
 
 ---------------------------------

@@ -6,7 +6,6 @@ local _, ArenaAnalytics = ...; -- Namespace
 ArenaAnalytics.Colors = {};
 ArenaAnalytics.Prints = {};
 ArenaAnalytics.Debug = {};
-ArenaAnalytics.Constants = {};
 ArenaAnalytics.Commands = {};
 
 ArenaAnalytics.Constants = {};

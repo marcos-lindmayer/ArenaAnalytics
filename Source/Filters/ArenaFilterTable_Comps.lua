@@ -17,7 +17,7 @@ FilterTables.comps = {}
 FilterTables.enemyComps = {}
 
 local function IsDisabled()
-    return not Filters:IsFilterActive("Filter_Bracket");
+    return not Filters:IsFilterActive(Filters.FilterKeys.Bracket);
 end
 
 local function MakeMainButtonTable(key)
@@ -43,16 +43,16 @@ local function AddEntry(entryTable, comp, filterKey)
     });
 end
 
-local function GenerateCompEntries(key)
-    assert(key == "Filter_Comp" or key == "Filter_EnemyComp");
+local function GenerateCompEntries(compKey)
+    assert(compKey == Filters.FilterKeys.TeamComp or compKey == Filters.FilterKeys.EnemyComp);
     local entryTable = TablePool:Acquire();
     entryTable.maxVisibleEntries = Options:Get("compDropdownVisibileLimit");
 
     local requiredPlayedCount = Options:Get("minimumCompsPlayed") or 0;
-    local comps = ArenaAnalytics:GetCurrentCompDataSorted(key);
+    local comps = ArenaAnalytics:GetCurrentCompDataSorted(compKey);
     for _,compData in ipairs(comps) do
         if(not compData.played or compData.played >= requiredPlayedCount) then
-            AddEntry(entryTable, compData.comp, key);
+            AddEntry(entryTable, compData.comp, compKey);
         end
     end
 
@@ -61,12 +61,12 @@ end
 
 function FilterTables:Init_Comps()
     FilterTables.comps = {
-        mainButton = MakeMainButtonTable("Filter_Comp"),
-        entries = function() return GenerateCompEntries("Filter_Comp") end,
-    }
+        mainButton = MakeMainButtonTable(Filters.FilterKeys.TeamComp),
+        entries = function() return GenerateCompEntries(Filters.FilterKeys.TeamComp) end,
+    };
 
     FilterTables.enemyComps = {
-        mainButton = MakeMainButtonTable("Filter_EnemyComp"),
-        entries = function() return GenerateCompEntries("Filter_EnemyComp") end,
-    }
+        mainButton = MakeMainButtonTable(Filters.FilterKeys.EnemyComp),
+        entries = function() return GenerateCompEntries(Filters.FilterKeys.EnemyComp) end,
+    };
 end

@@ -155,6 +155,7 @@ local SearchTokenTypeTable = {
             [1] = { "restoration druid", "resto druid", "rdruid", "rd" },
             [2] = { "feral", "fdruid" },
             [3] = { "balance", "bdruid", "moonkin", "boomkin", "boomy" },
+            [4] = { "guardian" },
 
             -- Paladin
             [11] = { "holy paladin", "holy pala", "holy pal", "hpal", "hpala", "hpaladin", "holypaladin", "holypala" },
@@ -209,8 +210,8 @@ local SearchTokenTypeTable = {
             [103] = { "windwalker", "wwmonk", "ww" },
 
             -- Demon Hunter
-            [111] = { "havoc", "hdh" },
-            [112] = { "vengeance", "vdh" },
+            [111] = { "vengeance", "vdh" },
+            [112] = { "havoc", "hdh" },
 
             -- Evoker
             [121] = { "preservation", "prevoker", "pres" },

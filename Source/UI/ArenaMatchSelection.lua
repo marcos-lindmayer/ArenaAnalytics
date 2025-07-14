@@ -33,7 +33,7 @@ end
 
 local function selectMatchByIndex(index, autoCommit, isDeselect)
     autoCommit = autoCommit or IsControlKeyDown();
-    if(ArenaAnalytics:GetFilteredMatch(index) ~= nil) then
+    if(IsValidMatch(index)) then
         if (isDeselect) then
             if autoCommit then
                 Selection.selectedGames[index] = nil;
@@ -121,7 +121,7 @@ local function selectRange(startIndex, endIndex, includeStartSession, includeEnd
 
     local startSession = ArenaMatch:GetSession(ArenaAnalytics:GetFilteredMatch(startIndex));
     local endSession = ArenaMatch:GetSession(ArenaAnalytics:GetFilteredMatch(endIndex));
-    
+
     for i = minIndex, maxIndex do
         -- Skip matches that belong to the same session as the start and end index,
         -- unless includeStartSession or includeEndSession is true

@@ -25,11 +25,6 @@ local Prints = ArenaAnalytics.Prints;
 -- ensuring all modules functions has been declared
 -------------------------------------------------------------------------
 
--- Whether Events module is allowed to handle entering arena.
-function Initialization:HasTrackingControl()
-	return not Initialization.hasLoaded or ArenaAnalytics.loadedIntoArena;
-end
-
 -- Await VARIABLES_LOADED and other early events
 ArenaAnalyticsScrollFrame:Hide();
 Events:Initialize();
@@ -101,7 +96,6 @@ function stages.Step2_VariablesLoaded()
 	Debug:LogTemp("Step2_VariablesLoaded:", IsLoggedIn());
 
 	-- Initialize DBs
-	ArenaAnalytics:InitializeTransientDB();
 	ArenaAnalytics:InitializeArenaAnalyticsDB();
 
 	-- Log current debug level, if non-zero
@@ -111,7 +105,6 @@ function stages.Step2_VariablesLoaded()
 	-- Initialize modules
 	---------------------------------
 
-	ArenaTracker:Initialize();
 	Options:Init();
 	Commands:Initialize();
 	Bitmap:Initialize();
@@ -156,6 +149,8 @@ end
 function stages.Step5_InitiateTracking()
 	Initialization:InitiateStep(5);
 	Debug:LogTemp("Step5_InitiateTracking()", API:IsInArena());
+
+	ArenaTracker:Initialize();
 
 	-- Force a status update and set initial wasInArena
 	Events:CheckZoneChanged(true);

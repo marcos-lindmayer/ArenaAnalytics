@@ -10,7 +10,6 @@ local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
--- TODO: DEtermine desired order, and whether index order matters
 API.classTokens = {
     -- Classic/TBC
     "WARRIOR",
@@ -79,7 +78,6 @@ function API:GetMaxSpecializationsForClass(classIndex)
     return nil;
 end
 
--- TODO: Custom off season logic?
 function API:GetCurrentSeason()
     return GetCurrentArenaSeason();
 end

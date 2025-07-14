@@ -674,10 +674,10 @@ function VersionManager:RevertIndexBasedNameAndRealm()
             return;
         end
 
-        for i,isEnemy in ipairs({false, true}) do
+        for _,isEnemy in ipairs({false, true}) do
             local team = ArenaMatch:GetTeam(match, isEnemy);
             if(type(team) == "table") then
-                for i,player in ipairs(team) do
+                for _,player in ipairs(team) do
                     local name = player[oldPlayerKeys.name];
                     local realm = player[oldPlayerKeys.realm];
 
@@ -760,7 +760,7 @@ function VersionManager:ConvertRoundAndPlayerFormat()
         end
 
         -- For each player
-        for i,isEnemy in ipairs({false, true}) do
+        for _,isEnemy in ipairs({false, true}) do
             local team = ArenaMatch:GetTeam(match, isEnemy);
             local newTeam = {}
 

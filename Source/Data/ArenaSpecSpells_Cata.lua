@@ -25,7 +25,7 @@ local specSpells = {
     [ 80313 ] = 2, -- Pulverize
     [ 33983 ] = 2, -- Berserk
     [ 17007 ] = 2, -- Leader of the Pack
-    
+
     -- Balance
     [ 78674 ] = 3, -- Starsurge
     [ 24858 ] = 3, -- Moonkin Form
@@ -51,7 +51,7 @@ local specSpells = {
     [ 20925 ] = 12, -- Holy Shield
     [ 20927 ] = 12, -- Divine Guardian
     [ 20928 ] = 12, -- Ardent Defender
-    
+
     -- Retribution
     [ 85256 ] = 14, -- Templar's Verdict
     [ 53385 ] = 14, -- Divine Storm
@@ -63,7 +63,7 @@ local specSpells = {
 
     --------------------------------------------------------
     -- SHAMAN
-    
+
     -- Restoration
     [ 974 ] = 21, -- Earth Shield
     [ 16188 ] = 21, -- Nature's Swiftness
@@ -74,7 +74,7 @@ local specSpells = {
     [ 51490 ] = 22, -- Thunderstorm
     [ 16166 ] = 22, -- Elemental Mastery
     [ 61882 ] = 22, -- Earthquake
-    
+
     -- Enhancement
     [ 60103 ] = 23, -- Lava Lash
     [ 17364 ] = 23, -- Stormstrike
@@ -136,7 +136,7 @@ local specSpells = {
     [ 11958 ] = 51, -- Cold Snap
     [ 11426 ] = 51, -- Ice Barrier
     [ 44572 ] = 51, -- Deep Freeze
-   
+
     -- Fire
     [ 11366 ] = 52, -- Pyroblast
     [ 11113 ] = 52, -- Blast Wave
@@ -223,7 +223,7 @@ local specSpells = {
     [ 12292 ] = 83, -- Death Wish
     [ 85288 ] = 83, -- Raging Blow
     [ 60970 ] = 83, -- Heroic Fury
-    
+
     --------------------------------------------------------
     -- PRIEST
 
@@ -259,7 +259,7 @@ local specSpells = {
 local debugSpells = {
     -- Feral
     [ 17007 ] = 2, -- Leader of the Pack
-    
+
     -- Subtlety
     [ 51698 ] = 61, -- Honor Among Thieves
 

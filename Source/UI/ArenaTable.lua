@@ -34,9 +34,6 @@ function ArenaAnalytics:SetFrameText(frame, text, color)
     frame:SetText(text);
 end
 
--- Filtered stats
-local wins, sessionGames, sessionWins = 0, 0, 0;
-
 function AAtable:GetDropdownTemplate(overrideTemplate)
     return overrideTemplate or API.defaultButtonTemplate or "UIPanelButtonTemplate";
 end
@@ -53,11 +50,11 @@ function AAtable:CreateButton(point, relativeFrame, relativePoint, xOffset, yOff
     btn:SetNormalFontObject("GameFontHighlight");
     btn:SetHighlightFontObject("GameFontHighlight");
     btn:SetDisabledFontObject("GameFontDisableSmall");
-    
+
     if(btn.money) then
         btn.money:Hide();
     end
-    
+
     return btn;
 end
 
@@ -258,7 +255,7 @@ function AAtable:OnLoad()
     hasLoaded = true;
 
     -- This will also update UI
-    Filters:Refresh();
+    C_Timer.After(0, function() Filters:Refresh(true) end);
 
     -- Default to hidden
     ArenaAnalyticsScrollFrame:Hide();
@@ -487,18 +484,22 @@ function AAtable:CreateDropdownForFilterComps(isEnemyComp)
 end
 
 -- Forcefully clear and recreate the comp filters for new filters. Optionally staying visible.
-function AAtable:ForceRefreshFilterDropdowns()
+function AAtable:ForceRefreshFilterDropdowns(skipRefreshAll)
     if(not hasLoaded) then
         Debug:Log("ForceRefresh called before OnLoad. Skipped.");
         return;
     end
 
-    ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh();
-    ArenaAnalyticsScrollFrame.filterCompsDropdown:Refresh();
-    ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Refresh();
+    ArenaAnalyticsScrollFrame.filterBracketDropdown:Refresh(skipRefreshAll);
+    ArenaAnalyticsScrollFrame.filterCompsDropdown:Refresh(skipRefreshAll);
+    ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:Refresh(skipRefreshAll);
 end
 
 function AAtable:CheckUnsavedWarningThreshold()
+    if(not hasLoaded or not ArenaAnalytics.unsavedArenaCount) then
+        return;
+    end
+
     if(ArenaAnalytics.unsavedArenaCount >= Options:Get("unsavedWarningThreshold")) then
         -- Show and update unsaved arena threshold
         local unsavedWarningText = "|cffff0000" .. ArenaAnalytics.unsavedArenaCount .." unsaved matches!\n |cff00cc66/reload|r |cffff0000to save!|r"
@@ -536,6 +537,11 @@ function AAtable:HandleArenaCountChanged()
 
     Options:TriggerStateUpdates()
     AAtable:RefreshLayout();
+    AAtable:CheckUnsavedWarningThreshold();
+
+    if(Filters.isRefreshing) then
+        return;
+    end
 
     if(not ArenaAnalytics:HasStoredMatches() and ArenaAnalyticsScrollFrame.exportDialogFrame) then
         ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
@@ -545,10 +551,10 @@ function AAtable:HandleArenaCountChanged()
     local sessionGames, sessionWins, sessionLosses, sessionDraws = 0,0,0,0;
 
     -- Update arena count & winrate
-    for i=ArenaAnalytics.filteredMatchCount, 1, -1 do
+    for i=1, ArenaAnalytics.filteredMatchCount do
         local match, filteredSession = ArenaAnalytics:GetFilteredMatch(i);
         if(match and filteredSession) then
-            if(ArenaMatch:IsVictory(match)) then 
+            if(ArenaMatch:IsVictory(match)) then
                 wins = wins + 1;
             elseif(ArenaMatch:IsLoss(match)) then
                 losses = losses + 1;
@@ -559,7 +565,7 @@ function AAtable:HandleArenaCountChanged()
             if (filteredSession == 1) then
                 sessionGames = sessionGames + 1;
 
-                if(ArenaMatch:IsVictory(match)) then 
+                if(ArenaMatch:IsVictory(match)) then
                     sessionWins = sessionWins + 1;
                 elseif(ArenaMatch:IsLoss(match)) then
                     sessionLosses = sessionLosses + 1;
@@ -587,8 +593,6 @@ function AAtable:HandleArenaCountChanged()
 
     local valuesText = CombineStatsText(ArenaAnalytics.filteredMatchCount, wins, losses, draws);
     ArenaAnalyticsScrollFrame.overallStats:SetText(text .. valuesText);
-
-    AAtable:CheckUnsavedWarningThreshold();
 end
 
 function AAtable:UpdateSelected()
@@ -617,7 +621,7 @@ function AAtable:UpdateSelected()
         if(match) then
             total = total + 1;
 
-            if(ArenaMatch:IsVictory(match)) then 
+            if(ArenaMatch:IsVictory(match)) then
                 wins = wins + 1;
             elseif(ArenaMatch:IsLoss(match)) then
                 losses = losses + 1;
@@ -629,7 +633,7 @@ function AAtable:UpdateSelected()
         end
     end
 
-    local newSelectedText = ""
+    local newSelectedText = "";
 
     -- Update the UI
     if (total > 0) then
@@ -757,7 +761,7 @@ function AAtable:RefreshLayout()
                 Tooltips:DrawShuffleTooltip(button, match);
                 --PlayerTooltip:SetPoint("TOPRIGHT", playerFrame, "TOPLEFT");
             end
-            
+
             button:RegisterForClicks("LeftButtonDown", "RightButtonDown", "LeftButtonUp", "RightButtonUp");
             button:SetScript("OnClick", function(args, key, down)
                 if down then

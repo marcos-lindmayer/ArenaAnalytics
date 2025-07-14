@@ -85,7 +85,7 @@ local function HandleZoneChanged(isLoad)
 	Debug:LogGreen("HandleZoneChanged triggered", API:IsInArena(), ArenaTracker:IsTrackingArena());
 
 	if(API:IsInArena()) then
-		ArenaTracker:HandleArenaEnter(isLoad);
+		ArenaTracker:HandleArenaInitiate(isLoad);
 	else
 		Events:UnregisterArenaEvents();
 
@@ -137,10 +137,18 @@ function Events:HandleGlobalEvent(event, ...)
 	if(event == "PVP_RATED_STATS_UPDATE") then
 		HandleRatedUpdate(...);
 	elseif(event == "UPDATE_BATTLEFIELD_SCORE") then
+		Debug:Log("BattlefieldID", API:GetActiveBattlefieldID(), "Score");
 		Events:CheckZoneChanged();
 		ArenaTracker:HandlePreTrackingScoreEvent(...);
 	elseif(event == "UPDATE_BATTLEFIELD_STATUS") then
 		Events:CheckZoneChanged();
+
+		local battlefieldId = API:GetActiveBattlefieldID();
+		Debug:Log("BattlefieldID", battlefieldId, "Status");
+		if(battlefieldId) then
+			-- Internal checks to ignore invalid calls
+			ArenaTracker:HandleArenaEnter(battlefieldId);
+		end
 	end
 end
 

@@ -19,11 +19,13 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 
 ArenaTracker.States = {
 	None = 1,		-- Not in arena and not tracking
-	Pending = 2,	-- Tracking is starting up, awaiting data 
-	Starting = 3,	-- 
-	Active = 4,		-- Arena is actively being tracked
-	Ended = 5,		-- HandleArenaEnd has been triggered
+	Initiated = 2,	-- Tracking initiated, awaiting battlefieldId to enter pending state
+	Pending = 3,	-- Tracking is starting up, awaiting data 
+	Starting = 4,	-- HandleArenaStart in progress, not yet fully active
+	Active = 5,		-- Arena is actively being tracked
+	Ended = 6,		-- HandleArenaEnd has been triggered
 };
+ArenaTracker.state = ArenaTracker.States.None;
 
 -- Reverse lookup for numeric → string
 ArenaTracker.TrackingStateNames = {}
@@ -31,7 +33,6 @@ for name, num in pairs(ArenaTracker.States) do
 	ArenaTracker.TrackingStateNames[num] = name;
 end
 
-ArenaTracker.state = ArenaTracker.States.None;
 
 -- Converts string → numeric tracking state
 function ArenaTracker:ToState(value)
@@ -48,10 +49,12 @@ function ArenaTracker:ToState(value)
 	return state;
 end
 
+
 -- Gets numeric state
 function ArenaTracker:GetCurrentState()
 	return self.state;
 end
+
 
 function ArenaTracker:GetState(stateName)
 	if(not stateName) then
@@ -61,11 +64,13 @@ function ArenaTracker:GetState(stateName)
 	return self.States[stateName] or "Invalid";
 end
 
+
 -- Converts numeric → string tracking state
 function ArenaTracker:GetStateName(stateNum)
 	stateNum = stateNum or self.state;
 	return self.TrackingStateNames[stateNum] or "Invalid";
 end
+
 
 -- Sets the current tracking state by string name
 function ArenaTracker:SetState(stateName)
@@ -76,10 +81,22 @@ function ArenaTracker:SetState(stateName)
 	Debug:Log("Setting tracking state:", self.state, stateName, "lastState:", self.lastState, ArenaTracker:GetStateName(self.lastState));
 end
 
+
 -- Checks if state matches a given name
-function ArenaTracker:IsInState(stateName)
-	Debug:Log("Setting tracking state:", self.lastState, self.state, self:ToState(stateName));
-	return self.state == self:ToState(stateName);
+local function IsInState_Internal(stateName, index)
+	Debug:Log("Setting tracking state:", ArenaTracker.lastState, ArenaTracker.state, ArenaTracker:ToState(stateName), index);
+	return ArenaTracker.state == ArenaTracker:ToState(stateName);
+end
+
+function ArenaTracker:IsInState(...)
+	local states = {...};
+	for index in ipairs(states) do
+		if(IsInState_Internal(states[index], index)) then
+			return true;
+		end
+	end
+
+	return false;
 end
 
 -------------------------------------------------------------------------
@@ -95,9 +112,11 @@ end
 ArenaTracker.hasReceivedScore = nil;
 ArenaTracker.isTracking = nil;
 
+
 function ArenaTracker:GetCurrentArena()
 	return ArenaAnalyticsTransientDB and ArenaAnalyticsTransientDB.currentArena;
 end
+
 
 function ArenaTracker:IsShuffle()
 	return currentArena.bracket == "shuffle";
@@ -115,14 +134,6 @@ function ArenaTracker:IsSkirmish()
 	return currentArena.matchType == "skirmish";
 end
 
-function ArenaTracker:GetDeathData()
-	assert(currentArena);
-	if(type(currentArena.deathData) ~= "table") then
-		Debug:LogError("Force reset DeathData from non-table value!");
-		currentArena.deathData = TablePool:Acquire();
-	end
-	return currentArena.deathData;
-end
 
 -- Reset current arena values
 function ArenaTracker:Reset()
@@ -181,6 +192,7 @@ function ArenaTracker:Reset()
 	currentArena.round.startTime = nil;
 end
 
+
 function ArenaTracker:Clear()
 	Debug:Log("Clearing current arena.");
 
@@ -191,6 +203,7 @@ function ArenaTracker:Clear()
 	ArenaTracker:Reset();
 end
 
+
 function ArenaTracker:HasReliableOutcome()
 	if(currentArena.winner ~= nil) then
 		return true;
@@ -200,12 +213,17 @@ function ArenaTracker:HasReliableOutcome()
 		return true;
 	end
 
+	if(ArenaTracker.hasReceivedScore) then
+		return true;
+	end
+
 	return false;
 end
 
+
 -- Returns the season played expected once the active arena ends
 function ArenaTracker:GetSeasonPlayed(bracketIndex)
-    if(not API:IsInArena()) then
+    if(not API:IsInArena() or not ArenaTracker:IsRated()) then
         return nil;
     end
 
@@ -228,13 +246,15 @@ function ArenaTracker:GetSeasonPlayed(bracketIndex)
         seasonPlayed = seasonPlayed + 1;
     end
 
-	if(seasonPlayed < currentArena.seasonPlayed) then
-		Debug:LogError("ArenaTracker:GetSeasonPlayed", seasonPlayed, API:GetWinner(), currentArena.winner, currentArena.seasonPlayed);
+	if(currentArena.seasonPlayed and seasonPlayed < currentArena.seasonPlayed) then
+		Debug:LogWarning("ArenaTracker:GetSeasonPlayed trying to reduce post match season played.", seasonPlayed, API:GetWinner(), currentArena.winner, currentArena.seasonPlayed);
 	end
     return seasonPlayed;
 end
 
+
 -------------------------------------------------------------------------
+
 
 -- Is tracking player, supports GUID, name and unitToken
 function ArenaTracker:IsTrackingPlayer(playerID)
@@ -252,6 +272,7 @@ end
 function ArenaTracker:HasMapData()
 	return currentArena and currentArena.mapId ~= nil;
 end
+
 
 function ArenaTracker:GetPlayer(playerID)
 	if(not playerID or playerID == "") then
@@ -279,10 +300,6 @@ function ArenaTracker:GetPlayer(playerID)
 	return nil;
 end
 
-function ArenaTracker:HasSpec(GUID)
-	local player = ArenaTracker:GetPlayer(GUID);
-	return player and Helpers:IsSpecID(player.spec);
-end
 
 function ArenaTracker:HandleScoreUpdate()
 	if(not API:IsInArena()) then
@@ -298,6 +315,7 @@ function ArenaTracker:HandleScoreUpdate()
 	ArenaTracker.hasReceivedScore = true;
 	currentArena.winner = API:GetWinner() or currentArena.winner;
 end
+
 
 function ArenaTracker:HandleRatedUpdate()
 	if(not API:IsInArena()) then
@@ -315,6 +333,7 @@ function ArenaTracker:HandleRatedUpdate()
 		currentArena.seasonPlayed = ArenaTracker:GetSeasonPlayed(currentArena.bracketIndex) or currentArena.seasonPlayed;
 	end
 end
+
 
 -- Search for missing members of group (party or arena), 
 -- Adds each non-tracked player to currentArena.players table.
@@ -360,6 +379,7 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 	end
 end
 
+
 -- Returns a table with unit information to be placed inside arena.players
 function ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, spec_id, kills, deaths, damage, healing)
 	return {
@@ -375,152 +395,6 @@ function ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, spec_id, k
 	};
 end
 
-local function hasValidDeathData(playerGUID)
-	local deathData = ArenaTracker:GetDeathData();
-
-	local existingData = deathData[playerGUID];
-	if(type(existingData) == "table" and tonumber(existingData.time) and existingData.name) then
-		return true;
-	end
-
-	return false;
-end
-
-local function removeDeath(playerGUID)
-	local deathData = ArenaTracker:GetDeathData();
-	deathData[playerGUID] = nil;
-end
-
--- Called from unit actions, to remove false deaths
-local function tryRemoveFromDeaths(playerGUID, spell)
-	if(not hasValidDeathData(playerGUID)) then
-		removeDeath(playerGUID);
-		return;
-	end
-
-	local deathData = ArenaTracker:GetDeathData();
-	local existingData = deathData[playerGUID];
-
-	if(existingData) then
-		local timeSinceDeath = time() - existingData.time;
-
-		local minimumDelay = existingData.isHunter and 2 or 10;
-		if(existingData.hasKillCredit) then
-			minimumDelay = minimumDelay + 5;
-		end
-
-		if(timeSinceDeath > minimumDelay) then
-			Debug:Log("Removed death by post-death action: ", spell, " for player: ", existingData.name, " Time since death: ", timeSinceDeath);
-			removeDeath(playerGUID);
-		end
-	end
-end
-
--- Handle a player's death, through death or kill credit message
-local function handlePlayerDeath(playerGUID, isKillCredit)
-	Debug:LogTemp("handlePlayerDeath", playerGUID, isKillCredit);
-
-	if(playerGUID == nil) then
-		return;
-	end
-
-	local class, race, name, realm = API:GetPlayerInfoByGUID(playerGUID);
-	if(name == nil or name == "") then
-		Debug:LogError("Invalid name of dead player. Skipping..");
-		return;
-	end
-
-	if(not realm or realm == "") then
-		name = Helpers:ToFullName(name);
-	else
-		name = name .. "-" .. realm;
-	end
-
-	Debug:LogGreen("Player Kill!", isKillCredit, name);
-
-	-- Store death
-	local deathData = ArenaTracker:GetDeathData();
-	local death = deathData[playerGUID] or TablePool:Acquire();
-	death.time = time();
-	death.name = name;
-	death.isHunter = (class == "HUNTER") or nil;
-	death.hasKillCredit = isKillCredit or death.hasKillCredit;
-
-	-- Validate that this is always true
-	Debug:Assert(type(death) == "table");
-
-	deathData[playerGUID] = death;
-
-	if(ArenaTracker:IsTrackingShuffle() and (isKillCredit or class ~= "HUNTER")) then
-		C_Timer.After(0, ArenaTracker.HandleRoundEnd);
-	end
-end
-
--- Commits current deaths to player stats (May be overridden by scoreboard, if value is trusted for the expansion)
-function ArenaTracker:CommitDeaths()
-	local deathData = ArenaTracker:GetDeathData();
-	for GUID,data in pairs(deathData) do
-		local player = ArenaTracker:GetPlayer(GUID);
-		if(player and data) then
-			-- Increment deaths
-			player.deaths = (player.deaths or 0) + 1;
-		end
-	end
-end
-
--- Fetch the real first death when saving the match
-function ArenaTracker:GetFirstDeathFromCurrentArena()
-	local deathData = ArenaTracker:GetDeathData();
-	if(deathData == nil) then
-		return;
-	end
-
-	local bestKey, bestTime;
-	for key,data in pairs(deathData) do
-		if(key and type(data) == "table" and data.time) then
-			if(bestTime == nil or data.time < bestTime) then
-				bestKey = key;
-				bestTime = data.time;
-			end
-		else
-			local player = ArenaTracker:GetPlayer(key);
-			Debug:LogError("Invalid death data found:", key, player and player.name, type(data));
-			Debug:LogTable(deathData);
-		end
-	end
-
-	if(not bestKey or not deathData[bestKey]) then
-		Debug:Log("Death data missing from currentArena.");
-		return nil;
-	end
-
-	local firstDeathData = deathData[bestKey];
-	return firstDeathData.name, firstDeathData.time;
-end
-
-function ArenaTracker:HandleOpponentUpdate()
-	if (not API:IsInArena()) then
-		return;
-	end
-
-	ArenaTracker:FillMissingPlayers();
-
-	-- If API exist to get opponent spec, use it
-	if(GetArenaOpponentSpec) then
-		Debug:LogTemp("HandleOpponentUpdate")
-
-		for i = 1, currentArena.size do
-			local unitToken = "arena"..i;
-			local player = ArenaTracker:GetPlayer(unitToken);
-			if(player) then
-				if(not Helpers:IsSpecID(player.spec)) then
-					local spec_id = API:GetArenaPlayerSpec(i, true);
-					ArenaTracker:OnSpecDetected(unitToken, spec_id);
-				end
-			end
-		end
-	end
-end
 
 function ArenaTracker:HandlePartyUpdate()
 	if (not API:IsInArena()) then
@@ -529,26 +403,19 @@ function ArenaTracker:HandlePartyUpdate()
 
 	ArenaTracker:FillMissingPlayers();
 
-	for i = 1, currentArena.size do
-		local unitToken = "party"..i;
-		local player = ArenaTracker:GetPlayer(UnitGUID(unitToken));
-		if(player and not Helpers:IsSpecID(player.spec)) then
-			if(Inspection and Inspection.RequestSpec) then
-				Debug:Log("Tracker: HandlePartyUpdate requesting spec:", unitToken, UnitGUID(unitToken));
-				Inspection:RequestSpec(unitToken);
-			end
-		end
-	end
+	ArenaTracker:RequestPartySpecs();
 
 	-- Internal IsTrackingShuffle() check
 	ArenaTracker:CheckRoundEnded();
 	ArenaTracker:UpdateRoundTeam();
 end
 
+
 function ArenaTracker:ForceTeamsUpdate()
 	ArenaTracker:HandleOpponentUpdate();
 	ArenaTracker:HandlePartyUpdate();
 end
+
 
 -- Attempts to get initial data on arena players:
 -- GUID, name, race, class, spec
@@ -561,87 +428,24 @@ function ArenaTracker:ProcessCombatLogEvent(...)
 	local timestamp,logEventType,_,sourceGUID,_,_,_,destGUID,_,_,_,spellID,spellName = CombatLogGetCurrentEventInfo();
 	if (logEventType == "SPELL_CAST_SUCCESS") then
 		ArenaTracker:DetectSpec(sourceGUID, spellID, spellName);
-		tryRemoveFromDeaths(sourceGUID, spellName);
+		ArenaTracker:TryRemoveFromDeaths(sourceGUID, spellName);
 	elseif(logEventType == "SPELL_AURA_APPLIED" or logEventType == "SPELL_AURA_REMOVED") then
 		ArenaTracker:DetectSpec(sourceGUID, spellID, spellName);
 	elseif(destGUID and destGUID:find("Player-", 1, true)) then
 		-- Player Death
 		if (logEventType == "UNIT_DIED") then
-			handlePlayerDeath(destGUID, false);
+			ArenaTracker:HandlePlayerDeath(destGUID, false);
 		end
 		-- Player killed
 		if (logEventType == "PARTY_KILL") then
-			handlePlayerDeath(destGUID, true);
+			ArenaTracker:HandlePlayerDeath(destGUID, true);
 		end
 	end
 end
 
-function ArenaTracker:ProcessUnitAuraEvent(...)
-	-- Excludes versions without spell detection included
-	if(not SpecSpells or not SpecSpells.GetSpec) then
-		return;
-	end
-
-	if (not API:IsInArena()) then
-		return;
-	end
-
-	local unitTarget, updateInfo = ...;
-	if(not updateInfo or updateInfo.isFullUpdate) then
-		return;
-	end
-
-	if(updateInfo.addedAuras) then
-		for _,aura in ipairs(updateInfo.addedAuras) do
-			if(aura and aura.sourceUnit and aura.isFromPlayerOrPlayerPet) then
-				local sourceGUID = UnitGUID(aura.sourceUnit);
-
-				ArenaTracker:DetectSpec(sourceGUID, aura.spellId, aura.name);
-			end
-		end
-	end
-end
-
--- Detects spec if a spell is spec defining, attaches it to its
--- caster if they weren't defined yet, or adds a new unit with it
-function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
-	if(not SpecSpells or not SpecSpells.GetSpec) then
-		return;
-	end
-
-	-- Only players matter for spec detection
-	if (not sourceGUID or not sourceGUID:find("Player-", 1, true)) then
-		return;
-	end
-
-	-- Check if spell belongs to spec defining spells
-	local spec_id = SpecSpells:GetSpec(spellID);
-	if (spec_id ~= nil) then
-		-- Check if unit should be added
-		ArenaTracker:FillMissingPlayers(sourceGUID, spec_id);
-		ArenaTracker:OnSpecDetected(sourceGUID, spec_id);
-	end
-end
-
-function ArenaTracker:OnSpecDetected(playerID, spec_id)
-	if(not playerID or not spec_id) then
-		return;
-	end
-
-	local player = ArenaTracker:GetPlayer(playerID);
-	if(not player) then
-		return;
-	end
-
-	if(not Helpers:IsSpecID(player.spec) or player.spec == 13) then -- Preg doesn't count as a known spec
-		Debug:Log("Assigning spec: ", spec_id, " for player: ", player.name);
-		player.spec = spec_id;
-	elseif(player.spec) then
-		Debug:Log("Tracker: Keeping old spec:", player.spec, " for player: ", player.name);
-	end
-end
 
 -------------------------------------------------------------------------
+
 
 function ArenaTracker:Initialize()
 	ReinitializeCurrentArena();
@@ -654,5 +458,8 @@ function ArenaTracker:Initialize()
 	ArenaTracker:InitializeSubmodule_GatesOpened();
 	ArenaTracker:InitializeSubmodule_End();
 	ArenaTracker:InitializeSubmodule_Exit();
+
 	ArenaTracker:InitializeSubmodule_Shuffle();
+	ArenaTracker:InitializeSubmodule_Deaths();
+	ArenaTracker:InitializeSubmodule_Specs();
 end

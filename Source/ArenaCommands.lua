@@ -41,13 +41,12 @@ Commands.list = {
 		ArenaAnalytics:PrintSystem("Total arenas stored: ", #ArenaAnalyticsDB);
 	end,
 
-	-- TODO: Update this to respect active filters
 	["played"] = function()
 		local totalDurationInArenas = 0;
 		local currentSeasonTotalPlayed = 0;
 		local longestDuration = 0;
-		for i=1, #ArenaAnalyticsDB do
-			local match = ArenaAnalyticsDB[i];
+		for i=1, ArenaAnalytics.filteredMatchCount do
+			local match = ArenaAnalytics:GetFilteredMatch(i);
 			local duration = ArenaMatch:GetDuration(match) or 0;
 			if(duration > 0) then
 				totalDurationInArenas = totalDurationInArenas + duration;
@@ -62,11 +61,23 @@ Commands.list = {
 			end
 		end
 
+		local function PrintColored(text, duration)
+			if(duration == "") then
+				duration = "None";
+			end
+
+			local coloredText = Colors:ColorText(text, Colors.white);
+			local coloredDuration = Colors:ColorText(duration, Colors.statsColor);
+			ArenaAnalytics:PrintSystem(coloredText, coloredDuration);
+		end
+
 		-- TODO: Update coloring?
-		ArenaAnalytics:PrintSystem("Total arena time played: ", SecondsToTime(totalDurationInArenas));
-		ArenaAnalytics:PrintSystem("Time played this season: ", SecondsToTime(currentSeasonTotalPlayed));
-		ArenaAnalytics:PrintSystem("Average arena duration: ", SecondsToTime(math.floor(totalDurationInArenas / #ArenaAnalyticsDB)));
-		ArenaAnalytics:PrintSystem("Longest arena duration: ", SecondsToTime(math.floor(longestDuration)));
+		ArenaAnalytics:PrintSystem(Colors:ColorText("==== Arena Played Time ==========", Colors.infoColor));
+		PrintColored(" Total played: ", SecondsToTime(totalDurationInArenas));
+		PrintColored(" Current season: ", SecondsToTime(currentSeasonTotalPlayed) or "NaN");
+		PrintColored(" Average duration: ", SecondsToTime(math.floor(totalDurationInArenas / ArenaAnalytics.filteredMatchCount)));
+		PrintColored(" Longest duration: ", SecondsToTime(math.floor(longestDuration)));
+		ArenaAnalytics:PrintSystem(Colors:ColorText("=============================", Colors.infoColor));
 	end,
 
 	-- Debug level
@@ -135,7 +146,6 @@ Commands.list = {
 
 		if(API and API.IsInArena()) then
 			ArenaAnalytics:Print("Arena Map ID:", API:GetCurrentMapID(), GetZoneText());
-			ArenaAnalytics:Print("BattlefieldWinner", API:GetWinner(), ArenaTracker:GetSeasonPlayed());
 		end
 		print(" ");
 	end,
@@ -144,14 +154,6 @@ Commands.list = {
 	["test"] = function(...)
 		print(" ");
 		ArenaAnalytics:Print(" ================================================ ");
-
-		if(API:IsInArena()) then
-			--Debug:LogTemp("Requesting RequestBattlefieldScoreData")
-			--RequestBattlefieldScoreData();
-			Debug:Log("BattlefieldID", API:GetActiveBattlefieldID());
-		end
-
-		Debug:LogTable(ArenaTracker:GetCurrentArena());
 
 		ArenaAnalytics:Print(" ================================================ ");
 	end,

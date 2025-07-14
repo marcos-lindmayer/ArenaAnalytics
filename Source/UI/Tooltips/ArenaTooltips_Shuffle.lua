@@ -112,7 +112,8 @@ local function CreateRoundEntryFrame(index, parent)
         for i=2, 0, -1 do
             local spec_id, isFirstDeath;
 
-            if(team ~= nil) then
+            -- Deconstruct compact team (210) where each index is a player index, and match the values to firstDeath index.
+            if(type(team) == "string") then
                 local playerIndex = (i == 0) and 0 or tonumber(team:sub(i,i));
                 if(playerIndex) then
                     local player = (playerIndex == 0) and selfPlayer or players[playerIndex];
@@ -129,7 +130,8 @@ local function CreateRoundEntryFrame(index, parent)
         for i=1, 3 do
             local spec_id, isFirstDeath;
 
-            if(enemy ~= nil) then
+            -- Deconstruct compact enemy team (345) where each index is a player index, and match the values to firstDeath index.
+            if(type(enemy) == "string") then
                 local playerIndex = tonumber(enemy:sub(i,i));
                 if(playerIndex) then
                     local player = players[playerIndex];

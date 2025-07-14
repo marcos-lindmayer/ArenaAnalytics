@@ -98,7 +98,7 @@ end
 
 function Search:Reset()
     if(Search:IsEmpty()) then
-        return;
+        return false;
     end
 
     Search:CommitSearch("");
@@ -183,7 +183,7 @@ function Search:CommitSearch(input)
     end
 
     lastCommittedSearchDisplay = Search.current.display;
-    
+
     -- Add all segments and non-transient tokens to the active data
     activeSearchData = GetPersistentData();
 
@@ -303,18 +303,20 @@ local function CheckSegmentForMatch(segment, match, alreadyMatchedPlayers)
 
     for _,isEnemyTeam in ipairs(teams) do
         local team = ArenaMatch:GetTeam(match, isEnemyTeam);
-        for _, player in ipairs(team) do
-            local result = CheckSegmentForPlayer(segment, player);
-            if(result) then
-                local fullName = ArenaMatch:GetPlayerFullName(player);
-                if(not alreadyMatchedPlayers or segment.inversed or not fullName) then
-                    -- Skip conflict handling
-                    return true;
-                elseif(alreadyMatchedPlayers[fullName] == nil) then
-                    alreadyMatchedPlayers[fullName] = true;
-                    return true;
-                else
-                    foundConflictMatch = true;
+        if(team) then
+            for _, player in ipairs(team) do
+                local result = CheckSegmentForPlayer(segment, player);
+                if(result) then
+                    local fullName = ArenaMatch:GetPlayerFullName(player);
+                    if(not alreadyMatchedPlayers or segment.inversed or not fullName) then
+                        -- Skip conflict handling
+                        return true;
+                    elseif(alreadyMatchedPlayers[fullName] == nil) then
+                        alreadyMatchedPlayers[fullName] = true;
+                        return true;
+                    else
+                        foundConflictMatch = true;
+                    end
                 end
             end
         end
@@ -455,22 +457,24 @@ local function CheckAdvancedPass(match)
 
         for _,isEnemyTeam in ipairs(teams) do
             local team = ArenaMatch:GetTeam(match, isEnemyTeam);
-            for playerIndex, player in ipairs(team) do
-                if(CheckSegmentForPlayer(segment, player)) then
-                    if(segment.inversed) then
-                        -- Inverse segments fail the pass if they match
-                        return false;
+            if(team) then
+                for playerIndex, player in ipairs(team) do
+                    if(CheckSegmentForPlayer(segment, player)) then
+                        if(segment.inversed) then
+                            -- Inverse segments fail the pass if they match
+                            return false;
+                        end
+
+                        local playerKey = (isEnemyTeam and "enemy" or "team") .. playerIndex;
+
+                        -- Add player to segment matches
+                        segmentMatches[currentIndex] = segmentMatches[currentIndex] or {};
+                        tinsert(segmentMatches[currentIndex], playerKey);
+
+                        -- Add segment to player matches
+                        playerMatches[playerKey] = playerMatches[playerKey] or {};
+                        tinsert(playerMatches[playerKey], currentIndex);
                     end
-
-                    local playerKey = (isEnemyTeam and "enemy" or "team") .. playerIndex;
-
-                    -- Add player to segment matches
-                    segmentMatches[currentIndex] = segmentMatches[currentIndex] or {};
-                    tinsert(segmentMatches[currentIndex], playerKey);
-
-                    -- Add segment to player matches
-                    playerMatches[playerKey] = playerMatches[playerKey] or {};
-                    tinsert(playerMatches[playerKey], currentIndex);
                 end
             end
         end

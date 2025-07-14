@@ -11,6 +11,7 @@ local RATING_HISTORY_LIMIT = 10;
 
 local function GetBracketRatedInfo(bracketIndex)
 	assert(ArenaAnalytics:GetBracket(bracketIndex), "Invalid bracketIndex!");
+
 	ArenaAnalyticsTransientDB.ratedInfo[bracketIndex] = ArenaAnalyticsTransientDB.ratedInfo[bracketIndex] or {};
 	return ArenaAnalyticsTransientDB.ratedInfo[bracketIndex];
 end
@@ -30,7 +31,8 @@ end
 
 -- Fix to deal deal with missed arenas (Clear & start over if seasonPlayed is nil or outdated)
 local function UpdateBracketCachedRatings(bracketIndex, seasonPlayed, rating)
-	bracketIndex = tonumber(bracketIndex);
+	assert(bracketIndex);
+
 	seasonPlayed = tonumber(seasonPlayed);
 	rating = tonumber(rating);
 
@@ -39,20 +41,24 @@ local function UpdateBracketCachedRatings(bracketIndex, seasonPlayed, rating)
 	end
 
 	local bracketRatedInfo = GetBracketRatedInfo(bracketIndex);
-	bracketRatedInfo[seasonPlayed] = rating;
+
+	if(bracketRatedInfo[seasonPlayed] ~= rating) then
+		local oldValue = bracketRatedInfo[seasonPlayed];
+		bracketRatedInfo[seasonPlayed] = rating;
+		Debug:Log("UpdateBracketCachedRatings:", bracketIndex, seasonPlayed, rating, bracketRatedInfo[seasonPlayed], oldValue);
+	end
 
 	-- Store the last season played known from outside arenas (May update twice after early leaves)
 	if(not API:IsInArena()) then
 		bracketRatedInfo.lastWorldSeasonPlayed = seasonPlayed;
 	end
 
-	Debug:Log("UpdateBracketCachedRatings:", bracketIndex, seasonPlayed, bracketRatedInfo[seasonPlayed]);
 end
 
 function ArenaRatedInfo:UpdateRatedInfo()
 	ArenaAnalytics:InitializeTransientDB();
 
-	for bracketIndex=1, 4 do
+	for bracketIndex=1, #ArenaAnalytics.brackets do
 		assert(ArenaAnalytics:GetBracket(bracketIndex), "Invalid bracketIndex in UpdateRatedInfo!");
 
 		local rating, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);

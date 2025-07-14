@@ -19,7 +19,7 @@ local specSpells = {
     [ 33983 ] = 2, -- Mangle (Cat)
     [ 48565 ] = 2, -- Mangle (Cat)
     [ 48566 ] = 2, -- Mangle (Cat)
-    
+
     [ 33878 ] = 2, -- Mangle (Bear)
     [ 33986 ] = 2, -- Mangle (Bear)
     [ 33987 ] = 2, -- Mangle (Bear)
@@ -141,7 +141,7 @@ local specSpells = {
     [ 55233 ] = 33, -- Vampiric Blood
     [ 55262 ] = 33, -- Heart Strike
     [ 49028 ] = 33, -- Dancing Rune Weapon
-    
+
     --------------------------------------------------------
     -- HUNTER
 
@@ -240,7 +240,7 @@ local specSpells = {
     [ 29834 ] = 82, -- Second Wind (Rank 1)
     [ 29838 ] = 82, -- Second Wind (Rank 2)
     [ 46924 ] = 82, -- Bladestorm
-    
+
     -- Fury
     [ 23881 ] = 83, -- Bloodthirst
     [ 46916 ] = 83, -- Bloodsurge

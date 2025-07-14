@@ -33,10 +33,10 @@ local function AddBracket(bracket)
         label = bracket.name or bracket,
         alignment = "CENTER",
         fontSize = 12,
-        key = "Filter_Bracket",
+        key = Filters.FilterKeys.Bracket,
         value = bracket.key,
         onClick = FilterTables.SetFilterValue,
-    })
+    });
 end
 
 function FilterTables:Init_Brackets()
@@ -45,11 +45,11 @@ function FilterTables:Init_Brackets()
             label = GetCurrentBracketName,
             alignment = "CENTER",
             fontSize = 12,
-            key = "Filter_Bracket",
+            key = Filters.FilterKeys.Bracket,
             onClick = FilterTables.ResetFilterValue,
         },
         entries = {}
-    }
+    };
 
     AddBracket("All");
 

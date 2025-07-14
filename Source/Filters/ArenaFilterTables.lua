@@ -42,7 +42,7 @@ end
 
 function FilterTables.IsFilterActive(dropdownContext)
     assert(dropdownContext.key)
-    return Filters:IsFilterActive(dropdownContext.key);
+    return Filters:IsFilterActive(dropdownContext.key, true);
 end
 
 function FilterTables.ResetFilterValue(dropdownContext, btn)

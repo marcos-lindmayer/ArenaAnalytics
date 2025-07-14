@@ -35,6 +35,7 @@ local stateData = {
 	-- Season Played state
 	seasonPlayed = nil,
 	seasonPlayedConfirmed = nil,
+	isProvenSeasonPlayed = nil,
 	scoreReceived = nil,
 	scoreTimedOut = nil,
 	hasMatchEnded = nil,
@@ -62,27 +63,24 @@ local function UpdatePostMatchSeasonPlayed(shouldLock)
 	end
 
 	stateData.seasonPlayed = seasonPlayed;
-	stateData.seasonPlayedConfirmed = seasonPlayed and shouldLock;
+	stateData.seasonPlayedConfirmed = seasonPlayed and shouldLock and true;
 end
 
 
-local function IsAwaitingSeasonPlayed(caller)
+local function IsAwaitingSeasonPlayed()
 	if(not API:IsInArena()) then
 		return false;
 	end
 
-	if(not ArenaTracker:IsInState("Pending")) then
-		Debug:LogTemp("IsAwaitingSeasonPlayed failed (Invalid state):", caller, ArenaTracker:GetStateName());
-		return false;
-	end
-
 	if(stateData.matchType ~= "rated") then
-		Debug:LogTemp("IsAwaitingSeasonPlayed failed (Invalid matchType):", stateData.matchType);
 		return false;
 	end
 
 	if(stateData.seasonPlayedConfirmed) then
-		Debug:LogTemp("IsAwaitingSeasonPlayed failed (Confirmed season played):", stateData.seasonPlayedConfirmed, stateData.seasonPlayed)
+		return false;
+	end
+
+	if(not ArenaTracker:IsInState("Initiated", "Pending")) then
 		return false;
 	end
 
@@ -91,7 +89,7 @@ end
 
 
 function ArenaTracker:HandlePreTrackingRatedEvent()
-	if(not IsAwaitingSeasonPlayed("Rated Event")) then
+	if(not IsAwaitingSeasonPlayed()) then
 		return;
 	end
 
@@ -114,7 +112,7 @@ end
 
 
 function ArenaTracker:HandlePreTrackingScoreEvent()
-	if(not IsAwaitingSeasonPlayed("Score Event")) then
+	if(not IsAwaitingSeasonPlayed()) then
 		return;
 	end
 
@@ -143,7 +141,7 @@ end
 
 -- Called when awaiting score times out after loading in
 function ArenaTracker:HandleScoreTimeout()
-	if(not IsAwaitingSeasonPlayed("Score Timeout")) then
+	if(not IsAwaitingSeasonPlayed()) then
 		return;
 	end
 
@@ -167,11 +165,17 @@ end
 -- Called once score and rated events determine a post-match seasonPlayed
 function ArenaTracker:OnSeasonPlayedReceived(isProvenSeasonPlayed)
 	-- Pending rated match tracking
-	if(stateData.matchType == "rated" and ArenaTracker:IsInState("Pending")) then
-		UpdatePostMatchSeasonPlayed(true);
+	if(not IsAwaitingSeasonPlayed()) then
+		return;
+	end
 
+	stateData.isProvenSeasonPlayed = isProvenSeasonPlayed;
+
+	UpdatePostMatchSeasonPlayed(true);
+
+	if(ArenaTracker:IsInState("Pending")) then
 		Debug:LogGreen("Post-match season played received:", stateData.seasonPlayed, ArenaTracker:GetStateName(),stateData.matchType);
-		ArenaTracker:StartNewOrContinueTracking(isProvenSeasonPlayed);
+		ArenaTracker:StartNewOrContinueTracking();
 	end
 end
 
@@ -179,11 +183,46 @@ end
 -------------------------------------------------------------------------
 
 
+-- Called to enter pending state, allowing collection of battlefield score
+function ArenaTracker:HandleArenaInitiate(isLoad)
+	if(not API:IsInArena()) then
+		Debug:Log("HandleArenaInitiate called while not in arena");
+		return;
+	end
+
+	if(ArenaTracker:IsTrackingArena()) then
+		Debug:Log("HandleArenaInitiate: Already tracking arena!");
+		return;
+	end
+
+	if(not ArenaTracker:IsInState("None")) then
+		Debug:LogWarning("HandleArenaInitiate bailing out due to invalid state:", ArenaTracker:GetStateName());
+		return;
+	end
+
+	ArenaTracker:SetState("Initiated");
+
+	-- Clear the old stateData
+	stateData = {};
+	stateData.isLoad = isLoad;
+
+	local battlefieldId = API:GetActiveBattlefieldID();
+	if(battlefieldId) then
+		ArenaTracker:HandleArenaEnter(battlefieldId);
+	end
+end
+
+
 -- Await basic info for match identification, before starting active tracking
 -- Initialization calls with isLoad = true, to check existing tracking to continue or reset.
-function ArenaTracker:HandleArenaEnter(isLoad)
+function ArenaTracker:HandleArenaEnter(battlefieldId)
+	if(not battlefieldId) then
+		Debug:Log("HandleArenaEnter: Missing active battlefield ID");
+		return;
+	end
+
 	if(not API:IsInArena()) then
-		Debug:Log("HandleArenaEnter called while not in arena")
+		Debug:Log("HandleArenaEnter: called while not in arena")
 		return;
 	end
 
@@ -192,41 +231,30 @@ function ArenaTracker:HandleArenaEnter(isLoad)
 		return;
 	end
 
-	local battlefieldId = API:GetActiveBattlefieldID()
-	if(not battlefieldId) then
-		Debug:LogError("Missing active battlefield ID");
+	if(not ArenaTracker:IsInState("Initiated")) then
+		Debug:Log("HandleArenaEnter bailing out due to invalid state:", ArenaTracker:GetStateName());
 		return;
 	end
-
-	if(not ArenaTracker:IsInState("None")) then
-		Debug:LogWarning("HandleArenaEnter bailing out due to invalid state:", ArenaTracker:GetStateName());
-		return;
-	end
-
-	ArenaTracker:SetState("Pending");
 
 	Debug:LogGreen("=================================================");
-	Debug:LogGreen("ArenaTracker:HandleArenaEnter: isLoad =", isLoad);
-
-	-- Basic state for currentArena, to compare to existing currentArena before real tracking starts.
-	stateData = {};
-	stateData.battlefieldId = battlefieldId;
-	stateData.mapId = API:GetCurrentMapID();
+	Debug:LogGreen("ArenaTracker:HandleArenaEnter: isLoad =", stateData.isLoad);
 
 	local status, bracket, _, matchType = API:GetBattlefieldStatus(battlefieldId);
-	if(status ~= "active") then
-		Debug:Log("HandleArenaEnter bailing out: No active battlefield found.");
-		return;
-	end
+	assert(status == "active");
 
+	-- Basic state for currentArena, to compare to existing currentArena before real tracking starts.
+	stateData.battlefieldId = battlefieldId;
+	stateData.mapId = API:GetCurrentMapID();
 	stateData.bracket = bracket;
 	stateData.bracketIndex = ArenaAnalytics:GetAddonBracketIndex(bracket);
 	stateData.matchType = matchType;
 
 	stateData.mySpec = API:GetSpecialization();
 
+	ArenaTracker:SetState("Pending");
+
 	-- Rated matches may need to await season played for the bracket
-	if(matchType == "rated") then
+	if(IsAwaitingSeasonPlayed()) then
 		RequestRatedInfo();
 	else
 		ArenaTracker:StartNewOrContinueTracking();
@@ -250,7 +278,7 @@ local function CheckOptionalField(field)
 	return success;
 end
 
-function ArenaTracker:CompareExistingTracking(isProvenSeasonPlayed)
+function ArenaTracker:CompareExistingTracking()
 	-- Returns true if the stateData matches the currentArena, false if it needs to reset before tracking
 	assert(currentArena);
 
@@ -290,7 +318,7 @@ end
 
 
 -- This is called once we know whether to reset or continue tracking.
-function ArenaTracker:StartNewOrContinueTracking(isProvenSeasonPlayed)
+function ArenaTracker:StartNewOrContinueTracking()
 	if(not API:IsInArena()) then
 		Debug:LogWarning("StartNewOrContinueTracking called outside arena.");
 		return;
@@ -306,7 +334,7 @@ function ArenaTracker:StartNewOrContinueTracking(isProvenSeasonPlayed)
 		return;
 	end
 
-	if(not ArenaTracker:CompareExistingTracking(isProvenSeasonPlayed)) then
+	if(not ArenaTracker:CompareExistingTracking()) then
 		Debug:LogGreen("Resetting currentArena for new tracking..");
 		ArenaTracker:Reset();
 	end

@@ -33,6 +33,8 @@ Source/Tracker/ArenaTracker_GatesOpened.lua
 Source/Tracker/ArenaTracker_End.lua
 Source/Tracker/ArenaTracker_Exit.lua
 Source/Tracker/ArenaTracker_Shuffle.lua
+Source/Tracker/ArenaTracker_Specs.lua
+Source/Tracker/ArenaTracker_Deaths.lua
 
 Source/API/ArenaHelpers.lua
 Source/API/ArenaAPI.lua

@@ -6,7 +6,7 @@ local Filters = ArenaAnalytics.Filters;
 local AAtable = ArenaAnalytics.AAtable;
 local Tooltips = ArenaAnalytics.Tooltips;
 local Dropdown = ArenaAnalytics.Dropdown;
-local Export = ArenaAnalytics.Export;
+local Helpers = ArenaAnalytics.Helpers;
 local API = ArenaAnalytics.API;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
 local ImportBox = ArenaAnalytics.ImportBox;
@@ -410,8 +410,8 @@ local function CreateInputBox(setting, parent, x, text, func)
     end);
 
     inputBox:SetScript("OnEditFocusLost", function(self)
-		local oldValue = tonumber(Options:Get(setting));
-		local newValue = tonumber(inputBox:GetText());
+		local oldValue = Helpers:ToSafeNumber(Options:Get(setting));
+		local newValue = Helpers:ToSafeNumber(inputBox:GetText());
         Options:Set(setting, newValue or oldValue)
 		inputBox:SetText(tonumber(Options:Get(setting)) or "");
         inputBox:SetCursorPosition(0);

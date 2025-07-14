@@ -27,7 +27,7 @@ local function GenerateSeasonData()
         {
             label = "All Seasons",
             alignment = "LEFT",
-            key = "Filter_Season",
+            key = Filters.FilterKeys.Season,
             value = "All",
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
@@ -35,7 +35,7 @@ local function GenerateSeasonData()
         {
             label = "Current Season",
             alignment = "LEFT",
-            key = "Filter_Season",
+            key = Filters.FilterKeys.Season,
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
         };
@@ -73,9 +73,9 @@ local function GenerateSeasonData()
             label = "Season " .. season,
             alignment = "LEFT",
             value = season,
-            key = "Filter_Season",
+            key = Filters.FilterKeys.Season,
             onClick = FilterTables.SetFilterValue,
-            checked = function() return Filters:Get("Filter_Season") == season end,
+            checked = function() return Filters:Get(Filters.FilterKeys.Season) == season end,
         });
     end
 
@@ -91,7 +91,7 @@ local function GenerateDateEntries(dates)
         tinsert(dateTable, {
             label = date,
             alignment = "LEFT",
-            key = "Filter_Date",
+            key = Filters.FilterKeys.Date,
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
         });
@@ -107,7 +107,7 @@ local function GenerateMapEntries()
         {
             label = "All Maps",
             alignment = "LEFT",
-            key = "Filter_Map",
+            key = Filters.FilterKeys.Map,
             value = "All",
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
@@ -121,7 +121,7 @@ local function GenerateMapEntries()
         tinsert(mapTable, {
             label = Internal:GetMapName(map_id),
             alignment = "LEFT",
-            key = "Filter_Map",
+            key = Filters.FilterKeys.Map,
             value = map_id,
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
@@ -145,7 +145,7 @@ local function GenerateOutcomeEntries()
         tinsert(outcomeTable, {
             label = entry.label,
             alignment = "LEFT",
-            key = "Filter_Outcome",
+            key = Filters.FilterKeys.Outcome,
             value = entry.value,
             onClick = FilterTables.SetFilterValue,
             checked = FilterTables.IsFilterEntryChecked,
@@ -157,10 +157,10 @@ end
 
 local function OnMainButtonClicked(dropdownContext, btn)
     if(btn == "RightButton") then
-        Filters:Reset("Filter_Season", true);
-        Filters:Reset("Filter_Date", true);
-        Filters:Reset("Filter_Map", true);
-        Filters:Reset("Filter_Outcome", true);
+        Filters:Reset(Filters.FilterKeys.Season, true);
+        Filters:Reset(Filters.FilterKeys.Date, true);
+        Filters:Reset(Filters.FilterKeys.Map, true);
+        Filters:Reset(Filters.FilterKeys.Outcome, true);
     else
         dropdownContext.parent:Toggle();
     end
@@ -179,7 +179,7 @@ function FilterTables:Init_MoreFilters()
             {
                 label = "Season",
                 alignment = "LEFT",
-                key = "Filter_Season",
+                key = Filters.FilterKeys.Season,
                 nested = GenerateSeasonData,
                 onClick = FilterTables.ResetFilterValue,
                 checked = FilterTables.IsFilterActive,
@@ -187,7 +187,7 @@ function FilterTables:Init_MoreFilters()
             {
                 label = "Date",
                 alignment = "LEFT",
-                key = "Filter_Date",
+                key = Filters.FilterKeys.Date,
                 nested = GenerateDateEntries(dates), -- Generate immediately (Static)
                 onClick = FilterTables.ResetFilterValue,
                 checked = FilterTables.IsFilterActive,
@@ -195,7 +195,7 @@ function FilterTables:Init_MoreFilters()
             {
                 label = "Maps",
                 alignment = "LEFT",
-                key = "Filter_Map",
+                key = Filters.FilterKeys.Map,
                 nested = GenerateMapEntries(),
                 onClick = FilterTables.ResetFilterValue,
                 checked = FilterTables.IsFilterActive,
@@ -203,7 +203,7 @@ function FilterTables:Init_MoreFilters()
             {
                 label = "Result",
                 alignment = "LEFT",
-                key = "Filter_Outcome",
+                key = Filters.FilterKeys.Outcome,
                 nested = GenerateOutcomeEntries(),
                 onClick = FilterTables.ResetFilterValue,
                 checked = FilterTables.IsFilterActive,

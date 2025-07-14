@@ -411,10 +411,10 @@ end
 -- Party Rating Delta (7)
 
 function ArenaMatch:GetPartyRatingDelta(match)
-    if(not match) then 
-        return nil 
-    end;
-    
+    if(not match) then
+        return nil;
+    end
+
     local key = matchKeys.rating_delta;
     return match and tonumber(match[key]);
 end
@@ -429,10 +429,6 @@ end
 -- Party MMR (8)
 
 function ArenaMatch:GetPartyMMR(match)
-    if(not match) then 
-        return nil 
-    end;
-    
     local key = matchKeys.mmr;
     return match and tonumber(match[key]);
 end
@@ -486,11 +482,8 @@ end
 -- Enemy MMR (11)
 
 function ArenaMatch:GetEnemyMMR(match)
-    if(not match) then 
-        return nil 
-    end;
-
-    return match and tonumber(match[matchKeys.enemy_mmr]);
+    local key = matchKeys.enemy_mmr;
+    return match and tonumber(match[key]);
 end
 
 function ArenaMatch:SetEnemyMMR(match, value)
@@ -518,7 +511,7 @@ end
 -- Session (13)
 
 function ArenaMatch:GetSession(match)
-    if(not match) then 
+    if(not match) then
         return nil;
     end
 
@@ -740,13 +733,14 @@ function ArenaMatch:IsLocalPlayer(player)
     return fullName and fullName == localFullName;
 end
 
-function ArenaMatch:GetTeam(match, isEnemyTeam)
-    if(not match) then
-        return nil;
-    end
+function ArenaMatch:GetMMR(match, isEnemyTeam)
+    local key = isEnemyTeam and matchKeys.enemy_mmr or matchKeys.mmr;
+    return match and key and tonumber(match[key]);
+end
 
+function ArenaMatch:GetTeam(match, isEnemyTeam)
     local key = isEnemyTeam and matchKeys.enemy_team or matchKeys.team;
-    return key and match[key] or {};
+    return match and key and match[key] or {};
 end
 
 function ArenaMatch:GetTeamSize(match, isSessionTeamCheck)
@@ -982,10 +976,8 @@ local function GetCompForSpecs(teamSpecs, requiredSize)
 end
 
 function ArenaMatch:GetComp(match, isEnemyTeam)
-    assert(match);
-
     local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
-    return match[key];
+    return match and key and match[key];
 end
 
 function ArenaMatch:HasComp(match, comp, isEnemyTeam)
@@ -1012,11 +1004,7 @@ function ArenaMatch:HasComp(match, comp, isEnemyTeam)
         return false;
     end
 
-    if(isEnemyTeam) then
-        return comp == match[matchKeys.enemy_comp];
-    else
-        return comp == match[matchKeys.comp];
-    end
+    return comp == ArenaMatch:GetComp(match, isEnemyTeam);
 end
 
 -- Returns the comp, outcome and mmr values for the match or round 
@@ -1025,7 +1013,7 @@ function ArenaMatch:GetCompInfo(match, isEnemyTeam, roundIndex)
         return nil;
     end
 
-    local mmr = ArenaMatch:GetPartyMMR(match);
+    local mmr = ArenaMatch:GetMMR(match, isEnemyTeam);
 
     if(ArenaMatch:IsShuffle(match)) then
         if(not roundIndex) then
@@ -1039,11 +1027,11 @@ function ArenaMatch:GetCompInfo(match, isEnemyTeam, roundIndex)
             return nil;
         end
 
-        local comp = isEnemyTeam and round[roundKeys.enemy_comp] or round[roundKeys.comp];
-        local _,_,_,_,outcome = ArenaMatch:GetRoundData(round);
+        local comp = ArenaMatch:GetRoundComp(round, isEnemyTeam);
+        local outcome = select(5, ArenaMatch:GetRoundData(round));
         return comp, outcome, mmr;
     else
-        local comp = isEnemyTeam and match[matchKeys.enemy_comp] or match[matchKeys.comp];
+        local comp = ArenaMatch:GetComp(match, isEnemyTeam);
         local outcome = ArenaMatch:GetMatchOutcome(match);
         return comp, outcome, mmr;
     end
@@ -1063,12 +1051,16 @@ function ArenaMatch:UpdateComp(match, isEnemyTeam)
         return;
     end
 
+    local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
+    if(not Debug:Assert(key)) then
+        return;
+    end
+
     local team = ArenaMatch:GetTeam(match, isEnemyTeam);
     local requiredTeamSize = ArenaMatch:GetTeamSize(match);
 
     local teamSpecs = ArenaMatch:GetTeamSpecs(team, requiredTeamSize);
 
-    local key = isEnemyTeam and matchKeys.enemy_comp or matchKeys.comp;
     local oldComp = match[key];
     match[key] = GetCompForSpecs(teamSpecs, requiredTeamSize);
 
@@ -1124,7 +1116,6 @@ function ArenaMatch:HasSelf(match)
     end
 
     local team = ArenaMatch:GetTeam(match, false);
-
     if(team) then
         for _,player in ipairs(team) do
             if(ArenaMatch:IsPlayerSelf(player)) then
@@ -1241,9 +1232,13 @@ function ArenaMatch:SetRounds(match, rounds)
     ArenaMatch:SortGroups(match);
 
     local enemyTeam = ArenaMatch:GetTeam(match, true);
-    assert(enemyTeam and #enemyTeam > 0); -- Must already have players, to compact round data
 
-    match[matchKeys.rounds] = {};
+    -- Must already have players, to compact round data
+    if(not Debug:Assert(enemyTeam and #enemyTeam > 0)) then
+        return;
+    end
+
+    match[matchKeys.rounds] = TablePool:Acquire();
 
     -- Cache values to help sort
     local myName = Helpers:GetPlayerName();
@@ -1251,7 +1246,7 @@ function ArenaMatch:SetRounds(match, rounds)
     local requiredTeamSize = ArenaMatch:GetTeamSize(match);
 
     -- Fill player name to index mapping
-    local indexMapping = {}
+    local indexMapping = TablePool:Acquire();
 
     -- Add self
     indexMapping[myName] = 0;
@@ -1343,12 +1338,9 @@ function ArenaMatch:SplitRoundData(data)
     return team, enemy, tonumber(death), tonumber(duration), tonumber(outcome);
 end
 
-function ArenaMatch:GetRoundComp(round)
-    return round and round[roundKeys.comp];
-end
-
-function ArenaMatch:GetRoundEnemyComp(round)
-    return round and round[roundKeys.enemy_comp];
+function ArenaMatch:GetRoundComp(round, isEnemyComp)
+    local compKey = isEnemyComp and roundKeys.enemy_comp or roundKeys.comp;
+    return round and compKey and round[compKey];
 end
 
 -------------------------------------------------------------------------

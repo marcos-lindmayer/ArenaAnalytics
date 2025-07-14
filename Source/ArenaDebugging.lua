@@ -107,9 +107,15 @@ function Debug:LogEscaped(...)
 
     -- Process each argument and replace | with || in string values, to escape formatting
 	local args = {...}
-	for i = 1, #args do
-		if(type(args[i]) == "string") then
-			args[i] = args[i]:gsub("|", "||");
+    local argCount = select('#', ...);
+
+	for i=1, argCount do
+        local arg = args[i];
+
+        if(arg == nil) then
+            args[i] = "nil";
+        elseif(type(arg) == "string") then
+			args[i] = arg:gsub("|", "||");
 		end
 	end
 
@@ -162,16 +168,16 @@ function Debug:LogTable(table, level, maxLevel)
     local indentation = string.rep(" ", 3*level);
 
     if(type(table) ~= "table") then
-        Debug:Log(indentation, table);
+        Debug:LogEscaped(indentation, table);
         return;
     end
 
     for key,value in pairs(table) do
         if(type(value) == "table") then
-            Debug:Log(indentation, key);
+            Debug:LogEscaped(indentation, key);
             Debug:LogTable(value, level+1, maxLevel);
         else
-            Debug:Log(indentation, key, value);
+            Debug:LogEscaped(indentation, key, value);
         end
     end
 end

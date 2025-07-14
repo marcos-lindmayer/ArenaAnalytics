@@ -19,17 +19,13 @@ local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
-local matchTypes = { "rated", "skirmish", "wargame" };
-local brackets = { "2v2", "3v3", "5v5", "shuffle" };
+ArenaAnalytics.matchTypes = { "rated", "skirmish", "wargame" };
+ArenaAnalytics.brackets = { "2v2", "3v3", "5v5", "shuffle" };
 
 -- Toggles addOn view/hide (Global to allow XML access)
 function ArenaAnalyticsToggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then
         Selection:ClearSelectedMatches();
-
-        Filters:Refresh(function()
-            AAtable:RefreshLayout();
-        end);
 
         Dropdown:CloseAll();
         Tooltips:HideAll();
@@ -49,7 +45,7 @@ end
 function ArenaAnalytics:GetAddonBracketIndex(bracket)
 	if(bracket) then
 		bracket = Helpers:ToSafeLower(bracket);
-		for i,value in ipairs(brackets) do
+		for i,value in ipairs(ArenaAnalytics.brackets) do
 			if(Helpers:ToSafeLower(value) == bracket or tonumber(bracket) == i) then
 				return i;
 			end
@@ -60,13 +56,13 @@ end
 
 function ArenaAnalytics:GetBracket(index)
 	index = tonumber(index);
-	return index and brackets[index];
+	return index and ArenaAnalytics.brackets[index];
 end
 
 function ArenaAnalytics:GetAddonMatchTypeIndex(matchType)
 	if(matchType) then
 		matchType = Helpers:ToSafeLower(matchType);
-		for i,value in ipairs(matchTypes) do
+		for i,value in ipairs(ArenaAnalytics.matchTypes) do
 			if(Helpers:ToSafeLower(value) == matchType or tonumber(value) == i) then
 				return i;
 			end
@@ -77,7 +73,7 @@ end
 
 function ArenaAnalytics:GetMatchType(index)
 	index = tonumber(index);
-	return index and matchTypes[index];
+	return index and ArenaAnalytics.matchTypes[index];
 end
 
 -------------------------------------------------------------------------
@@ -90,13 +86,17 @@ function ArenaAnalytics:InitializeTransientDB()
 	ArenaAnalyticsTransientDB = ArenaAnalyticsTransientDB or {};
 	ArenaAnalyticsTransientDB.currentArena = ArenaAnalyticsTransientDB.currentArena or {};
 
-	ArenaAnalyticsTransientDB.ratedInfo = ArenaAnalyticsTransientDB.ratedInfo or {};
-
 	local currentSeason = API:GetCurrentSeason();
-	if(currentSeason) then
-		if(currentSeason ~= ArenaAnalyticsTransientDB.ratedInfo.seasonPlayed) then
-			ArenaAnalyticsTransientDB.ratedInfo = {}; -- Force reset invalid season data
-		end
+	if(currentSeason == 0) then
+		Debug:LogWarning("current season is 0.")
+	end
+
+	if(not ArenaAnalyticsTransientDB.ratedInfo) then
+		Debug:LogWarning("Initiating transient DB ratedInfo!", ArenaAnalyticsTransientDB.ratedInfo);
+		ArenaAnalyticsTransientDB.ratedInfo = { season = currentSeason };
+	elseif(currentSeason and currentSeason ~= ArenaAnalyticsTransientDB.ratedInfo.season) then
+		Debug:LogWarning("Resetting transient DB ratedInfo due to season:", currentSeason, ArenaAnalyticsTransientDB.ratedInfo.season);
+		ArenaAnalyticsTransientDB.ratedInfo = { season = currentSeason }; -- Force reset invalid season data
 	end
 end
 
@@ -419,13 +419,19 @@ end
 
 -- Current filtered comp data
 local currentCompData = {
-	comp = { ["All"] = {} },
-	enemyComp = { ["All"] = {} },
+	Filter_Comp = { ["All"] = {} },
+	Filter_EnemyComp = { ["All"] = {} },
 };
 
 function ArenaAnalytics:SetCurrentCompData(newCompDataTable)
 	assert(newCompDataTable and newCompDataTable.Filter_Comp and newCompDataTable.Filter_EnemyComp);
 	currentCompData = Helpers:DeepCopy(newCompDataTable);
+
+	currentCompData.Filter_Comp = currentCompData.Filter_Comp or {};
+	currentCompData.Filter_EnemyComp = currentCompData.Filter_EnemyComp or {};
+
+	currentCompData.Filter_Comp.All = currentCompData.Filter_Comp.All or {};
+	currentCompData.Filter_EnemyComp.All = currentCompData.Filter_EnemyComp.All or {};
 end
 
 function ArenaAnalytics:GetCurrentCompData(compKey, comp)
@@ -483,7 +489,12 @@ function ArenaAnalytics:GetMatch(index)
 end
 
 function ArenaAnalytics:GetFilteredMatch(index)
-	if(not index or index > ArenaAnalytics.filteredMatchCount) then
+	if(not index) then
+		return nil;
+	end
+
+	index = ArenaAnalytics.filteredMatchCount - index + 1;
+	if(index > ArenaAnalytics.filteredMatchCount) then
 		return nil;
 	end
 

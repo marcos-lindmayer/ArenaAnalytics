@@ -115,10 +115,8 @@ local function InitializeLookupTable_Spec()
                             local id, specName = GetSpecializationInfoForSpecID(specID, genderIndex);
                             specName = Helpers:SanitizeValue(specName);
 
-                            Debug:LogTemp("InitializeLookupTable_Spec", id, specName, specName and classTable[specName], specID, classIndex, specIndex);
                             if(id and specName and tonumber(classTable[specName]) == nil) then -- Prioritize known English IDs
                                 classTable[specName] = API:GetMappedAddonSpecID(id);
-                                Debug:LogTemp("InitializeLookupTable_Spec", classToken, specName, id, classTable[specName]);
                             end
                         end
                     end
