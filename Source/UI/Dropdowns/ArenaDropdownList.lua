@@ -78,14 +78,14 @@ function List:Refresh()
             self.entryFrames[i] = nil;
         end
     end
-    
+
     self.entryFrames = TablePool:Acquire();
 
     -- Add new entries
     self:AddEntries(entries);
-    
+
     Dropdown:AddActiveDropdown(self.level, self);
-    
+
     self:SetupScrollbar();
     self.scrollFrame:UpdateScrollChildRect(); -- Ensure the scroll child rect is updated
 end
@@ -113,7 +113,7 @@ function List:AddEntries(entries)
         end
 
         accumulatedHeight = Round(accumulatedHeight + entryFrame:GetHeight());
-        
+
         lastFrame = entryFrame:GetFrame();
         table.insert(self.entryFrames, entryFrame);
     end
@@ -139,7 +139,7 @@ function List:SetupScrollbar()
 
     local viewHeight = self.scrollFrame:GetHeight()
     local contentHeight = self.scrollFrame.content:GetHeight();
-    
+
     -- Workaround for scrollbar not hiding automatically
     if ((viewHeight + 0.01) < contentHeight) then
         scrollbar:SetAlpha(1);
@@ -164,7 +164,7 @@ function List:UpdateScrollbarMinMax()
     local viewHeight = self.scrollFrame:GetHeight();
     local contentHeight = self.scrollFrame.content:GetHeight();
     local maxScroll = math.max(contentHeight - viewHeight, 0);
-    
+
     self.scrollFrame:UpdateScrollChildRect();
     self.scrollFrame.ScrollBar:SetMinMaxValues(0, maxScroll);
 end
@@ -172,7 +172,7 @@ end
 function List:SetBackdropAlpha(alpha)
     local bgColor = self.backdrop.backdropColor or TOOLTIP_DEFAULT_BACKGROUND_COLOR;
 	local bgR, bgG, bgB = bgColor:GetRGB();
-	
+
     alpha = alpha or 1;
 	self.backdrop:SetBackdropColor(bgR, bgG, bgB, alpha);
 end

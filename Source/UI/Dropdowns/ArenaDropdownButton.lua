@@ -37,14 +37,14 @@ function Button:Create(parent, width, height, config)
 
     -- Config
     self:SetConfig(config);
-    
+
     self.btn = CreateFrame("Button", self.name, parent:GetOwner(), self.template);
     self.btn:SetSize(width, self.height);
     self.btn:SetText("");
     self.btn:Show();
 
     self.btn:SetPoint("CENTER", parent:GetFrame(), "CENTER");
-    
+
     -- Font Objects
     self.btn:SetNormalFontObject("GameFontHighlight");
     self.btn:SetHighlightFontObject("GameFontHighlight");
@@ -54,7 +54,7 @@ function Button:Create(parent, width, height, config)
     if(self.btn.money) then
         self.btn.money:Hide();
     end
-    
+
     self.btn:RegisterForClicks("LeftButtonDown", "RightButtonDown");
     self.btn:SetScript("OnClick", function(frame, button)
         if(self.onClick) then
@@ -133,7 +133,7 @@ function Button:GetDisabledText()
         return Dropdown:RetrieveValue(self.disabledText, self);
     end
     return "Disabled";
-end    
+end
 
 function Button:GetCheckboxWidth()
     return 0; -- Display expects this function on parent

@@ -22,7 +22,7 @@ end
 
 function EntryFrame:Create(parent, index, width, height, config)
     ValidateConfig(config);
-    
+
     local self = setmetatable({}, EntryFrame);
     self.parent = parent;
 
@@ -49,7 +49,6 @@ function EntryFrame:Create(parent, index, width, height, config)
     self.btn:SetDisabledFontObject("GameFontDisableSmall");
     self.btn:SetSize(self.width, height);
     self.btn:SetText("");
-    
 
     -- Create the highlight texture
     self.highlight = self.btn:CreateTexture(nil, "HIGHLIGHT");
@@ -57,13 +56,13 @@ function EntryFrame:Create(parent, index, width, height, config)
     self.highlight:SetBlendMode("ADD");
     self.highlight:SetAllPoints(self.btn);
     self.highlight:Hide();
-    
+
     local entryFrame = self;
 
     self.btn:RegisterForClicks("LeftButtonDown", "RightButtonDown");
     self.btn:SetScript("OnClick", function(frame, button)
         if(self.onClick) then
-            self.onClick(self, button);            
+            self.onClick(self, button);
         end
 
         self.parent:Refresh();
@@ -77,13 +76,18 @@ function EntryFrame:Create(parent, index, width, height, config)
     -- Hover Background
     self.btn:SetScript("OnEnter", function()
         self.highlight:Show();
-        self:CreateNestedList();
+
+        if(self.nested) then
+            self:CreateNestedList();
+        else
+            Dropdown:HideActiveDropdownsFromLevel(self.parent.level + 1, true);
+        end
     end);
 
     self.btn:SetScript("OnLeave", function()
         self.highlight:Hide();
     end);
-    
+
     self:Refresh();
 
     return self;
@@ -96,19 +100,19 @@ function EntryFrame:SetConfig(config)
     self.key = config.key;
     self.value = config.value or config.label;
     self.nested = config.nested;
-    
+
     self.disabled = config.disabled;
     self.disabledText = config.disabledText;
     self.disabledColor = config.disabledColor;
     self.disabledSize = config.disabledSize;
-    
+
     self.onClick = config.onClick;
-    
+
     self.checked = config.checked;
 
     self.alignment = config.alignment;
     self.offsetX = config.offsetX;
-    
+
     self.width = config.width or self.width;
     self.height = config.height or self.height;
     self.fontSize = config.fontSize;
@@ -224,7 +228,7 @@ function EntryFrame:GetDisabledText()
         return Dropdown:RetrieveValue(self.disabledText, self);
     end
     return "Disabled";
-end    
+end
 
 function EntryFrame:GetCheckboxWidth()
     if(self.checkbox) then

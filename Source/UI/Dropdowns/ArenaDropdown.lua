@@ -46,6 +46,7 @@ function Dropdown:GetHighestActiveDropdownLevel()
     return #Dropdown.dropdownLevelFrames;
 end
 
+-- NOTE: Untested, validate before use
 -- Returns true of any active dropdown is mouseover
 function Dropdown:IsAnyMouseOver()
     for i=1, #Dropdown.dropdownLevelFrames do

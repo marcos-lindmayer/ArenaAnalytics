@@ -24,6 +24,7 @@ Filters.FilterKeys = {
     Season = "Filter_Season",
     Map = "Filter_Map",
     Outcome = "Filter_Outcome",
+    Mirror = "Filter_Mirror",
     Bracket = "Filter_Bracket",
     EnemyComp = "Filter_EnemyComp",
     TeamComp = "Filter_Comp",
@@ -48,7 +49,12 @@ local function AddFilter(filter, default)
 
     local override = Filters:GetOverride(filter);
 
-    currentFilters[filter] = (override ~= nil) and override or default;
+    if(override ~= nil) then
+        currentFilters[filter] = override;
+    else
+        currentFilters[filter] = default;
+    end
+
     defaults[filter] = default;
 end
 
@@ -57,9 +63,24 @@ function Filters:Init()
     AddFilter(Filters.FilterKeys.Season, "All");
     AddFilter(Filters.FilterKeys.Map, "All");
     AddFilter(Filters.FilterKeys.Outcome, "All");
+    AddFilter(Filters.FilterKeys.Mirror, false);
     AddFilter(Filters.FilterKeys.Bracket, "All");
     AddFilter(Filters.FilterKeys.TeamComp, "All");
     AddFilter(Filters.FilterKeys.EnemyComp, "All");
+end
+
+function Filters:IsValidCompKey(compKey)
+    return compKey == Filters.FilterKeys.TeamComp or compKey == Filters.FilterKeys.EnemyComp;
+end
+
+function Filters:Get(filter)
+    assert(filter, "Invalid filter in Filters:Get - Filter: " .. tostring(filter));
+
+    if(currentFilters[filter] == nil) then
+        currentFilters[filter] = Filters:GetDefault(filter);
+    end
+
+    return currentFilters[filter];
 end
 
 function Filters:GetOverride(filter)
@@ -70,20 +91,6 @@ function Filters:GetOverride(filter)
     if(filter == Filters.FilterKeys.Season and Options:Get("defaultCurrentSeasonFilter")) then
         return "Current Season";
     end
-end
-
-function Filters:IsValidCompKey(compKey)
-    return compKey == Filters.FilterKeys.TeamComp or compKey == Filters.FilterKeys.EnemyComp;
-end
-
-function Filters:Get(filter)
-    assert(filter, "Invalid filter in Filters:Get() " .. (filter or "nil"));
-
-    if(not currentFilters[filter]) then
-        currentFilters[filter] = Filters:GetDefault(filter);
-    end
-
-    return currentFilters[filter];
 end
 
 function Filters:GetDefault(filter, skipOverrides)
@@ -99,10 +106,14 @@ function Filters:GetDefault(filter, skipOverrides)
 end
 
 function Filters:Set(filter, value, skipRefresh)
-    assert(filter and currentFilters[filter]);
-    value = value or Filters:GetDefault(filter);
+    assert(filter and currentFilters[filter] ~= nil);
 
-    if(value == currentFilters[filter]) then
+    if(value == nil) then
+        value = Filters:GetDefault(filter);
+    end
+
+    Debug:LogTemp("Attempting to set filter:", filter, value, skipRefresh);
+    if(value == Filters:Get(filter)) then
         return false;
     end
 
@@ -123,7 +134,7 @@ function Filters:Set(filter, value, skipRefresh)
 end
 
 function Filters:ResetFast(filter, skipOverrides)
-    assert(filter and currentFilters[filter] and defaults[filter], "Invalid filter: " .. (filter and filter or "nil"));
+    assert(filter and currentFilters[filter] ~= nil and defaults[filter] ~= nil, "Invalid filter: " .. (filter and filter or "nil"));
     local default = Filters:GetDefault(filter, skipOverrides);
 
     -- Return true if value changed
@@ -143,10 +154,12 @@ end
 -- Clearing filters, optionally keeping filters explicitly applied through options
 function Filters:ResetAll(skipOverrides)
     local changed = false;
+
     changed = Filters:ResetFast(Filters.FilterKeys.Date, skipOverrides) or changed;
     changed = Filters:ResetFast(Filters.FilterKeys.Season, skipOverrides) or changed;
     changed = Filters:ResetFast(Filters.FilterKeys.Map) or changed;
     changed = Filters:ResetFast(Filters.FilterKeys.Outcome) or changed;
+    changed = Filters:ResetFast(Filters.FilterKeys.Mirror) or changed;
     changed = Filters:ResetFast(Filters.FilterKeys.Bracket) or changed;
     changed = Filters:ResetFast(Filters.FilterKeys.TeamComp) or changed;
     changed = Filters:ResetFast(Filters.FilterKeys.EnemyComp) or changed;
@@ -160,12 +173,12 @@ function Filters:ResetAll(skipOverrides)
 end
 
 function Filters:IsFilterActive(filter, ignoreOverrides)
-    local current = currentFilters[filter];
+    local current = Filters:Get(filter);
     if (current ~= nil) then
         return current ~= Filters:GetDefault(filter, ignoreOverrides);
     end
 
-    Debug:Log("isFilterActive failed to find filter: ", filter);
+    Debug:LogWarning("isFilterActive failed to find filter: ", filter);
     return false;
 end
 
@@ -222,6 +235,24 @@ local function doesMatchPassFilter_Outcome(match)
     end
 
     return ArenaMatch:GetMatchOutcome(match) == filter;
+end
+
+-- check outcome filter
+local function doesMatchPassFilter_Mirror(match)
+    if match == nil then
+        return false;
+    end
+
+    if(not Filters:Get(Filters.FilterKeys.Mirror)) then
+        return true;
+    end
+
+    -- Team comp == enemy comp
+    local teamComp = ArenaMatch:GetComp(match, false);
+    local enemyComp = ArenaMatch:GetComp(match, true);
+
+    -- Both valid and equal
+    return teamComp and teamComp == enemyComp;
 end
 
 -- check bracket filter
@@ -349,6 +380,12 @@ function Filters:DoesMatchPassAllFilters(match, excluded)
 
     -- Bracket
     if(not doesMatchPassFilter_Bracket(match)) then
+        return false;
+    end
+
+    -- TODO: Decide how this interacts with comp exclusions
+    -- Mirror matches only
+    if(not doesMatchPassFilter_Mirror(match)) then
         return false;
     end
 

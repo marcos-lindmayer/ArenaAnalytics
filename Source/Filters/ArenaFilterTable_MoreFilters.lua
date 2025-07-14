@@ -157,10 +157,17 @@ end
 
 local function OnMainButtonClicked(dropdownContext, btn)
     if(btn == "RightButton") then
-        Filters:Reset(Filters.FilterKeys.Season, true);
-        Filters:Reset(Filters.FilterKeys.Date, true);
-        Filters:Reset(Filters.FilterKeys.Map, true);
-        Filters:Reset(Filters.FilterKeys.Outcome, true);
+        local changed = false;
+
+        changed = Filters:ResetFast(Filters.FilterKeys.Season, true) or changed;
+        changed = Filters:ResetFast(Filters.FilterKeys.Date, true) or changed;
+        changed = Filters:ResetFast(Filters.FilterKeys.Map, true) or changed;
+        changed = Filters:ResetFast(Filters.FilterKeys.Outcome, true) or changed;
+        changed = Filters:ResetFast(Filters.FilterKeys.Mirror) or changed;
+
+        if(changed) then
+            Filters:Refresh();
+        end
     else
         dropdownContext.parent:Toggle();
     end
@@ -207,6 +214,14 @@ function FilterTables:Init_MoreFilters()
                 nested = GenerateOutcomeEntries(),
                 onClick = FilterTables.ResetFilterValue,
                 checked = FilterTables.IsFilterActive,
+            },
+            {
+                label = "Mirror",
+                alignment = "LEFT",
+                key = Filters.FilterKeys.Mirror,
+                value = true,
+                onClick = FilterTables.ToggleFilterValue,
+                checked = FilterTables.IsFilterEntryChecked,
             },
         },        
     };

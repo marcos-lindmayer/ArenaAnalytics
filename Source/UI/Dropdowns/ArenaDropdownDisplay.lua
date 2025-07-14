@@ -19,17 +19,17 @@ function Display:Create(parent, displayFunc)
     assert(parent.GetCheckboxWidth, "Dropdown Display parent must include GetCheckboxWidth()!");
     assert(parent.GetArrowWidth, "Dropdown Display parent must include GetArrowWidth()!");
     assert(not displayFunc or type(displayFunc) == "function");
-    
+
     local self = setmetatable({}, Display);
 
     self.parent = parent;
     self.name = parent:GetName() .. "_Display";
-    
+
     self.displayFunc = displayFunc;
     self.frames = {}
 
     self.padding = 0;
-    
+
     return self;
 end
 
@@ -186,7 +186,7 @@ function Display.SetComp(dropdownContext, display)
     if(comp == "All") then
         containerFrame.text = CreateText(containerFrame, comp, fontSize, fontColor);
         containerFrame.text:SetPoint("LEFT", 0, 0);
-        
+
         local width = containerFrame.text:GetWidth();
         totalWidth = totalWidth + width;
     else
@@ -237,7 +237,7 @@ function Display.SetComp(dropdownContext, display)
 
         lastFrame = containerFrame.winrate;
         totalWidth = totalWidth + containerFrame.winrate:GetWidth() + padding;
-        
+
         -- Calculate alignment offset
         local prefixWidth = containerFrame.played:GetWidth();
         local suffixWidth = containerFrame.winrate:GetWidth();

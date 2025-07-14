@@ -30,7 +30,27 @@ function FilterTables.SetFilterValue(dropdownContext, btn)
     if(btn == "RightButton") then
         Filters:Reset(dropdownContext.key);
     else
-        Filters:Set(dropdownContext.key, (dropdownContext.value or dropdownContext.label));
+        local value = dropdownContext.value;
+
+        if(value == nil) then
+            value = dropdownContext.label;
+        end
+
+        Filters:Set(dropdownContext.key, value);
+    end
+end
+
+function FilterTables.ToggleFilterValue(dropdownContext, btn)
+    if(btn == "RightButton" or Filters:IsFilterActive(dropdownContext.key)) then
+        Filters:Reset(dropdownContext.key);
+    else
+        local value = dropdownContext.value;
+
+        if(value == nil) then
+            value = dropdownContext.label;
+        end
+
+        Filters:Set(dropdownContext.key, value);
     end
 end
 
