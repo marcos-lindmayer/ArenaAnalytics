@@ -9,7 +9,7 @@
 
 
 Source/ArenaModules.lua
-Source/ArenaColors.lua
+Source/Data/ArenaColors.lua
 Source/ArenaPrints.lua
 Source/ArenaDebugging.lua
 Source/ArenaCommands.lua
@@ -17,7 +17,7 @@ Source/ArenaCommands.lua
 Source/UI/ArenaMinimapButton.lua
 
 Source/ArenaAnalytics.lua
-Source/ArenaOptions.lua
+Source/Options/ArenaOptions.lua
 Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
 Source/Events/ArenaEvents.lua
