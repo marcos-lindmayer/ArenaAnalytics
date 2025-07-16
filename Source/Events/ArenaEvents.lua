@@ -82,16 +82,16 @@ local function HandleZoneChanged(isLoad)
 	-- Optionally mute/revert dialogue volume
 	API:UpdateDialogueVolume();
 
-	Debug:LogGreen("HandleZoneChanged triggered", API:IsInArena(), ArenaTracker:IsTrackingArena());
+	Debug:LogGreen("HandleZoneChanged triggered", API:IsInArena(), ArenaTracker:GetStateName(), ArenaTracker:IsTrackingArena(true), GetZoneText());
 
 	if(API:IsInArena()) then
 		ArenaTracker:HandleArenaInitiate(isLoad);
 	else
 		Events:UnregisterArenaEvents();
 
-		-- Handle exit here?
-		if(ArenaTracker:IsTrackingArena()) then
-			Debug:LogTemp("Zone changed calling HandleExit!");
+		-- Handle exit
+		if(ArenaTracker:IsTrackingArena(true)) then
+			Debug:LogTemp("Zone changed calling HandleArenaExit!");
 			C_Timer.After(0, ArenaTracker.HandleArenaExit);
 		end
 
@@ -104,10 +104,6 @@ end
 ArenaAnalytics.wasInArena = nil;
 function Events:CheckZoneChanged(isLoad)
 	local isInArena = API:IsInArena();
-
-	if(not isInArena) then
-		ArenaAnalytics.hasMatchEnded = false;
-	end
 
 	if(ArenaAnalytics.wasInArena ~= isInArena) then
 		ArenaAnalytics.wasInArena = isInArena;
@@ -143,7 +139,7 @@ function Events:HandleGlobalEvent(event, ...)
 		Events:CheckZoneChanged();
 
 		local battlefieldId = API:GetActiveBattlefieldID();
-		if(battlefieldId) then
+		if(battlefieldId and ArenaTracker:IsInState("Initiated")) then
 			-- Internal checks to ignore invalid calls
 			ArenaTracker:HandleArenaEnter(battlefieldId);
 		end

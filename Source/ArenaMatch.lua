@@ -199,21 +199,19 @@ function ArenaMatch:TryFixLastRating(match)
 
     local season = ArenaMatch:GetSeason(match);
     local currentSeason = API:GetCurrentSeason();
-    if(currentSeason and currentSeason > 0 and season and season ~= currentSeason) then
+    if(season and currentSeason and currentSeason > 0 and season ~= currentSeason) then
         -- Season appears to have changed, too late to fix last rating.
         ArenaMatch:ClearTransientValues(match);
         return;
     end
+
+    Debug:Log("TryFixLastRating:", trackedSeasonPlayed, currentSeason);
 
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
     local currentSeasonPlayed = API:GetSeasonPlayed(bracketIndex);
 
     if(not currentSeasonPlayed or currentSeasonPlayed < trackedSeasonPlayed) then
         Debug:Log("ArenaMatch: Delaying rating fix - Season Played.", bracketIndex, currentSeasonPlayed, trackedSeasonPlayed);
-        return;
-    end
-
-    if(not ArenaRatedInfo:HasRating(bracketIndex, trackedSeasonPlayed)) then
         return;
     end
 
@@ -236,6 +234,8 @@ function ArenaMatch:TryFixLastRating(match)
 
     -- Clear transient values
     ArenaMatch:ClearTransientValues(match);
+
+    Debug:Log("Fixed last rating:", bracketIndex, newRating, oldRating, currentSeasonPlayed);
 end
 
 -------------------------------------------------------------------------

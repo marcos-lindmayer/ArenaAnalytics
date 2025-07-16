@@ -26,12 +26,18 @@ function ArenaTracker:InitializeSubmodule_Exit()
 end
 
 local function CheckRequiresRatingFix()
-	local seasonPlayed = API:GetSeasonPlayed(currentArena.bracketIndex);
-	if(currentArena.seasonPlayed) then
+	if(type(currentArena.seasonPlayed) ~= "number" or currentArena.seasonPlayed == 0) then
 		Debug:Log("CheckRequiresRatingFix: No season played stored on currentArena. Skipping fixup check.");
+		return nil;
+	end
+
+	-- We'll never be able to fix rating without knowing the bracket
+	if(not currentArena.bracketIndex) then
 		return false;
 	end
 
+	-- Missing current season played value, assume we'll get it later to validate
+	local seasonPlayed = API:GetSeasonPlayed(currentArena.bracketIndex);
 	if(not seasonPlayed) then
 		Debug:Log("CheckRequiresRatingFix: Missing current season played for bracket:", currentArena.bracketIndex);
 		return true;
@@ -40,17 +46,40 @@ local function CheckRequiresRatingFix()
 	if(seasonPlayed < currentArena.seasonPlayed) then
 		if(seasonPlayed + 1 < currentArena.seasonPlayed) then
 			Debug:LogError("Tracked post-match seasonPlayed is more than one higher than current season played.");
+			return false;
 		end
 
 		-- Rating has updated, no longer needed to store transient SeasonPlayed for fixup.
 		return true;
 	end
+
+	-- Don't schedule rating fix
+	return false;
 end
 
-local function GetLastStoredRating()
-	-- TODO: Add an attempt to fetch the last rating for the bracket in current season? Using ArenaAnalytics:GetLatestRating?
-	return nil; -- TODO: Implement?
+
+local function MarkPlayerFirstDeath()
+	if(ArenaTracker:IsShuffle()) then
+		return;
+	end
+
+	if(type(currentArena.players) ~= "table") then
+		return;
+	end
+
+	-- Get first death
+	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
+	ArenaTracker:CommitDeaths();
+	wipe(currentArena.deathData);
+
+	-- Find matching player
+	for _,player in ipairs(currentArena.players) do
+		if(player.name == firstDeath) then
+			player.isFirstDeath = true;
+		end
+	end
 end
+
 
 -- Player left an arena (Zone changed to non-arena with valid arena data)
 function ArenaTracker:HandleArenaExit()
@@ -80,10 +109,6 @@ function ArenaTracker:HandleArenaExit()
 	if(ArenaTracker:IsRated()) then
 		local newRating, oldRating = ArenaRatedInfo:GetRatedInfo(currentArena.bracketIndex, currentArena.seasonPlayed);
 
-		if(not oldRating) then
-			oldRating = GetLastStoredRating(); -- NYI
-		end
-
 		if(newRating) then
 			currentArena.partyRating = newRating;
 			currentArena.partyRatingDelta = oldRating and newRating - oldRating or nil;
@@ -98,6 +123,8 @@ function ArenaTracker:HandleArenaExit()
 			end
 		end
 	end
+
+	MarkPlayerFirstDeath();
 
 	ArenaTracker:InsertArenaToMatchHistory(currentArena);
 	ArenaTracker:Clear();

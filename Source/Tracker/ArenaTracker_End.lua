@@ -65,10 +65,6 @@ function ArenaTracker:HandleArenaEnd()
 	-- Figure out how to default to nil, without failing to count losses.
 	local myTeamIndex = nil;
 
-	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
-	ArenaTracker:CommitDeaths();
-	wipe(currentArena.deathData);
-
 	local isShuffle = ArenaTracker:IsShuffle();
 
 	for i=1, GetNumBattlefieldScores() do
@@ -103,11 +99,6 @@ function ArenaTracker:HandleArenaEnd()
 		end
 
 		if(player.name) then
-			-- First Death
-			if(not isShuffle and player.name == firstDeath) then
-				player.isFirstDeath = true;
-			end
-
 			if (currentArena.playerName and player.name == currentArena.playerName) then
 				myTeamIndex = player.teamIndex;
 				player.isSelf = true;

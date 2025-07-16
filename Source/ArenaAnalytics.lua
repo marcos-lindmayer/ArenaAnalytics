@@ -601,7 +601,7 @@ function ArenaAnalytics:GetLatestRating(bracketIndex, explicitSeason, explicitSe
 end
 
 function ArenaAnalytics:TryFixLastMatchRating()
-	local lastMatch = ArenaAnalytics:GetLastMatch(true);
+	local lastMatch = ArenaAnalytics:GetLastMatch();
 	if(ArenaMatch:DoesRequireRatingFix(lastMatch)) then
 		ArenaMatch:TryFixLastRating(lastMatch);
 	end

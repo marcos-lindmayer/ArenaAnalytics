@@ -20,8 +20,8 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 -- Responsible for starting tracking, after event or OnLoad says so.
 -------------------------------------------------------------------------
 
-local MAX_TIMESTAMP_DIFFERENCE = 1200; -- The limit in time before forcing new tracking
-local SCORE_UPDATE_TIMEOUT = 5;
+local MAX_TIMESTAMP_DIFFERENCE = 3600; -- The limit in time before forcing new tracking
+local SCORE_UPDATE_TIMEOUT = 3;
 
 local stateData = {
 	-- Current match idenfification
@@ -292,6 +292,13 @@ function ArenaTracker:CompareExistingTracking()
 	if(not currentArena.isTracking) then
 		Debug:Log("CompareExistingTracking forcing reset: No previous tracking.", currentArena.isTracking)
 		return false;
+	end
+
+	if(currentArena.startTime) then
+		local timeDifference = (time() - currentArena.startTime);
+		if(timeDifference > MAX_TIMESTAMP_DIFFERENCE) then
+			return false;
+		end
 	end
 
 	if(stateData.matchType == "rated" and not CheckRequiredField("seasonPlayed")) then

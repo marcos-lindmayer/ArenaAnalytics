@@ -26,8 +26,8 @@ function ArenaTracker:InitializeSubmodule_Shuffle()
 end
 
 
-function ArenaTracker:IsTrackingShuffle()
-	return ArenaTracker:IsTrackingArena() and ArenaTracker:IsShuffle();
+function ArenaTracker:IsTrackingShuffle(skipTransient)
+	return ArenaTracker:IsTrackingArena(skipTransient) and ArenaTracker:IsShuffle();
 end
 
 

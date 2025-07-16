@@ -100,20 +100,15 @@ end
 
 -------------------------------------------------------------------------
 
+-- Arena variables
+ArenaTracker.hasReceivedScore = nil;
+ArenaTracker.isTracking = nil;
+
 local currentArena = {}; -- Not yet initialized
 
 local function ReinitializeCurrentArena()
 	ArenaAnalytics:InitializeTransientDB();
 	currentArena = ArenaAnalyticsTransientDB.currentArena;
-end
-
--- Arena variables
-ArenaTracker.hasReceivedScore = nil;
-ArenaTracker.isTracking = nil;
-
-
-function ArenaTracker:GetCurrentArena()
-	return ArenaAnalyticsTransientDB and ArenaAnalyticsTransientDB.currentArena;
 end
 
 
@@ -260,8 +255,8 @@ function ArenaTracker:IsTrackingPlayer(playerID)
 	return (ArenaTracker:GetPlayer(playerID) ~= nil);
 end
 
-function ArenaTracker:IsTrackingArena()
-	return currentArena.mapId ~= nil and currentArena.isTracking and ArenaTracker.isTracking;
+function ArenaTracker:IsTrackingArena(skipTransient)
+	return currentArena.mapId ~= nil and currentArena.isTracking and (skipTransient or ArenaTracker.isTracking);
 end
 
 function ArenaTracker:GetArenaEndedProperly()
