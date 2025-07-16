@@ -7,10 +7,11 @@ Display.__index = Display
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
-local Constants = ArenaAnalytics.Constants;
+local API = ArenaAnalytics.API;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local TablePool = ArenaAnalytics.TablePool;
 local GroupSorter = ArenaAnalytics.GroupSorter;
+local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
@@ -190,10 +191,8 @@ function Display.SetComp(dropdownContext, display)
         local width = containerFrame.text:GetWidth();
         totalWidth = totalWidth + width;
     else
-        -- Get data
+        -- Total played matches
         local played = tonumber(compData.played);
-        local winrate = tonumber(compData.winrate);
-
         if(played and played > 9999) then
             fontSize = min(fontSize, 10);
         end
@@ -231,6 +230,7 @@ function Display.SetComp(dropdownContext, display)
         end
 
         -- Add winrate text
+        local winrate = API:RoundPercentage(compData.winrate);
         local winrateSuffix = winrate and (" " .. winrate .. "%") or "|cffff0000" .. "  0%" .. "|r";
         containerFrame.winrate = CreateText(containerFrame, winrateSuffix, fontSize, fontColor);
         containerFrame.winrate:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0);
@@ -245,7 +245,7 @@ function Display.SetComp(dropdownContext, display)
     end
 
     -- Average MMR
-    if(Options:Get("compDisplayAverageMmr")) then        
+    if(Options:Get("compDisplayAverageMmr")) then
         local mmr = tonumber(compData.mmr);
         if(mmr) then
             --local mmrText = ArenaAnalyticsCreateText(dropdownContext:GetFrame(), "RIGHT", dropdownContext:GetFrame(), "RIGHT", -5, 0, averageMMR, 8);

@@ -155,6 +155,8 @@ Commands.list = {
 		print(" ");
 		ArenaAnalytics:Print(" ================================================ ");
 
+		Debug:Log("Target isFemale:", ArenaAnalytics.Helpers:IsUnitFemale("target"), UnitNameUnmodified("target"));
+
 		ArenaAnalytics:Print(" ================================================ ");
 	end,
 

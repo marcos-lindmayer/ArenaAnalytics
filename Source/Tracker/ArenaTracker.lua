@@ -84,7 +84,6 @@ end
 
 -- Checks if state matches a given name
 local function IsInState_Internal(stateName, index)
-	Debug:Log("Setting tracking state:", ArenaTracker.lastState, ArenaTracker.state, ArenaTracker:ToState(stateName), index);
 	return ArenaTracker.state == ArenaTracker:ToState(stateName);
 end
 
@@ -279,19 +278,21 @@ function ArenaTracker:GetPlayer(playerID)
 		return nil;
 	end
 
-	if(currentArena.players) then
-		for i = 1, #currentArena.players do
-			local player = currentArena.players[i];
-			if (player) then
-				if(Helpers:ToSafeLower(player.name) == Helpers:ToSafeLower(playerID)) then
+	if(not currentArena.players) then
+		return nil;
+	end
+
+	for i = 1, #currentArena.players do
+		local player = currentArena.players[i];
+		if (player) then
+			if(Helpers:ToSafeLower(player.name) == Helpers:ToSafeLower(playerID)) then
+				return player;
+			elseif(player.GUID == playerID) then
+				return player;
+			else -- Unit Token
+				local GUID = UnitGUID(playerID);
+				if(GUID and GUID == player.GUID) then
 					return player;
-				elseif(player.GUID == playerID) then
-					return player;
-				else -- Unit Token
-					local GUID = UnitGUID(playerID);
-					if(GUID and GUID == player.GUID) then
-						return player;
-					end
 				end
 			end
 		end
@@ -359,10 +360,12 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 				local isEnemy = (group == "arena");
 				local race_id = Helpers:GetUnitRace(unitToken);
 				local class_id = Helpers:GetUnitClass(unitToken);
+				local isFemale = Helpers:IsUnitFemale(unitToken);
 				local spec_id = GUID and GUID == unitGUID and tonumber(unitSpec);
+				Debug:Log("Creating player table. IsFemale:", isFemale);
 
 				if(GUID and name) then
-					player = ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, (spec_id or class_id));
+					player = ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, isFemale, (spec_id or class_id));
 					table.insert(currentArena.players, player);
 
 					if(not isEnemy and Inspection and Inspection.RequestSpec) then
@@ -381,17 +384,19 @@ end
 
 
 -- Returns a table with unit information to be placed inside arena.players
-function ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, spec_id, kills, deaths, damage, healing)
+function ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, isFemale, spec_id, kills, deaths, damage, healing)
 	return {
 		["isEnemy"] = isEnemy,
 		["GUID"] = GUID,
 		["name"] = name,
 		["race"] = race_id,
+		["isFemale"] = isFemale,
 		["spec"] = spec_id,
 		["kills"] = kills,
 		["deaths"] = deaths,
 		["damage"] = damage,
 		["healing"] = healing,
+		["isSelf"] = currentArena.playerName and name == currentArena.playerName or nil;
 	};
 end
 

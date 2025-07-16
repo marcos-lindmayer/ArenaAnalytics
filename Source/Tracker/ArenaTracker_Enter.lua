@@ -107,7 +107,7 @@ function ArenaTracker:HandlePreTrackingRatedEvent()
 		C_Timer.After(SCORE_UPDATE_TIMEOUT, ArenaTracker.HandleScoreTimeout);
 	end
 
-	Debug:LogGreen("HandlePreTrackingRatedEvent", stateData.scoreReceived, stateData.scoreTimedOut, stateData.hasMatchEnded, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
+	Debug:Log("HandlePreTrackingRatedEvent", stateData.scoreReceived, stateData.scoreTimedOut, stateData.hasMatchEnded, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
 end
 
 
@@ -135,7 +135,7 @@ function ArenaTracker:HandlePreTrackingScoreEvent()
 		RequestRatedInfo();
 	end
 
-	Debug:LogGreen("HandlePreTrackingScoreEvent", stateData.scoreReceived, stateData.hasMatchEnded, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
+	Debug:Log("HandlePreTrackingScoreEvent", stateData.scoreReceived, stateData.hasMatchEnded, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
 end
 
 
@@ -202,6 +202,8 @@ function ArenaTracker:HandleArenaInitiate(isLoad)
 
 	ArenaTracker:SetState("Initiated");
 
+	Debug:LogGreen("HandleArenaInitiate triggered!");
+
 	-- Clear the old stateData
 	stateData = {};
 	stateData.isLoad = isLoad;
@@ -232,15 +234,18 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 	end
 
 	if(not ArenaTracker:IsInState("Initiated")) then
-		Debug:Log("HandleArenaEnter bailing out due to invalid state:", ArenaTracker:GetStateName());
+		Debug:LogWarning("HandleArenaEnter bailing out due to invalid state:", ArenaTracker:GetStateName());
 		return;
 	end
 
 	Debug:LogGreen("=================================================");
-	Debug:LogGreen("ArenaTracker:HandleArenaEnter: isLoad =", stateData.isLoad);
+	Debug:LogGreen("ArenaTracker:HandleArenaEnter:", battlefieldId, stateData.isLoad);
 
 	local status, bracket, _, matchType = API:GetBattlefieldStatus(battlefieldId);
-	assert(status == "active");
+	if(not Debug:Assert(status == "active", "HandleArenaEnter called with inactive bettlefield ID.")) then
+		Debug:LogWarning("HandleArenaEnter called with inactive bettlefield ID.", battlefieldId);
+		return;
+	end
 
 	-- Basic state for currentArena, to compare to existing currentArena before real tracking starts.
 	stateData.battlefieldId = battlefieldId;
@@ -261,17 +266,18 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 	end
 end
 
-
+-- Must be valid and equal on existing and new tracking
 local function CheckRequiredField(field)
-	local success = currentArena[field] and stateData[field] and currentArena[field] == stateData[field];
+	local success = currentArena[field] and currentArena[field] == stateData[field];
 	if(not success) then
 		Debug:LogWarning("CheckRequiredField failing field:", field, currentArena[field], stateData[field]);
 	end
 	return success;
 end
 
+-- Must be equal, if both existing and new tracking has a valid value
 local function CheckOptionalField(field)
-	local success = not currentArena[field] or (stateData[field] and currentArena[field] == stateData[field]);
+	local success = not currentArena[field] or not stateData[field] or currentArena[field] == stateData[field];
 	if(not success) then
 		Debug:LogWarning("CheckOptionalField failing field:", field, currentArena[field], stateData[field]);
 	end
@@ -312,7 +318,7 @@ function ArenaTracker:CompareExistingTracking()
 		return false;
 	end
 
-	Debug:LogTemp("CompareExistingTracking passed!");
+	Debug:LogGreen("CompareExistingTracking passed!");
 	return true;
 end
 
@@ -338,6 +344,8 @@ function ArenaTracker:StartNewOrContinueTracking()
 		Debug:LogGreen("Resetting currentArena for new tracking..");
 		ArenaTracker:Reset();
 	end
+
+	Debug:LogGreen("Starting arena tracking, with season played:", stateData.seasonPlayed, stateData.seasonPlayedConfirmed, stateData.matchType);
 
 	ArenaTracker:HandleArenaStart(stateData);
 end

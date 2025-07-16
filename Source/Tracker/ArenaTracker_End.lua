@@ -52,17 +52,15 @@ function ArenaTracker:HandleArenaEnd()
 	currentArena.endTime = tonumber(currentArena.endTime) or time();
 
 	Debug:LogGreen("HandleArenaEnd!", #currentArena.players, currentArena.startTime, currentArena.endTime);
-	Debug:LogTable(currentArena.deathData);
 
 	-- Solo Shuffle
 	ArenaTracker:HandleRoundEnd(true);
 
 	local winner = API:GetWinner();
 
-	-- TODO: Get rated info and validate season played to be post match season played
 	RequestRatedInfo();
 
-	local players = {};
+	local players = TablePool:Acquire();
 
 	-- Figure out how to default to nil, without failing to count losses.
 	local myTeamIndex = nil;
@@ -74,7 +72,7 @@ function ArenaTracker:HandleArenaEnd()
 	local isShuffle = ArenaTracker:IsShuffle();
 
 	for i=1, GetNumBattlefieldScores() do
-		local score = API:GetPlayerScore(i) or {};
+		local score = API:GetPlayerScore(i) or TablePool:Acquire();
 
 		-- Find or add player
 		local player = ArenaTracker:GetPlayer(score.name);

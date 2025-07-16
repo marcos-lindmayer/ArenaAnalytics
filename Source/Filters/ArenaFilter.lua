@@ -112,7 +112,6 @@ function Filters:Set(filter, value, skipRefresh)
         value = Filters:GetDefault(filter);
     end
 
-    Debug:LogTemp("Attempting to set filter:", filter, value, skipRefresh);
     if(value == Filters:Get(filter)) then
         return false;
     end
@@ -501,7 +500,7 @@ local function FinalizeCompDataTables()
                 -- Calculate winrate
                 local played = tonumber(compTable.played) or 0;
                 local wins = tonumber(compTable.wins) or 0;
-                compTable.winrate = (played > 0) and math.floor(wins * 100 / played) or 0;
+                compTable.winrate = Helpers:GetSafePercentage(wins, played, 3); -- Keep 3 decimals for sorting accuracy. (Rounded by UI)
 
                 -- Calculate average MMR
                 local mmr = tonumber(compTable.mmr);

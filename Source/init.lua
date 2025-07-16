@@ -79,7 +79,7 @@ end
 
 function stages.Step1_AddonLoaded()
 	Initialization:InitiateStep(1);
-	Debug:LogTemp("Step1_AddonLoaded");
+	Debug:Log("Step1_AddonLoaded");
 
 	local successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
 	if(not successfulRequest) then
@@ -93,7 +93,7 @@ end
 
 function stages.Step2_VariablesLoaded()
 	Initialization:InitiateStep(2);
-	Debug:LogTemp("Step2_VariablesLoaded:", IsLoggedIn());
+	Debug:Log("Step2_VariablesLoaded:", IsLoggedIn());
 
 	-- Initialize DBs
 	ArenaAnalytics:InitializeArenaAnalyticsDB();
@@ -119,7 +119,7 @@ end
 
 function stages.Step3_PlayerLogin()
 	Initialization:InitiateStep(3);
-	Debug:LogTemp("Step3_PlayerLogin:", IsLoggedIn());
+	Debug:Log("Step3_PlayerLogin:", IsLoggedIn());
 
 	VersionManager:OnInit();
 	MinimapButton:Update();
@@ -129,7 +129,7 @@ end
 
 function stages.Step4_EnteringWorld()
 	Initialization:InitiateStep(4);
-	Debug:LogTemp("Step4_EnteringWorld");
+	Debug:Log("Step4_EnteringWorld");
 
 	-- TODO: Implement to inform users of latest versions (Avoid false positives from development versions!)
 	-- Version Message (Unused)

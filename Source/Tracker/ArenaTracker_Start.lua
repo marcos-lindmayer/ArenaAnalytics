@@ -66,15 +66,13 @@ function ArenaTracker:HandleArenaStart(stateData)
 	currentArena.startTime = tonumber(currentArena.startTime) or time();
 
 	currentArena.playerName = Helpers:GetPlayerName();
-	currentArena.mySpec = stateData.mySpec or API:GetSpecialization();
+	currentArena.mySpec = Helpers:IsSpecID(stateData.mySpec) and stateData.mySpec or API:GetSpecialization();
 
 	currentArena.size = teamSize;
 
 	currentArena.matchType = matchType;
 	currentArena.bracket = bracket;
 	currentArena.bracketIndex = bracketIndex;
-
-	Debug:Log("TeamSize:", teamSize, currentArena.size, "Bracket:", bracket);
 
 	if(ArenaTracker:IsRated()) then
 		currentArena.seasonPlayed = stateData.seasonPlayed; -- Post match season played
@@ -86,11 +84,12 @@ function ArenaTracker:HandleArenaStart(stateData)
 		local GUID = UnitGUID("player");
 		local name = currentArena.playerName;
 		local race_id = Helpers:GetUnitRace("player");
+		local isFemale = Helpers:IsUnitFemale("player");
 		local class_id = Helpers:GetUnitClass("player");
 		local spec_id = currentArena.mySpec or class_id;
-		Debug:Log("Using MySpec:", spec_id);
+		Debug:Log("Using MySpec:", spec_id, isFemale);
 
-		local player = ArenaTracker:CreatePlayerTable(false, GUID, name, race_id, spec_id);
+		local player = ArenaTracker:CreatePlayerTable(false, GUID, name, race_id, isFemale, spec_id);
 		table.insert(currentArena.players, player);
 	end
 

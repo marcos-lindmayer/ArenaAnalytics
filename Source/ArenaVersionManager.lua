@@ -16,6 +16,8 @@ local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
+VersionManager.disabled = true;
+
 -- True if data sync was detected with a later version.
 VersionManager.newDetectedVersion = false;
 VersionManager.latestFormatVersion = 4;
@@ -85,6 +87,10 @@ end
 
 -- Returns true if loading should convert data
 function VersionManager:OnInit()
+    if(VersionManager.disabled) then
+        return;
+    end
+
     ArenaAnalyticsDB.formatVersion = ArenaAnalyticsDB.formatVersion or 0;
     if(ArenaAnalyticsDB.formatVersion >= VersionManager.latestFormatVersion) then
         return;
@@ -151,8 +157,6 @@ local function convertFormatedDurationToSeconds(inDuration)
     if(type(inDuration) == "number") then
         return tonumber(inDuration);
     end
-
-    Debug:LogTemp(inDuration, type(inDuration));
 
     if(inDuration and inDuration ~= "") then
         -- Sanitize the formatted time string

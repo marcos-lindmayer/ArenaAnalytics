@@ -85,6 +85,7 @@ end
 -- Creates addOn text, filters, table headers
 function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:SetFrameStrata("HIGH");
+    ArenaAnalyticsScrollFrame:SetFrameLevel(666);
 
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
 
@@ -515,9 +516,10 @@ local function GetArenaText(arenaCount)
 end
 
 local function CombineStatsText(total, wins, losses, draws)
-    total = total or 0;
+    total = tonumber(total) or 0;
+    wins = tonumber(wins) or 0;
 
-    local winrateText = total > 0 and math.floor(wins * 100 / total) or 0;
+    local winrateText = Helpers:GetSafePercentage(wins, total);
     local winsText =  Colors:ColorText(wins, Colors.winColor);
     local lossesText = Colors:ColorText(losses, Colors.lossColor);
 

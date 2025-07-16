@@ -57,7 +57,7 @@ function ArenaTracker:HandleArenaExit()
 	assert(currentArena.size);
 	assert(currentArena.mapId);
 
-	Debug:LogGreen("HandleArenaExit!     ", API:GetSeasonPlayed(currentArena.bracketIndex));
+	Debug:LogGreen("HandleArenaExit!     ", API:GetSeasonPlayed(currentArena.bracketIndex), currentArena.seasonPlayed);
 
 	if(Inspection and Inspection.Clear) then
 		Inspection:Clear();
@@ -156,6 +156,7 @@ function ArenaTracker:InsertArenaToMatchHistory(newArena)
 	end
 
 	ArenaMatch:SetSeason(arenaData, season);
+	ArenaMatch:SetSeasonPlayed(arenaData, newArena.seasonPlayed)
 
 	ArenaMatch:SetMatchOutcome(arenaData, newArena.outcome);
 
@@ -169,11 +170,7 @@ function ArenaTracker:InsertArenaToMatchHistory(newArena)
 	-- Assign session
 	Sessions:AssignSession(arenaData);
 
-	if(newArena.requireRatingFix) then
-		-- Transient data
-		ArenaMatch:SetTransientSeasonPlayed(arenaData, newArena.seasonPlayed);
-		ArenaMatch:SetRequireRatingFix(arenaData, newArena.requireRatingFix);
-	end
+	ArenaMatch:TrySetRequireRatingFix(arenaData, newArena.requireRatingFix);
 
 	-- Clear transient season played from last match
 	ArenaAnalytics:ClearLastMatchTransientValues(newArena.bracketIndex);

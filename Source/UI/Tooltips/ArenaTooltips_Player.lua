@@ -444,9 +444,8 @@ local function SetNameText(text)
     -- Apply the adjusted font size
     self.name:SetFont(fontPath, size, fontFlags);
 
-    -- TODO: Determine if the next-frame delay is good, bad or irrelevant.
     -- Ensure the name font string is shown
-    C_Timer.After(0, function() self.name:Show() end);
+    self.name:Show();
 end
 
 function PlayerTooltip:Reset()

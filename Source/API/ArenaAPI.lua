@@ -27,6 +27,7 @@ API.classTokens = {
     "EVOKER",       -- Dragonflight
 };
 
+
 function API:CanInspect(unitToken)
     -- TODO: Validate that this is allowed in all versions (To avoid inspect error message)
     if(not InCombatLockdown() and not CheckInteractDistance(unitToken, 1)) then
@@ -37,14 +38,17 @@ function API:CanInspect(unitToken)
     return unitToken ~= nil; --and CanInspect(unitToken);
 end
 
+
 function API:GetClassToken(index)
     index = tonumber(index);
     return index and API.classTokens[index];
 end
 
+
 function API:GetNumClasses()
     return #API.classTokens;
 end
+
 
 function API:GetAddonVersion()
     if(GetAddOnMetadata) then
@@ -53,17 +57,17 @@ function API:GetAddonVersion()
     return C_AddOns and C_AddOns.GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
 end
 
+
 function API:GetActiveBattlefieldID()
     for index = 1, GetMaxBattlefieldID() do
         local status = API:GetBattlefieldStatus(index);
-        Debug:LogTemp("battlefield status:", index, status);
         if status == "active" then
 			Debug:Log("Found battlefield ID ", index);
             return index;
         end
     end
-	Debug:Log("Failed to find battlefield ID");
 end
+
 
 -- Unused
 function API:GetMaxSpecializationsForClass(classIndex)
@@ -78,14 +82,17 @@ function API:GetMaxSpecializationsForClass(classIndex)
     return nil;
 end
 
+
 function API:GetCurrentSeason()
     return GetCurrentArenaSeason();
 end
+
 
 function API:GetSeasonPlayed(bracketIndex)
     local _, seasonPlayed = API:GetPersonalRatedInfo(bracketIndex);
     return seasonPlayed;
 end
+
 
 function API:GetWinner()
     if(not API:IsInArena()) then
@@ -100,10 +107,13 @@ function API:GetWinner()
     return tonumber(winner);
 end
 
+
 function API:GetCurrentMapID()
     local mapID = select(8,GetInstanceInfo());
+    Debug:Log("Map:", mapID)
     return tonumber(mapID);
 end
+
 
 function API:IsInArena()
     return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
@@ -120,6 +130,7 @@ end
 function API:IsSoloShuffle()
     return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
 end
+
 
 function API:DetermineMatchType()
     if(API:IsInArena()) then
@@ -139,6 +150,7 @@ function API:DetermineMatchType()
     return "none";
 end
 
+
 function API:DetermineBracket(teamSize)
     if(API:IsSoloShuffle()) then
         return "shuffle";
@@ -153,11 +165,34 @@ function API:DetermineBracket(teamSize)
     return nil;
 end
 
+
+function API:Round(number, decimals)
+    number = tonumber(number) or 0;
+
+    if(not Debug:Assert(type(Round) == "function", "WoW API Round missing.")) then
+        return number;
+    end
+
+    return Round(number, decimals);
+end
+
+-- Rounds the winrate, flooring 99-100.
+function API:RoundPercentage(winrate)
+    winrate = tonumber(winrate) or 0;
+
+    if(winrate > 99 and winrate < 99.97) then
+        return math.floor(winrate);
+    end
+
+    return API:Round(winrate);
+end
+
 -------------------------------------------------------------------------
 
 function API:HasSurrenderAPI()
     return CanSurrenderArena and SurrenderArena;
 end
+
 
 function API:TrySurrenderArena(source)
     if(not API:HasSurrenderAPI()) then
@@ -194,7 +229,9 @@ function API:TrySurrenderArena(source)
     end
 end
 
+
 -------------------------------------------------------------------------
+
 
 function API:UpdateDialogueVolume()
     local hasPreviousValue = type(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue) ~= "number"
@@ -222,7 +259,9 @@ function API:UpdateDialogueVolume()
     end
 end
 
+
 -------------------------------------------------------------------------
+
 
 function API:GetArenaPlayerSpec(index, isEnemy)
     if(isEnemy) then
@@ -236,6 +275,7 @@ function API:GetArenaPlayerSpec(index, isEnemy)
     end
 end
 
+
 function API:GetRoleBitmap(spec_id)
     spec_id = tonumber(spec_id);
     if(not spec_id) then
@@ -247,6 +287,7 @@ function API:GetRoleBitmap(spec_id)
 
     return bitmapOverride or Internal:GetRoleBitmap(spec_id);
 end
+
 
 function API:GetMappedAddonSpecID(specID)
     if(not API.specMappingTable) then
@@ -265,6 +306,7 @@ function API:GetMappedAddonSpecID(specID)
     return spec_id;
 end
 
+
 function API:GetSpecIcon(spec_id)
     spec_id = tonumber(spec_id);
     if(not spec_id) then
@@ -277,8 +319,10 @@ function API:GetSpecIcon(spec_id)
     return bitmapOverride or Constants:GetBaseSpecIcon(spec_id);
 end
 
+
 -------------------------------------------------------------------------
 -- Initialize the general and expansion specific addon API
+
 function API:Initialize()
     if(API.InitializeExpansion) then
         API:InitializeExpansion();

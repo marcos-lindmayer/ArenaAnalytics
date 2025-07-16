@@ -19,6 +19,7 @@ function Helpers:ToSafeLower(value)
     return value;
 end
 
+
 function Helpers:ToSafeNumber(value)
     if(not value or value == "inf" or value == "nan") then
         return nil; -- Assume non-nil values will be kept if needed elsewhere
@@ -27,6 +28,7 @@ function Helpers:ToSafeNumber(value)
     return tonumber(value);
 end
 
+
 function Helpers:SanitizeValue(value)
     if(type(value) == "string") then
         value = value:gsub(" ", ""):lower();
@@ -34,9 +36,11 @@ function Helpers:SanitizeValue(value)
     return value;
 end
 
+
 function Helpers:IsPositiveNumber(value)
     return tonumber(value) and tonumber(value) > 0;
 end
+
 
 function Helpers:DeepCopy(original)
     local copy = {}
@@ -60,6 +64,7 @@ function Helpers:DeepCopy(original)
     return copy;
 end
 
+
 function Helpers:GetPlayerName(skipRealm)
     local name, realm = UnitFullName("player");
 
@@ -69,6 +74,26 @@ function Helpers:GetPlayerName(skipRealm)
 
     return name;
 end
+
+
+function Helpers:GetSafePercentage(numerator, denominator, decimals)
+    numerator = tonumber(numerator) or 0;
+    denominator = tonumber(denominator) or 0;
+
+    if(denominator <= 0) then
+        return 0;
+    end
+
+    local percentage = numerator * 100 / denominator;
+
+    -- Floors values between 99 and 100, to require near exact 100%
+    if(not decimals or decimals < 0) then
+        return API:RoundPercentage(percentage)
+    end
+
+    return API:Round(percentage, decimals) or 0;
+end
+
 
 function Helpers:RatingToText(rating, delta)
     rating = tonumber(rating);
@@ -100,12 +125,13 @@ function Helpers:RatingToText(rating, delta)
     return string.format("%d (%s)", rating, delta);
 end
 
+
 local function splitLargeNumber(value)
     if(not value) then
         return 0;
     end
 
-    value = Round(value);
+    value = API:Round(value);
 
     local substitutions = nil;
     repeat
@@ -115,12 +141,13 @@ local function splitLargeNumber(value)
     return value;
 end
 
+
 local function numberSuffixFormat(value)
     local prefix = (value < 0) and "-" or "";
     local absValue = math.abs(value);
 
     if(absValue < 1000) then
-        return Round(value);
+        return API:Round(value);
     end
 
     local suffixes = { "", "K", "M", "B", "T", "Q" };
@@ -131,7 +158,7 @@ local function numberSuffixFormat(value)
         suffixIndex = suffixIndex + 1;
     end
 
-    absValue = Round(absValue*10);
+    absValue = API:Round(absValue*10);
     local hasDecimal = (absValue < 1000) and (absValue % 10 ~= 0);
     absValue = absValue / 10;
 
@@ -142,12 +169,13 @@ local function numberSuffixFormat(value)
     end
 end
 
+
 function Helpers:FormatNumber(value, forceExact)
     value = tonumber(value) or "-";
 
     if (type(value) == "number") then
         if(math.abs(value) < 1000) then
-            value = Round(value);
+            value = API:Round(value);
         elseif(Options:Get("compactLargeNumbers") and not forceExact) then
             value = numberSuffixFormat(value);
         else
@@ -158,9 +186,11 @@ function Helpers:FormatNumber(value, forceExact)
     return Colors:ColorText(value, Colors.statsColor);
 end
 
+
 function Helpers:FormatDate(value)
     return value and date("%d.%m.%y  %H:%M", value);
 end
+
 
 -- Create two layers of backdrop, for an extra low transparency
 function Helpers:CreateDoubleBackdrop(parent, name, strata, level)
@@ -193,6 +223,7 @@ function Helpers:CreateDoubleBackdrop(parent, name, strata, level)
     return frame;
 end
 
+
 -------------------------------------------------------------------------
 -- Data Helpers
 
@@ -209,11 +240,28 @@ function Helpers:GetUnitRace(unit)
     return Internal:GetAddonRaceIDByToken(token, factionIndex);
 end
 
+
 -- Get Addon Class ID from unit
 function Helpers:GetUnitClass(unit)
     local _,token = UnitClass(unit);
     return Internal:GetAddonClassID(token);
 end
+
+
+function Helpers:IsUnitFemale(unit)
+    local genderIndex = tonumber(UnitSex(unit));
+
+    if(genderIndex == 2) then
+        -- Male
+        return false;
+    elseif(genderIndex == 3) then
+        -- Female
+        return true;
+    end
+
+    return nil;
+end
+
 
 function Helpers:GetUnitFullName(unitToken)
     local name = UnitNameUnmodified(unitToken);
@@ -235,6 +283,7 @@ function Helpers:GetUnitFullName(unitToken)
     return format("%s-%s", name, realm);
 end
 
+
 function Helpers:ToFullName(name)
     if(not name) then
         return nil;
@@ -247,6 +296,7 @@ function Helpers:ToFullName(name)
 
     return name;
 end
+
 
 function Helpers:GetClassID(spec_id)
     spec_id = tonumber(spec_id);

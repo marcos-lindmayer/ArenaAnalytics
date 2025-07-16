@@ -38,7 +38,7 @@ local QuickSearchValueTable = {
         ["mechagnome"] = "MGnome",
         ["vulpera"] = "Vulpera"
     },
-}
+};
 
 function Search:GetShortQuickSearch(typeKey, longValue)
     assert(typeKey and QuickSearchValueTable[typeKey]);
@@ -61,7 +61,7 @@ local function CheckShortcut(shortcut, btn)
     if(shortcut == "LMB") then
         return btn == "LeftButton";
     end
-    
+
     if(shortcut == "RMB") then
         return btn == "RightButton";
     end
@@ -73,11 +73,11 @@ local function CheckShortcut(shortcut, btn)
     if(shortcut == "Ctrl") then
         return IsControlKeyDown();
     end
-    
+
     if(shortcut == "Alt") then
         return IsAltKeyDown();
     end
-    
+
     if(shortcut == "Nomod") then
         return not IsShiftKeyDown() and not IsControlKeyDown() and not IsAltKeyDown();
     end
@@ -228,7 +228,7 @@ local function GetQuickSearchTokens(player, team, btn)
         AddValueByType(tokens, player, "race");
         hasValue = true;
     end
-    
+
     -- Faction
     shortcut = Options:Get("quickSearchAction_Faction");
     if(CheckShortcut(shortcut, btn)) then
@@ -287,7 +287,7 @@ local function RemoveSeparatorFromTokens(tokens)
 
     for i=#tokens, 1, -1 do
         local token = tokens[i];
-        
+
         if(token and token.isSeparator) then
             table.remove(tokens, i);
         end
@@ -302,7 +302,7 @@ local function TokensContainExact(existingTokens, token)
             return true;
         end
     end
-    
+
     return false;
 end
 
@@ -434,7 +434,7 @@ function Search:CommitQuickSearch(currentSegments, segmentIndex, newTokens, appe
 
                     if(existingToken.explicitType == token.explicitType) then
                         isUniqueToken = false;
-                        
+
                         -- Different values, replace with the new token
                         if(existingToken.value ~= token.value) then
                             existingTokens[tokenIndex] = token;
@@ -461,6 +461,6 @@ function Search:CommitQuickSearch(currentSegments, segmentIndex, newTokens, appe
 
     Search:SetCurrentData(currentSegments);
     Search:CommitSearch();
-    
+
     locked = false;
 end

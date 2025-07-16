@@ -264,7 +264,7 @@ function Constants:GetBaseSpecIcon(spec_id)
         return "";
     end
 
-    return specIconTable[spec_id] or 134400;
+    return specIconTable[spec_id] or 134400; -- Red question mark ID (Inv_misc_questionmark)
 end
 
 function ArenaAnalytics:getBracketFromTeamSize(teamSize)

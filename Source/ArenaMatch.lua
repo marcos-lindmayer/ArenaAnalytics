@@ -34,8 +34,9 @@ ArenaMatch.matchKeys = {
     comp = -16,
     enemy_comp = -17,
     rounds = -18,
+    seasonPlayed = -19,
 
-    transient_seasonPlayed = -100,
+    transient_seasonPlayed_DEPRECATED = -100, -- TODO: Remove in favor of persistent seasonPlayed key
     transient_requireRatingFix = -101,
 };
 local matchKeys = ArenaMatch.matchKeys;
@@ -51,6 +52,7 @@ ArenaMatch.playerKeys = {
     rated_info = -7,
     stats = -8,
     variable_stats = -9, -- Game mode specific stats (Wins for shuffle)
+    is_female = -10, -- For future localization logic
 };
 local playerKeys = ArenaMatch.playerKeys;
 
@@ -113,7 +115,7 @@ end
 local function ToPositiveNumber(value, allowZero)
     value = tonumber(value);
     if(not value) then
-        return;
+        return nil;
     end
 
     value = Round(value);
@@ -127,17 +129,34 @@ local function ToPositiveNumber(value, allowZero)
     return value or nil;
 end
 
-local function ToNumericalBool(value, drawValue)
+local function ToNumericalOutcome(value, drawValue)
     value = tonumber(value);
     if(value == nil) then
-        return;
+        return nil;
     end
 
     if(drawValue and value == drawValue) then
+        assert(type(drawValue) == "number", "ToNumericalOutcome drawValue must be a number!");
         return drawValue;
     end
 
-    return (value and value == 1) and 1 or 0;
+    return (value ~= 0) and 1 or 0;
+end
+
+local function ToNumericalBool(value, ignoreFalse)
+    if(value == nil) then
+        return nil;
+    end
+
+    if(type(value) == "number") then
+        value = (value ~= 0); -- Convert to bool
+    end
+
+    if(not value) then
+        return not ignoreFalse and 0 or nil;
+    end
+
+    return 1;
 end
 
 -------------------------------------------------------------------------
@@ -146,24 +165,20 @@ end
 function ArenaMatch:ClearTransientValues(match)
     assert(match);
 
-    match[matchKeys.transient_seasonPlayed] = nil;
+    match[matchKeys.transient_seasonPlayed_DEPRECATED] = nil;
     match[matchKeys.transient_requireRatingFix] = nil;
 end
 
-function ArenaMatch:SetTransientSeasonPlayed(match, value)
+function ArenaMatch:TrySetRequireRatingFix(match, value)
     assert(match);
-    Debug:Log("Assigning transient season played value:", value, "from:", match[matchKeys.transient_seasonPlayed]);
-    match[matchKeys.transient_seasonPlayed] = tonumber(value);
-end
 
-function ArenaMatch:GetSeasonPlayed(match)
-    return match and match[matchKeys.transient_seasonPlayed];
-end
+    value = value and true;
+    if(not value) then
+        return;
+    end
 
-function ArenaMatch:SetRequireRatingFix(match, value)
-    assert(match);
-    Debug:LogWarning("SetRequireRatingFix:", value, "from:", match[matchKeys.transient_requireRatingFix]);
-    match[matchKeys.transient_requireRatingFix] = value and true or nil;
+    Debug:LogWarning("TrySetRequireRatingFix:", value, "from:", match[matchKeys.transient_requireRatingFix]);
+    match[matchKeys.transient_requireRatingFix] = value;
 end
 
 function ArenaMatch:DoesRequireRatingFix(match)
@@ -177,7 +192,7 @@ function ArenaMatch:TryFixLastRating(match)
         return;
     end
 
-    local trackedSeasonPlayed = tonumber(match[matchKeys.transient_seasonPlayed]);
+    local trackedSeasonPlayed = ArenaMatch:GetSeasonPlayed(match);
     if(not trackedSeasonPlayed) then
         return;
     end
@@ -492,7 +507,7 @@ function ArenaMatch:SetEnemyMMR(match, value)
 end
 
 -------------------------------------------------------------------------
--- Season (12)
+-- Season (12) and Season Played (19)
 
 function ArenaMatch:GetSeason(match)
     if(not match) then 
@@ -505,6 +520,16 @@ end
 function ArenaMatch:SetSeason(match, value)
     assert(match);
     match[matchKeys.season] = ToPositiveNumber(value, true);
+end
+
+
+function ArenaMatch:GetSeasonPlayed(match)
+    return match and tonumber(match[matchKeys.season]);
+end
+
+function ArenaMatch:SetSeasonPlayed(match, value)
+    assert(match);
+    match[matchKeys.seasonPlayed] = ToPositiveNumber(value, true);
 end
 
 -------------------------------------------------------------------------
@@ -549,7 +574,7 @@ function ArenaMatch:SetMatchOutcome(match, value)
     assert(match);
 
     -- 0 = loss, 1 = win, 2 = draw, nil = unknown. 
-    match[matchKeys.outcome] = ToNumericalBool(value, 2);
+    match[matchKeys.outcome] = ToNumericalOutcome(value, 2);
 end
 
 -------------------------------------------------------------------------
@@ -596,7 +621,6 @@ function ArenaMatch:AddPlayer(match, player)
     else
         Debug:Log("Warning: Adding player to stored match without name!");
     end
-
 
     local newPlayer = ArenaMatch:MakeCompactPlayerData(player);
 
@@ -652,6 +676,7 @@ function ArenaMatch:MakeCompactPlayerData(player)
         [playerKeys.role] = Internal:GetRoleBitmap(player.spec),
         [playerKeys.is_self] = player.isSelf and 1 or nil,
         [playerKeys.is_first_death] = player.isFirstDeath and 1 or nil,
+        [playerKeys.is_female] = ToNumericalBool(player.isFemale),
     };
 
     local ratedInfoKeys = {
@@ -816,7 +841,7 @@ function ArenaMatch:GetPlayerInfo(player)
     playerInfo.role_main = Bitmap:GetMainRole(playerInfo.role);
     playerInfo.role_sub = Bitmap:GetSubRole(playerInfo.role);
 
-    -- Expand bitmask (isFirstDeath, isEnemy, isSelf)
+    -- Expand bitmask (isFirstDeath, isEnemy, isSelf, isFemale)
     for key,index in pairs(Constants.playerFlags) do
         assert(key and tonumber(index), "Invalid flag in Constants.playerFlags!");
         --playerInfo[key] = playerInfo.bitmask and Bitmap:HasBitByIndex(playerInfo.bitmask, index) or nil;
@@ -1101,6 +1126,14 @@ end
 
 function ArenaMatch:IsPlayerFirstDeath(player)
     return player and player[playerKeys.is_first_death] or false;
+end
+
+-------------------------------------------------------------------------
+-- Gender
+
+function ArenaMatch:IsPlayerFemale(player)
+    Debug:LogTemp("ArenaMatch:IsPlayerFemale", player, playerKeys.is_female, player[playerKeys.is_female])
+    return player and player[playerKeys.is_female];
 end
 
 -------------------------------------------------------------------------
