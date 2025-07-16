@@ -32,6 +32,11 @@ function Tooltips:DrawMinimapTooltip(frame)
     GameTooltip:AddDoubleLine(Colors:GetTitle(true), Colors:GetVersionText());
     GameTooltip:AddLine("|c" .. Colors.infoColor .. "Left Click|r" .. " to toggle ArenaAnalytics");
     GameTooltip:AddLine("|c" .. Colors.infoColor .. "Right Click|r".. " to open Options");
+
+    if(Options:Get("surrenderByMiddleMouseClick") and API:HasSurrenderAPI()) then
+        GameTooltip:AddLine("|c" .. Colors.infoColor .. "Middle Mouse Click|r".. " to surrender.");
+    end
+
     GameTooltip:Show();
 end
 

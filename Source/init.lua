@@ -105,7 +105,7 @@ function stages.Step2_VariablesLoaded()
 	-- Initialize modules
 	---------------------------------
 
-	Options:Init();
+	Options:Initialize();
 	Commands:Initialize();
 	Bitmap:Initialize();
 	Internal:Initialize();

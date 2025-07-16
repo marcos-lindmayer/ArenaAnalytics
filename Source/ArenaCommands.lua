@@ -157,15 +157,6 @@ Commands.list = {
 
 		Debug:Log("Target isFemale:", ArenaAnalytics.Helpers:IsUnitFemale("target"), UnitNameUnmodified("target"));
 
-		local seasonPlayed = ...;
-		for bracketIndex=1, #ArenaAnalytics.brackets do
-			local sp = seasonPlayed or API:GetSeasonPlayed(bracketIndex) or 0;
-
-			local rating = ArenaAnalytics.ArenaRatedInfo:GetRatedInfo(bracketIndex, sp);
-			local lastRating = ArenaAnalytics.ArenaRatedInfo:GetRatedInfo(bracketIndex, sp-1);
-			Debug:Log(rating, lastRating, "SeasonPlayed:", sp);
-		end
-
 		ArenaAnalytics:Print(" ================================================ ");
 	end,
 

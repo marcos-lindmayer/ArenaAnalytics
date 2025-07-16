@@ -64,27 +64,25 @@ function Events:CreateEventListenerForRequest(event, repeatable, callback)
     end);
 end
 
-local function isLoaded()
-	if(not IsLoggedIn()) then
-		return false;
-	end
-
-	-- Check some APIs
-
-	return true;
-end
-
-local function useFallbackLoadTimer()
-	-- If all load events hapened, and API still fails, then start a 1 sec timer loop until they work?
-end
+-- Manual management of zone change, counting only between arena and non-arena
+local currentZoneState = {
+	wasInArena = nil,
+	lastKnownArenaEnded = nil,
+	map = nil,
+};
 
 local function HandleZoneChanged(isLoad)
+	local isInArena = API:IsInArena();
+	currentZoneState.wasInArena = isInArena;
+	currentZoneState.lastKnownArenaEnded = nil;
+	currentZoneState.map = isInArena and API:GetCurrentMapID() or nil;
+
 	-- Optionally mute/revert dialogue volume
 	API:UpdateDialogueVolume();
 
-	Debug:LogGreen("HandleZoneChanged triggered", API:IsInArena(), ArenaTracker:GetStateName(), ArenaTracker:IsTrackingArena(true), GetZoneText());
+	Debug:LogGreen("HandleZoneChanged triggered", isInArena, ArenaTracker:GetStateName(), ArenaTracker:IsTrackingArena(true), GetZoneText());
 
-	if(API:IsInArena()) then
+	if(isInArena) then
 		ArenaTracker:HandleArenaInitiate(isLoad);
 	else
 		Events:UnregisterArenaEvents();
@@ -100,15 +98,30 @@ local function HandleZoneChanged(isLoad)
 	end
 end
 
--- Manual management of zone change, counting only between arena and non-arena
-ArenaAnalytics.wasInArena = nil;
 function Events:CheckZoneChanged(isLoad)
 	local isInArena = API:IsInArena();
+	local isNewArenaMap = isInArena and currentZoneState.map ~= API:GetCurrentMapID();
 
-	if(ArenaAnalytics.wasInArena ~= isInArena) then
-		ArenaAnalytics.wasInArena = isInArena;
-
+	if(currentZoneState.wasInArena ~= isInArena or isNewArenaMap) then
 		HandleZoneChanged(isLoad);
+	end
+end
+
+local function UpdateArenaEnded()
+	if(not API:IsInArena()) then
+		return;
+	end
+
+	local alreadyEnded = currentZoneState.lastKnownArenaEnded;
+	local hasEnded = API:GetWinner() ~= nil;
+
+	if(hasEnded ~= alreadyEnded) then
+		currentZoneState.lastKnownArenaEnded = hasEnded;
+	end
+
+	if(alreadyEnded == true and not hasEnded) then
+		currentZoneState.wasInArena = false;
+		Events:CheckZoneChanged();
 	end
 end
 
@@ -133,6 +146,7 @@ function Events:HandleGlobalEvent(event, ...)
 	if(event == "PVP_RATED_STATS_UPDATE") then
 		HandleRatedUpdate(...);
 	elseif(event == "UPDATE_BATTLEFIELD_SCORE") then
+		UpdateArenaEnded();
 		Events:CheckZoneChanged();
 		ArenaTracker:HandlePreTrackingScoreEvent(...);
 	elseif(event == "UPDATE_BATTLEFIELD_STATUS") then
@@ -231,14 +245,12 @@ end
 
 -- Custom OnLoad event handling
 function Events:RegisterLoadEvents()
-	if(eventFrames.initEventFrame) then
-		registerEvents(eventFrames.initEventFrame, loadEvents, Events.HandleLoadEvents);
-	end
+	registerEvents(eventFrames.initEventFrame, loadEvents, Events.HandleLoadEvents);
 end
 
 function Events:UnregisterLoadEvents()
-	--unregisterEvents(eventFrames.initEventFrame, loadEvents);
-	--eventFrames.initEventFrame = nil;
+	unregisterEvents(eventFrames.initEventFrame, loadEvents);
+	eventFrames.initEventFrame = nil;
 end
 
 -- Creates "global" events
@@ -292,7 +304,7 @@ function Events:OnLoad()
 	hasLoaded = true;
 
 	Debug:LogGreen("Events:OnLoad() triggered!");
-	ArenaAnalytics.wasInArena = API:IsInArena();
+	currentZoneState.wasInArena = API:IsInArena();
 
 	Events:RegisterGlobalEvents();
 

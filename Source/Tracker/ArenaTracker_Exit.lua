@@ -83,6 +83,10 @@ end
 
 -- Player left an arena (Zone changed to non-arena with valid arena data)
 function ArenaTracker:HandleArenaExit()
+	if(not ArenaTracker:IsTrackingArena(true)) then
+		return;
+	end
+
 	assert(currentArena.size);
 	assert(currentArena.mapId);
 

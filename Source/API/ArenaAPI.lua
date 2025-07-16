@@ -62,7 +62,6 @@ function API:GetActiveBattlefieldID()
     for index = 1, GetMaxBattlefieldID() do
         local status = API:GetBattlefieldStatus(index);
         if status == "active" then
-			Debug:Log("Found battlefield ID ", index);
             return index;
         end
     end

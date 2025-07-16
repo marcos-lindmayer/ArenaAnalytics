@@ -91,7 +91,7 @@ end
 
 local hasOptionsLoaded = nil;
 function Options:LoadSettings()
-    if hasOptionsLoaded then return end;
+    if hasOptionsLoaded then return end; -- Load only once
 
     Debug:Log("Loading settings..");
 
@@ -108,10 +108,12 @@ function Options:LoadSettings()
 
     AddSetting("muteArenaDialogSounds", false);
 
-    AddSetting("surrenderByMiddleMouseClick", false);
-    AddSetting("enableSurrenderAfkOverride", true);
-    AddSetting("enableDoubleAfkToLeave", true);
-    AddSetting("enableSurrenderGoodGameCommand", true);
+    if(API:HasSurrenderAPI()) then
+        AddSetting("surrenderByMiddleMouseClick", false);
+        AddSetting("enableSurrenderAfkOverride", true);
+        AddSetting("enableDoubleAfkToLeave", true);
+        AddSetting("enableSurrenderGoodGameCommand", true);
+    end
 
     AddSetting("hideMinimapButton", false);
     AddSetting("hideFromCompartment", false);
@@ -795,7 +797,7 @@ end
 -- Initialize Options Menu
 -------------------------------------------------------------------
 
-function Options:Init()
+function Options:Initialize()
     Options:LoadSettings();
 
     if not ArenaAnalyticsOptionsFrame then
