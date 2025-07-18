@@ -348,7 +348,7 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 		for i = 1, currentArena.size do
 			local unitToken = group..i;
 
-			local name = Helpers:GetUnitFullName(unitToken);
+			local name = API:GetUnitFullName(unitToken);
 			local player = ArenaTracker:GetPlayer(name);
 			if(name and not player) then
 				local GUID = UnitGUID(unitToken);

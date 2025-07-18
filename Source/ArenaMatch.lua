@@ -757,7 +757,7 @@ end
 function ArenaMatch:IsLocalPlayer(player)
     assert(player);
 
-    local localFullName = Helpers:GetPlayerName();
+    local localFullName = API:GetPlayerName();
     local fullName = ArenaMatch:GetPlayerFullName(player);
     return fullName and fullName == localFullName;
 end
@@ -1278,7 +1278,7 @@ function ArenaMatch:SetRounds(match, rounds)
     match[matchKeys.rounds] = TablePool:Acquire();
 
     -- Cache values to help sort
-    local myName = Helpers:GetPlayerName();
+    local myName = API:GetPlayerName();
     local selfPlayerInfo = ArenaMatch:GetSelfInfo(match, true);
     local requiredTeamSize = ArenaMatch:GetTeamSize(match);
 

@@ -176,10 +176,7 @@ function Sessions:IsMatchesSameSession(firstArena, secondArena)
 		end
 	end
 
-	local matchType1 = ArenaMatch:GetMatchType(firstArena);
-	local matchType2 = ArenaMatch:GetMatchType(secondArena);
-
-	if(matchType1 ~= "skirmish" or matchType2 ~= "skirmish") then	
+	if(RequiresGroupForMatch(firstArena) or RequiresGroupForMatch(secondArena)) then
 		if(not Sessions:ArenasHaveSameParty(firstArena, secondArena)) then
 			return false;
 		end

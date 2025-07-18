@@ -75,14 +75,14 @@ function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
 		return;
 	end
 
-	local class, race, name, realm = API:GetPlayerInfoByGUID(playerGUID);
+	local name, realm, class, race, isFemale = API:GetPlayerInfoByGUID(playerGUID);
 	if(name == nil or name == "") then
 		Debug:LogError("Invalid name of dead player. Skipping..");
 		return;
 	end
 
 	if(not realm or realm == "") then
-		name = Helpers:ToFullName(name);
+		name = API:ToFullName(name);
 	else
 		name = name .. "-" .. realm;
 	end

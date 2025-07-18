@@ -98,7 +98,7 @@ function API:GetPlayerScore(index)
         spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
     end
 
-    score.name = Helpers:ToFullName(scoreInfo.name);
+    score.name = API:ToFullName(scoreInfo.name);
     score.race = Localization:GetRaceID(scoreInfo.raceName);
     score.spec = spec_id;
     score.team = scoreInfo.faction;
@@ -153,11 +153,6 @@ function API:GetSpecialization(unitToken, explicit)
 
     local specID = GetInspectSpecialization(unitToken);
     return API:GetMappedAddonSpecID(specID);
-end
-
-function API:GetPlayerInfoByGUID(GUID)
-    local _,class,_,race,_,name,realm = GetPlayerInfoByGUID(GUID);
-    return class,race,name,realm;
 end
 
 API.maxRaceID = 70;

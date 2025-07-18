@@ -65,7 +65,7 @@ function ArenaTracker:HandleArenaStart(stateData)
 	-- Update start time immediately, might be overridden by gates open if it hasn't happened yet.
 	currentArena.startTime = tonumber(currentArena.startTime) or time();
 
-	currentArena.playerName = Helpers:GetPlayerName();
+	currentArena.playerName = API:GetPlayerName();
 	currentArena.mySpec = Helpers:IsSpecID(stateData.mySpec) and stateData.mySpec or API:GetSpecialization();
 
 	currentArena.size = teamSize;

@@ -585,7 +585,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
         end
     end
 
-    local myName = Helpers:GetPlayerName();
+    local myName = API:GetPlayerName();
     if(myName) then
         selfNames[myName] = true;
     else

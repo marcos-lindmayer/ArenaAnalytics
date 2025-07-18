@@ -6,6 +6,7 @@ local API = ArenaAnalytics.API;
 local Internal = ArenaAnalytics.Internal;
 local Constants = ArenaAnalytics.Constants;
 local Options = ArenaAnalytics.Options;
+local Helpers = ArenaAnalytics.Helpers;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -28,17 +29,6 @@ API.classTokens = {
 };
 
 
-function API:CanInspect(unitToken)
-    -- TODO: Validate that this is allowed in all versions (To avoid inspect error message)
-    if(not InCombatLockdown() and not CheckInteractDistance(unitToken, 1)) then
-        Debug:Log("Inspection skipped due to out of combat interact distance.");
-        return;
-    end
-
-    return unitToken ~= nil; --and CanInspect(unitToken);
-end
-
-
 function API:GetClassToken(index)
     index = tonumber(index);
     return index and API.classTokens[index];
@@ -55,6 +45,84 @@ function API:GetAddonVersion()
         return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
     end
     return C_AddOns and C_AddOns.GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
+end
+
+
+function API:GetUnitFullName(unitToken, skipRealm)
+    if(not unitToken) then
+        Debug:LogWarning("API:GetUnitFullName called with invalid unitToken:", unitToken);
+        return nil;
+    end
+
+    local name = UnitNameUnmodified(unitToken);
+
+    if(not Helpers:IsValidValue(name)) then
+        return nil;
+    end
+
+    if(skipRealm) then
+        return name;
+    end
+
+    -- Get the realm
+    local realm = select(2, UnitFullName(unitToken));
+    if(not Helpers:IsValidValue(realm)) then
+        realm = select(2, UnitFullName("player")); -- Local player's realm
+    end
+
+    if(not Helpers:IsValidValue(realm)) then
+        Debug:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm for unit:", unitToken);
+        return name;
+    end
+
+    return format("%s-%s", name, realm);
+end
+
+
+function API:GetPlayerName(skipRealm)
+    return API:GetUnitFullName("player", skipRealm);
+end
+
+
+function API:ToFullName(name)
+    if(not name) then
+        return nil;
+    end
+
+    if(not name:find("-", 1, true)) then
+        local _,realm = UnitFullName("player"); -- Local player's realm
+        name = realm and (name.."-"..realm) or name;
+    end
+
+    return name;
+end
+
+
+function API:GetUnitGender(unitToken)
+    local genderIndex = UnitSex(unitToken);
+    return tonumber(genderIndex);
+end
+
+
+function API:GetPlayerInfoByGUID(GUID)
+    local _,class,_,race,genderIndex,name,realm = GetPlayerInfoByGUID(GUID);
+
+    name = Helpers:ToValidValue(name);
+    realm = Helpers:ToValidValue(realm);
+    local isFemale = Helpers:IsFemaleIndex(genderIndex);
+
+    return name, realm, class, race, isFemale;
+end
+
+
+function API:CanInspect(unitToken)
+    -- TODO: Validate that this is allowed in all versions (To avoid inspect error message)
+    if(not InCombatLockdown() and not CheckInteractDistance(unitToken, 1)) then
+        Debug:Log("Inspection skipped due to out of combat interact distance.");
+        return;
+    end
+
+    return unitToken ~= nil; --and CanInspect(unitToken);
 end
 
 

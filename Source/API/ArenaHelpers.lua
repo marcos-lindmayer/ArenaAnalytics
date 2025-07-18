@@ -65,17 +65,6 @@ function Helpers:DeepCopy(original)
 end
 
 
-function Helpers:GetPlayerName(skipRealm)
-    local name, realm = UnitFullName("player");
-
-	if(name and realm and not skipRealm) then
-		return format("%s-%s", name, realm);
-	end
-
-    return name;
-end
-
-
 function Helpers:GetSafePercentage(numerator, denominator, decimals)
     numerator = tonumber(numerator) or 0;
     denominator = tonumber(denominator) or 0;
@@ -249,7 +238,13 @@ end
 
 
 function Helpers:IsUnitFemale(unit)
-    local genderIndex = tonumber(UnitSex(unit));
+    local genderIndex = API:GetUnitGender(unit);
+    return Helpers:IsFemaleIndex(genderIndex);
+end
+
+
+function Helpers:IsFemaleIndex(genderIndex)
+    genderIndex = tonumber(genderIndex);
 
     if(genderIndex == 2) then
         -- Male
@@ -260,41 +255,6 @@ function Helpers:IsUnitFemale(unit)
     end
 
     return nil;
-end
-
-
-function Helpers:GetUnitFullName(unitToken)
-    local name = UnitNameUnmodified(unitToken);
-    local realm = select(2, UnitFullName(unitToken));
-
-    if (name == nil or name == "Unknown") then
-        return nil;
-    end
-
-    if(realm == nil or realm == "") then
-        realm = select(2, UnitFullName("player")); -- Local player's realm
-    end
-
-    if(not realm) then
-        Debug:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm!");
-        return name;
-    end
-
-    return format("%s-%s", name, realm);
-end
-
-
-function Helpers:ToFullName(name)
-    if(not name) then
-        return nil;
-    end
-
-    if(not name:find("-", 1, true)) then
-        local _,realm = UnitFullName("player"); -- Local player's realm
-        name = realm and (name.."-"..realm) or name;
-    end
-
-    return name;
 end
 
 
@@ -311,4 +271,24 @@ end
 function Helpers:IsSpecID(spec_id)
     spec_id = tonumber(spec_id);
     return spec_id and (spec_id % 10 > 0);
+end
+
+
+local unknownValues = {
+    [""] = true,
+    ["?"] = true,
+    [UNKNOWN or "Unknown"] = true,
+    [UKNOWNBEING or _G["UNKNOWNBEING"] or "Unknown Being"] = true, -- NOTE: Blizzard misspelled the constant ingame! (Missing N is intentional here!)
+    [UNKNOWNOBJECT or "Unknown"] = true,
+};
+function Helpers:IsValidValue(value)
+    return value and not unknownValues[value];
+end
+
+function Helpers:ToValidValue(value)
+    if(not Helpers:IsValidValue(value)) then
+        return nil;
+    end
+
+    return value;
 end

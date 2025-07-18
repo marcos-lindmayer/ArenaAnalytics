@@ -69,7 +69,7 @@ end
 
 function API:GetPlayerScore(index)
     local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(index);
-    name = Helpers:ToFullName(name);
+    name = API:ToFullName(name);
 
     -- Convert values
     local race_id = Localization:GetRaceID(race);
@@ -120,13 +120,7 @@ function API:GetSpecialization(unitToken, explicit)
         return nil;
     end
 
-    Debug:LogGreen("API:GetSpecialization attempted to inspect spec!", unitToken, specID, API:GetMappedAddonSpecID(specID));
     return API:GetMappedAddonSpecID(specID);
-end
-
-function API:GetPlayerInfoByGUID(GUID)
-    local _,class,_,race,_,name,realm = GetPlayerInfoByGUID(GUID);
-    return class,race,name,realm;
 end
 
 API.maxRaceID = 70;

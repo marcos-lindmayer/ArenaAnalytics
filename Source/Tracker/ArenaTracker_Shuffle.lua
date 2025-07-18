@@ -66,7 +66,7 @@ function ArenaTracker:UpdateRoundTeam()
 	wipe(currentArena.round.team)
 	currentArena.round.team = TablePool:Acquire();
 	for i=1, 2 do
-		local name = Helpers:GetUnitFullName("party"..i);
+		local name = API:GetUnitFullName("party"..i);
 		if(name) then
 			tinsert(currentArena.round.team, name);
 			Debug:Log("Adding team player:", name, #currentArena.round.team);
@@ -92,7 +92,7 @@ function ArenaTracker:RoundTeamContainsPlayer(playerName)
 		end
 	end
 
-	return playerName == Helpers:GetPlayerName();
+	return playerName == API:GetPlayerName();
 end
 
 
@@ -102,7 +102,7 @@ function ArenaTracker:IsSameRoundTeam()
 	end
 
 	for i=1, 2 do
-		local unitName = Helpers:GetUnitFullName("party"..i);
+		local unitName = API:GetUnitFullName("party"..i);
 
 		if(unitName and not ArenaTracker:RoundTeamContainsPlayer(unitName)) then
 			return false;

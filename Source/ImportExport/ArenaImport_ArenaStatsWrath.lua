@@ -2,9 +2,8 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Import = ArenaAnalytics.Import;
 
 -- Local module aliases
-local API = ArenaAnalytics.API;
 local TablePool = ArenaAnalytics.TablePool;
-local Internal = ArenaAnalytics.Internal;
+local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Debug = ArenaAnalytics.Debug;
 
@@ -48,14 +47,10 @@ end
 -------------------------------------------------------------------------
 -- Process arenas
 
-local function IsValidValue(value)
-    return value and value ~= "" and value ~= "Unknown";
-end
-
 local function GetMatchOutcome(cachedValues)
     local myTeam = cachedValues[7];
     local winningTeam = cachedValues[8];
-    if(not IsValidValue(myTeam) or not IsValidValue(winningTeam)) then
+    if(not Helpers:IsValidValue(myTeam) or not Helpers:IsValidValue(winningTeam)) then
         return nil;
     end
 
@@ -69,7 +64,7 @@ local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionInde
     local name = cachedValues[valueIndex];
 
     -- Assume invalid player, if name is missing
-    if(not IsValidValue(name)) then
+    if(not Helpers:IsValidValue(name)) then
         return nil;
     end
 
@@ -87,7 +82,7 @@ local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionInde
         race = Localization:GetRaceID(race, factionIndex),
     };
 
-    if(IsValidValue(class)) then
+    if(Helpers:IsValidValue(class)) then
         player.spec = Localization:GetClassID(class);
     else
         Debug:LogError("Import: Missing class and spec for player:", name);
