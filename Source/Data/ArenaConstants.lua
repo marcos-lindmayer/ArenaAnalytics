@@ -7,28 +7,6 @@ local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
--- NOTE: Indices here affect save data
-Constants.roleIndexes = { 
-    -- Main roles
-    { token = "tank", isMain = true, name = "Tank" },
-    { token = "damager", isMain = true, name = "Dps" },
-    { token = "healer", isMain = true, name = "Healer" },
-
-    -- Sub roles
-    { token = "caster", name = "Caster" },
-    { token = "ranged", name = "Ranged" },
-    { token = "melee", name = "Melee" },
-};
-
-Constants.playerFlags = {
-    isFirstDeath = 1,
-    isEnemy = 2,
-    isSelf = 3,
-    isFemale = 4,
-};
-
--------------------------------------------------------------------------
-
 local matchStartedMessages = {
     ["The Arena battle has begun!"] = true,          -- English / Default
     ["¡La batalla en arena ha comenzado!"] = true,   -- esES / esMX

@@ -93,12 +93,10 @@ end
 local function InitializeLookupTable_Spec()
     specLookupTable = {};
 
-    if(GetSpecializationInfoForClassID and GetSpecializationInfoForSpecID and not API.disableSpecInfoAPI) then
-        -- Populate English first, independent of game client and localization
-        for classIndex=1, API:GetNumClasses() do
-            Internal:PopulateEnglishSpecs(specLookupTable, classIndex);
-        end
+    -- Populate English first, independent of game client and localization
+    Internal:PopulateEnglishSpecs(specLookupTable);
 
+    if(GetSpecializationInfoForClassID and GetSpecializationInfoForSpecID and GetClassInfo) then
         -- Second loop to deal with different class index orders
         for classIndex=1, API:GetNumClasses() do
             local _,classToken = GetClassInfo(classIndex);
@@ -124,6 +122,8 @@ local function InitializeLookupTable_Spec()
             end
         end
     end
+
+    Debug:LogTable(specLookupTable);
 end
 
 function Localization:TempLogSpecMapping()

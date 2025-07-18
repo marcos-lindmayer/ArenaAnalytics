@@ -831,6 +831,8 @@ function ArenaMatch:GetPlayerInfo(player)
     playerInfo.name = player[playerKeys.name];
     playerInfo.realm = player[playerKeys.realm];
     playerInfo.fullName = ArenaMatch:GetPlayerFullName(player, false, false);
+    playerInfo.isSelf = ArenaMatch:IsPlayerSelf(player);
+    playerInfo.isFirstDeath = ArenaMatch:IsPlayerFirstDeath(player);
     playerInfo.race = ArenaMatch:GetPlayerRace(player);
     playerInfo.spec = ArenaMatch:GetPlayerSpec(player);
     playerInfo.role = ArenaMatch:GetPlayerRole(player);
@@ -844,12 +846,6 @@ function ArenaMatch:GetPlayerInfo(player)
     -- Expand role
     playerInfo.role_main = Bitmap:GetMainRole(playerInfo.role);
     playerInfo.role_sub = Bitmap:GetSubRole(playerInfo.role);
-
-    -- Expand bitmask (isFirstDeath, isEnemy, isSelf, isFemale)
-    for key,index in pairs(Constants.playerFlags) do
-        assert(key and tonumber(index), "Invalid flag in Constants.playerFlags!");
-        --playerInfo[key] = playerInfo.bitmask and Bitmap:HasBitByIndex(playerInfo.bitmask, index) or nil;
-    end
 
     return playerInfo;
 end

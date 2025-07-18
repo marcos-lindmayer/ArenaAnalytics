@@ -386,30 +386,33 @@ function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
     return nil;
 end
 
-function Internal:PopulateEnglishSpecs(outSpecTable, classIndex)
+function Internal:PopulateEnglishSpecs(outSpecTable)
     if(not addonSpecializationIDs) then
         return;
     end
 
-    local classToken = API:GetClassToken(classIndex);
-    if(not classToken) then
-        return;
-    end
+    -- TODO: Refactor to phase out dependency on ingame values, for cross version compatibility
+    for classIndex=1, API:GetNumClasses() do
+        local classToken = API:GetClassToken(classIndex);
+        if(not classToken) then
+            return;
+        end
 
-    classToken = Helpers:ToSafeLower(classToken);
+        classToken = Helpers:ToSafeLower(classToken);
 
-    local class_id = Internal:GetAddonClassID(classToken);
-    if(not class_id) then
-        return;
-    end
+        local class_id = Internal:GetAddonClassID(classToken);
+        if(not class_id) then
+            return;
+        end
 
-    outSpecTable[classToken] = outSpecTable[classToken] or {};
+        outSpecTable[classToken] = outSpecTable[classToken] or {};
 
-    for id,data in pairs(addonSpecializationIDs) do
-        if(Helpers:IsSpecID(id) and Helpers:GetClassID(id) == class_id) then
-            local specToken = Helpers:SanitizeValue(data.spec);
-            if(specToken) then
-                outSpecTable[classToken][specToken] = id;
+        for id,data in pairs(addonSpecializationIDs) do
+            if(Helpers:IsSpecID(id) and Helpers:GetClassID(id) == class_id) then
+                local specToken = Helpers:SanitizeValue(data.spec);
+                if(specToken) then
+                    outSpecTable[classToken][specToken] = id;
+                end
             end
         end
     end

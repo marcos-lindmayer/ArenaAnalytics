@@ -253,7 +253,7 @@ local function MakeSpecPlayerInfo(spec_id)
     end
 
     local playerInfo = TablePool:Acquire();
-    playerInfo.spec = spec_id;    
+    playerInfo.spec = spec_id;
     playerInfo.role = Internal:GetRoleBitmap(spec_id);
     playerInfo.role_main = Bitmap:GetMainRole(playerInfo.role);
     playerInfo.role_sub = Bitmap:GetSubRole(playerInfo.role);
