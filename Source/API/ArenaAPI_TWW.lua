@@ -16,6 +16,7 @@ API.defaultButtonTemplate = "UIPanelButtonTemplate";
 API.showPerPlayerRatedInfo = true;
 API.useThirdTooltipBackdrop = true;
 API.enableInspection = true;
+API.hasDampening = true;
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {
@@ -69,11 +70,6 @@ function API:GetBattlefieldStatus(battlefieldId)
     return status, bracket, teamSize, matchType;
 end
 
-function API:GetTeamMMR(teamIndex)
-    local _,_,_,mmr = GetBattlefieldTeamInfo(teamIndex);
-    return tonumber(mmr);
-end
-
 function API:GetPersonalRatedInfo(bracketIndex)
     bracketIndex = tonumber(bracketIndex);
     if(not bracketIndex) then
@@ -93,7 +89,7 @@ function API:GetPlayerScore(index)
     local scoreInfo = C_PvP.GetScoreInfo(index);
 
     local score = TablePool:Acquire();
-    if(not scoreInfo) then
+    if(not scoreInfo or not scoreInfo.name) then
         return score;
     end
 

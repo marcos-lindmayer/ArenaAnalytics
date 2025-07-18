@@ -65,7 +65,7 @@ function VersionManager:compareVersions(version, otherVersion)
 end
 
 -- Removed from SavedVariables. Avoid affecting global variables of other addons.
-local MatchHistoryDB = nil; 
+local MatchHistoryDB = nil;
 local ArenaAnalyticsRealmsDB = nil;
 
 function VersionManager:HasOldData()
@@ -812,7 +812,7 @@ function VersionManager:FinalizeConversionAttempts()
 	ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
 
 	ArenaAnalytics:ResortGroupsInMatchHistory();
-	Sessions:RecomputeSessionsForMatchHistory();
+	Sessions:RecomputeSessionsForMatchHistory(true);
 
     Import:TryHide();
     Filters:Refresh();

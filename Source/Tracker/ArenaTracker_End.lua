@@ -102,6 +102,11 @@ function ArenaTracker:HandleArenaEnd()
 			if (currentArena.playerName and player.name == currentArena.playerName) then
 				myTeamIndex = player.teamIndex;
 				player.isSelf = true;
+
+				if(myTeamIndex ~= GetBattlefieldArenaFaction()) then
+					Debug:LogError("My team index API mismatch! GetBattlefieldArenaFaction cannot be trusted?");
+				end
+
 			elseif(isShuffle) then
 				-- Everyone else is an opponent in shuffle (1v5)
 				player.isEnemy = true;
@@ -115,7 +120,7 @@ function ArenaTracker:HandleArenaEnd()
 		TablePool:Release(score);
 	end
 
-	if(ArenaTracker:IsTrackingShuffle()) then
+	if(ArenaTracker:IsShuffle()) then
 		-- Determine match outcome
 		currentArena.outcome = ArenaTracker:GetShuffleOutcome()
 	else

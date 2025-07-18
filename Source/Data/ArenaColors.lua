@@ -35,6 +35,7 @@ Colors.logGreenColor = "ff1effa7";
 Colors.warningColor = "ffffd700";
 Colors.errorColor = "ffff1111";
 Colors.tempColor = "fffe42ee";
+Colors.slashCommandColor = "ff00cc66";
 
 -- Explicit colors (Makes it easier to find and modify later)
 Colors.white = "ffffffff";

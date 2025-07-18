@@ -44,11 +44,6 @@ function API:GetBattlefieldStatus(battlefieldId)
     return status, bracket, teamSize, matchType;
 end
 
-function API:GetTeamMMR(teamIndex)
-    local _,_,_,mmr = GetBattlefieldTeamInfo(teamIndex);
-    return tonumber(mmr);
-end
-
 function API:GetPersonalRatedInfo(bracketIndex)
     bracketIndex = tonumber(bracketIndex);
     if(not bracketIndex) then

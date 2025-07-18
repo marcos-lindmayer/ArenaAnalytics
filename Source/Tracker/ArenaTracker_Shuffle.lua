@@ -33,7 +33,7 @@ end
 
 -- Get current player wins and all players summed wins
 function ArenaTracker:GetCurrentWins()
-	if(not ArenaTracker:IsTrackingShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle(true)) then
 		return;
 	end
 
@@ -78,7 +78,7 @@ end
 
 
 function ArenaTracker:RoundTeamContainsPlayer(playerName)
-	if(not ArenaTracker:IsTrackingShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle(true)) then
 		return;
 	end
 
@@ -97,7 +97,7 @@ end
 
 
 function ArenaTracker:IsSameRoundTeam()
-	if(not ArenaTracker:IsTrackingShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle(true)) then
 		return nil;
 	end
 
@@ -171,7 +171,7 @@ end
 
 -- Solo Shuffle specific round end
 function ArenaTracker:HandleRoundEnd(force)
-	if(not API:IsInArena() or not ArenaTracker:IsTrackingShuffle()) then
+	if(not ArenaTracker:IsTrackingShuffle(true)) then
 		return;
 	end
 
@@ -204,13 +204,12 @@ function ArenaTracker:CommitCurrentRound(force)
 
 	-- Get death stats, then wipe the deaths to avoid double counting
 	ArenaTracker:CommitDeaths();
-	wipe(currentArena.deathData);
 
 	local roundData = {
 		duration = startTime and (endTime - startTime) or nil,
 		firstDeath = death,
-		team = {},
-		enemy = {},
+		team = TablePool:Acquire(),
+		enemy = TablePool:Acquire(),
 	};
 
 	-- Get the total wins after current round
@@ -239,7 +238,7 @@ function ArenaTracker:CommitCurrentRound(force)
 	currentArena.deathData = TablePool:Acquire();
 
 	-- Reset current round
-	currentArena.round.team = {};
+	currentArena.round.team = TablePool:Acquire();
 	currentArena.round.startTime = nil;
 	currentArena.round.hasStarted = false;
 

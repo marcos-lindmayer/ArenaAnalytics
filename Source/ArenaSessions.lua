@@ -5,10 +5,13 @@ local Sessions = ArenaAnalytics.Sessions;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Options = ArenaAnalytics.Options;
 local AAtable = ArenaAnalytics.AAtable;
-local Helpers = ArenaAnalytics.Helpers;
+local Filters = ArenaAnalytics.Filters;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
+
+local SESSION_EXPIRATION_TIME = 3600;
+local SKIRMISH_IGNORE_PARTY = true; -- Options:Get("ignoreGroupForSkirmishSession");
 
 function Sessions:AssignSession(match)
     assert(match);
@@ -23,7 +26,7 @@ function Sessions:AssignSession(match)
 	Debug:Log("Assigned session:", session);
 end
 
-function Sessions:RecomputeSessionsForMatchHistory()
+function Sessions:RecomputeSessionsForMatchHistory(skipRefresh)
 	-- Assign session to filtered matches
 	local session = 1
 	for i = 1, #ArenaAnalyticsDB do
@@ -38,13 +41,17 @@ function Sessions:RecomputeSessionsForMatchHistory()
 			ArenaMatch:SetSession(current, session);
 		end
 	end
+
+	if(not skipRefresh) then
+		Filters:Refresh();
+	end
 end
 
 -- Whether the session requires a group check for the given match
 local function RequiresGroupForMatch(match)
     assert(match);
 
-    if(Options:Get("ignoreGroupForSkirmishSession")) then
+    if(SKIRMISH_IGNORE_PARTY) then
         local matchType = ArenaMatch:GetMatchType(match);
         if(matchType == "skirmish") then
             return false;
@@ -86,7 +93,7 @@ function Sessions:ShouldSkipMatchForSessions(match)
     end
 
 	-- Don't skip
-	return false; 
+	return false;
 end
 
 -- Returns the start and end times of the last session
@@ -106,7 +113,7 @@ function Sessions:GetLatestSessionStartAndEndTime()
 				local duration = ArenaMatch:GetDuration(match);
 				local testEndTime = duration and date + duration or date;
 
-				expired = not testEndTime or (time() - testEndTime) > 3600;
+				expired = not testEndTime or (time() - testEndTime) > SESSION_EXPIRATION_TIME;
 				endTime = expired and testEndTime or time();
 			end
 
@@ -147,7 +154,7 @@ function Sessions:HasMatchSessionExpired(match)
 		return true;
 	end
 
-	return (time() - endTime) > 3600;
+	return (time() - endTime) > SESSION_EXPIRATION_TIME;
 end
 
 -- Check if 2 arenas are in the same session
@@ -159,8 +166,14 @@ function Sessions:IsMatchesSameSession(firstArena, secondArena)
 	local date1 = ArenaMatch:GetDate(firstArena) or 0;
 	local date2 = ArenaMatch:GetDate(secondArena) or 0;
 
-	if(date2 - date1 > 3600) then
-		return false;
+	if(date1 > 0 and date2 > 0) then
+		if(date1 > date2) then
+			Debug:LogError("IsMatchesSameSession called with first arena dated after second arena!", date1, date2, "Diff:", date1-date2)
+		end
+
+		if(date2 - date1 > SESSION_EXPIRATION_TIME) then
+			return false;
+		end
 	end
 
 	local matchType1 = ArenaMatch:GetMatchType(firstArena);
@@ -236,7 +249,7 @@ local function handleSessionDurationTimer()
 
     if (startTime and not expired and not isSessionTimerActive) then
         local duration = endTime - startTime;
-        local desiredInterval = (duration > 3600) and 60 or 1;
+        local desiredInterval = (duration > 3600) and 60 or 1; -- Update per minute when session duration is over an hour, otherwise per second
         isSessionTimerActive = true;
         C_Timer.After(desiredInterval, function() handleSessionDurationTimer() end);
     end

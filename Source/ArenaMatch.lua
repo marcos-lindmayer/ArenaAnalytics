@@ -193,6 +193,7 @@ function ArenaMatch:TryFixLastRating(match)
     end
 
     local trackedSeasonPlayed = ArenaMatch:GetSeasonPlayed(match);
+    Debug:Log("Attempting rating fix for last match..", trackedSeasonPlayed, ArenaMatch:GetBracket(match));
     if(not trackedSeasonPlayed) then
         return;
     end
@@ -202,6 +203,7 @@ function ArenaMatch:TryFixLastRating(match)
     if(season and currentSeason and currentSeason > 0 and season ~= currentSeason) then
         -- Season appears to have changed, too late to fix last rating.
         ArenaMatch:ClearTransientValues(match);
+        Debug:Log("Rating fix cancelled - Incorrect season:", season, "current:", currentSeason);
         return;
     end
 
@@ -211,7 +213,7 @@ function ArenaMatch:TryFixLastRating(match)
     local currentSeasonPlayed = API:GetSeasonPlayed(bracketIndex);
 
     if(not currentSeasonPlayed or currentSeasonPlayed < trackedSeasonPlayed) then
-        Debug:Log("ArenaMatch: Delaying rating fix - Season Played.", bracketIndex, currentSeasonPlayed, trackedSeasonPlayed);
+        Debug:Log("ArenaMatch: Rating fix delayed - Season Played.", bracketIndex, currentSeasonPlayed, trackedSeasonPlayed);
         return;
     end
 
@@ -220,9 +222,11 @@ function ArenaMatch:TryFixLastRating(match)
         if(currentSeasonPlayed > trackedSeasonPlayed) then
             -- Lacking data, and already passed the match. We cannot recover.
             ArenaMatch:ClearTransientValues(match);
+            Debug:Log("Rating fix cancelled - Outdated season played:", trackedSeasonPlayed, "current:", currentSeasonPlayed);
             return;
         end
 
+        Debug:Log("Rating fix delayed - Missing new rating still.");
         return; -- No data found to fix rating
     end
 
@@ -235,7 +239,7 @@ function ArenaMatch:TryFixLastRating(match)
     -- Clear transient values
     ArenaMatch:ClearTransientValues(match);
 
-    Debug:Log("Fixed last rating:", bracketIndex, newRating, oldRating, currentSeasonPlayed);
+    Debug:Log("Fixed last rating:", ArenaMatch:GetBracket(match), newRating, oldRating, currentSeasonPlayed);
 end
 
 -------------------------------------------------------------------------
@@ -524,7 +528,7 @@ end
 
 
 function ArenaMatch:GetSeasonPlayed(match)
-    return match and tonumber(match[matchKeys.season]);
+    return match and tonumber(match[matchKeys.seasonPlayed]);
 end
 
 function ArenaMatch:SetSeasonPlayed(match, value)

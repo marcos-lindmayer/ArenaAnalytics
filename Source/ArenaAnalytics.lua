@@ -507,22 +507,20 @@ function ArenaAnalytics:GetFilteredMatch(index)
 	return filteredMatch, filteredMatchInfo.filteredSession;
 end
 
-function ArenaAnalytics:ResortMatchHistory()
+function ArenaAnalytics:ResortMatchHistory(skipRefresh)
 	table.sort(ArenaAnalyticsDB, function (arena1,arena2)
-		local date1 = ArenaMatch:GetDate(arena1);
-		local date2 = ArenaMatch:GetDate(arena2);
-
-		if(not date2) then
-			return true;
-		elseif(not date1) then
-			return false;
-		end
+		local date1 = ArenaMatch:GetDate(arena1) or 0;
+		local date2 = ArenaMatch:GetDate(arena2) or 0;
 
 		return date1 < date2;
 	end);
+
+	if(not skipRefresh) then
+		Filters:Refresh();
+	end
 end
 
-function ArenaAnalytics:ResortGroupsInMatchHistory()
+function ArenaAnalytics:ResortGroupsInMatchHistory(skipRefresh)
     debugprofilestart();
 
 	for i=1, #ArenaAnalyticsDB do
@@ -532,7 +530,11 @@ function ArenaAnalytics:ResortGroupsInMatchHistory()
 		end
 	end
 
-	Debug:Log("ArenaAnalytics:ResortGroupsInMatchHistory", debugprofilestop())
+	if(not skipRefresh) then
+		Filters:Refresh();
+	end
+
+	Debug:Log("ResortGroupsInMatchHistory completed:", debugprofilestop())
 end
 
 function ArenaAnalytics:HasStoredMatches()

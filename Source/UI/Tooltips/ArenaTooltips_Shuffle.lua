@@ -123,7 +123,7 @@ local function CreateRoundEntryFrame(index, parent)
             end
 
             local playerIcon = self.team[i+1];
-            playerIcon:SetSpec(spec_id, true);
+            playerIcon:SetSpec(spec_id);
             playerIcon:SetIsFirstDeath(isFirstDeath, true);
         end
 
@@ -141,7 +141,7 @@ local function CreateRoundEntryFrame(index, parent)
             end
 
             local playerIcon = self.enemyTeam[i];
-            playerIcon:SetSpec(spec_id, true);
+            playerIcon:SetSpec(spec_id);
             playerIcon:SetIsFirstDeath(isFirstDeath, true);
         end
     end

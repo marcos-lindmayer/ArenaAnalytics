@@ -118,6 +118,8 @@ function ArenaTracker:CommitDeaths()
 			player.deaths = (player.deaths or 0) + 1;
 		end
 	end
+
+	wipe(currentArena.deathData);
 end
 
 

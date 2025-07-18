@@ -58,7 +58,7 @@ local function AddFilter(filter, default)
     defaults[filter] = default;
 end
 
-function Filters:Init()
+function Filters:Initialize()
     AddFilter(Filters.FilterKeys.Date, "All Time");
     AddFilter(Filters.FilterKeys.Season, "All");
     AddFilter(Filters.FilterKeys.Map, "All");
@@ -154,14 +154,9 @@ end
 function Filters:ResetAll(skipOverrides)
     local changed = false;
 
-    changed = Filters:ResetFast(Filters.FilterKeys.Date, skipOverrides) or changed;
-    changed = Filters:ResetFast(Filters.FilterKeys.Season, skipOverrides) or changed;
-    changed = Filters:ResetFast(Filters.FilterKeys.Map) or changed;
-    changed = Filters:ResetFast(Filters.FilterKeys.Outcome) or changed;
-    changed = Filters:ResetFast(Filters.FilterKeys.Mirror) or changed;
-    changed = Filters:ResetFast(Filters.FilterKeys.Bracket) or changed;
-    changed = Filters:ResetFast(Filters.FilterKeys.TeamComp) or changed;
-    changed = Filters:ResetFast(Filters.FilterKeys.EnemyComp) or changed;
+    for _,filter in pairs(Filters.FilterKeys) do
+        changed = Filters:ResetFast(filter, skipOverrides) or changed;
+    end
 
     changed = Search:Reset() or changed;
 
@@ -183,30 +178,17 @@ end
 
 function Filters:GetActiveFilterCount()
     local count = 0;
+
     if(not Search:IsEmpty()) then
         count = count + 1;
     end
-    if(Filters:IsFilterActive(Filters.FilterKeys.Date, true)) then
-        count = count + 1;
+
+    for _,filter in pairs(Filters.FilterKeys) do
+        if(Filters:IsFilterActive(filter, true)) then
+            count = count + 1;
+        end
     end
-    if(Filters:IsFilterActive(Filters.FilterKeys.Season, true)) then
-        count = count + 1;
-    end
-    if(Filters:IsFilterActive(Filters.FilterKeys.Map, true)) then
-        count = count + 1;
-    end
-    if(Filters:IsFilterActive(Filters.FilterKeys.Outcome, true)) then
-        count = count + 1;
-    end
-    if(Filters:IsFilterActive(Filters.FilterKeys.Bracket, true)) then
-        count = count + 1;
-    end
-    if(Filters:IsFilterActive(Filters.FilterKeys.TeamComp, true)) then
-        count = count + 1;
-    end
-    if(Filters:IsFilterActive(Filters.FilterKeys.EnemyComp, true)) then
-        count = count + 1;
-    end
+
     return count;
 end
 
@@ -382,7 +364,6 @@ function Filters:DoesMatchPassAllFilters(match, excluded)
         return false;
     end
 
-    -- TODO: Decide how this interacts with comp exclusions
     -- Mirror matches only
     if(not doesMatchPassFilter_Mirror(match)) then
         return false;

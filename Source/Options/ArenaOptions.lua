@@ -104,7 +104,7 @@ function Options:LoadSettings()
     AddSetting("compactLargeNumbers", true);
     AddSetting("hideZeroRatingDelta", true);
     AddSetting("hidePlayerTooltipZeroRatingDelta", false);
-    AddSetting("ignoreGroupForSkirmishSession", true);
+    --AddSetting("ignoreGroupForSkirmishSession", true);
 
     AddSetting("muteArenaDialogSounds", false);
 
@@ -557,7 +557,7 @@ function SetupTab_General()
     CreateCheckbox("compactLargeNumbers", parent, offsetX, "Compact large numbers.");
     CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
     CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
-    CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
+    --CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
 
     CreateSpace();
 

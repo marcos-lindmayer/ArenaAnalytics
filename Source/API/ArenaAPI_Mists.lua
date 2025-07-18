@@ -14,6 +14,7 @@ local Debug = ArenaAnalytics.Debug;
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
 API.enableInspection = true;
 API.disableSpecInfoAPI = true;
+API.hasDampening = true;
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {
@@ -49,11 +50,6 @@ function API:GetBattlefieldStatus(battlefieldId)
     local matchType = API:DetermineMatchType();
 
     return status, bracket, teamSize, matchType;
-end
-
-function API:GetTeamMMR(teamIndex)
-    local _,_,_,mmr = GetBattlefieldTeamInfo(teamIndex);
-    return tonumber(mmr);
 end
 
 function API:GetPersonalRatedInfo(bracketIndex)

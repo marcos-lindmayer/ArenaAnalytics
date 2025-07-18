@@ -93,6 +93,55 @@ function API:GetSeasonPlayed(bracketIndex)
 end
 
 
+function API:GetTeamIndex(isEnemy)
+    if(not API:IsInArena()) then
+        return nil;
+    end
+
+    local teamIndex = GetBattlefieldArenaFaction();
+    Debug:Log("GetTeamIndex my team:", teamIndex);
+    if(not teamIndex) then
+        return nil;
+    end
+
+    if(isEnemy) then
+        -- Inverse team index for enemy team
+        teamIndex = (teamIndex == 0) and 1 or 0;
+    end
+
+    Debug:Log("Received team:", teamIndex, isEnemy);
+    return tonumber(teamIndex);
+end
+
+function API:GetTeamMMR(team)
+    if(not API:IsInArena()) then
+        return nil;
+    end
+
+    if(type(team) ~= "number") then
+        -- Assume input is truthy/falsy for isEnemy
+        team = API:GetTeamIndex(team);
+    end
+
+    -- Must be a teamIndex by now
+    team = tonumber(team);
+    if(not team) then
+        return nil;
+    end
+
+    -- Get current MMR for the given team
+    local mmr = select(4, GetBattlefieldTeamInfo(team));
+    mmr = tonumber(mmr);
+
+    -- Discard invalid MMR value
+    if(mmr <= 0) then
+        return nil;
+    end
+
+    return mmr;
+end
+
+
 function API:GetWinner()
     if(not API:IsInArena()) then
         return nil;
@@ -164,6 +213,8 @@ function API:DetermineBracket(teamSize)
     return nil;
 end
 
+
+-------------------------------------------------------------------------
 
 function API:Round(number, decimals)
     number = tonumber(number) or 0;
@@ -260,7 +311,7 @@ end
 
 
 -------------------------------------------------------------------------
-
+-- Specializations
 
 function API:GetArenaPlayerSpec(index, isEnemy)
     if(isEnemy) then
@@ -316,6 +367,58 @@ function API:GetSpecIcon(spec_id)
     local bitmapOverride = API.specIconOverrides and API.specIconOverrides[spec_id];
 
     return bitmapOverride or Constants:GetBaseSpecIcon(spec_id);
+end
+
+
+-------------------------------------------------------------------------
+-- Aura checks (Dampening & Preparation)
+
+function API:FindAuraByID(auraIDs)
+    if(type(auraIDs) == "number") then
+        return C_UnitAuras.GetPlayerAuraBySpellID(auraIDs);
+    end
+
+    if(type(auraIDs) == "table") then
+        for _,ID in ipairs(auraIDs) do
+            local aura = C_UnitAuras.GetPlayerAuraBySpellID(ID);
+            if(aura ~= nil) then
+                return aura;
+            end
+        end
+    end
+
+    return nil;
+end
+
+function API:GetCurrentDampening()
+    if(not API.hasDampening) then
+        return nil;
+    end
+
+    if(not API:IsInArena()) then
+        return nil;
+    end
+
+    local aura = API:FindAuraByID(API.explicitDampeningID or { 110310, 397766 });
+    if(aura ~= nil) then
+        local stacks = aura.applications or 0;
+        return stacks, aura.name, aura.spellId;
+    end
+
+    return nil;
+end
+
+function API:IsArenaPreparation()
+    if(not API:IsInArena()) then
+        return nil;
+    end
+
+    local aura = API:FindAuraByID(API.explicitPreparationID or { 32727, 44521 }); -- 32727 confirmed for MoP
+    if(aura ~= nil) then
+        return true, aura.name, aura.spellId;
+    end
+
+    return false;
 end
 
 

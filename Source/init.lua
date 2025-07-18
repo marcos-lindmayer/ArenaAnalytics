@@ -112,8 +112,8 @@ function stages.Step2_VariablesLoaded()
 	Localization:Initialize();
 	Search:Initialize();
 	API:Initialize();
-	FilterTables:Init();
-	Filters:Init();
+	FilterTables:Initialize();
+	Filters:Initialize();
 end
 
 

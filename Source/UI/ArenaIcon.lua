@@ -76,19 +76,22 @@ function ArenaIcon:Create(parent, size, skipDeath)
         end
 
         -- Class icon (Fallback to red question mark)
-        if(not classIcon and hideInvalid) then
-            classIcon = "";
+        local hasClassIcon = (classIcon ~= nil);
+        if(not classIcon) then
+            classIcon = not hideInvalid and 134400 or "";
         end
 
         -- Set class icon
         newFrame.classTexture:SetTexture(classIcon or 134400);
 
-        -- Set spec icon
-        if(isSpec) then
-            newFrame.specOverlay.texture:SetTexture(specIcon or "");
-        else
-            newFrame.specOverlay.texture:SetTexture("");
+        -- Force question mark for invalid but known classes
+        if(hasClassIcon and newFrame.classTexture:GetTexture() == nil) then
+            newFrame.classTexture:SetTexture(134400);
         end
+
+        -- Set spec icon
+        local specOverlayIcon = isSpec and specIcon or "";
+        newFrame.specOverlay.texture:SetTexture(specOverlayIcon);
     end
 
     function newFrame:SetIsFirstDeath(value, alwaysShown)

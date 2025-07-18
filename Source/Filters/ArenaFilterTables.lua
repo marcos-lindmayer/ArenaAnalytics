@@ -9,7 +9,7 @@ local Filters = ArenaAnalytics.Filters;
 
 
 -- Initialize all tables
-function FilterTables:Init()
+function FilterTables:Initialize()
     FilterTables:Init_Brackets();
     FilterTables:Init_Comps();
     FilterTables:Init_MoreFilters();

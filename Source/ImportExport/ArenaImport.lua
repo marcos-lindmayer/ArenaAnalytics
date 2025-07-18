@@ -280,9 +280,9 @@ function Import:Finalize()
     Import:Reset();
     Import:TryHide();
 
-    ArenaAnalytics:ResortMatchHistory();
+    ArenaAnalytics:ResortMatchHistory(true);
+    Sessions:RecomputeSessionsForMatchHistory(true);
 
-    Sessions:RecomputeSessionsForMatchHistory();
     ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
 
     Filters:Refresh();

@@ -54,11 +54,12 @@ local function CheckRequiresRatingFix()
 	end
 
 	-- Don't schedule rating fix
+	Debug:Log("CheckRequiresRatingFix passed, no fix required.");
 	return false;
 end
 
 
-local function MarkPlayerFirstDeath()
+local function TryMarkPlayerFirstDeath()
 	if(ArenaTracker:IsShuffle()) then
 		return;
 	end
@@ -70,7 +71,6 @@ local function MarkPlayerFirstDeath()
 	-- Get first death
 	local firstDeath = ArenaTracker:GetFirstDeathFromCurrentArena();
 	ArenaTracker:CommitDeaths();
-	wipe(currentArena.deathData);
 
 	-- Find matching player
 	for _,player in ipairs(currentArena.players) do
@@ -78,6 +78,30 @@ local function MarkPlayerFirstDeath()
 			player.isFirstDeath = true;
 		end
 	end
+end
+
+
+local function TryAssignRating()
+	if(not ArenaTracker:IsRated()) then
+		return;
+	end
+
+	local newRating, oldRating = ArenaRatedInfo:GetRatedInfo(currentArena.bracketIndex, currentArena.seasonPlayed);
+
+	if(newRating) then
+		currentArena.partyRating = newRating;
+		currentArena.partyRatingDelta = oldRating and newRating - oldRating or nil;
+
+		Debug:Log("Setting party rating:", currentArena.partyRating, "Delta:", currentArena.partyRatingDelta);
+	else
+		-- Use old rating, presumably temporary
+		currentArena.partyRating = oldRating;
+		currentArena.requireRatingFix = true;
+	end
+
+	currentArena.requireRatingFix = currentArena.requireRatingFix or CheckRequiresRatingFix() or nil;
+
+	Debug:Log("Requires rating fix:", currentArena.requireRatingFix, "New rating:", newRating, "Old rating:", oldRating, "season played:", currentArena.seasonPlayed);
 end
 
 
@@ -97,7 +121,9 @@ function ArenaTracker:HandleArenaExit()
 	end
 
 	-- Solo Shuffle
-	ArenaTracker:HandleRoundEnd(true);
+	if(ArenaTracker:IsShuffle()) then
+		ArenaTracker:HandleRoundEnd(true);
+	end
 
 	currentArena.hasStartTime = Helpers:IsPositiveNumber(currentArena.startTime);
 	currentArena.startTime = tonumber(currentArena.startTime) or time();
@@ -111,24 +137,12 @@ function ArenaTracker:HandleArenaExit()
 	end
 
 	if(ArenaTracker:IsRated()) then
-		local newRating, oldRating = ArenaRatedInfo:GetRatedInfo(currentArena.bracketIndex, currentArena.seasonPlayed);
-
-		if(newRating) then
-			currentArena.partyRating = newRating;
-			currentArena.partyRatingDelta = oldRating and newRating - oldRating or nil;
-
-			Debug:LogGreen("Setting party rating delta:", currentArena.partyRatingDelta, oldRating, newRating);
-		else
-			if(CheckRequiresRatingFix()) then
-				currentArena.requireRatingFix = true;
-
-				-- Use old rating temporarily
-				currentArena.partyRating = oldRating;
-			end
-		end
+		TryAssignRating();
 	end
 
-	MarkPlayerFirstDeath();
+	if(not ArenaTracker:IsShuffle()) then
+		TryMarkPlayerFirstDeath();
+	end
 
 	ArenaTracker:InsertArenaToMatchHistory(currentArena);
 	ArenaTracker:Clear();

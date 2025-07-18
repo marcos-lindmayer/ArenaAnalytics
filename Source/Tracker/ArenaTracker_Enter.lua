@@ -116,6 +116,12 @@ function ArenaTracker:HandlePreTrackingScoreEvent()
 		return;
 	end
 
+	local teamMMR, enemyMMR = API:GetTeamMMR(false), API:GetTeamMMR(true);
+
+	Debug:LogTemp("==========================================");
+	Debug:LogTemp("Score Event MMR Test:", teamMMR, enemyMMR, #ArenaAnalyticsDB);
+	Debug:LogTemp("==========================================");
+
 	stateData.scoreReceived = true;
 	ArenaTracker.hasReceivedScore = true;
 	stateData.scoreTimedOut = false;
