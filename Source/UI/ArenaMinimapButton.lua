@@ -3,21 +3,18 @@ ArenaAnalytics.MinimapButton = {};
 local MinimapButton = ArenaAnalytics.MinimapButton;
 
 -- Local module aliases
+local Options = ArenaAnalytics.Options;
+local Colors = ArenaAnalytics.Colors;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
-
-local function GetOption(setting)
-    assert(setting);
-    return ArenaAnalyticsSharedSettingsDB[setting];
-end
 
 local function OnClick(button)
     if(button == "RightButton") then
         -- Open ArenaAnalytics Options
         ArenaAnalyticsOpenOptions();
     elseif(button == "MiddleButton") then
-        if(GetOption("surrenderByMiddleMouseClick")) then
+        if(Options:GetSafe("surrenderByMiddleMouseClick")) then
             ArenaAnalytics.API:TrySurrenderArena();
         end
     else
@@ -39,7 +36,7 @@ local minimapButton = nil;
 
 -- ArenaAnalytics Compartment object
 local compartmentObject = {
-    text = "Arena|cff00ccffAnalytics|r",
+    text = Colors:GetTitle(),
     icon = "Interface\\Icons\\achievement_arena_3v3_7",
     notCheckable = true,
     func = function(_, clickInfo, entry)
@@ -127,14 +124,14 @@ end
 function MinimapButton:Update()
 	-- Addon compartment
     if(AddonCompartmentFrame) then
-        if(GetOption("hideFromCompartment")) then
+        if(Options:GetSafe("hideFromCompartment")) then
             MinimapButton:RemoveFromCompartment();
         else
             MinimapButton:AddToCompartment();
         end
     end
 
-    if(GetOption("hideMinimapButton")) then
+    if(Options:GetSafe("hideMinimapButton")) then
         if(minimapButton) then
             minimapButton:Hide();
             minimapButton = nil;
@@ -175,4 +172,10 @@ function MinimapButton:RemoveFromCompartment()
             AddonCompartmentFrame:UpdateDisplay();
         end
     end
+end
+
+-------------------------------------------------------------------------
+
+function MinimapButton:Initialize()
+	MinimapButton:Update();
 end

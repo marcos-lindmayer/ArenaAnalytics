@@ -98,7 +98,7 @@ function stages.Step2_VariablesLoaded()
 	-- Initialize DBs
 	ArenaAnalytics:InitializeArenaAnalyticsDB();
 
-	-- Log current debug level, if non-zero
+	MinimapButton:Initialize();
 	Debug:Initialize();
 
 	---------------------------------
@@ -122,7 +122,6 @@ function stages.Step3_PlayerLogin()
 	Debug:Log("Step3_PlayerLogin:", IsLoggedIn());
 
 	VersionManager:OnInit();
-	MinimapButton:Update();
 	AAtable:OnLoad();
 end
 

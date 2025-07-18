@@ -15,6 +15,9 @@ Source/ArenaPrints.lua
 Source/ArenaDebugging.lua
 Source/ArenaCommands.lua
 
+Source/UI/ArenaTable.lua
+Source/UI/HybridScroll.xml
+
 Source/UI/ArenaMinimapButton.lua
 
 Source/ArenaAnalytics.lua
@@ -45,8 +48,6 @@ Source/API/ArenaAPI_Mists.lua [AllowLoadGameType mists]
 Source/API/ArenaAPI_TWW.lua [AllowLoadGameType standard]
 Source/API/ArenaInspection.lua
 
-Source/UI/HybridScroll.xml
-Source/UI/ArenaTable.lua
 Source/UI/ArenaMatchSelection.lua
 Source/UI/ArenaIcon.lua
 

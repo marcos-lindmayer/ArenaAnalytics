@@ -20,7 +20,7 @@ function Localization:GetClassID(class)
         return nil;
     end
 
-    class = Helpers:ToSafeLower(class);
+    class = Helpers:SanitizeValue(class);
     local class_id = class and classLookupTable[class];
 
     if(not class_id) then
@@ -37,8 +37,8 @@ local function InitializeLookupTable_Class()
         local classID = Internal:GetAddonClassID(classToken);
 
         if(classID) then
-            classToken = Helpers:ToSafeLower(classToken);
-            className = Helpers:ToSafeLower(className);
+            classToken = Helpers:SanitizeValue(classToken);
+            className = Helpers:SanitizeValue(className);
 
             if(classToken and not classLookupTable[classToken]) then
                 classLookupTable[classToken] = classID;
@@ -76,8 +76,8 @@ function Localization:GetSpecID(classToken, spec)
         return nil;
     end
 
-    classToken = Helpers:ToSafeLower(classToken);
-    spec = Helpers:ToSafeLower(spec);
+    classToken = Helpers:SanitizeValue(classToken);
+    spec = Helpers:SanitizeValue(spec);
 
     local classTable = specLookupTable[classToken];
     local spec_id = classTable and tonumber(classTable[spec]);
@@ -103,7 +103,7 @@ local function InitializeLookupTable_Spec()
         for classIndex=1, API:GetNumClasses() do
             local _,classToken = GetClassInfo(classIndex);
             if(classToken) then
-                classToken = Helpers:ToSafeLower(classToken);
+                classToken = Helpers:SanitizeValue(classToken);
 
                 specLookupTable[classToken] = specLookupTable[classToken] or {};
                 local classTable = specLookupTable[classToken];
@@ -513,7 +513,7 @@ function Localization:GetFactionIndex(faction)
 
     if(type(faction) == "string") then
         -- TODO: Add localized checks?
-        faction = Helpers:ToSafeLower(faction);
+        faction = Helpers:SanitizeValue(faction);
         if(faction == "horde") then
             faction = 0;
         elseif(faction == "alliance") then
