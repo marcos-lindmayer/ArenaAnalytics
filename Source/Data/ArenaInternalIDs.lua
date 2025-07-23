@@ -76,6 +76,7 @@ local addonMapIDs = {
     [16] =  { token = "MaldraxxusColiseum", shortName = "MC", name = "Maldraxxus Coliseum" },
 
     [17] =  { token = "NokhudonProvingGrounds", shortName = "NPG", name = "Nokhudon Proving Grounds" },
+
     [18] =  { token = "CageOfCarnage", shortName = "CoC", name = "Cage of Carnage" },
 };
 

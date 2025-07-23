@@ -4,7 +4,7 @@ local API = ArenaAnalytics.API;
 
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
-local Localization = ArenaAnalytics.Localization;
+local LocalizationTables = ArenaAnalytics.LocalizationTables;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
 local Debug = ArenaAnalytics.Debug;
@@ -64,7 +64,7 @@ function API:GetPlayerScore(index)
     name = API:ToFullName(name);
 
     -- Convert values
-    local race_id = Localization:GetRaceID(race);
+    local race_id = LocalizationTables:GetRaceID(race);
     local class_id = Internal:GetAddonClassID(classToken);
 
     local score = {

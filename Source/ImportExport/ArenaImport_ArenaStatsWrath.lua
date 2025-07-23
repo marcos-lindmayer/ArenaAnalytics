@@ -4,7 +4,7 @@ local Import = ArenaAnalytics.Import;
 -- Local module aliases
 local TablePool = ArenaAnalytics.TablePool;
 local Helpers = ArenaAnalytics.Helpers;
-local Localization = ArenaAnalytics.Localization;
+local LocalizationTables = ArenaAnalytics.LocalizationTables;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -79,11 +79,11 @@ local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionInde
         isEnemy = isEnemyTeam,
         isSelf = (name == UnitName("player")),
         name = name,
-        race = Localization:GetRaceID(race, factionIndex),
+        race = LocalizationTables:GetRaceID(race, factionIndex),
     };
 
     if(Helpers:IsValidValue(class)) then
-        player.spec = Localization:GetClassID(class);
+        player.spec = LocalizationTables:GetClassID(class);
     else
         Debug:LogError("Import: Missing class and spec for player:", name);
     end
@@ -125,7 +125,7 @@ function Import.ProcessNextMatch_ArenaStatsWrath(arenaString)
     newArena.players = TablePool:Acquire();
 
     local enemyCount = 0;
-    local factionIndex = Localization:GetFactionIndex(cachedValues[48]);
+    local factionIndex = LocalizationTables:GetFactionIndex(cachedValues[48]);
     for _,isEnemy in ipairs({false, true}) do
         for i=1, 5 do
             local player = ProcessPlayer(cachedValues, isEnemy, i, factionIndex);

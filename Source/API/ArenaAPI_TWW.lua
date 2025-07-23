@@ -4,7 +4,7 @@ local API = ArenaAnalytics.API;
 
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
-local Localization = ArenaAnalytics.Localization;
+local LocalizationTables = ArenaAnalytics.LocalizationTables;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
 local TablePool = ArenaAnalytics.TablePool;
@@ -93,13 +93,13 @@ function API:GetPlayerScore(index)
         return score;
     end
 
-    local spec_id = Localization:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
+    local spec_id = LocalizationTables:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
     if(not spec_id) then
         spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
     end
 
     score.name = API:ToFullName(scoreInfo.name);
-    score.race = Localization:GetRaceID(scoreInfo.raceName);
+    score.race = LocalizationTables:GetRaceID(scoreInfo.raceName);
     score.spec = spec_id;
     score.team = scoreInfo.faction;
     score.kills = scoreInfo.killingBlows;

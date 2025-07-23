@@ -3,7 +3,7 @@ local Initialization = ArenaAnalytics.Initialization;
 
 -- Local module aliases
 local Internal = ArenaAnalytics.Internal;
-local Localization = ArenaAnalytics.Localization;
+local LocalizationTables = ArenaAnalytics.LocalizationTables;
 local Bitmap = ArenaAnalytics.Bitmap;
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
@@ -109,7 +109,7 @@ function stages.Step2_VariablesLoaded()
 	Commands:Initialize();
 	Bitmap:Initialize();
 	Internal:Initialize();
-	Localization:Initialize();
+	LocalizationTables:Initialize();
 	Search:Initialize();
 	API:Initialize();
 	FilterTables:Initialize();
