@@ -1,5 +1,5 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
-local Localization = ArenaAnalytics.Localization;
+local LocalizationTables = ArenaAnalytics.LocalizationTables;
 
 -- Local module aliases
 local Internal = ArenaAnalytics.Internal;
@@ -10,9 +10,9 @@ local Debug = ArenaAnalytics.Debug;
 -------------------------------------------------------------------------
 
 local classLookupTable = nil;
-function Localization:GetClassID(class)
+function LocalizationTables:GetClassID(class)
     if(not classLookupTable) then
-        Debug:LogError("classLookupTable failed to initialize for Localization conversions.");
+        Debug:LogError("classLookupTable failed to initialize for LocalizationTables conversions.");
         return nil;
     end
 
@@ -24,7 +24,7 @@ function Localization:GetClassID(class)
     local class_id = class and classLookupTable[class];
 
     if(not class_id) then
-        Debug:LogWarning("Localization:GetSpecID failed to find ID for:", class);
+        Debug:LogWarning("LocalizationTables:GetSpecID failed to find ID for:", class);
     end
 
     return class_id;
@@ -66,9 +66,9 @@ end
 -------------------------------------------------------------------------
 
 local specLookupTable = nil;
-function Localization:GetSpecID(classToken, spec)
+function LocalizationTables:GetSpecID(classToken, spec)
     if(not specLookupTable) then
-        Debug:LogError("specLookupTable failed to initialize for Localization conversions.");
+        Debug:LogError("specLookupTable failed to initialize for LocalizationTables conversions.");
         return nil;
     end
 
@@ -84,7 +84,7 @@ function Localization:GetSpecID(classToken, spec)
 
     -- Logging
     if(not spec_id) then
-        Debug:LogWarning("Localization:GetSpecID failed to find ID for:", classToken, spec);
+        Debug:LogWarning("LocalizationTables:GetSpecID failed to find ID for:", classToken, spec);
     end
 
     return spec_id;
@@ -94,7 +94,7 @@ local function InitializeLookupTable_Spec()
     specLookupTable = {};
 
     if(GetSpecializationInfoForClassID and GetSpecializationInfoForSpecID and not API.disableSpecInfoAPI) then
-        -- Populate English first, independent of game client and localization
+        -- Populate English first, independent of game client and LocalizationTables
         for classIndex=1, API:GetNumClasses() do
             Internal:PopulateEnglishSpecs(specLookupTable, classIndex);
         end
@@ -126,7 +126,7 @@ local function InitializeLookupTable_Spec()
     end
 end
 
-function Localization:TempLogSpecMapping()
+function LocalizationTables:TempLogSpecMapping()
     ArenaAnalytics.Debug:LogTable(specLookupTable);
 end
 
@@ -436,9 +436,9 @@ local raceMapping = {
 };
 
 local raceLookupTable = nil;
-function Localization:GetRaceID(race, factionIndex)
+function LocalizationTables:GetRaceID(race, factionIndex)
     if(not raceLookupTable) then
-        Debug:LogError("raceLookupTable failed to initialize for Localization conversions.");
+        Debug:LogError("raceLookupTable failed to initialize for LocalizationTables conversions.");
         return nil;
     end
 
@@ -463,7 +463,7 @@ function Localization:GetRaceID(race, factionIndex)
 
     -- Logging
     if(not race_id) then
-        Debug:LogWarning("Localization:GetRaceID failed to find ID for:", race, factionIndex);
+        Debug:LogWarning("LocalizationTables:GetRaceID failed to find ID for:", race, factionIndex);
     end
 
     return race_id;
@@ -506,7 +506,7 @@ local function InitializeLookupTable_Race()
     PopulateRace("undead", "scourge");
 end
 
-function Localization:GetFactionIndex(faction)
+function LocalizationTables:GetFactionIndex(faction)
     if(not faction) then
         return nil;
     end
@@ -525,7 +525,7 @@ function Localization:GetFactionIndex(faction)
     return faction and faction % 2;
 end
 
-function Localization:Initialize()
+function LocalizationTables:Initialize()
     InitializeLookupTable_Class();
     InitializeLookupTable_Spec();
     InitializeLookupTable_Race();

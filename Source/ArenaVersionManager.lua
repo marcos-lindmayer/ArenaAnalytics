@@ -10,7 +10,7 @@ local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
-local Localization = ArenaAnalytics.Localization;
+local LocalizationTables = ArenaAnalytics.LocalizationTables;
 local Sessions = ArenaAnalytics.Sessions;
 local Debug = ArenaAnalytics.Debug;
 
@@ -503,14 +503,14 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
     ArenaAnalytics:InitializeArenaAnalyticsDB();
 
     local function ConvertValues(race, class, spec)
-        local race_id = Localization:GetRaceID(race);
+        local race_id = LocalizationTables:GetRaceID(race);
         if(race_id) then
             race = race_id;
         else
             Debug:Log("Failed to find race_id when converting race:", race);
         end
 
-        local class_id = Localization:GetClassID(class);
+        local class_id = LocalizationTables:GetClassID(class);
         if(class_id) then
             class = class_id;
         else

@@ -3,7 +3,7 @@ local Import = ArenaAnalytics.Import;
 
 -- Local module aliases
 local API = ArenaAnalytics.API;
-local Localization = ArenaAnalytics.Localization;
+local LocalizationTables = ArenaAnalytics.LocalizationTables;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
 local TablePool = ArenaAnalytics.TablePool;
@@ -61,7 +61,7 @@ local function ProcessTeam(players, cachedValues, isEnemyTeam)
 
             newPlayer.isEnemy = isEnemyTeam;
             newPlayer.name = name;
-            newPlayer.spec = Localization:GetSpecID(class, spec);
+            newPlayer.spec = LocalizationTables:GetSpecID(class, spec);
 
             -- Determine if the player is self
             newPlayer.isSelf = (name == UnitName("player"));

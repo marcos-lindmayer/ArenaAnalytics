@@ -10,7 +10,7 @@ ArenaAnalytics.Commands = {};
 
 ArenaAnalytics.Constants = {};
 ArenaAnalytics.SpecSpells = {};
-ArenaAnalytics.Localization = {};
+ArenaAnalytics.LocalizationTables = {};
 ArenaAnalytics.Internal = {};
 ArenaAnalytics.Bitmap = {};
 ArenaAnalytics.TablePool = {};
