@@ -12,6 +12,7 @@ local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local TablePool = ArenaAnalytics.TablePool;
 local GroupSorter = ArenaAnalytics.GroupSorter;
 local Debug = ArenaAnalytics.Debug;
+local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
@@ -112,13 +113,13 @@ end
 -- Helpers
 
 local function CreateText(parent, text, size, color)
-    color = color or "ffffff";
+    color = color or Colors.white;
     size = size or 12;
     text = text or "";
 
     local fontString = parent:CreateFontString(nil, "OVERLAY");
     fontString:SetFont("Fonts\\FRIZQT__.TTF", size, "");
-    fontString:SetText("|cff" .. color .. text .. "|r");
+    fontString:SetText(Colors:ColorText(text, color));
     return fontString;
 end
 
@@ -150,7 +151,7 @@ function Display.SetText(dropdownContext, display)
 
     local label = Dropdown:RetrieveValue(dropdownContext.label, dropdownContext);
     local fontSize = dropdownContext.fontSize or 12;
-    local fontColor = dropdownContext.fontColor or "ffffff";
+    local fontColor = dropdownContext.fontColor or Colors.white;
 
     local fontString = CreateText(dropdownContext:GetFrame(), label, fontSize, fontColor);
 
@@ -170,7 +171,7 @@ function Display.SetComp(dropdownContext, display)
 
     local comp = Dropdown:RetrieveValue(dropdownContext.label, dropdownContext);
     local fontSize = dropdownContext.fontSize or 12;
-    local fontColor = dropdownContext.disabledColor or "ffffff";
+    local fontColor = dropdownContext.disabledColor or Colors.white;
 
     local padding = 1;
 

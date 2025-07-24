@@ -11,9 +11,13 @@ ArenaAnalytics.Commands = {};
 ArenaAnalytics.Constants = {};
 ArenaAnalytics.SpecSpells = {};
 ArenaAnalytics.LocalizationTables = {};
-ArenaAnalytics.Internal = {};
 ArenaAnalytics.Bitmap = {};
 ArenaAnalytics.TablePool = {};
+
+ArenaAnalytics.ArenaID = {};
+ArenaAnalytics.Localization = {};
+ArenaAnalytics.Lookup = {};
+ArenaAnalytics.ArenaText = {};
 
 ArenaAnalytics.Helpers = {};
 ArenaAnalytics.API = {};

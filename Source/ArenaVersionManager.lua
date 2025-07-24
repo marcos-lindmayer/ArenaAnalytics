@@ -3,13 +3,12 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local VersionManager = ArenaAnalytics.VersionManager;
 
 -- Local module aliases
-local Constants = ArenaAnalytics.Constants;
 local Filters = ArenaAnalytics.Filters;
 local Import = ArenaAnalytics.Import;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local LocalizationTables = ArenaAnalytics.LocalizationTables;
 local Sessions = ArenaAnalytics.Sessions;
 local Debug = ArenaAnalytics.Debug;
@@ -114,7 +113,7 @@ function VersionManager:OnInit()
 
     if(VersionManager:HasOldData() and #ArenaAnalyticsDB == 0) then
         -- Force early init, to ensure the internal tables are valid.
-        Internal:Initialize();
+        ArenaID:Initialize();
 
         Debug:Log("Converting old data...")
 
@@ -517,7 +516,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
             Debug:Log("Failed to find class_id when converting class:", class);
         end
 
-        local spec_id = Internal:GetSpecFromSpecString(class, spec);
+        local spec_id = ArenaID:GetSpecFromSpecString(class, spec);
         if(spec_id) then
             spec = spec_id;
         else

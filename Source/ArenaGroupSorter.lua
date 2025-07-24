@@ -3,8 +3,7 @@ local GroupSorter = ArenaAnalytics.GroupSorter;
 
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
-local Constants = ArenaAnalytics.Constants;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local TablePool = ArenaAnalytics.TablePool;
 local Bitmap = ArenaAnalytics.Bitmap;
@@ -254,7 +253,7 @@ local function MakeSpecPlayerInfo(spec_id)
 
     local playerInfo = TablePool:Acquire();
     playerInfo.spec = spec_id;    
-    playerInfo.role = Internal:GetRoleBitmap(spec_id);
+    playerInfo.role = ArenaID:GetRoleBitmap(spec_id);
     playerInfo.role_main = Bitmap:GetMainRole(playerInfo.role);
     playerInfo.role_sub = Bitmap:GetSubRole(playerInfo.role);
     return playerInfo;

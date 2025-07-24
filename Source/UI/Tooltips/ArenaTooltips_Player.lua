@@ -9,9 +9,8 @@ local TablePool = ArenaAnalytics.TablePool;
 local Helpers = ArenaAnalytics.Helpers;
 local API = ArenaAnalytics.API;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Options = ArenaAnalytics.Options;
-local Constants = ArenaAnalytics.Constants;
 local Debug = ArenaAnalytics.Debug;
 local Colors = ArenaAnalytics.Colors;
 
@@ -308,13 +307,13 @@ function PlayerTooltip:UpdateQuickSearchVisibility()
 end
 
 function PlayerTooltip:SetInfo(race_id, spec_id)
-    local race = Internal:GetRace(race_id);
+    local race = ArenaID:GetRace(race_id);
     if(race) then
-        local factionColor = Internal:GetRaceFactionColor(race_id);
+        local factionColor = ArenaID:GetRaceFactionColor(race_id);
         race = Colors:ColorText(race, factionColor);
     end
 
-    local class, spec = Internal:GetClassAndSpec(spec_id);
+    local class, spec = ArenaID:GetClassAndSpec(spec_id);
 
     local specialization = nil;
     if(class and spec) then
@@ -324,7 +323,7 @@ function PlayerTooltip:SetInfo(race_id, spec_id)
     end
 
     if(specialization ~= "") then
-        local color = Internal:GetClassColor(spec_id) or "ffffff";
+        local color = Colors:GetClassColor(spec_id) or Colors.white;
         specialization = Colors:ColorText(specialization, color);
     end
 

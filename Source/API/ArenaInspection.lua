@@ -4,7 +4,7 @@ local Inspection = ArenaAnalytics.Inspection;
 -- Local module aliases
 local API = ArenaAnalytics.API;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -139,7 +139,7 @@ local function HandleInspect_Internal(GUID)
     local unitToken = getPartyUnitToken(GUID);
     if(unitToken) then
         local spec_id = API:GetSpecialization(unitToken, true);
-        Debug:Log("HandleInspect_Internal", unitToken, spec_id, Internal:GetClassAndSpec(spec_id));
+        Debug:Log("HandleInspect_Internal", unitToken, spec_id, ArenaID:GetClassAndSpec(spec_id));
         if(spec_id) then
             foundSpec = true;
             ArenaTracker:OnSpecDetected(GUID, spec_id);

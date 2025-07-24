@@ -2,18 +2,8 @@ local _, ArenaAnalytics = ... -- Namespace
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
 
 -- Local module aliases
-local AAmatch = ArenaAnalytics.AAmatch;
-local Constants = ArenaAnalytics.Constants;
-local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
-local Helpers = ArenaAnalytics.Helpers;
-local Internal = ArenaAnalytics.Internal;
-local LocalizationTables = ArenaAnalytics.LocalizationTables;
-local Inspection = ArenaAnalytics.Inspection;
-local Events = ArenaAnalytics.Events;
-local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
-local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 
 -------------------------------------------------------------------------
 -- ArenaTracker subsection

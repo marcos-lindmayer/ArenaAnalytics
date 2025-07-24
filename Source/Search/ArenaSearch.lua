@@ -4,7 +4,6 @@ local Search = ArenaAnalytics.Search;
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
 local Filters = ArenaAnalytics.Filters;
-local Constants = ArenaAnalytics.Constants;
 local Bitmap = ArenaAnalytics.Bitmap;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;

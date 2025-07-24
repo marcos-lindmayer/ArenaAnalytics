@@ -13,7 +13,7 @@ local Import = ArenaAnalytics.Import;
 local Options = ArenaAnalytics.Options;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Debug = ArenaAnalytics.Debug;
 local Colors = ArenaAnalytics.Colors;
 
@@ -389,8 +389,8 @@ function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
 			name = name,
 			realm = realm,
 			fullName = ArenaAnalytics:CombineNameAndRealm(name, realm),
-			faction = Internal:GetRaceFaction(race_id),
-			race = Internal:GetRace(race_id),
+			faction = ArenaID:GetRaceFaction(race_id),
+			race = ArenaID:GetRace(race_id),
 			race_id = race_id,
 			spec_id = Helpers:GetClassID(spec_id), -- Avoid dynamic changes for sorting
 			role = role_bitmap,

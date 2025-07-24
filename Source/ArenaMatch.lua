@@ -2,10 +2,9 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -- Local module aliases
-local Constants = ArenaAnalytics.Constants;
 local Bitmap = ArenaAnalytics.Bitmap;
 local Helpers = ArenaAnalytics.Helpers;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local GroupSorter = ArenaAnalytics.GroupSorter;
 local API = ArenaAnalytics.API;
 local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
@@ -295,7 +294,7 @@ function ArenaMatch:GetMapID(match)
     if(type(value) == "table") then
         if(value.raw) then
             -- Check for map_id from an arbitrary raw value
-            local map_id = tonumber(Internal:GetAddonMapID(value.raw));
+            local map_id = tonumber(ArenaID:GetAddonMapID(value.raw));
             if(map_id) then
                 match[key] = map_id;
                 return map_id;
@@ -317,7 +316,7 @@ function ArenaMatch:GetMap(match, useShortName)
     end
 
     if(useShortName) then
-        local map = Internal:GetShortMapName(map_id);
+        local map = ArenaID:GetShortMapName(map_id);
         if(map) then
             return map;
         end
@@ -325,7 +324,7 @@ function ArenaMatch:GetMap(match, useShortName)
         Debug:Log("ArenaMatch failed to get short name for map_id:", map_id);
     end
 
-    return Internal:GetMapName(map_id);
+    return ArenaID:GetMapName(map_id);
 end
 
 function ArenaMatch:SetMap(match, value)
@@ -335,7 +334,7 @@ function ArenaMatch:SetMap(match, value)
         return;
     end
 
-    local map_id = Internal:GetAddonMapID(value);
+    local map_id = ArenaID:GetAddonMapID(value);
     if(map_id) then
         match[matchKeys.map] = tonumber(map_id);
     else
@@ -677,7 +676,7 @@ function ArenaMatch:MakeCompactPlayerData(player)
         [playerKeys.realm] = tonumber(realm),
         [playerKeys.race] = tonumber(player.race),
         [playerKeys.spec] = tonumber(player.spec),
-        [playerKeys.role] = Internal:GetRoleBitmap(player.spec),
+        [playerKeys.role] = ArenaID:GetRoleBitmap(player.spec),
         [playerKeys.is_self] = player.isSelf and 1 or nil,
         [playerKeys.is_first_death] = player.isFirstDeath and 1 or nil,
         [playerKeys.is_female] = ToNumericalBool(player.isFemale),
@@ -837,7 +836,7 @@ function ArenaMatch:GetPlayerInfo(player)
 
     -- Fix role in case it's missing
     if(not playerInfo.role and playerInfo.spec) then
-        player[playerKeys.role] = Internal:GetRoleBitmap(playerInfo.spec);
+        player[playerKeys.role] = ArenaID:GetRoleBitmap(playerInfo.spec);
         playerInfo.role = player[playerKeys.role];
     end
 
@@ -846,8 +845,8 @@ function ArenaMatch:GetPlayerInfo(player)
     playerInfo.role_sub = Bitmap:GetSubRole(playerInfo.role);
 
     -- Expand bitmask (isFirstDeath, isEnemy, isSelf, isFemale)
-    for key,index in pairs(Constants.playerFlags) do
-        assert(key and tonumber(index), "Invalid flag in Constants.playerFlags!");
+    for key,index in pairs(Bitmap.playerFlags) do
+        assert(key and tonumber(index), "Invalid flag in Bitmap.playerFlags!");
         --playerInfo[key] = playerInfo.bitmask and Bitmap:HasBitByIndex(playerInfo.bitmask, index) or nil;
     end
 

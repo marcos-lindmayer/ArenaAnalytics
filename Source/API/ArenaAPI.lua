@@ -3,7 +3,7 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local API = ArenaAnalytics.API;
 
 -- Local module aliases
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Constants = ArenaAnalytics.Constants;
 local Options = ArenaAnalytics.Options;
 local Helpers = ArenaAnalytics.Helpers;
@@ -399,7 +399,7 @@ function API:GetRoleBitmap(spec_id)
     -- Check for override
     local bitmapOverride = API.roleBitmapOverrides and API.roleBitmapOverrides[spec_id];
 
-    return bitmapOverride or Internal:GetRoleBitmap(spec_id);
+    return bitmapOverride or ArenaID:GetRoleBitmap(spec_id);
 end
 
 

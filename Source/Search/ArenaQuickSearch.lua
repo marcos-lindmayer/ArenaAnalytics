@@ -3,10 +3,9 @@ local Search = ArenaAnalytics.Search;
 
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
-local Constants = ArenaAnalytics.Constants;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -161,7 +160,7 @@ local function AddValueByType(tokens, player, explicitType)
         value = ArenaMatch:GetPlayerRace(player);
     elseif(explicitType == "faction") then
         local race = ArenaMatch:GetPlayerRace(player);
-        value = Internal:GetRaceFaction(race);
+        value = ArenaID:GetRaceFaction(race);
     end
 
     if(value) then

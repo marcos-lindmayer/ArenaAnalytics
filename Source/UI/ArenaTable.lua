@@ -10,10 +10,7 @@ local Search = ArenaAnalytics.Search;
 local Dropdown = ArenaAnalytics.Dropdown;
 local Selection = ArenaAnalytics.Selection;
 local API = ArenaAnalytics.API;
-local Import = ArenaAnalytics.Import;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local Internal = ArenaAnalytics.Internal;
-local Constants = ArenaAnalytics.Constants;
 local ImportBox = ArenaAnalytics.ImportBox;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local Helpers = ArenaAnalytics.Helpers;
@@ -273,7 +270,10 @@ function AAtable:TryShowimportDialogFrame(parent)
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
         ArenaAnalyticsScrollFrame.importDialogFrame.title:SetText("Import |cffCCCCCC(Optional)|r");
 
-        local supportedSourcesText = "|cffffffffPaste the |cff00ccffArenaStats|r or |cff00ccffREFlex|r import string in the edit box.|r";
+        local arenaStatsText = Colors:ColorText("ArenaStats", Colors.themeColor);
+        local reflexText = Colors:ColorText("REFlex", Colors.themeColor);
+
+        local supportedSourcesText = Colors:ColorText("Paste the "..arenaStatsText.." or "..reflexText.." import string in the edit box.", Colors.white);
         ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, supportedSourcesText);
 
         local noteText = "|cffCCCCCCNote:|r |cff888888Import may be missing data required for some filters.|r";

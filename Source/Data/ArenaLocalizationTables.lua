@@ -2,7 +2,7 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local LocalizationTables = ArenaAnalytics.LocalizationTables;
 
 -- Local module aliases
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Helpers = ArenaAnalytics.Helpers;
 local API = ArenaAnalytics.API;
 local Debug = ArenaAnalytics.Debug;
@@ -34,7 +34,7 @@ local function InitializeLookupTable_Class()
     classLookupTable = {};
 
     local function PopulateTable(classToken, className)
-        local classID = Internal:GetAddonClassID(classToken);
+        local classID = ArenaID:GetAddonClassID(classToken);
 
         if(classID) then
             classToken = Helpers:SanitizeValue(classToken);
@@ -96,7 +96,7 @@ local function InitializeLookupTable_Spec()
     if(GetSpecializationInfoForClassID and GetSpecializationInfoForSpecID and not API.disableSpecInfoAPI) then
         -- Populate English first, independent of game client and LocalizationTables
         for classIndex=1, API:GetNumClasses() do
-            Internal:PopulateEnglishSpecs(specLookupTable, classIndex);
+            ArenaID:PopulateEnglishSpecs(specLookupTable, classIndex);
         end
 
         -- Second loop to deal with different class index orders
@@ -474,8 +474,8 @@ local function InitializeLookupTable_Race()
 
     local function PopulateRace(raceToken, key)
         if(raceToken and key and key ~= "" and not raceLookupTable[key]) then
-            local hordeID = Internal:GetAddonRaceIDByToken(raceToken, 0);
-            local allianceID = Internal:GetAddonRaceIDByToken(raceToken, 1);
+            local hordeID = ArenaID:GetAddonRaceIDByToken(raceToken, 0);
+            local allianceID = ArenaID:GetAddonRaceIDByToken(raceToken, 1);
 
             -- Insert neutral as table, or explicit faction as number
             if(hordeID and allianceID and hordeID ~= allianceID) then

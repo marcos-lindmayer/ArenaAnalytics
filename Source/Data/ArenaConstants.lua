@@ -7,28 +7,6 @@ local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
--- NOTE: Indices here affect save data
-Constants.roleIndexes = { 
-    -- Main roles
-    { token = "tank", isMain = true, name = "Tank" },
-    { token = "damager", isMain = true, name = "Dps" },
-    { token = "healer", isMain = true, name = "Healer" },
-
-    -- Sub roles
-    { token = "caster", name = "Caster" },
-    { token = "ranged", name = "Ranged" },
-    { token = "melee", name = "Melee" },
-};
-
-Constants.playerFlags = {
-    isFirstDeath = 1,
-    isEnemy = 2,
-    isSelf = 3,
-    isFemale = 4,
-};
-
--------------------------------------------------------------------------
-
 local matchStartedMessages = {
     ["The Arena battle has begun!"] = true,          -- English / Default
     ["¡La batalla en arena ha comenzado!"] = true,   -- esES / esMX
@@ -263,7 +241,7 @@ function Constants:GetBaseSpecIcon(spec_id)
     return specIconTable[spec_id] or 134400; -- Red question mark ID (Inv_misc_questionmark)
 end
 
-function ArenaAnalytics:getBracketFromTeamSize(teamSize)
+function ArenaAnalytics:getBracketFromTeamSize_DEPRECATED(teamSize)
     if(teamSize == 2) then
         return "2v2";
     elseif(teamSize == 3) then
@@ -272,7 +250,7 @@ function ArenaAnalytics:getBracketFromTeamSize(teamSize)
     return "5v5";
 end
 
-function ArenaAnalytics:getBracketIdFromTeamSize(teamSize)
+function ArenaAnalytics:getBracketIdFromTeamSize_DEPRECATED(teamSize)
     if(teamSize == 2) then
         return 1;
     elseif(teamSize == 3) then
