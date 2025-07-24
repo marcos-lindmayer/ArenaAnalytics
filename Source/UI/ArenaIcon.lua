@@ -3,8 +3,7 @@ local ArenaIcon = ArenaAnalytics.ArenaIcon;
 ArenaIcon.__index = ArenaIcon
 
 -- Local module aliases
-local Constants = ArenaAnalytics.Constants;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Helpers = ArenaAnalytics.Helpers;
 local API = ArenaAnalytics.API;
 local Options = ArenaAnalytics.Options;
@@ -68,10 +67,10 @@ function ArenaIcon:Create(parent, size, skipDeath)
 
         local classIcon, specIcon;
         if(Options:Get("fullSizeSpecIcons")) then
-            classIcon = isSpec and API:GetSpecIcon(spec_id) or Internal:GetClassIcon(spec_id);
+            classIcon = isSpec and API:GetSpecIcon(spec_id) or ArenaID:GetClassIcon(spec_id);
             specIcon = ""; -- Hide spec icon
         else
-            classIcon = Internal:GetClassIcon(spec_id);
+            classIcon = ArenaID:GetClassIcon(spec_id);
             specIcon = API:GetSpecIcon(spec_id);
         end
 

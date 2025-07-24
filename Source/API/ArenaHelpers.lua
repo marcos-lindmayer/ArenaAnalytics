@@ -3,7 +3,7 @@ local Helpers = ArenaAnalytics.Helpers;
 
 -- Local module aliases
 local API = ArenaAnalytics.API;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Options = ArenaAnalytics.Options;
 local Colors = ArenaAnalytics.Colors;
 local Debug = ArenaAnalytics.Debug;
@@ -226,14 +226,14 @@ function Helpers:GetUnitRace(unit)
         factionIndex = (faction == "Alliance") and 1 or 0;
     end
 
-    return Internal:GetAddonRaceIDByToken(token, factionIndex);
+    return ArenaID:GetAddonRaceIDByToken(token, factionIndex);
 end
 
 
 -- Get Addon Class ID from unit
 function Helpers:GetUnitClass(unit)
     local _,token = UnitClass(unit);
-    return Internal:GetAddonClassID(token);
+    return ArenaID:GetAddonClassID(token);
 end
 
 
@@ -281,6 +281,7 @@ local unknownValues = {
     [UKNOWNBEING or _G["UNKNOWNBEING"] or "Unknown Being"] = true, -- NOTE: Blizzard misspelled the constant ingame! (Missing N is intentional here!)
     [UNKNOWNOBJECT or "Unknown"] = true,
 };
+
 function Helpers:IsValidValue(value)
     return value and not unknownValues[value];
 end
@@ -292,3 +293,4 @@ function Helpers:ToValidValue(value)
 
     return value;
 end
+

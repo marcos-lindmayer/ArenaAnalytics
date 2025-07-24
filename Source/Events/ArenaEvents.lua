@@ -3,7 +3,6 @@ local Events = ArenaAnalytics.Events;
 
 -- Local module aliases
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
-local Constants = ArenaAnalytics.Constants;
 local API = ArenaAnalytics.API;
 local Inspection = ArenaAnalytics.Inspection;
 local Options = ArenaAnalytics.Options;
@@ -154,7 +153,7 @@ function Events:HandleGlobalEvent(event, ...)
 
 		local battlefieldId = API:GetActiveBattlefieldID();
 		if(battlefieldId and ArenaTracker:IsInState("Initiated")) then
-			-- Internal checks to ignore invalid calls
+			-- ArenaID checks to ignore invalid calls
 			ArenaTracker:HandleArenaEnter(battlefieldId);
 		end
 	end

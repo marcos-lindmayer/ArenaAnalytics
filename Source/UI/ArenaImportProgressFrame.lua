@@ -3,13 +3,7 @@ local ImportProgressFrame = ArenaAnalytics.ImportProgressFrame;
 
 -- Local module aliases
 local Import = ArenaAnalytics.Import;
-local Sessions = ArenaAnalytics.Sessions;
-local TablePool = ArenaAnalytics.TablePool;
-local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local Filters = ArenaAnalytics.Filters;
 local Helpers = ArenaAnalytics.Helpers;
-local Debug = ArenaAnalytics.Debug;
-local Constants = ArenaAnalytics.Constants;
 local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------

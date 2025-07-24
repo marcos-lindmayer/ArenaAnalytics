@@ -3,6 +3,7 @@ local Search = ArenaAnalytics.Search;
 
 -- Local module aliases
 local Debug = ArenaAnalytics.Debug;
+local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 -- Search Colors
@@ -22,8 +23,8 @@ function Search:ColorizeToken(token)
     end
 
     local type = token.explicitType;
-    
-    return token.raw and "|cffFFFFFF" .. token.raw .. "|r" or "";
+
+    return Colors:ColorText(token.raw, Colors.white);
 end
 
 -------------------------------------------------------------------------

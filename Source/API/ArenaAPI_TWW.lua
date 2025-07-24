@@ -5,7 +5,7 @@ local API = ArenaAnalytics.API;
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
 local LocalizationTables = ArenaAnalytics.LocalizationTables;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Bitmap = ArenaAnalytics.Bitmap;
 local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
@@ -95,7 +95,7 @@ function API:GetPlayerScore(index)
 
     local spec_id = LocalizationTables:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
     if(not spec_id) then
-        spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
+        spec_id = ArenaID:GetAddonClassID(scoreInfo.classToken);
     end
 
     score.name = API:ToFullName(scoreInfo.name);
@@ -157,7 +157,7 @@ end
 
 API.maxRaceID = 70;
 
--- Internal Addon Spec ID to expansion spec IDs
+-- ArenaID Addon Spec ID to expansion spec IDs
 API.specMappingTable = {
     [105] = 1, -- Restoration Druid
     [103] = 2, -- Feral Druid

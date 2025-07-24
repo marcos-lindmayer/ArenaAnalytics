@@ -5,7 +5,7 @@ local Import = ArenaAnalytics.Import;
 local API = ArenaAnalytics.API;
 local LocalizationTables = ArenaAnalytics.LocalizationTables;
 local Helpers = ArenaAnalytics.Helpers;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
 

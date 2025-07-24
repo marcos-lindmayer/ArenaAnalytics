@@ -19,8 +19,10 @@ Source/UI/HybridScroll.xml
 
 Source/UI/ArenaMinimapButton.lua
 
-Source/ArenaAnalytics.lua
 Source/Options/ArenaOptions.lua
+Source/Options/ArenaOptionsFrames.lua
+
+Source/ArenaAnalytics.lua
 Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
 Source/Events/ArenaEvents.lua
@@ -51,7 +53,23 @@ Source/UI/Tooltips/ArenaTooltips.lua
 Source/UI/Tooltips/ArenaTooltips_Player.lua
 Source/UI/Tooltips/ArenaTooltips_Shuffle.lua
 
-Source/Data/ArenaInternalIDs.lua
+Source/Data/ArenaID/ArenaID.lua
+Source/Data/ArenaID/ArenaID_Map.lua
+Source/Data/ArenaID/ArenaID_Race.lua
+Source/Data/ArenaID/ArenaID_Class.lua
+Source/Data/ArenaID/ArenaID_Spec.lua
+
+Source/Localization/ArenaLocalization.lua
+Source/Localization/ArenaLocalization_enGB.lua
+
+Source/Lookup/ArenaLookup.lua
+Source/Lookup/ArenaLookup_Races.lua
+Source/Lookup/ArenaLookup_Specs.lua
+Source/Lookup/ArenaLookup_Search.lua
+Source/Lookup/ArenaLookup_Export.lua
+
+Source/UI/ArenaText.lua
+
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
 Source/Data/ArenaSpecSpells_Cata.lua

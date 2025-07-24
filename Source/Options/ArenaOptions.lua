@@ -120,6 +120,10 @@ function Options:LoadSettings()
 
     AddSetting("printAsSystem", true);
 
+    -- Language
+    AddSetting("language", "enGB");
+    AddSetting("languageLogging", false); -- Enables logging relevant for translators
+
     -- Filters
     AddSetting("defaultCurrentSeasonFilter", false);
     AddSetting("defaultCurrentSessionFilter", false);
@@ -247,283 +251,15 @@ function Options:TriggerStateUpdates()
     end
 end
 
-local TabTitleSize = 18;
 local TabHeaderSize = 16;
-local GroupHeaderSize = 14;
-local TextSize = 12;
-
-local OptionsSpacing = 10;
-
--- Offset to use while creating settings tabs
-local offsetY = 0;
-
--------------------------------------------------------------------
--- Helper Functions
--------------------------------------------------------------------
-
-local function SetupTooltip(owner, frames)
-    assert(owner ~= nil);
-
-    frames = frames or owner;
-    frames = (type(frames) == "table" and frames or { frames });
-
-    for i,frame in ipairs(frames) do
-        frame:SetScript("OnEnter", function ()
-            if(owner.tooltip) then
-                Tooltips:DrawOptionTooltip(owner, owner.tooltip);
-            end
-        end);
-
-        frame:SetScript("OnLeave", function ()
-            if(owner.tooltip) then
-                GameTooltip:Hide();
-            end
-        end);
-    end
-end
-
-local function InitializeTab(parent)
-    local addonNameText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    addonNameText:SetPoint("TOPLEFT", parent, "TOPLEFT", -5, 32)
-    addonNameText:SetTextHeight(TabTitleSize);
-    addonNameText:SetText(Colors:GetTitle() .. "   " .. Colors:GetVersionText());
-
-    -- Reset Y offset
-    offsetY = 0;
-end
-
-local function CreateSpace(explicit)
-    offsetY = offsetY - max(0, explicit or 20)
-end
-
-local function CreateHeader(text, size, parent, relative, x, y, icon)
-    local frame = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    frame:SetPoint("TOPLEFT", relative or parent, "TOPLEFT", x, y)
-    frame:SetTextHeight(size);
-    frame:SetText(text or "");
-
-    offsetY = offsetY - OptionsSpacing - frame:GetHeight() + y;
-
-    return frame;
-end
-
-local function CreateButton(setting, parent, x, width, text, func)
-    assert(type(func) == "function");
-
-    -- Create the button
-    local button = CreateFrame("Button", "ArenaAnalyticsButton_" .. (setting or text or ""), parent, "UIPanelButtonTemplate");
-
-    -- Set the button's position
-    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
-
-    -- Set the button's size and text
-    button:SetSize(width or 120, 30)
-    button:SetText(text or "")
-
-    -- Add a script for the button's click action
-    button:SetScript("OnClick", function()
-        func(setting);
-    end)
-
-    SetupTooltip(button, nil);
-
-    offsetY = offsetY - OptionsSpacing - button:GetHeight();
-
-    return button;
-end
-
-local function CreateImportBox(parent, x, width, height)
-    local ImportBox = ImportBox:Create(parent, "ArenaAnalyticsImportDialogBox", width, (height or 25));
-    ImportBox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
-
-    function ImportBox:stateFunc()
-        if(Options:Get("allowImportDataMerge") or not ArenaAnalytics:HasStoredMatches()) then
-            self.frame.editbox:Enable();
-        else
-            self:Disable();
-        end
-    end
-
-    ImportBox:stateFunc();
-
-    offsetY = offsetY - ImportBox:GetHeight();
-
-    return ImportBox;
-end
-
-local function CreateCheckbox(setting, parent, x, text, func)
-    assert(setting ~= nil);
-    assert(type(setting) == "string");
-
-    local checkbox = CreateFrame("CheckButton", "ArenaAnalyticsScrollFrame_"..setting, parent, "OptionsSmallCheckButtonTemplate");
-
-    checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
-
-    checkbox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    checkbox.text:SetPoint("LEFT", checkbox, "RIGHT", 5);
-    checkbox.text:SetTextHeight(TextSize);
-    checkbox.text:SetText(text or "");
-
-    checkbox:SetChecked(Options:Get(setting));
-
-    checkbox:SetScript("OnClick", function()
-		Options:Set(setting, checkbox:GetChecked());
-        
-        if(func) then
-            func(setting);
-        end
-	end);
-
-    SetupTooltip(checkbox, {checkbox, checkbox.text});
-
-    offsetY = offsetY - OptionsSpacing - checkbox:GetHeight() + 10;
-
-    parent[setting] = checkbox;
-    return checkbox;
-end
-
-local function CreateInputBox(setting, parent, x, text, func)
-    offsetY = offsetY - 2; -- top padding
-
-    local inputBox = CreateFrame("EditBox", "exportFrameScroll", parent, "InputBoxTemplate");
-    inputBox:SetPoint("TOPLEFT", parent, "TOPLEFT", x + 8, offsetY);
-    inputBox:SetWidth(50);
-    inputBox:SetHeight(20);
-    inputBox:SetNumeric();
-    inputBox:SetAutoFocus(false);
-    inputBox:SetMaxLetters(5);
-    inputBox:SetText(tonumber(Options:Get(setting)) or "");
-    inputBox:SetCursorPosition(0);
-    inputBox:HighlightText(0,0);    
-
-    -- Text
-    inputBox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    inputBox.text:SetPoint("LEFT", inputBox, "RIGHT", 5, 0);
-    inputBox.text:SetTextHeight(TextSize);
-    inputBox.text:SetText(text or "");
-
-    inputBox:SetScript("OnEnterPressed", function(self)
-        self:ClearFocus();
-    end);
-
-    inputBox:SetScript("OnEscapePressed", function(self)
-		inputBox:SetText(Options:Get(setting) or "");
-        self:ClearFocus();
-    end);
-
-    inputBox:SetScript("OnEditFocusLost", function(self)
-		local oldValue = Helpers:ToSafeNumber(Options:Get(setting));
-		local newValue = Helpers:ToSafeNumber(inputBox:GetText());
-        Options:Set(setting, newValue or oldValue)
-		inputBox:SetText(tonumber(Options:Get(setting)) or "");
-        inputBox:SetCursorPosition(0);
-		inputBox:HighlightText(0,0);
-
-		AAtable:CheckUnsavedWarningThreshold();
-    end);
-
-    SetupTooltip(inputBox, {inputBox, inputBox.text});
-
-    if(func) then
-        func(setting);
-    end
-
-    offsetY = offsetY - OptionsSpacing - inputBox:GetHeight() + 5;
-
-    return inputBox;
-end
-
-local function CreateDropdown(setting, parent, x, text, entries, func)
-    assert(setting and entries and #entries > 0);
-    assert(Options:IsValid(setting));
-
-    offsetY = offsetY - 2;
-
-    local function SetSettingFromDropdown(dropdownContext, btn)
-        if(btn == "RightButton") then
-            Options:Reset(dropdownContext.key);
-        else
-            Options:Set(dropdownContext.key, (dropdownContext.value or dropdownContext.label));
-        end
-
-        if(func) then
-            func(dropdownContext, btn, parent);
-        end
-    end
-
-    local function IsSettingEntryChecked(dropdownContext)
-        assert(dropdownContext ~= nil, "Invalid contextFrame");
-
-        return Options:Get(dropdownContext.key) == (dropdownContext.value or dropdownContext.label);
-    end
-
-    local function ResetSetting(dropdownContext, btn)
-        if(btn == "RightButton") then
-            Options:Reset(dropdownContext.key);
-            dropdownContext:Refresh();
-
-            if(func) then
-                func(dropdownContext, btn, parent);
-            end
-        else
-            dropdownContext.parent:Toggle();
-        end
-    end
-
-    local function GenerateEntries()
-        local entryTable = {}
-        for _,entry in ipairs(entries) do 
-            if(entry) then
-                tinsert(entryTable, {
-                    label = entry,
-                    alignment = "LEFT",
-                    key = setting,
-                    onClick = SetSettingFromDropdown,
-                    checked = IsSettingEntryChecked,
-                });
-            end
-        end
-        return entryTable;
-    end
-
-    local function GetSelectedLabel(dropdownContext)
-        local selected = Options:Get(dropdownContext.key) or "";
-        if(selected == "None") then
-            return "|cff555555" .. selected .. "|r";
-        end
-        return selected;
-    end
-
-    local config = {
-        mainButton = {
-            label = GetSelectedLabel,
-            alignment = "CENTER",
-            key = setting,
-            onClick = ResetSetting
-        },
-        entries = GenerateEntries;
-    }
-
-    local newDropdown = Dropdown:Create(parent, "Setting", setting.."Dropdown", config, 150, 25) -- parent, dropdownType, frameName, config, width, height
-    newDropdown:SetPoint("TOPLEFT", parent, "TOPLEFT", x, offsetY);
-
-    -- Text
-    newDropdown.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    newDropdown.text:SetPoint("LEFT", newDropdown:GetFrame(), "RIGHT", 5, 0);
-    newDropdown.text:SetTextHeight(TextSize);
-    newDropdown.text:SetText(text or "");
-
-    offsetY = offsetY - OptionsSpacing - newDropdown:GetHeight() + 10;
-    return newDropdown;
-end
 
 -------------------------------------------------------------------
 -- General Tab
 -------------------------------------------------------------------
 
-function SetupTab_General()
+local function SetupTab_General()
     -- Title
-    InitializeTab(ArenaAnalyticsOptionsFrame);
+    Options:InitializeTab(ArenaAnalyticsOptionsFrame);
     local parent = ArenaAnalyticsOptionsFrame;
     if(not parent) then
         return;
@@ -531,37 +267,37 @@ function SetupTab_General()
 
     local offsetX = 20;
 
-    parent.tabHeader = CreateHeader("General", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = Options:CreateHeader("General", parent, nil, 15, -15);
 
     -- Setup options
-    CreateCheckbox("hideMinimapButton", parent, offsetX, "Hide minimap icon.", ArenaAnalytics.MinimapButton.Update);
+    Options:CreateCheckbox("hideMinimapButton", parent, offsetX, "Hide minimap icon.", ArenaAnalytics.MinimapButton.Update);
 
     if(AddonCompartmentFrame) then
-        CreateCheckbox("hideFromCompartment", parent, offsetX, "Hide from addon compartment.", ArenaAnalytics.MinimapButton.Update);
+        Options:CreateCheckbox("hideFromCompartment", parent, offsetX, "Hide from addon compartment.", ArenaAnalytics.MinimapButton.Update);
     end
 
-    CreateSpace();
+    Options:CreateSpace();
 
-    CreateCheckbox("printAsSystem", parent, offsetX, "Print messages using system messages.    |cffaaaaaa(Alternative is general chat only prints)|r");
-    CreateCheckbox("hideErrorLogs", parent, offsetX, "Hide error logging in chat.     |cffaaaaaa(Consider reporting errors instead)|r");
+    Options:CreateCheckbox("printAsSystem", parent, offsetX, "Print messages using system messages.    |cffaaaaaa(Alternative is general chat only prints)|r");
+    Options:CreateCheckbox("hideErrorLogs", parent, offsetX, "Hide error logging in chat.     |cffaaaaaa(Consider reporting errors instead)|r");
 
-    CreateSpace();
+    Options:CreateSpace();
 
-    CreateCheckbox("fullSizeSpecIcons", parent, offsetX, "Full size spec icons.");
-    CreateCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
-    CreateCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
-    CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
+    Options:CreateCheckbox("fullSizeSpecIcons", parent, offsetX, "Full size spec icons.");
+    Options:CreateCheckbox("alwaysShowDeathOverlay", parent, offsetX, "Always show death overlay (Otherwise mouseover only)");
+    Options:CreateCheckbox("alwaysShowSpecOverlay", parent, offsetX, "Always show spec (Otherwise mouseover only)");
+    Options:CreateInputBox("unsavedWarningThreshold", parent, offsetX, "Unsaved games threshold before showing |cff00cc66/reload|r warning.");
 
-    CreateSpace();
+    Options:CreateSpace();
 
-    CreateCheckbox("compactLargeNumbers", parent, offsetX, "Compact large numbers.");
-    CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
-    CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
+    Options:CreateCheckbox("compactLargeNumbers", parent, offsetX, "Compact large numbers.");
+    Options:CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
+    Options:CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
     --CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
 
-    CreateSpace();
+    Options:CreateSpace();
 
-    CreateCheckbox("muteArenaDialogSounds", parent, offsetX, "Mute dialog sound during arena.", API.UpdateDialogueVolume);
+    Options:CreateCheckbox("muteArenaDialogSounds", parent, offsetX, "Mute dialog sound during arena.", API.UpdateDialogueVolume);
 
     if(API:HasSurrenderAPI()) then
         local function UpdateDoubleAfkState()
@@ -574,45 +310,62 @@ function SetupTab_General()
             end
         end
 
-        CreateSpace();
-        CreateCheckbox("surrenderByMiddleMouseClick", parent, offsetX, "Surrender by middle mouse clicking the minimap icon.");
-        CreateCheckbox("enableSurrenderGoodGameCommand", parent, offsetX, "Register |cff00ccff/gg|r surrender command.", Commands.UpdateSurrenderCommands);
-        CreateCheckbox("enableSurrenderAfkOverride", parent, offsetX, "Enable |cff00ccff/afk|r surrender override.", function()
+        Options:CreateSpace();
+        Options:CreateCheckbox("surrenderByMiddleMouseClick", parent, offsetX, "Surrender by middle mouse clicking the minimap icon.");
+        Options:CreateCheckbox("enableSurrenderGoodGameCommand", parent, offsetX, "Register |cff00ccff/gg|r surrender command.", Commands.UpdateSurrenderCommands);
+        Options:CreateCheckbox("enableSurrenderAfkOverride", parent, offsetX, "Enable |cff00ccff/afk|r surrender override.", function()
             UpdateDoubleAfkState();
             Commands.UpdateSurrenderCommands();
         end);
-        CreateCheckbox("enableDoubleAfkToLeave", parent, offsetX*2, "Double |cff00ccff/afk|r to leave the arena.    |cffaaaaaa(Type |cff00ccff/afk|r twice within 5 seconds to confirm.)|r");
+        Options:CreateCheckbox("enableDoubleAfkToLeave", parent, offsetX*2, "Double |cff00ccff/afk|r to leave the arena.    |cffaaaaaa(Type |cff00ccff/afk|r twice within 5 seconds to confirm.)|r");
         UpdateDoubleAfkState();
     end
+end
+
+-------------------------------------------------------------------
+-- General Tab
+-------------------------------------------------------------------
+
+local function SetupTab_Language()
+    -- Title
+    Options:InitializeTab(ArenaAnalyticsOptionsFrame);
+    local parent = ArenaAnalyticsOptionsFrame;
+    if(not parent) then
+        return;
+    end
+
+    local offsetX = 20;
+
+    parent.tabHeader = Options:CreateHeader("General", parent, nil, 15, -15);
 end
 
 -------------------------------------------------------------------
 -- Filter Tab
 -------------------------------------------------------------------
 
-function SetupTab_Filters()
+local function SetupTab_Filters()
     local filterOptionsFrame = CreateFrame("frame");
     Options:RegisterCategory(filterOptionsFrame, "Filters", ArenaAnalyticsOptionsFrame);
 
     -- Title
-    InitializeTab(filterOptionsFrame);
+    Options:InitializeTab(filterOptionsFrame);
     local parent = filterOptionsFrame;
     local offsetX = 20;
 
-    parent.tabHeader = CreateHeader("Filters", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = Options:CreateHeader("Filters", parent, nil, 15, -15);
 
-    CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
-    CreateCheckbox("showWarGames", parent, offsetX, "Show War Games in match history.");
+    Options:CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
+    Options:CreateCheckbox("showWarGames", parent, offsetX, "Show War Games in match history.");
 
-    CreateSpace();
+    Options:CreateSpace();
 
     -- Setup options
-    CreateCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
-    CreateCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
+    Options:CreateCheckbox("defaultCurrentSeasonFilter", parent, offsetX, "Apply current season filter by default.");
+    Options:CreateCheckbox("defaultCurrentSessionFilter", parent, offsetX, "Apply latest session only by default.");
 
-    CreateSpace();
+    Options:CreateSpace();
 
-    CreateCheckbox("showCompDropdownInfoText", parent, offsetX, "Show info text by comp dropdown titles.", function()
+    Options:CreateCheckbox("showCompDropdownInfoText", parent, offsetX, "Show info text by comp dropdown titles.", function()
         local function forceUpdateInfoVisibility(frame)
             if(frame and frame.title and frame.title.info) then
                 if(Options:Get("showCompDropdownInfoText")) then
@@ -627,11 +380,11 @@ function SetupTab_Filters()
         forceUpdateInfoVisibility(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame());
     end);
 
-    CreateSpace();
+    Options:CreateSpace();
 
-    CreateCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
-    CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
-    CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
+    Options:CreateCheckbox("sortCompFilterByTotalPlayed", parent, offsetX, "Sort comp filter dropdowns by total played.");
+    Options:CreateCheckbox("showSelectedCompStats", parent, offsetX, "Show played and winrate for selected comp in filters.");
+    Options:CreateCheckbox("compDisplayAverageMmr", parent, offsetX, "Show average mmr in comp dropdown.", function()
         local info = Options:Get("compDisplayAverageMmr") and "Games || Comp || Winrate || mmr" or "Games || Comp || Winrate";
         info = Colors:ColorText(info, Colors.infoColor);
 
@@ -645,30 +398,30 @@ function SetupTab_Filters()
         forceUpdateInfoText(ArenaAnalyticsScrollFrame.filterEnemyCompsDropdown:GetFrame());
     end);
 
-    parent.minimumCompsPlayed = CreateInputBox("minimumCompsPlayed", parent, offsetX, "Minimum games required to appear on comp filter.");
-    parent.compDropdownVisibileLimit = CreateInputBox("compDropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
-    parent.dropdownScrollStep = CreateInputBox("dropdownScrollStep", parent, offsetX, "Dropdown entries to scroll past per through per step.");
+    parent.minimumCompsPlayed = Options:CreateInputBox("minimumCompsPlayed", parent, offsetX, "Minimum games required to appear on comp filter.");
+    parent.compDropdownVisibileLimit = Options:CreateInputBox("compDropdownVisibileLimit", parent, offsetX, "Maximum comp dropdown entries visible.");
+    parent.dropdownScrollStep = Options:CreateInputBox("dropdownScrollStep", parent, offsetX, "Dropdown entries to scroll past per through per step.");
 end
 
 -------------------------------------------------------------------
 -- Search Tab
 -------------------------------------------------------------------
 
-function SetupTab_Search()
+local function SetupTab_Search()
     local filterOptionsFrame = CreateFrame("frame");
     --filterOptionsFrame.name = "Search";
     Options:RegisterCategory(filterOptionsFrame, "Search", ArenaAnalyticsOptionsFrame);
 
     -- Title
-    InitializeTab(filterOptionsFrame);
+    Options:InitializeTab(filterOptionsFrame);
     local parent = filterOptionsFrame;
     local offsetX = 20;
 
-    parent.tabHeader = CreateHeader("Search", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = Options:CreateHeader("Search", parent, nil, 15, -15);
 
     -- Setup options
     -- TODO: Convert to explicit team dropdown (Any, Team, Enemy)
-    CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
+    Options:CreateCheckbox("searchDefaultExplicitEnemy", parent, offsetX, "Search defaults enemy team.   |cffaaaaaa(Override by adding keyword: '|cff00ccffteam|r' for explicit friendly team.)|r", function()
         if(Debug:Assert(ArenaAnalyticsScrollFrame.searchBox.title)) then
             local explicitEnemyText = Options:Get("searchDefaultExplicitEnemy") and "Enemy Search" or "Search";
             ArenaAnalyticsScrollFrame.searchBox.title:SetText(Colors:ColorText(explicitEnemyText, Colors.headerColor));
@@ -705,90 +458,90 @@ local function ForceUniqueAppendRuleShortcut(dropdownContext, _, parent)
     end
 end
 
-function SetupTab_QuickSearch()
+local function SetupTab_QuickSearch()
     local filterOptionsFrame = CreateFrame("frame");
     --filterOptionsFrame.name = "Quick Search";
     Options:RegisterCategory(filterOptionsFrame, "Quick Search", ArenaAnalyticsOptionsFrame);
 
     -- Title
-    InitializeTab(filterOptionsFrame);
+    Options:InitializeTab(filterOptionsFrame);
     local parent = filterOptionsFrame;
-    local offsetX = 20;    
+    local offsetX = 20;
 
-    parent.tabHeader = CreateHeader("Quick Search", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = Options:CreateHeader("Quick Search", parent, nil, 15, -15);
 
     -- Setup options
-    CreateCheckbox("quickSearchEnabled", parent, offsetX, "Enable Quick Search");
-    CreateCheckbox("searchShowTooltipQuickSearch", parent, offsetX, "Show Quick Search shortcuts in Player Tooltips");
+    Options:CreateCheckbox("quickSearchEnabled", parent, offsetX, "Enable Quick Search");
+    Options:CreateCheckbox("searchShowTooltipQuickSearch", parent, offsetX, "Show Quick Search shortcuts in Player Tooltips");
 
-    CreateSpace(15);
+    Options:CreateSpace(15);
 
     local includeRealmOptions = { "None", "All", "Other Realms", "My Realm" };
-    parent.includeRealmDropdown = CreateDropdown("quickSearchIncludeRealm", parent, offsetX, "Include realms from Quick Search.", includeRealmOptions);
+    parent.includeRealmDropdown = Options:CreateDropdown("quickSearchIncludeRealm", parent, offsetX, "Include realms from Quick Search.", includeRealmOptions);
 
     local appendRules = { "New Search", "New Segment", "Same Segment" };
-    parent.defaultAppendRuleDropdown = CreateDropdown("quickSearchDefaultAppendRule", parent, offsetX, "Default append rule, if not overridden by shortcuts.", appendRules);
+    parent.defaultAppendRuleDropdown = Options:CreateDropdown("quickSearchDefaultAppendRule", parent, offsetX, "Default append rule, if not overridden by shortcuts.", appendRules);
 
     local valueOptions = { "Name", "Spec", "Race", "Faction" };
-    parent.defaultValueDropdown = CreateDropdown("quickSearchDefaultValue", parent, offsetX, "Default value to add, if not overridden by shortcuts.", valueOptions);
+    parent.defaultValueDropdown = Options:CreateDropdown("quickSearchDefaultValue", parent, offsetX, "Default value to add, if not overridden by shortcuts.", valueOptions);
 
-    CreateSpace(15);
+    Options:CreateSpace(15);
 
     local shortcuts = { "None", "LMB", "RMB", "Nomod", "Shift", "Ctrl", "Alt" };
 
-    parent.quickSearchAppendRule_NewSearch = CreateDropdown("quickSearchAppendRule_NewSearch", parent, offsetX, "New Search append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
-    parent.quickSearchAppendRule_NewSegment = CreateDropdown("quickSearchAppendRule_NewSegment", parent, offsetX, "New Segment append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
-    parent.quickSearchAppendRule_SameSegment = CreateDropdown("quickSearchAppendRule_SameSegment", parent, offsetX, "Same Segment append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
+    parent.quickSearchAppendRule_NewSearch = Options:CreateDropdown("quickSearchAppendRule_NewSearch", parent, offsetX, "New Search append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
+    parent.quickSearchAppendRule_NewSegment = Options:CreateDropdown("quickSearchAppendRule_NewSegment", parent, offsetX, "New Segment append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
+    parent.quickSearchAppendRule_SameSegment = Options:CreateDropdown("quickSearchAppendRule_SameSegment", parent, offsetX, "Same Segment append rule shortcut.", shortcuts, ForceUniqueAppendRuleShortcut);
 
-    CreateSpace(15);
+    Options:CreateSpace(15);
 
-    parent.inverseValueDropdown = CreateDropdown("quickSearchAction_Inverse", parent, offsetX, "Inverse segment shortcut.", shortcuts);
+    parent.inverseValueDropdown = Options:CreateDropdown("quickSearchAction_Inverse", parent, offsetX, "Inverse segment shortcut.", shortcuts);
 
-    CreateSpace(15);
+    Options:CreateSpace(15);
 
-    parent.clickedTeamValueDropdown = CreateDropdown("quickSearchAction_ClickedTeam", parent, offsetX, "Team of clicked player shortcut.", shortcuts);
-    parent.teamValueDropdown = CreateDropdown("quickSearchAction_Team", parent, offsetX, "Team shortcut.", shortcuts);
-    parent.enemyValueDropdown = CreateDropdown("quickSearchAction_Enemy", parent, offsetX, "Enemy shortcut.", shortcuts);
+    parent.clickedTeamValueDropdown = Options:CreateDropdown("quickSearchAction_ClickedTeam", parent, offsetX, "Team of clicked player shortcut.", shortcuts);
+    parent.teamValueDropdown = Options:CreateDropdown("quickSearchAction_Team", parent, offsetX, "Team shortcut.", shortcuts);
+    parent.enemyValueDropdown = Options:CreateDropdown("quickSearchAction_Enemy", parent, offsetX, "Enemy shortcut.", shortcuts);
 
-    CreateSpace(15);
+    Options:CreateSpace(15);
 
-    parent.nameValueDropdown = CreateDropdown("quickSearchAction_Name", parent, offsetX, "Name shortcut.", shortcuts);
-    parent.specValueDropdown = CreateDropdown("quickSearchAction_Spec", parent, offsetX, "Spec shortcut.", shortcuts);
-    parent.raceValueDropdown = CreateDropdown("quickSearchAction_Race", parent, offsetX, "Race shortcut.", shortcuts);
-    parent.factionValueDropdown = CreateDropdown("quickSearchAction_Faction", parent, offsetX, "Faction shortcut.", shortcuts);
+    parent.nameValueDropdown = Options:CreateDropdown("quickSearchAction_Name", parent, offsetX, "Name shortcut.", shortcuts);
+    parent.specValueDropdown = Options:CreateDropdown("quickSearchAction_Spec", parent, offsetX, "Spec shortcut.", shortcuts);
+    parent.raceValueDropdown = Options:CreateDropdown("quickSearchAction_Race", parent, offsetX, "Race shortcut.", shortcuts);
+    parent.factionValueDropdown = Options:CreateDropdown("quickSearchAction_Faction", parent, offsetX, "Faction shortcut.", shortcuts);
 end
 
 -------------------------------------------------------------------
 -- Import/Export Tab
 -------------------------------------------------------------------
 
-function SetupTab_ImportExport()
+local function SetupTab_ImportExport()
     exportOptionsFrame = CreateFrame("frame");
     Options:RegisterCategory(exportOptionsFrame, "Import / Export", ArenaAnalyticsOptionsFrame);
 
-    InitializeTab(exportOptionsFrame);
+    Options:InitializeTab(exportOptionsFrame);
     local parent = exportOptionsFrame;
     local offsetX = 20;
 
-    parent.tabHeader = CreateHeader("Import / Export", TabHeaderSize, parent, nil, 15, -15);
+    parent.tabHeader = Options:CreateHeader("Import / Export", parent, nil, 15, -15);
 
-    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() end);
+    parent.exportButton = Options:CreateButton(nil, parent, offsetX, 120, "Export", function() end);
     parent.exportButton:Disable(); -- TODO: Add export
     parent.exportButton.tooltip = { "ArenaAnalytics Export", "Not Yet Implemented" }
 
-    CreateSpace();
+    Options:CreateSpace();
 
     -- Import button (Might want an option at some point for whether we'll allow importing to merge with existing entries)
-    parent.ImportBox = CreateImportBox(parent, offsetX, 380);
+    parent.ImportBox = Options:CreateImportBox(parent, offsetX, 380);
 
-    local frame = CreateCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
+    local frame = Options:CreateCheckbox("allowImportDataMerge", parent, offsetX, "Allow Import Merge", function()
         parent.ImportBox:stateFunc();
     end);
     frame.tooltip = { "Allow Import Merge", "Enables importing with stored matches.\nSkip matches within 24 hours of first and last arena, and matches between the two dates.\n\n|cffff0000Experimental! It is recommended to backup character specific SavedVariable first." }
 
-    CreateSpace();
+    Options:CreateSpace();
 
-    parent.purgeButton = CreateButton(nil, parent, offsetX, 213, "Purge Match History", ArenaAnalytics.ShowPurgeConfirmationDialog);
+    parent.purgeButton = Options:CreateButton(nil, parent, offsetX, 213, "Purge Match History", ArenaAnalytics.ShowPurgeConfirmationDialog);
 
     exportOptionsFrame:SetScript("OnShow", function() parent.ImportBox:stateFunc() end);
 end

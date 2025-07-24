@@ -4,7 +4,7 @@ local FilterTables = ArenaAnalytics.FilterTables;
 -- Local module aliases
 local API = ArenaAnalytics.API;
 local Filters = ArenaAnalytics.Filters;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -115,11 +115,11 @@ local function GenerateMapEntries()
     };
 
     for idx,token in ipairs(API.availableMaps) do
-        local map_id = Internal:GetAddonMapID(token);
+        local map_id = ArenaID:GetAddonMapID(token);
         assert(map_id, "Invalid map token in availableMaps: " .. (token or "nil") .. ", at index: " .. (idx or "nil"));
 
         tinsert(mapTable, {
-            label = Internal:GetMapName(map_id),
+            label = ArenaID:GetMapName(map_id),
             alignment = "LEFT",
             key = Filters.FilterKeys.Map,
             value = map_id,

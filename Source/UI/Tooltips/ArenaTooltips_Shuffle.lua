@@ -7,7 +7,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Tooltips = ArenaAnalytics.Tooltips;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local TablePool = ArenaAnalytics.TablePool;
 local Colors = ArenaAnalytics.Colors;
 local Debug = ArenaAnalytics.Debug;
@@ -216,7 +216,7 @@ local function AddBottomStat(prefix, name, value, spec_id)
 
     -- Player Name
     if(name) then
-        local classColor = Internal:GetClassColor(spec_id);
+        local classColor = Colors:GetClassColor(spec_id);
         name = Colors:ColorText(name, classColor);
     end
 

@@ -2,13 +2,34 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Bitmap = ArenaAnalytics.Bitmap;
 
 -- Local module aliases
-local Constants = ArenaAnalytics.Constants;
-local Internal = ArenaAnalytics.Internal;
+local ArenaID = ArenaAnalytics.ArenaID;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 
-local bitmapTable = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 }
+-- NOTE: Indices here affect save data
+Bitmap.roleIndexes = {
+    -- Main roles
+    { token = "tank", isMain = true, name = "Tank" },
+    { token = "damager", isMain = true, name = "Dps" },
+    { token = "healer", isMain = true, name = "Healer" },
+
+    -- Sub roles
+    { token = "caster", name = "Caster" },
+    { token = "ranged", name = "Ranged" },
+    { token = "melee", name = "Melee" },
+};
+
+Bitmap.playerFlags = {
+    isFirstDeath = 1,
+    isEnemy = 2,
+    isSelf = 3,
+    isFemale = 4,
+};
+
+-------------------------------------------------------------------------
+
+local bitmapTable = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 };
 
 function Bitmap:IndexToBitmap(index)
     index = tonumber(index);
@@ -20,8 +41,8 @@ end
 function Bitmap:GetPlayerFlags(bitmap)
     local result = {}
 
-    for key,index in pairs(Constants.playerFlags) do
-        assert(key and tonumber(index), "Invalid flag in Constants.playerFlags");
+    for key,index in pairs(Bitmap.playerFlags) do
+        assert(key and tonumber(index), "Invalid flag in Bitmap.playerFlags");
         result[key] = Bitmap:HasBitByIndex(bitmap, index)
     end
 
@@ -34,7 +55,7 @@ function Bitmap:GetRoleBitmapValue(...)
     local bitmap = 0;
     for _,value in ipairs({...}) do
         if(type(value) == "string") then
-            for i,data in ipairs(Constants.roleIndexes) do
+            for i,data in ipairs(Bitmap.roleIndexes) do
                 if(data.token == value) then
                     value = i;
                     break;
@@ -70,7 +91,7 @@ function InitializeRoles()
 
         caster_healer = Bitmap:GetRoleBitmapValue("caster", "healer"),
         caster_damager = Bitmap:GetRoleBitmapValue("caster", "damager"),
-    }
+    };
 end
 
 -- Function to get the main role from the role_bitmap
@@ -79,7 +100,7 @@ function Bitmap:GetMainRole(role_bitmap)
         return nil;
     end
 
-    for i, data in pairs(Constants.roleIndexes) do
+    for i, data in pairs(Bitmap.roleIndexes) do
         if(data.isMain and Bitmap:HasBitByIndex(role_bitmap, i)) then
             return i, data.name;
         end
@@ -94,7 +115,7 @@ function Bitmap:GetSubRole(role_bitmap)
         return nil
     end
 
-    for i, data in pairs(Constants.roleIndexes) do
+    for i, data in pairs(Bitmap.roleIndexes) do
         if(not data.isMain and Bitmap:HasBitByIndex(role_bitmap, i)) then
             return i, data.name;
         end
@@ -108,7 +129,7 @@ end
 function Bitmap:BitmapHasAll(bitmap, value)
     bitmap = tonumber(bitmap);
     value = tonumber(value);
-    
+
     if(not bitmap or not value) then
         return false;
     end
@@ -131,7 +152,7 @@ function Bitmap:HasBitByIndex(bitmap, index)
     if(not bitmap or not index) then
         return false;
     end
-    
+
     local value = Bitmap:IndexToBitmap(index);
     local bit = value and floor(bitmap / value) % 2;
     return bit == 1;
