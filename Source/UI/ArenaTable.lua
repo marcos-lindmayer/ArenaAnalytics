@@ -18,6 +18,7 @@ local Tooltips = ArenaAnalytics.Tooltips;
 local PlayerTooltip = ArenaAnalytics.PlayerTooltip;
 local Sessions = ArenaAnalytics.Sessions;
 local Colors = ArenaAnalytics.Colors;
+local ArenaText = ArenaAnalytics.ArenaText;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -83,6 +84,7 @@ end
 function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:SetFrameStrata("HIGH");
     ArenaAnalyticsScrollFrame:SetFrameLevel(666);
+    ArenaAnalyticsScrollFrame:SetScale(0.95); -- TODO: Add as option
 
     ArenaAnalyticsScrollFrame.ListScrollFrame.update = function() AAtable:RefreshLayout(); end
 

@@ -84,7 +84,7 @@ function ImportProgressFrame:TryCreateToast()
         progressToastFrame.timeRemaining = progressToastFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
         progressToastFrame.timeRemaining:SetText("Estimated remaining: 0s");
         progressToastFrame.timeRemaining:SetPoint("BOTTOMLEFT", progressToastFrame, "BOTTOMRIGHT", -170.7, 10);
-        
+
         -- Progress Bar
         progressToastFrame.progressBar = CreateFrame("StatusBar", nil, progressToastFrame, "TextStatusBar");
         progressToastFrame.progressBar:SetPoint("BOTTOMLEFT", progressToastFrame, "BOTTOMLEFT", 6, 3);

@@ -12,6 +12,80 @@ local Colors = ArenaAnalytics.Colors;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
+-- Create New Instance
+
+-- function ArenaAnalyticsCreateText(parent, anchor, relativeFrame, relPoint, xOff, yOff, text, size)
+
+function ArenaText:CreateInline(parent, text, size, color, point, relativeFrame, relPoint, xOffset, yOffset)
+    if(not parent) then
+        Debug:LogWarning("ArenaText:CreateInline called without parent.");
+        return;
+    end
+
+    -- Clean up anchor with defaults
+    return ArenaText:Create({
+        parent = parent,
+        anchor = { point, relativeFrame or parent, relPoint, xOffset, yOffset },
+        text = text,
+        size = size,
+        color = color,
+    });
+end
+
+function ArenaText:Create(params)
+    assert(params and params.parent, "ArenaText:Create requires a 'parent' frame.");
+
+    local instance = setmetatable(TablePool:Acquire(), ArenaText);
+
+    -- Initialize tag table
+    instance.tags = TablePool:Acquire();
+
+    -- Font string creation
+    local fontString = params.parent:CreateFontString(nil, params.layer or "OVERLAY", params.fontTemplate or "GameFontNormal");
+    instance.fontString = fontString;
+
+    -- Optional font size
+    instance.size = params.size or 12;
+
+    -- Optional anchor point setup
+    if(type(params.anchor) == "table") then
+        fontString:ClearAllPoints();
+
+        local point = params.anchor[1] or "TOPLEFT";
+        local relFrame = params.anchor[2] or params.parent;
+        local relPoint = params.anchor[3] or point;
+        local xOffset = params.anchor[4] or 0;
+        local yOffset = params.anchor[5] or 0;
+        fontString:SetPoint(point, relFrame, relPoint, xOffset, yOffset);
+    end
+
+    -- Optional width and justification
+    if(params.width) then
+        fontString:SetWidth(params.width);
+    end
+    if(params.justifyH) then
+        fontString:SetJustifyH(params.justifyH);
+    end
+    if(params.justifyV) then
+        fontString:SetJustifyV(params.justifyV);
+    end
+
+    -- Optional initial text
+    if(params.text) then
+        instance:SetText(params.text);
+    end
+
+    -- Optional initial color
+    if(params.color) then
+        instance:SetColor(params.color);
+    end
+
+    ArenaText:MarkDirty(instance); -- Refresh next frame, allowing batched setters with initial setup (Experiment)
+    ArenaText:Register(instance);
+    return instance;
+end
+
+-------------------------------------------------------------------------
 -- Statics
 
 local registeredWrappers = {};
@@ -86,82 +160,6 @@ function ArenaText:RefreshAllDirty()
 end
 
 -------------------------------------------------------------------------
--- Create New Instance
-
--- function ArenaAnalyticsCreateText(parent, anchor, relativeFrame, relPoint, xOff, yOff, text, size)
-
-function ArenaText:CreateInline(parent, text, size, color, anchor, relativeFrame, relPoint, xOffset, yOffset)
-    if(not parent) then
-        Debug:LogWarning("ArenaText:CreateInline called without parent.");
-        return;
-    end
-
-    -- Clean up anchor with defaults
-    return ArenaText:Create({
-        parent = parent,
-        anchor = { anchor, relativeFrame or parent, relPoint, xOffset, yOffset },
-        text = text,
-        size = size,
-        color = color,
-    });
-end
-
-function ArenaText:Create(params)
-    assert(params and params.parent, "ArenaText:Create requires a 'parent' frame.");
-
-    local instance = setmetatable(TablePool:Acquire(), ArenaText);
-
-    -- Initialize tag table
-    instance.tags = TablePool:Acquire();
-
-    -- Font string creation
-    local fontString = params.parent:CreateFontString(nil, params.layer or "OVERLAY", params.fontTemplate or "GameFontNormal");
-    instance.fontString = fontString;
-
-    -- Optional font size
-    if(params.size) then
-        instance.size = params.size;
-    end
-
-    -- Optional anchor point setup
-    if(type(params.anchor) == "table") then
-        fontString:ClearAllPoints();
-
-        local point = params.anchor[1] or "TOPLEFT";
-        local relFrame = params.anchor[2] or params.parent;
-        local relPoint = params.anchor[3] or point;
-        local xOffset = params.anchor[4] or 0;
-        local yOffset = params.anchor[5] or 0;
-        fontString:SetPoint(point, relFrame, relPoint, xOffset, yOffset);
-    end
-
-    -- Optional width and justification
-    if(params.width) then
-        fontString:SetWidth(params.width);
-    end
-    if(params.justifyH) then
-        fontString:SetJustifyH(params.justifyH);
-    end
-    if(params.justifyV) then
-        fontString:SetJustifyV(params.justifyV);
-    end
-
-    -- Optional initial text
-    if(params.text) then
-        instance:SetText(params.text);
-    end
-
-    -- Optional initial color
-    if(params.color) then
-        instance:SetColor(params.color, true);
-    end
-
-    ArenaText:MarkDirty(instance); -- Refresh next frame, allowing batched setters with initial setup (Experiment)
-    ArenaText:Register(instance);
-    return instance;
-end
-
--------------------------------------------------------------------------
 -- Set Text
 
 function ArenaText:SetText(value, ...)
@@ -213,11 +211,13 @@ end
 -------------------------------------------------------------------------
 -- Color
 
-function ArenaText:SetColor(color, isExplicitColor)
-    if(isExplicitColor or Colors:IsColorKey(color)) then
-        self:SetColorKey(color);
-    elseif(type(color) == "func") then
+function ArenaText:SetColor(color)
+    if(type(color) == "func") then
         self:SetColorFunc(color);
+    elseif(Colors:IsValidKey(color)) then
+        self:SetColorKey(color);
+    else
+        self:SetColorRaw(color);
     end
 end
 
@@ -252,7 +252,6 @@ function ArenaText:Refresh()
     self:_ResolveText();
 
     self:_ApplyText();
-
 end
 
 function ArenaText:Clear()
@@ -306,29 +305,6 @@ function ArenaText:_ResolveText()
     self.resolvedText = baseText;
 end
 
-function ArenaText:_ResolveText_()
-    -- Resolve text
-    if(self.textFunc) then
-        self.resolvedText = tostring(self.textFunc()) or "";
-    elseif(self.textToken) then
-        local baseText = Localization:GetTokenFallback(self.textToken, self.tags) or "";
-        if self.textArgs and self.textArgs.n > 0 then
-            self.resolvedText = string.format(baseText, unpack(self.textArgs, 1, self.textArgs.n));
-        else
-            self.resolvedText = baseText;
-        end
-    elseif(self.rawText) then
-        if self.textArgs and self.textArgs.n > 0 then
-            self.resolvedText = string.format(self.rawText, unpack(self.textArgs, 1, self.textArgs.n));
-        else
-            self.resolvedText = self.rawText or "";
-        end
-    else
-        self.resolvedText = "";
-    end
-end
-
-
 function ArenaText:_ResolveColor()
     -- Resolve color
     if(self.explicitColor) then
@@ -344,20 +320,43 @@ function ArenaText:_ResolveColor()
 end
 
 
-function ArenaText:_ApplyText()
-    local size = self.size or self.fontString:GetHeight() or 12;
-
-    self.fontString:SetFontObject("GameFontNormal");
-    self.fontString:SetText(self:GetText());
-
-    local fontFile, _, fontFlags = self.fontString:GetFont();
-
-    if(not fontFile) then
-        Debug:LogError("Invalid font from ArenaText:", self:GetText());
+local function GetFontForText(text)
+    if not text or text == "" then
+        return "Fonts\\FRIZQT__.TTF";
     end
 
-    fontFile = fontFile or "Fonts\\FRIZQT__.TTF";
-    self.fontString:SetFont(fontFile, size, fontFlags or "");
+    -- Check for Cyrillic characters
+    if text:match("[\208-\209][\128-\191]") then
+        return "Fonts\\FRIZQT___CYR.TTF";
+    end
+
+    -- Check for Korean characters (Hangul)
+    if text:match("[\234-\237][\128-\191][\128-\191]") then
+        return "Fonts\\2002.TTF";
+    end
+
+    -- Check for Chinese characters (CJK Unified Ideographs)
+    if text:match("[\228-\233][\128-\191][\128-\191]") then
+        -- Could be either simplified or traditional, default to simplified
+        -- You might need additional logic here to distinguish between zhCN and zhTW
+        return "Fonts\\ARKai_T.TTF";
+    end
+
+    -- Default to Western font for Latin characters and others
+    return "Fonts\\FRIZQT__.TTF";
+end
+
+function ArenaText:_ApplyText()
+    local size = self.size or 12;
+    local text = self:GetText();
+
+    self.fontString:SetText(text);
+
+    -- local _, _, fontFlags = self.fontString:GetFont();
+    self.fontString:SetFont(GetFontForText(text), size, "");
+    self.fontString:Show();
+
+    Debug:Log("_ApplyText:", self.fontString:GetText(), self.fontString:GetHeight());
 end
 
 -------------------------------------------------------------------------

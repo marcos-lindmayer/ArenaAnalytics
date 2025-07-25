@@ -45,6 +45,14 @@ Colors.red = "ffff0000";
 
 -------------------------------------------------------------------------
 
+function Colors:Get(colorKey, fallback)
+    return colorKey and Colors[colorKey] or fallback;
+end
+
+function Colors:IsValidKey(value)
+    return Colors:Get(value) ~= nil;
+end
+
 function Colors:ColorText(text, color)
     text = text or "";
 
