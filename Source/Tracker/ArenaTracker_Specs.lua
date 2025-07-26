@@ -58,8 +58,6 @@ function ArenaTracker:HandleOpponentUpdate()
 
 	-- If API exist to get opponent spec, use it
 	if(GetArenaOpponentSpec) then
-		Debug:LogTemp("HandleOpponentUpdate")
-
 		for i = 1, currentArena.size do
 			local unitToken = "arena"..i;
 			local player = ArenaTracker:GetPlayer(unitToken);

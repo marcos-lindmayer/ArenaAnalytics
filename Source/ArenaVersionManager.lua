@@ -20,7 +20,7 @@ VersionManager.disabled = true;
 
 -- True if data sync was detected with a later version.
 VersionManager.newDetectedVersion = false;
-VersionManager.latestFormatVersion = 4;
+VersionManager.latestFormatVersion = 5;
 
 -- TODO: Fix & Validate this function
 -- Compare two version strings. Returns -1 if version is lower, 0 if equal, 1 if higher.
@@ -87,7 +87,22 @@ end
 
 -- Returns true if loading should convert data
 function VersionManager:OnInit()
-    if(VersionManager.disabled) then
+    Debug:Log("Version OnInit...     Last:", ArenaAnalyticsDB.formatVersion, "Current:", VersionManager.latestFormatVersion);
+
+    if(ArenaAnalyticsDB.formatVersion < VersionManager.latestFormatVersion) then
+        Debug:LogWarning("Fixing up shuffle durations!");
+        for i=1, #ArenaAnalyticsDB do
+            local match = ArenaAnalyticsDB[i];
+            if(match) then
+                ArenaMatch:RecomputeShuffleDurations(match);
+            end
+        end
+
+        ArenaAnalyticsDB.formatVersion = VersionManager.latestFormatVersion;
+    end
+
+    -- TODO: Refactor all of VersionManager for simpler version control in the future.
+    if(false and VersionManager.disabled) then
         return;
     end
 

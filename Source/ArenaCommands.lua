@@ -171,6 +171,17 @@ function Commands.HandleCommand_Test()
 	ArenaAnalytics:Print("================================================ ");
 end
 
+function Commands.HandleCommand_FixDurations()
+	for i=1, #ArenaAnalyticsDB do
+		local match = ArenaAnalyticsDB[i];
+		if(match) then
+			ArenaMatch:RecomputeShuffleDurations(match);
+		end
+	end
+
+	ArenaAnalytics:Print("Recomputed shuffle durations.");
+end
+
 function Commands.HandleCommand_Inspect(...)
 	Debug:NotifyInspectSpec(...);
 end
@@ -185,7 +196,6 @@ Commands.list = {
 	["version"] = Commands.HandleCommand_Version,
 	["total"] = Commands.HandleCommand_Total,
 	["played"] = Commands.HandleCommand_Played,
-	["convert"] = Commands.HandleCommand_Convert,
 	["update"] = Commands.HandleCommand_Update,
 	["purge"] = Commands.HandleCommand_Purge,
 	["inspect"] = Commands.HandleCommand_Inspect,
@@ -195,6 +205,10 @@ Commands.list = {
 	["dumprealms"] = Commands.HandleCommand_DumpRealms,		-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = Commands.HandleCommand_Test,					-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["dump"] = Commands.HandleCommand_Dump,					-- Debugging: Used to gather zone and version info from users helping with version update.
+
+	-- Conversions
+	["convert"] = Commands.HandleCommand_Convert,
+	["fixshuffle"] = Commands.HandleCommand_FixDurations,
 };
 
 local function handleSlashCommands(str)

@@ -89,7 +89,7 @@ local function HandleZoneChanged(isLoad)
 
 		-- Handle exit
 		if(ArenaTracker:IsTrackingArena(true)) then
-			Debug:LogTemp("Zone changed calling HandleArenaExit!");
+			Debug:Log("Zone changed calling HandleArenaExit!");
 			C_Timer.After(0, ArenaTracker.HandleArenaExit);
 		end
 

@@ -153,7 +153,7 @@ end
 -- and triggers a layout refresh on ArenaAnalytics.AAtable
 function ArenaTracker:InsertArenaToMatchHistory(newArena)
 	-- Calculate arena duration
-	if(newArena.isShuffle) then
+	if(newArena.bracket == "shuffle") then
 		newArena.duration = 0;
 
 		if(newArena.committedRounds) then

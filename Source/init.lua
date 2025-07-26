@@ -147,7 +147,7 @@ end
 -- Initiate tracking if in arena, otherwise skip
 function stages.Step5_InitiateTracking()
 	Initialization:InitiateStep(5);
-	Debug:LogTemp("Step5_InitiateTracking()", API:IsInArena());
+	Debug:Log("Step5_InitiateTracking()", API:IsInArena());
 
 	ArenaTracker:Initialize();
 
@@ -182,17 +182,14 @@ local function shouldInitiateStep(stepNumber, stepData)
 	end
 
 	if(stepNumber - 1 ~= Initialization.lastStep) then
-		--Debug:LogTemp("shouldInitiateStep step failed for step:", stepNumber, stepNumber, Initialization.lastStep);
 		return false;
 	end
 
 	if(stepData.event and not Initialization.receivedEvents[stepData.event]) then
-		--Debug:LogTemp("shouldInitiateStep event failed for step:", stepNumber, stepData.event);
 		return false;
 	end
 
 	if(stepData.conditionFunc and not stepData.conditionFunc()) then
-		--Debug:LogTemp("shouldInitiateStep condition failed for step:", stepNumber);
 		return false;
 	end
 
@@ -214,8 +211,7 @@ end
 
 function Initialization:TryAdvanceInitialization(forced)
 	if(Initialization.locked and not forced) then
-		-- TODO: Set desired repeat the frame after unlocking (Unless all initializations are done)
-		Debug:LogTemp("Initialization locked. Skipping attempt.");
+		Debug:Log("Initialization locked. Skipping attempt.");
 		Initialization.hasPending = true;
 		return;
 	end
@@ -229,6 +225,5 @@ function Initialization:TryAdvanceInitialization(forced)
 		return;
 	end
 
-	--Debug:LogTemp("Unlocking initialization at step:", Initialization.lastStep);
 	Initialization.locked = false;
 end

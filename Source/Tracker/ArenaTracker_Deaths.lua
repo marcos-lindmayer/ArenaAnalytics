@@ -69,8 +69,6 @@ end
 
 -- Handle a player's death, through death or kill credit message
 function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
-	Debug:LogTemp("handlePlayerDeath", playerGUID, isKillCredit);
-
 	if(playerGUID == nil) then
 		return;
 	end

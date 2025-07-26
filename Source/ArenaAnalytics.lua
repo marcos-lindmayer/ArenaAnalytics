@@ -78,10 +78,6 @@ end
 
 -------------------------------------------------------------------------
 
-local function ShouldAttemptVersionControl()
-	return false; -- Disable version control for now
-end
-
 function ArenaAnalytics:InitializeTransientDB()
 	ArenaAnalyticsTransientDB = ArenaAnalyticsTransientDB or {};
 	ArenaAnalyticsTransientDB.currentArena = ArenaAnalyticsTransientDB.currentArena or {};
@@ -104,11 +100,6 @@ function ArenaAnalytics:InitializeArenaAnalyticsDB()
 	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
 	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
 	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
-
-	if(not ShouldAttemptVersionControl()) then
-		-- No data to update, assign latest version
-		ArenaAnalyticsDB.formatVersion = ArenaAnalytics.VersionManager.latestFormatVersion;
-	end
 
 	if(#ArenaAnalyticsDB.names == 0) then
 		local name = UnitNameUnmodified("player");

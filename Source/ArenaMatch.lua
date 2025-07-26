@@ -350,18 +350,18 @@ end
 -- Bracket (4)
 
 function ArenaMatch:GetBracketIndex(match)
-    if(not match) then 
-        return nil 
-    end;
-    
+    if(not match) then
+        return nil;
+    end
+
     local key = matchKeys.bracket;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:GetBracket(match)
-    if(not match) then 
-        return nil 
-    end;
+    if(not match) then
+        return nil;
+    end
 
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
     return ArenaAnalytics:GetBracket(bracketIndex);
@@ -1136,7 +1136,6 @@ end
 -- Gender
 
 function ArenaMatch:IsPlayerFemale(player)
-    Debug:LogTemp("ArenaMatch:IsPlayerFemale", player, playerKeys.is_female, player[playerKeys.is_female])
     return player and player[playerKeys.is_female];
 end
 
@@ -1487,4 +1486,34 @@ function ArenaMatch:SortGroups(match)
 
     local enemyTeam = ArenaMatch:GetTeam(match, true);
     GroupSorter:SortGroup(enemyTeam, selfPlayerInfo);
+end
+
+
+-------------------------------------------------------------------------
+-- Forced fixups
+
+function ArenaMatch:RecomputeShuffleDurations(match)
+    if(not match) then
+        return;
+    end
+
+    if(not ArenaMatch:IsShuffle(match)) then
+        return;
+    end
+
+    local rounds = ArenaMatch:GetRounds(match);
+    if(not rounds) then
+        return;
+    end
+
+    -- Update round groups to new index
+    local totalDuration = 0;
+    for i,round in ipairs(rounds) do
+        local _, _, _, duration = ArenaMatch:GetRoundData(round);
+        totalDuration = totalDuration + (tonumber(duration) or 0);
+    end
+
+    if(totalDuration > 0) then
+	    ArenaMatch:SetDuration(match, totalDuration);
+    end
 end

@@ -424,10 +424,6 @@ local function findOrAddCompValues(compsTable, comp, isWin, mmr, isEnemy)
     -- Played
     SafeIncrement(compData, "played");
 
-    if(comp == "42|91" and isEnemy) then
-        Debug:LogTemp("findOrAddCompValues for comp:", comp, compData.played, lastIndex, isEnemy);
-    end
-
     -- Win count
     if isWin then
         SafeIncrement(compData, "wins");
@@ -619,10 +615,7 @@ local function Refresh_Internal()
 
         if(Filters.forceNewRefresh) then
             -- Restart refresh next frame
-            C_Timer.After(0, function()
-                Debug:LogTemp("Forcing new refresh");
-                Filters:Refresh_Internal();
-            end);
+            C_Timer.After(0, function() Filters:Refresh_Internal() end);
             return;
         end
 

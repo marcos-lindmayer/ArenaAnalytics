@@ -100,8 +100,6 @@ function ArenaTracker:HandlePreTrackingRatedEvent()
 	end
 
 	if(not stateData.seasonPlayedConfirmed and not stateData.hasRequestedScore) then
-		Debug:LogTemp("HandlePreTrackingRatedEvent: Requesting battlefield score for hasWinner.");
-
 		stateData.hasRequestedScore = true;
 		RequestBattlefieldScoreData();
 		C_Timer.After(SCORE_UPDATE_TIMEOUT, ArenaTracker.HandleScoreTimeout);
@@ -118,10 +116,6 @@ function ArenaTracker:HandlePreTrackingScoreEvent()
 
 	local teamMMR, enemyMMR = API:GetTeamMMR(false), API:GetTeamMMR(true);
 
-	Debug:LogTemp("==========================================");
-	Debug:LogTemp("Score Event MMR Test:", teamMMR, enemyMMR, #ArenaAnalyticsDB);
-	Debug:LogTemp("==========================================");
-
 	stateData.scoreReceived = true;
 	ArenaTracker.hasReceivedScore = true;
 	stateData.scoreTimedOut = false;
@@ -135,8 +129,6 @@ function ArenaTracker:HandlePreTrackingScoreEvent()
 	end
 
 	if(not stateData.seasonPlayedConfirmed and not stateData.hasRequestedRated) then
-		Debug:LogTemp("HandlePreTrackingScoreEvent: Requesting rated info for season played.");
-
 		stateData.hasRequestedRated = true;
 		RequestRatedInfo();
 	end
