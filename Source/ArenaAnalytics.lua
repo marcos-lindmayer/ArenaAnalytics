@@ -100,6 +100,7 @@ function ArenaAnalytics:InitializeArenaAnalyticsDB()
 	ArenaAnalyticsDB = ArenaAnalyticsDB or {};
 	ArenaAnalyticsDB.names = ArenaAnalyticsDB.names or {};
 	ArenaAnalyticsDB.realms = ArenaAnalyticsDB.realms or {};
+    ArenaAnalyticsDB.formatVersion = ArenaAnalyticsDB.formatVersion or 0;
 
 	if(#ArenaAnalyticsDB.names == 0) then
 		local name = UnitNameUnmodified("player");

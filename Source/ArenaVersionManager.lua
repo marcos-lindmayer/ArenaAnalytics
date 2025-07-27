@@ -89,7 +89,8 @@ end
 function VersionManager:OnInit()
     Debug:Log("Version OnInit...     Last:", ArenaAnalyticsDB.formatVersion, "Current:", VersionManager.latestFormatVersion);
 
-    if(ArenaAnalyticsDB.formatVersion < VersionManager.latestFormatVersion) then
+    local lastversion = ArenaAnalyticsDB.formatVersion;
+    if(lastversion and lastversion < VersionManager.latestFormatVersion) then
         Debug:LogWarning("Fixing up shuffle durations!");
         for i=1, #ArenaAnalyticsDB do
             local match = ArenaAnalyticsDB[i];
