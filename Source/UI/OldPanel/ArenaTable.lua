@@ -243,9 +243,6 @@ function AAtable:OnLoad()
         Dropdown:CloseAll();
     end);
 
-    ArenaAnalyticsScrollFrame.specFrames = {}
-    ArenaAnalyticsScrollFrame.deathFrames = {}
-
     HybridScrollFrame_CreateButtons(ArenaAnalyticsScrollFrame.ListScrollFrame, "ArenaAnalyticsScrollListMatch");
 
     ArenaAnalyticsScrollFrame.moreFiltersDrodown = Dropdown:Create(ArenaAnalyticsScrollFrame, "Comp", "MoreFilters", FilterTables.moreFilters, 90, 35, 26);

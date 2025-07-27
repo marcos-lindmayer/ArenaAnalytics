@@ -14,11 +14,6 @@ Source/ArenaPrints.lua
 Source/ArenaDebugging.lua
 Source/ArenaCommands.lua
 
-Source/UI/ArenaTable.lua
-Source/UI/HybridScroll.xml
-
-Source/UI/ArenaMinimapButton.lua
-
 Source/Options/ArenaOptions.lua
 Source/Options/ArenaOptionsFrames.lua
 
@@ -46,13 +41,6 @@ Source/API/ArenaAPI.lua
 Source/API/ArenaAPI_Cata.lua
 Source/API/ArenaInspection.lua
 
-Source/UI/ArenaMatchSelection.lua
-Source/UI/ArenaIcon.lua
-
-Source/UI/Tooltips/ArenaTooltips.lua
-Source/UI/Tooltips/ArenaTooltips_Player.lua
-Source/UI/Tooltips/ArenaTooltips_Shuffle.lua
-
 Source/Data/ArenaID/ArenaID.lua
 Source/Data/ArenaID/ArenaID_Map.lua
 Source/Data/ArenaID/ArenaID_Race.lua
@@ -67,8 +55,6 @@ Source/Lookup/ArenaLookup_Races.lua
 Source/Lookup/ArenaLookup_Specs.lua
 Source/Lookup/ArenaLookup_Search.lua
 Source/Lookup/ArenaLookup_Export.lua
-
-Source/UI/ArenaText.lua
 
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
@@ -95,13 +81,26 @@ Source/ImportExport/ArenaImport_ArenaStatsWrath.lua
 Source/ImportExport/ArenaImport_ArenaStatsCata.lua
 Source/ImportExport/ArenaImport_ArenaAnalytics.lua
 
-Source/UI/ArenaImportProgressFrame.lua
-Source/UI/Dropdowns/ArenaDropdown.lua
-Source/UI/Dropdowns/ArenaDropdownList.lua
-Source/UI/Dropdowns/ArenaDropdownEntry.lua
-Source/UI/Dropdowns/ArenaDropdownButton.lua
-Source/UI/Dropdowns/ArenaDropdownDisplay.lua
+Source/UI/ArenaMatchSelection.lua
 
-Source/UI/_EXPERIMENT_MinimalScrollPanel.lua
+Source/UI/OldPanel/ArenaTable.lua
+Source/UI/OldPanel/HybridScroll.xml
+
+Source/UI/Frames/ArenaText.lua
+Source/UI/Frames/ArenaIcon.lua
+Source/UI/Frames/ArenaMinimapButton.lua
+
+Source/UI/Frames/Tooltips/ArenaTooltips.lua
+Source/UI/Frames/Tooltips/ArenaTooltips_Player.lua
+Source/UI/Frames/Tooltips/ArenaTooltips_Shuffle.lua
+
+Source/UI/Frames/ArenaImportProgressFrame.lua
+Source/UI/Frames/Dropdowns/ArenaDropdown.lua
+Source/UI/Frames/Dropdowns/ArenaDropdownList.lua
+Source/UI/Frames/Dropdowns/ArenaDropdownEntry.lua
+Source/UI/Frames/Dropdowns/ArenaDropdownButton.lua
+Source/UI/Frames/Dropdowns/ArenaDropdownDisplay.lua
+
+Source/UI/Experimental/_EXPERIMENT_MinimalScrollPanel.lua
 
 Source/init.lua
