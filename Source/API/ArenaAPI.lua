@@ -160,9 +160,9 @@ function API:GetSeasonPlayed(bracketIndex)
     return seasonPlayed;
 end
 
-
+-- NOTE: Don't trust GetBattlefieldArenaFaction, at least not in shuffles!
 function API:GetTeamIndex(isEnemy)
-    if(not API:IsInArena()) then
+    if(not API:IsInArena() and not API:IsSoloShuffle()) then
         return nil;
     end
 
@@ -185,6 +185,11 @@ end
 function API:GetTeamMMR(team)
     if(not API:IsInArena()) then
         return nil;
+    end
+
+    if(type(team) ~= "number") then
+        -- Assume input is truthy/falsy for isEnemy
+        --team = API:GetTeamIndex(team); -- TODO: Determine if this is ever valid
     end
 
     -- Must be a teamIndex by now
