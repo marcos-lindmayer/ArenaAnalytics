@@ -33,7 +33,6 @@ local PrefixTable = {
     ["name"] = { NoSpaces = true, Aliases = { "n", "name" }},
     ["class"] = { NoSpaces = false, Aliases = { "c", "class" }},
     ["spec"] = { NoSpaces = false, Aliases = { "s", "spec" }},
-    ["hero"] = { NoSpaces = false, Aliases = { "h", "hero", "herospec" }},
     ["role"] = {NoSpaces = true, Aliases = { "role" }},
     ["race"] = { NoSpaces = false, Aliases = { "r", "race" }},
     ["faction"] = { NoSpaces = true, Aliases = { "f", "faction" }},

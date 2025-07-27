@@ -22,6 +22,48 @@ local Colors = ArenaAnalytics.Colors;
 ArenaAnalytics.matchTypes = { "rated", "skirmish", "wargame" };
 ArenaAnalytics.brackets = { "2v2", "3v3", "5v5", "shuffle" };
 
+-------------------------------------------------------------------------
+
+-- TEMP EXPERIMENT START
+-- Translation table for "Arena Analytics" in all WoW supported languages
+local arenaAnalyticsTranslations = {
+	["mix"] = "Análisis-竞技场分析-競技場分析-Arena-d'Arène-Арены-분석-æøå", -- Experiment
+	["enUS"] = "Arena Analytics",
+	["deDE"] = "Arena-Analytik",
+	["frFR"] = "Analyses d'Arène",
+	["esES"] = "Análisis de Arena",
+	["esMX"] = "Análisis de Arena",
+	["ptBR"] = "Análises da Arena",
+	["itIT"] = "Analisi dell'Arena",
+	["ruRU"] = "Аналитика Арены",
+	["koKR"] = "투기장 분석",
+	["zhCN"] = "竞技场分析",
+	["zhTW"] = "競技場分析",
+}
+
+-- Ordered list of locales for cycling
+local localeOrder = {"enUS", "deDE", "frFR", "esES", "esMX", "ptBR", "itIT", "ruRU", "koKR", "zhCN", "zhTW" }
+local currentIndex = 1
+
+-- Function to cycle through all translations for testing
+local function TempExperiment()
+	local currentLocale = localeOrder[currentIndex]
+	local titleText = arenaAnalyticsTranslations[currentLocale]
+
+	if ArenaAnalyticsScrollFrame and ArenaAnalyticsScrollFrame.title then
+		ArenaAnalyticsScrollFrame.title:SetText(titleText)
+		Debug:LogTemp("Arena Analytics title set to: " .. titleText .. " (" .. currentLocale .. ")")
+	end
+
+	-- Cycle to next locale
+	currentIndex = currentIndex + 1
+	if currentIndex > #localeOrder then
+		currentIndex = 1
+	end
+end
+
+-------------------------------------------------------------------------
+
 -- Toggles addOn view/hide (Global to allow XML access)
 function ArenaAnalyticsToggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then
@@ -29,6 +71,8 @@ function ArenaAnalyticsToggle()
 
         Dropdown:CloseAll();
         Tooltips:HideAll();
+
+		TempExperiment(); -- TODO: Remove this!!
 
         ArenaAnalyticsScrollFrame:Show();
     else

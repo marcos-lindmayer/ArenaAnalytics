@@ -7,6 +7,7 @@ EntryFrame.__index = EntryFrame;
 
 -- Local module aliases
 local Display = ArenaAnalytics.Dropdown.Display;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 
@@ -23,7 +24,7 @@ end
 function EntryFrame:Create(parent, index, width, height, config)
     ValidateConfig(config);
 
-    local self = setmetatable({}, EntryFrame);
+    local self = setmetatable(TablePool:Acquire(), EntryFrame);
     self.parent = parent;
 
     self.name = (parent:GetName() .. "Entry") .. (index and index or "");
@@ -112,6 +113,7 @@ function EntryFrame:SetConfig(config)
 
     self.alignment = config.alignment;
     self.offsetX = config.offsetX;
+    self.offsetY = config.offsetY;
 
     self.width = config.width or self.width;
     self.height = config.height or self.height;

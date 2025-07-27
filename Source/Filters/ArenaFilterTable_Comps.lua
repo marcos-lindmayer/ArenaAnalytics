@@ -13,34 +13,43 @@ local Display = Dropdown.Display;
 -------------------------------------------------------------------------
 
 
-FilterTables.comps = {}
-FilterTables.enemyComps = {}
+FilterTables.comps = {};
+FilterTables.enemyComps = {};
 
 local function IsDisabled()
     return not Filters:IsFilterActive(Filters.FilterKeys.Bracket);
 end
 
 local function MakeMainButtonTable(key)
-    return {
-        label = FilterTables.GetCurrentFilterValue,
-        displayFunc = Display.SetComp,
-        disabled = IsDisabled,
-        disabledText = "Select bracket to enable filter",
-        disabledSize = 9,
-        alignment = "CENTER",
-        key = key,
-        onClick = FilterTables.ResetFilterValue,
-    };
+    local config = TablePool:Acquire();
+    config.key = key;
+    config.label = FilterTables.GetCurrentFilterValue;
+
+    config.displayFunc = Display.SetComp;
+    config.alignment = "CENTER";
+    config.offsetY = -1;
+
+    config.disabled = IsDisabled;
+    config.disabledText = "Select bracket to enable filter";
+    config.disabledSize = 9;
+
+    config.onClick = FilterTables.ResetFilterValue;
+
+    return config;
 end
 
 local function AddEntry(entryTable, comp, filterKey)
-    tinsert(entryTable, {
-        label = comp,
-        displayFunc = Display.SetComp,
-        alignment = "CENTER",
-        key = filterKey,
-        onClick = FilterTables.SetFilterValue,
-    });
+    local config = TablePool:Acquire();
+    config.key = filterKey;
+    config.label = comp;
+
+    config.displayFunc = Display.SetComp;
+    config.alignment = "CENTER";
+    config.offsetY = 0.75;
+
+    config.onClick = FilterTables.SetFilterValue;
+
+    tinsert(entryTable, config);
 end
 
 local function GenerateCompEntries(compKey)
@@ -60,13 +69,11 @@ local function GenerateCompEntries(compKey)
 end
 
 function FilterTables:Init_Comps()
-    FilterTables.comps = {
-        mainButton = MakeMainButtonTable(Filters.FilterKeys.TeamComp),
-        entries = function() return GenerateCompEntries(Filters.FilterKeys.TeamComp) end,
-    };
+    FilterTables.comps = FilterTables.comps or TablePool:Acquire();
+    FilterTables.comps.mainButton = MakeMainButtonTable(Filters.FilterKeys.TeamComp);
+    FilterTables.comps.entries = function() return GenerateCompEntries(Filters.FilterKeys.TeamComp) end;
 
-    FilterTables.enemyComps = {
-        mainButton = MakeMainButtonTable(Filters.FilterKeys.EnemyComp),
-        entries = function() return GenerateCompEntries(Filters.FilterKeys.EnemyComp) end,
-    };
+    FilterTables.enemyComps = FilterTables.enemyComps or TablePool:Acquire();
+    FilterTables.enemyComps.mainButton = MakeMainButtonTable(Filters.FilterKeys.EnemyComp);
+    FilterTables.enemyComps.entries = function() return GenerateCompEntries(Filters.FilterKeys.EnemyComp) end;
 end

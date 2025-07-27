@@ -59,6 +59,9 @@ ArenaAnalytics.VersionManager = {};
 ArenaAnalytics.Initialization = {};
 
 
+ArenaAnalytics.Experimental = {}; -- TODO: REMOVE AFTER TESTS
+
+
 -------------------------------------------------------------------------
 -- Local module aliases
 

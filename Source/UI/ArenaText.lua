@@ -22,14 +22,29 @@ function ArenaText:CreateInline(parent, text, size, color, point, relativeFrame,
         return;
     end
 
+    local args = TablePool:Acquire();
+
+    if(point or relativeFrame or relPoint or xOffset or yOffset) then
+        args.anchor = TablePool:Acquire();
+        args.anchor[1] = point;
+        args.anchor[2] = relativeFrame or parent;
+        args.anchor[3] = relPoint;
+        args.anchor[4] = xOffset;
+        args.anchor[5] = yOffset;
+    end
+
+    args.parent = parent;
+    args.text = text;
+    args.size = size;
+    args.color = color;
+
     -- Clean up anchor with defaults
-    return ArenaText:Create({
-        parent = parent,
-        anchor = { point, relativeFrame or parent, relPoint, xOffset, yOffset },
-        text = text,
-        size = size,
-        color = color,
-    });
+    local newText = ArenaText:Create(args);
+
+    TablePool:Release(args.anchor);
+    TablePool:Release(args);
+
+    return newText;
 end
 
 function ArenaText:Create(params)
@@ -70,18 +85,18 @@ function ArenaText:Create(params)
         fontString:SetJustifyV(params.justifyV);
     end
 
-    -- Optional initial text
-    if(params.text) then
-        instance:SetText(params.text);
-    end
-
     -- Optional initial color
     if(params.color) then
         instance:SetColor(params.color);
     end
 
-    ArenaText:MarkDirty(instance); -- Refresh next frame, allowing batched setters with initial setup (Experiment)
-    ArenaText:Register(instance);
+    instance:SetText(params.text or "");
+
+    if(not params.skipRegister) then
+        ArenaText:Register(instance);
+    end
+
+    -- instance:Refresh(); Called in SetText currently
     return instance;
 end
 
@@ -167,24 +182,26 @@ function ArenaText:SetText(value, ...)
 
     if(valueType == "function") then
         self:SetTextFunc(value, ...);
-    elseif(valueType == "string") then
-        if(Localization:IsValidToken(value, ...)) then
-            self:SetTextToken(value, ...);
-        else
-            self:SetTextRaw(value, ...);
-        end
+    elseif(value and Localization:IsValidToken(value, ...)) then
+        self:SetTextToken(value, ...);
     else
-        Debug:LogError("Invalid value provided for ArenaText:SetText:", valueType, value);
+        self:SetTextRaw(value, ...);
     end
 end
 
 function ArenaText:SetTextRaw(text, ...)
+    if(not text) then
+        Debug:LogError("Invalid value provided for ArenaText:SetTextRaw:", type(text), text);
+        return;
+    end
+
     self.rawText = text;
     self.textToken = nil;
     self.textFunc = nil;
 
     self:_UpdateVarArgs(...);
 
+    self:Refresh();
     ArenaText:MarkDirty(self);
 end
 
@@ -195,6 +212,7 @@ function ArenaText:SetTextToken(token, ...)
 
     self:_UpdateVarArgs(...);
 
+    self:Refresh();
     ArenaText:MarkDirty(self);
 end
 
@@ -205,6 +223,7 @@ function ArenaText:SetTextFunc(textFunc, ...)
 
     self:_UpdateVarArgs(...);
 
+    self:Refresh();
     ArenaText:MarkDirty(self);
 end
 
@@ -225,6 +244,8 @@ function ArenaText:SetColorRaw(color)
     self.explicitColor = color;
     self.colorKey = nil;
     self.colorFunc = nil;
+
+    self:Refresh();
     ArenaText:MarkDirty(self);
 end
 
@@ -232,6 +253,8 @@ function ArenaText:SetColorKey(key)
     self.colorKey = key;
     self.colorFunc = nil;
     self.explicitColor = nil;
+
+    self:Refresh();
     ArenaText:MarkDirty(self);
 end
 
@@ -239,10 +262,26 @@ function ArenaText:SetColorFunc(func)
     self.colorFunc = func;
     self.colorKey = nil;
     self.explicitColor = nil;
+
+    self:Refresh();
     ArenaText:MarkDirty(self);
 end
 
 -------------------------------------------------------------------------
+-- Functions
+
+function ArenaText:IsInstanced()
+    return self.fontString ~= nil;
+end
+
+function ArenaText:AssertInstanced(context)
+    assert(self:IsInstanced(), tostring(context) .. " called on non-instanced ArenaText.");
+end
+
+function ArenaText:GetFrame()
+    self:AssertInstanced("GetFrame");
+    return self.fontString;
+end
 
 function ArenaText:Refresh()
     self.isDirty = false;
@@ -271,6 +310,51 @@ function ArenaText:GetText()
     return Colors:ColorText(self.resolvedText, self:GetColor());
 end
 
+
+function ArenaText:Show()
+    return self.fontString:Show();
+end
+
+function ArenaText:Hide()
+    return self.fontString:Hide();
+end
+
+function ArenaText:IsShown()
+    return self.fontString:IsShown();
+end
+
+
+function ArenaText:GetWidth()
+    return self.fontString:GetWidth();
+end
+
+function ArenaText:SetSize(size)
+    size = tonumber(size) or 0;
+
+    local font, _, fontFlags = self.fontString:GetFont();
+    self.fontString:SetFont(font, size, fontFlags);
+end
+
+function ArenaText:SetPoint(...)
+    self.fontString:SetPoint(...);
+end
+
+function ArenaText:CreateFontString(...)
+    self:AssertInstanced("CreateFontString");
+    self.fontString:CreateFontString(...);
+end
+
+
+function ArenaText:SetParent(...)
+    self:AssertInstanced("SetParent");
+    self.fontString:SetParent(...);
+end
+
+function ArenaText:GetParent()
+    self:AssertInstanced("GetParent");
+    self.fontString:GetParent();
+end
+
 -------------------------------------------------------------------------
 -- Resolve text & color
 
@@ -294,7 +378,7 @@ function ArenaText:_ResolveText()
     elseif(self.rawText) then
         baseText = self.rawText;
     else
-        Debug:LogWarning("ArenaText:_ResolveText has no valid text.");
+        -- Debug:LogWarning("ArenaText:_ResolveText has no valid text.");
         baseText = "Missing";
     end
 
@@ -356,7 +440,7 @@ function ArenaText:_ApplyText()
     self.fontString:SetFont(GetFontForText(text), size, "");
     self.fontString:Show();
 
-    Debug:Log("_ApplyText:", self.fontString:GetText(), self.fontString:GetHeight());
+    -- Debug:Log("_ApplyText:", self.fontString:GetText());
 end
 
 -------------------------------------------------------------------------

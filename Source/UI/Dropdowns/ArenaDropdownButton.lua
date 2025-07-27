@@ -7,7 +7,7 @@ Button.__index = Button;
 
 -- Local module aliases
 local Display = Dropdown.Display;
-local API = ArenaAnalytics.API;
+local TablePool = ArenaAnalytics.TablePool;
 local AAtable = ArenaAnalytics.AAtable;
 
 -------------------------------------------------------------------------
@@ -25,12 +25,12 @@ end
 function Button:Create(parent, width, height, config)
     ValidateConfig(config);
 
-    local self = setmetatable({}, Button);
+    local self = setmetatable(TablePool:Acquire(), Button);
     self.parent = parent;
 
     self.name = (parent:GetName() .. "Button");
 
-    self.template = AAtable:GetDropdownTemplate(config.template);
+    self.template = "WowStyle2DropdownTemplate" or AAtable:GetDropdownTemplate(config.template);
 
     self.width = width;
     self.height = (self.template == "UIPanelButtonTemplate" and height or height - 8);
@@ -38,17 +38,30 @@ function Button:Create(parent, width, height, config)
     -- Config
     self:SetConfig(config);
 
+    -- Initiate display
+    self.displayFunc = config.displayFunc;
+    self.display = Display:Create(self, self.displayFunc);
+
+    -- Create button
     self.btn = CreateFrame("Button", self.name, parent:GetOwner(), self.template);
-    self.btn:SetSize(width, self.height);
+    function self.btn:IsMenuOpen()
+        return self.isOpen or false;
+    end
+
+    --Mixin(self.btn, DummyDropdownMixin);
+    self.btn:SetSize(self.width, self.height+5);
     self.btn:SetText("");
     self.btn:Show();
+--    self.btn:SetEnabled(false);
+--    self.btn.DecrementButton:Hide()
+--    self.btn.IncrementButton:Hide()
 
     self.btn:SetPoint("CENTER", parent:GetFrame(), "CENTER");
 
     -- Font Objects
-    self.btn:SetNormalFontObject("GameFontHighlight");
-    self.btn:SetHighlightFontObject("GameFontHighlight");
-    self.btn:SetDisabledFontObject("GameFontDisableSmall");
+    --self.btn:SetNormalFontObject("GameFontHighlight");
+    --self.btn:SetHighlightFontObject("GameFontHighlight");
+    --self.btn:SetDisabledFontObject("GameFontDisableSmall");
 
     -- When using UIServiceButtonTemplate, we need this:
     if(self.btn.money) then
@@ -80,11 +93,9 @@ function Button:SetConfig(config)
     self.value = config.value or config.label;
     self.onClick = config.onClick;
 
-    self.displayFunc = config.displayFunc;
-    self.display = Display:Create(self, self.displayFunc);
-
     self.alignment = config.alignment;
     self.offsetX = config.offsetX;
+    self.offsetY = config.offsetY;
 end
 
 function Button:Refresh()

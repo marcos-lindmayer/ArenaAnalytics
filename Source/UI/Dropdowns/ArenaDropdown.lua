@@ -22,7 +22,7 @@ local TablePool = ArenaAnalytics.TablePool;
 
 function Dropdown:RetrieveValue(valueOrFunc, contextFrame)
     assert(contextFrame ~= nil);
-    
+
     if(type(valueOrFunc) == "function") then
         return valueOrFunc(contextFrame);
     end

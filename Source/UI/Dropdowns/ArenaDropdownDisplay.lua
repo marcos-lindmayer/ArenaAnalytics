@@ -13,6 +13,7 @@ local TablePool = ArenaAnalytics.TablePool;
 local GroupSorter = ArenaAnalytics.GroupSorter;
 local Debug = ArenaAnalytics.Debug;
 local Colors = ArenaAnalytics.Colors;
+local ArenaText = ArenaAnalytics.ArenaText;
 
 -------------------------------------------------------------------------
 
@@ -22,13 +23,13 @@ function Display:Create(parent, displayFunc)
     assert(parent.GetArrowWidth, "Dropdown Display parent must include GetArrowWidth()!");
     assert(not displayFunc or type(displayFunc) == "function");
 
-    local self = setmetatable({}, Display);
+    local self = setmetatable(TablePool:Acquire(), Display);
 
     self.parent = parent;
     self.name = parent:GetName() .. "_Display";
 
     self.displayFunc = displayFunc;
-    self.frames = {}
+    self.frames = TablePool:Acquire();
 
     self.padding = 0;
 
@@ -39,11 +40,11 @@ function Display:Refresh()
     self:Reset();
 
     if(self.parent:IsDisabled()) then
-        Display.SetDisabledText(self.parent, self)
+        Display.SetDisabledText(self.parent, self);
     elseif(self.displayFunc) then
         self.displayFunc(self.parent, self);
     else
-        Display.SetText(self.parent, self)
+        Display.SetText(self.parent, self);
     end
 end
 
@@ -57,7 +58,7 @@ end
 
 function Display:AddFrame(frame, alignment, offsetX)
     if(self.frames == nil) then
-        self.frames = {};
+        self.frames = TablePool:Acquire();
     end
 
     assert(frame);
@@ -88,7 +89,7 @@ function Display:Reset()
             end
         end
     end
-    self.frames = {};
+    self.frames = TablePool:Acquire();
 end
 
 function Display:SetPadding(padding)
@@ -112,15 +113,11 @@ end
 -------------------------------------------------------------------------
 -- Helpers
 
+-- TODO: Refactor to use CreateInline directly throughout?
+--function ArenaText:CreateInline(parent, text, size, color, point, relativeFrame, relPoint, xOffset, yOffset)
 local function CreateText(parent, text, size, color)
     color = color or Colors.white;
-    size = size or 12;
-    text = text or "";
-
-    local fontString = parent:CreateFontString(nil, "OVERLAY");
-    fontString:SetFont("Fonts\\FRIZQT__.TTF", size, "");
-    fontString:SetText(Colors:ColorText(text, color));
-    return fontString;
+    return ArenaText:CreateInline(parent, text, size, color);
 end
 
 
@@ -135,7 +132,7 @@ function Display.SetDisabledText(dropdownContext, display)
     local fontSize = dropdownContext.disabledSize or dropdownContext.fontSize or 10;
     local fontColor = dropdownContext.disabledColor or "888888";
 
-    local fontString = CreateText(dropdownContext:GetFrame(), label, fontSize, fontColor);
+    local fontString = ArenaText:CreateInline(dropdownContext:GetFrame(), label, fontSize, fontColor);
 
     local offsetX = dropdownContext.offsetX or 0;
     display:AddFrame(fontString, dropdownContext.alignment, offsetX);
@@ -153,10 +150,11 @@ function Display.SetText(dropdownContext, display)
     local fontSize = dropdownContext.fontSize or 12;
     local fontColor = dropdownContext.fontColor or Colors.white;
 
-    local fontString = CreateText(dropdownContext:GetFrame(), label, fontSize, fontColor);
+    local fontString = ArenaText:CreateInline(dropdownContext:GetFrame(), label, fontSize, fontColor);
 
     local alignment = dropdownContext.alignment or "CENTER";
     local offsetX = dropdownContext.offsetX or 0;
+    local offsetY = dropdownContext.offsetY or 0;
 
     display:AddFrame(fontString, dropdownContext.alignment, offsetX);
 end
@@ -181,12 +179,13 @@ function Display.SetComp(dropdownContext, display)
 
     local totalWidth = 0;
     local offsetX = dropdownContext.offsetX or 0;
+    local offsetY = dropdownContext.offsetY or 0;
 
-    local compData = ArenaAnalytics:GetCurrentCompData(dropdownContext.key, comp) or {}
+    local compData = ArenaAnalytics:GetCurrentCompData(dropdownContext.key, comp) or TablePool:Acquire();
 
     -- Construct the container contents
     if(comp == "All") then
-        containerFrame.text = CreateText(containerFrame, comp, fontSize, fontColor);
+        containerFrame.text = ArenaText:CreateInline(containerFrame, comp, fontSize, fontColor);
         containerFrame.text:SetPoint("LEFT", 0, 0);
 
         local width = containerFrame.text:GetWidth();
@@ -202,10 +201,10 @@ function Display.SetComp(dropdownContext, display)
 
         -- Add played text
         local playedPrefix = played and (played .. " ") or "|cffff0000" .. "0  " .. "|r";
-        containerFrame.played = CreateText(containerFrame, playedPrefix, fontSize, fontColor);
-        containerFrame.played:SetPoint("LEFT", padding, 0);
+        containerFrame.played = ArenaText:CreateInline(containerFrame, playedPrefix, fontSize, fontColor);
+        containerFrame.played:SetPoint("LEFT", padding, offsetY);
 
-        lastFrame = containerFrame.played;
+        lastFrame = containerFrame.played:GetFrame();
         totalWidth = totalWidth + containerFrame.played:GetWidth() + padding;
 
         local specs = TablePool:Acquire();
@@ -222,7 +221,7 @@ function Display.SetComp(dropdownContext, display)
 
         -- Display specs
         for i,spec_id in ipairs(specs) do
-            local iconFrame = ArenaIcon:Create(containerFrame, 25, true);
+            local iconFrame = ArenaIcon:Create(containerFrame, 22, true);
             iconFrame:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0);
             iconFrame:SetSpec(spec_id);
 

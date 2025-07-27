@@ -107,4 +107,6 @@ Source/UI/Dropdowns/ArenaDropdownEntry.lua
 Source/UI/Dropdowns/ArenaDropdownButton.lua
 Source/UI/Dropdowns/ArenaDropdownDisplay.lua
 
+Source/UI/_EXPERIMENT_MinimalScrollPanel.lua
+
 Source/init.lua
