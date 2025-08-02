@@ -161,7 +161,7 @@ function Commands.HandleCommand_Test()
 	print(" ");
 	ArenaAnalytics:Print("================================================ ");
 
-	ArenaAnalytics.Experimental:CreateFrame();
+	ArenaAnalytics.Experimental:Toggle();
 
 --	Debug:LogTable(FilterBracketDropdownButton)
 
