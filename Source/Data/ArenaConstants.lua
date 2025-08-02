@@ -88,7 +88,9 @@ local arenaMessages = {
     -- Russian (ruRU)
     ["Одна минута до начала боя на арене!"] = 60,
     ["Тридцать секунд до начала боя на арене!"] = 30,
+    ["Пятнадцать секунд до начала боя на арене!"] = 15, -- TWW Shuffles
     ["До начала боя на арене осталось 15 секунд."] = 15,
+    ["Битва на арене началась!"] = 0, -- TWW Shuffles
     ["Бой начался!"] = 0,
 
     -- Chinese Simplified (zhCN)
@@ -114,6 +116,7 @@ function Constants:CheckTimerMessage(msg)
     return isStart, timeTillStart;
 end
 
+--[[
 local arenaTimer = {
     ["default"] = {
         [61] = "One minute until the Arena battle begins!",
@@ -178,14 +181,7 @@ local arenaTimer = {
 }
 arenaTimer["esMX"] = arenaTimer["esES"]
 arenaTimer["ptPT"] = arenaTimer["ptBR"]
-
-function Constants:GetArenaTimer()
-    if arenaTimer[GetLocale()] then
-        return arenaTimer[GetLocale()]
-    else
-        return arenaTimer["default"]
-    end
-end
+--]]
 
 -------------------------------------------------------------------------
 
