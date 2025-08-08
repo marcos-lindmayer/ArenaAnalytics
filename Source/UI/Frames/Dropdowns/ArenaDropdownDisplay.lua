@@ -10,7 +10,7 @@ local Options = ArenaAnalytics.Options;
 local API = ArenaAnalytics.API;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local TablePool = ArenaAnalytics.TablePool;
-local GroupSorter = ArenaAnalytics.GroupSorter;
+local Lookup = ArenaAnalytics.Lookup;
 local Debug = ArenaAnalytics.Debug;
 local Colors = ArenaAnalytics.Colors;
 local ArenaText = ArenaAnalytics.ArenaText;
@@ -207,17 +207,8 @@ function Display.SetComp(dropdownContext, display)
         lastFrame = containerFrame.played:GetFrame();
         totalWidth = totalWidth + containerFrame.played:GetWidth() + padding;
 
-        local specs = TablePool:Acquire();
-
         -- Add each player spec icon
-        for spec_id in comp:gmatch("([^|]+)") do
-            if(tonumber(spec_id)) then
-                tinsert(specs, tonumber(spec_id));
-            end
-        end
-
-        local playerInfo = ArenaAnalytics:GetLocalPlayerInfo();
-        GroupSorter:SortSpecs(specs, playerInfo);
+        local specs = Lookup:FindOrAddCompLookup(comp);
 
         -- Display specs
         for i,spec_id in ipairs(specs) do

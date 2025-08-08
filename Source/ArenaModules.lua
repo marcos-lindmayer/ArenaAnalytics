@@ -49,6 +49,7 @@ ArenaAnalytics.ArenaTracker = {};
 
 ArenaAnalytics.Search = {};
 ArenaAnalytics.Filters = {};
+ArenaAnalytics.FilterCache = {};
 ArenaAnalytics.FilterTables = {};
 
 ArenaAnalytics.Export = {};

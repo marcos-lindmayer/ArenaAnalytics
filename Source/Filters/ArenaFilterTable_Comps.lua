@@ -6,6 +6,7 @@ local API = ArenaAnalytics.API;
 local Filters = ArenaAnalytics.Filters;
 local TablePool = ArenaAnalytics.TablePool;
 local Options = ArenaAnalytics.Options;
+local Debug = ArenaAnalytics.Debug;
 
 local Dropdown = ArenaAnalytics.Dropdown;
 local Display = Dropdown.Display;
@@ -59,12 +60,13 @@ local function GenerateCompEntries(compKey)
 
     local requiredPlayedCount = Options:Get("minimumCompsPlayed") or 0;
     local comps = ArenaAnalytics:GetCurrentCompDataSorted(compKey);
-    for _,compData in ipairs(comps) do
+    for i,compData in ipairs(comps) do
         if(not compData.played or compData.played >= requiredPlayedCount) then
             AddEntry(entryTable, compData.comp, compKey);
         end
     end
 
+    Debug:LogTemp("GenerateCompEntries  ", compKey, #entryTable)
     return entryTable;
 end
 

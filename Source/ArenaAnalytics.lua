@@ -436,7 +436,7 @@ function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
 			faction = ArenaID:GetRaceFaction(race_id),
 			race = ArenaID:GetRace(race_id),
 			race_id = race_id,
-			spec_id = Helpers:GetClassID(spec_id), -- Avoid dynamic changes for sorting
+			spec_id = spec_id, -- Avoid dynamic changes for sorting
 			role = role_bitmap,
 			role_main = Bitmap:GetMainRole(role_bitmap),
 			role_sub = Bitmap:GetSubRole(role_bitmap),
@@ -446,6 +446,21 @@ function ArenaAnalytics:GetLocalPlayerInfo(forceUpdate)
 	end
 
 	return ArenaAnalytics.localPlayerInfo;
+end
+
+ArenaAnalytics.localPlayerSpec = nil;
+local lastLocalPlayerSpecUpdate = 0;
+function ArenaAnalytics:GetLocalPlayerSpec(forceUpdate)
+	if(lastLocalPlayerSpecUpdate < time()) then
+		forceUpdate = true;
+	end
+
+	if(not ArenaAnalytics.localPlayerSpec or forceUpdate) then
+		ArenaAnalytics.localPlayerSpec = API:GetSpecialization();
+		lastLocalPlayerSpecUpdate = time();
+	end
+
+	return ArenaAnalytics.localPlayerSpec;
 end
 
 -------------------------------------------------------------------------

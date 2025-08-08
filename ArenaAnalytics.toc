@@ -59,6 +59,7 @@ Source/Lookup/ArenaLookup_Races.lua
 Source/Lookup/ArenaLookup_Specs.lua
 Source/Lookup/ArenaLookup_Search.lua
 Source/Lookup/ArenaLookup_Export.lua
+Source/Lookup/ArenaLookup_Comps.lua
 
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
@@ -73,6 +74,8 @@ Source/Search/ArenaSearchDisplay.lua
 Source/Search/ArenaQuickSearch.lua
 
 Source/Filters/ArenaFilter.lua
+Source/Filters/ArenaFilter_Refresh.lua
+Source/Filters/ArenaFilterCache.lua
 Source/Filters/ArenaFilterTables.lua
 Source/Filters/ArenaFilterTable_Brackets.lua
 Source/Filters/ArenaFilterTable_Comps.lua

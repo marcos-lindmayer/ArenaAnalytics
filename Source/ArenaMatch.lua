@@ -245,12 +245,7 @@ end
 -- Date (1)
 
 function ArenaMatch:GetDate(match)
-    if(not match) then 
-        return nil 
-    end;
-
-    local key = matchKeys.date;
-    return match and tonumber(match[key]);
+    return match and tonumber(match[matchKeys.date]);
 end
 
 function ArenaMatch:SetDate(match, value)
@@ -264,12 +259,7 @@ end
 -- Duration (2)
 
 function ArenaMatch:GetDuration(match)
-    if(not match) then
-        return nil;
-    end
-
-    local key = matchKeys.duration;
-    return match and tonumber(match[key]);
+    return match and tonumber(match[matchKeys.duration]);
 end
 
 function ArenaMatch:SetDuration(match, value)
@@ -283,9 +273,9 @@ end
 -- Map (3)
 
 function ArenaMatch:GetMapID(match)
-    if(not match) then 
-        return nil 
-    end;
+    if(not match) then
+        return nil;
+    end
 
     local key = matchKeys.map;
     local value = match and match[key];
@@ -349,19 +339,11 @@ end
 -- Bracket (4)
 
 function ArenaMatch:GetBracketIndex(match)
-    if(not match) then
-        return nil;
-    end
-
     local key = matchKeys.bracket;
     return match and tonumber(match[key]);
 end
 
 function ArenaMatch:GetBracket(match)
-    if(not match) then
-        return nil;
-    end
-
     local bracketIndex = ArenaMatch:GetBracketIndex(match);
     return ArenaAnalytics:GetBracket(bracketIndex);
 end

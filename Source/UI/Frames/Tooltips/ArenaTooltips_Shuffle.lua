@@ -77,8 +77,8 @@ local function CreateRoundEntryFrame(index, parent)
     ArenaAnalytics:SetFrameText(newFrame.separator, "  vs  ", Colors.valueColor);
 
     -- Teams
-    newFrame.team = {};
-    newFrame.enemyTeam = {};
+    newFrame.team = TablePool:Acquire();
+    newFrame.enemyTeam = TablePool:Acquire();
 
     local playerPadding = 4;
     local separatorPadding = 15;
@@ -101,7 +101,7 @@ local function CreateRoundEntryFrame(index, parent)
         iconFrame:SetPoint("LEFT", lastFrame, "RIGHT", 2, 0);
         lastFrame = iconFrame;
 
-        tinsert(newFrame.enemyTeam, iconFrame);
+        newFrame.enemyTeam[i] = iconFrame;
     end
 
     function newFrame:SetData(team, enemy, firstDeath, duration, outcome, selfPlayer, players)
@@ -109,36 +109,35 @@ local function CreateRoundEntryFrame(index, parent)
 
         ArenaAnalytics:SetFrameText(self.duration, (duration and SecondsToTime(duration)), Colors.valueColor);
 
-        for i=2, 0, -1 do
-            local spec_id, isFirstDeath;
-
-            -- Deconstruct compact team (210) where each index is a player index, and match the values to firstDeath index.
-            if(type(team) == "string") then
-                local playerIndex = (i == 0) and 0 or tonumber(team:sub(i,i));
-                if(playerIndex) then
-                    local player = (playerIndex == 0) and selfPlayer or players[playerIndex];
-                    spec_id = ArenaMatch:GetPlayerSpec(player);
-                    isFirstDeath = (playerIndex == firstDeath);
-                end
+        -- Helper function
+        -- Deconstruct compact team (210) where each index is a player index, and match the values to firstDeath index.
+        local function GetPlayerByTeam(compactTeam, idx)
+            if(type(compactTeam) ~= "string") then
+                return;
             end
+
+            local playerIndex = (idx == 0) and 0 or tonumber(compactTeam:sub(idx,idx));
+            if(playerIndex) then
+                local player = (playerIndex == 0) and selfPlayer or players[playerIndex];
+                local spec_id = ArenaMatch:GetPlayerSpec(player);
+                local isFirstDeath = (playerIndex == firstDeath);
+
+                return spec_id, isFirstDeath;
+            end
+        end
+
+        -- Team
+        for i=0, 2 do
+            local spec_id, isFirstDeath = GetPlayerByTeam(team, i);
 
             local playerIcon = self.team[i+1];
             playerIcon:SetSpec(spec_id);
             playerIcon:SetIsFirstDeath(isFirstDeath, true);
         end
 
+        -- Enemy
         for i=1, 3 do
-            local spec_id, isFirstDeath;
-
-            -- Deconstruct compact enemy team (345) where each index is a player index, and match the values to firstDeath index.
-            if(type(enemy) == "string") then
-                local playerIndex = tonumber(enemy:sub(i,i));
-                if(playerIndex) then
-                    local player = players[playerIndex];
-                    spec_id = ArenaMatch:GetPlayerSpec(player);                    
-                    isFirstDeath = (playerIndex == firstDeath);
-                end
-            end
+            local spec_id, isFirstDeath = GetPlayerByTeam(enemy, i);
 
             local playerIcon = self.enemyTeam[i];
             playerIcon:SetSpec(spec_id);
@@ -146,6 +145,7 @@ local function CreateRoundEntryFrame(index, parent)
         end
     end
 
+    -- TODO: Refactor Colors module to allow getting RGB?
     -- Set background color based on round win or loss
     function newFrame:SetOutcomeColor(outcome)
         if(outcome == nil) then -- Grey for unknown
@@ -178,13 +178,13 @@ local function GetOrCreateSingleton()
         self.title = ArenaAnalyticsCreateText(self.frame, "TOPLEFT", self.frame, "TOPLEFT", 10, -10, Colors:ColorText("Solo Shuffle", Colors.valueColor), 18);
         self.winsText = ArenaAnalyticsCreateText(self.frame, "TOPRIGHT", self.frame, "TOPRIGHT", -10, -10, "", 15);
 
-        self.rounds = {}
+        self.rounds = TablePool:Acquire();
 
         for i=1, 6 do
             self.rounds[i] = CreateRoundEntryFrame(i, self.frame);
         end
 
-        self.bottomStatTexts = {}
+        self.bottomStatTexts = TablePool:Acquire();
 
         Debug:Log("Created new Shuffle Tooltip singleton!");
     end
