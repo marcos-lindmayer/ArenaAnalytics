@@ -161,13 +161,6 @@ function Commands.HandleCommand_Test()
 	print(" ");
 	ArenaAnalytics:Print("================================================ ");
 
-	--Debug:Log("Target isFemale:", Helpers:IsUnitFemale("target"), UnitNameUnmodified("target"));
-
-	local teamMMR, enemyMMR = API:GetTeamMMR(false), API:GetTeamMMR(true);
-	Debug:LogTemp("Score Event MMR Test:", teamMMR, enemyMMR, #ArenaAnalyticsDB);
-	Debug:LogTemp("Score0:", GetBattlefieldTeamInfo(0))
-	Debug:LogTemp("Score0:", GetBattlefieldTeamInfo(1))
-
 	ArenaAnalytics:Print("================================================ ");
 end
 

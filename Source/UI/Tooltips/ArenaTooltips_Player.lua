@@ -53,7 +53,6 @@ local statsPadding = 10;
 local function FillContainerValues(container, values, rowHeight, padding, yOffset)
     padding = padding or 0;
     yOffset = yOffset or 0;
-    rowHeight = rowHeight - 0.3; -- Fix rounding layout issues
 
     -- Ensure the frames table exists on the container for reuse
     container.frames = container.frames or TablePool:Acquire();
@@ -91,7 +90,7 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
 
                 isLeft = true;
             else
-                Debug:Log("Ignoring number stat spacer", value)
+                Debug:Log("Ignoring number stat spacer", value);
             end
         else
             local column = isLeft and container.leftColumn or container.rightColumn;
@@ -99,6 +98,8 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
             -- Create or reuse a font string for the value
             if not frame then
                 frame = container:CreateFontString(nil, "OVERLAY", "GameFontNormal");
+                frame:SetJustifyH("LEFT");
+                frame:SetJustifyV("TOP");
                 container.frames[i] = frame;
             end
 
@@ -106,7 +107,7 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
             frame:SetText(value);
 
             -- Position the value in either the left or right column
-            frame:SetPoint("TOPLEFT", column, "TOPLEFT", -0.3, -yOffset);
+            frame:SetPoint("TOPLEFT", column, "TOPLEFT", 0, -yOffset);
 
             -- Check for increased required size
             if(frame:GetWidth() > column.desiredWidth) then
@@ -270,7 +271,7 @@ function PlayerTooltip:UpdateQuickSearchTips()
     -- Update dynamic visibility
     PlayerTooltip:UpdateQuickSearchVisibility();
 
-    container:RegisterEvent("MODIFIER_STATE_CHANGED");    
+    container:RegisterEvent("MODIFIER_STATE_CHANGED");
     container:SetScript("OnEvent", function(frame)
         PlayerTooltip:UpdateQuickSearchVisibility();
         PlayerTooltip:RecomputeSize();
@@ -425,14 +426,14 @@ local function SetNameText(text)
     -- Adjust the font size if it detects the Russian font
     -- Replace "your_russian_font_path" with the actual font file path for Russian
     if(fontPath == "Fonts\\FRIZQT___CYR.TTF") then
-        desiredSize = desiredSize + russianFontAdjustment
+        desiredSize = desiredSize + russianFontAdjustment;
     end
 
     -- Set the initial font size
-    self.name:SetFont(fontPath, desiredSize, fontFlags)
+    self.name:SetFont(fontPath, desiredSize, fontFlags);
 
     -- Measure the text width in pixels
-    local textWidth = self.name:GetStringWidth()
+    local textWidth = self.name:GetStringWidth();
 
     -- Adjust the size based on the text width exceeding the maximum allowed width
     local size = desiredSize

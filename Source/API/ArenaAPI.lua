@@ -166,6 +166,7 @@ function API:GetTeamIndex(isEnemy)
         return nil;
     end
 
+    -- Invalid in shuffles, uncomfirmed otherwise
     local teamIndex = GetBattlefieldArenaFaction();
     Debug:Log("GetTeamIndex my team:", teamIndex);
     if(not teamIndex) then
@@ -184,11 +185,6 @@ end
 function API:GetTeamMMR(team)
     if(not API:IsInArena()) then
         return nil;
-    end
-
-    if(type(team) ~= "number") then
-        -- Assume input is truthy/falsy for isEnemy
-        team = API:GetTeamIndex(team);
     end
 
     -- Must be a teamIndex by now

@@ -103,8 +103,9 @@ function ArenaTracker:HandleArenaEnd()
 				myTeamIndex = player.teamIndex;
 				player.isSelf = true;
 
-				if(myTeamIndex ~= GetBattlefieldArenaFaction()) then
-					Debug:LogError("My team index API mismatch! GetBattlefieldArenaFaction cannot be trusted?");
+				-- Probably not useful, keeping at warning log level for non-shuffles, in case I learn more.
+				if(not ArenaTracker:IsShuffle() and myTeamIndex ~= GetBattlefieldArenaFaction()) then
+					Debug:LogWarning("My team index API mismatch! GetBattlefieldArenaFaction cannot be trusted?");
 				end
 
 			elseif(isShuffle) then

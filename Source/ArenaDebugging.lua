@@ -3,6 +3,8 @@ local Debug = ArenaAnalytics.Debug;
 
 -- Local module aliases
 local Colors = ArenaAnalytics.Colors;
+local Options = ArenaAnalytics.Options;
+local Helpers = ArenaAnalytics.Helpers;
 local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
@@ -12,14 +14,14 @@ function Debug:GetDebugLevel()
 end
 
 function Debug:SetDebugLevel(level)
-    local currentLevel = ArenaAnalytics.Options:Get("debuggingLevel");
+    local currentLevel = Debug:GetDebugLevel();
 
-    level = tonumber(level) or (currentLevel == 0 and 3) or 0;
+    level = Helpers:ToSafeNumber(level) or (currentLevel == 0 and 1) or 0;
     if(level == currentLevel and level > 0) then
         level = 0;
     end
 
-    ArenaAnalytics.Options:Set("debuggingLevel", level);
+    Options:Set("debuggingLevel", level);
 
     if(Debug:GetDebugLevel() == 0) then
         ArenaAnalytics:PrintSystem("Debugging disabled!");
@@ -47,7 +49,7 @@ function Debug:LogForced(...)
 end
 
 -------------------------------------------------------------------------
--- Debug level 1 (Error)
+-- Debug (Errors & Warnings)
 
 function Debug:LogError(...)
     if(ArenaAnalyticsSharedSettingsDB["hideErrorLogs"]) then
@@ -58,27 +60,29 @@ function Debug:LogError(...)
 	print(prefix, ...);
 end
 
--- Assert if debug is enabled. Returns value to allow wrapping within if statements.
-function Debug:Assert(value, msg)
-	if(Debug:GetDebugLevel() > 0) then
-        if(not value) then
-            Debug:LogError("Assert failed:", msg or "-")
-            assert(value, "Debug Assertion failed! " .. (msg or ""));
-        end
-	end
-	return value;
-end
-
--------------------------------------------------------------------------
--- Debug level 2 (Warning)
-
 function Debug:LogWarning(...)
-	if(Debug:GetDebugLevel() < 2) then
+	if(Debug:GetDebugLevel() < 1) then
 		return;
 	end
 
     local prefix = Colors:ColorText("ArenaAnalytics (Warning):", Colors.warningColor);
 	print(prefix, ...);
+end
+
+-------------------------------------------------------------------------
+-- Debug level 2 (Warning)
+
+function Debug:LogFrameTime(context)
+	if(Debug:GetDebugLevel() < 2) then
+        return;
+    end
+
+    debugprofilestart();
+
+    C_Timer.After(0, function()
+        local elapsed = debugprofilestop();
+        Debug:LogForced("DebugLogFrameTime:", elapsed, "Context:", context);
+    end);
 end
 
 -------------------------------------------------------------------------
@@ -123,24 +127,22 @@ function Debug:LogEscaped(...)
 	Debug:Log(unpack(args));
 end
 
-function Debug:LogFrameTime(context)
-	if(Debug:GetDebugLevel() == 0) then
-        return;
-    end
-
-    debugprofilestart();
-
-    C_Timer.After(0, function()
-        local elapsed = debugprofilestop();
-        Debug:LogForced("DebugLogFrameTime:", elapsed, "Context:", context);
-    end);
+-- Assert if debug is enabled. Returns value to allow wrapping within if statements.
+function Debug:Assert(value, msg)
+	if(Debug:GetDebugLevel() >= 3) then
+        if(not value) then
+            Debug:LogError("Assert failed:", msg or "-")
+            assert(value, "Debug Assertion failed! " .. (msg or ""));
+        end
+	end
+	return value;
 end
 
 -------------------------------------------------------------------------
 -- Temporary Debugging tools
 
 function Debug:LogTemp(...)
-	if(Debug:GetDebugLevel() < 1) then
+	if(Debug:GetDebugLevel() < 2) then
 		return;
 	end
 
@@ -202,7 +204,7 @@ end
 
 -- TEMP debugging
 function Debug:PrintScoreboardStats(numPlayers)
-	if(Debug:GetDebugLevel() < 5) then
+	if(Debug:GetDebugLevel() < 10) then
         return;
 	end
 
@@ -247,7 +249,7 @@ end
 
 local lastInspectUnitToken = "target";
 function Debug:NotifyInspectSpec(unitToken)
-    if(ArenaAnalytics.Options:Get("debuggingLevel") < 1) then
+    if(Debug:GetDebugLevel() < 2) then
         return;
     end
 
@@ -267,7 +269,7 @@ function Debug:NotifyInspectSpec(unitToken)
 end
 
 function Debug:HandleDebugInspect(GUID)
-    if(ArenaAnalytics.Options:Get("debuggingLevel") < 1) then
+    if(Debug:GetDebugLevel() < 2) then
         return;
     end
 

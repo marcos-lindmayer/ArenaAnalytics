@@ -83,9 +83,6 @@ function ArenaAnalytics:InitializeTransientDB()
 	ArenaAnalyticsTransientDB.currentArena = ArenaAnalyticsTransientDB.currentArena or {};
 
 	local currentSeason = API:GetCurrentSeason();
-	if(currentSeason == 0) then
-		Debug:LogWarning("current season is 0.")
-	end
 
 	if(not ArenaAnalyticsTransientDB.ratedInfo) then
 		Debug:LogWarning("Initiating transient DB ratedInfo!", ArenaAnalyticsTransientDB.ratedInfo);
