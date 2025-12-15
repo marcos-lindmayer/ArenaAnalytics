@@ -24,7 +24,6 @@ API.availableMaps = {
     "BladesEdgeArena",
     "NagrandArena",
     "RuinsOfLordaeron",
-    "DalaranArena",
 };
 
 function API:IsRatedArena()
@@ -238,9 +237,21 @@ local function InitializeRoleBitmapOverrides()
     };
 end
 
+API.specIconOverrides = nil;
+local function InitializeSpecOverrides()
+    API.specIconOverrides = {
+        -- Warrior
+        [82] = [[Interface\Icons\ability_warrior_savageblow]], -- Arms
+
+        -- Priest
+        [91] = [[Interface\Icons\spell_holy_powerwordshield]], -- Discipline
+    };
+end
+
 -------------------------------------------------------------------------
 -- Expansion API initializer
 
 function API:InitializeExpansion()
     InitializeRoleBitmapOverrides();
+    InitializeSpecOverrides();
 end

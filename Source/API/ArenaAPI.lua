@@ -269,7 +269,7 @@ function API:IsWargame()
 end
 
 function API:IsSkirmish()
-    return IsArenaSkirmish();
+    return IsArenaSkirmish and IsArenaSkirmish();
 end
 
 function API:IsSoloShuffle()

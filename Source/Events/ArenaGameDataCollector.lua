@@ -169,9 +169,7 @@ function DataCollector:ProcessUnitAuraEvent(...)
 		for _,aura in ipairs(updateInfo.addedAuras) do
 			if(aura and aura.sourceUnit and aura.isFromPlayerOrPlayerPet) then
 				local sourceGUID = Helpers:UnitGUID(aura.sourceUnit);
-                local _, class = UnitClass(aura.sourceUnit);
-
-                DataCollector:HandleSpellID(aura.spellId, aura.name, true, sourceGUID, class);
+                DataCollector:HandleSpellID(aura.spellId, aura.name, true, sourceGUID);
 			end
 		end
 	end
@@ -190,7 +188,7 @@ function DataCollector:ProcessCombatLogEvent(...)
 end
 
 
-function DataCollector:HandleSpellID(spellID, spellName, isAura, sourceGUID, class)
+function DataCollector:HandleSpellID(spellID, spellName, isAura, sourceGUID)
     if(not spellID or not sourceGUID) then
         return;
     end
@@ -203,24 +201,13 @@ function DataCollector:HandleSpellID(spellID, spellName, isAura, sourceGUID, cla
         end
     end
 
-    local isPet = nil;
-
-    local playerGUID = nil;
-    if(sourceGUID:find("Player-", 1, true)) then
-        playerGUID = sourceGUID;
-        isPet = false;
-    elseif(sourceGUID:find("Pet-", 1, true)) then
-        -- TODO: Get owner player GUID
-        playerGUID = DataCollector:TryFindPetOwnerGUID(sourceGUID);
-        isPet = playerGUID ~= nil;
-    end
-
+    local playerGUID, isPet = DataCollector:ToPlayerOrOwnerGUID(sourceGUID);
     if(not playerGUID) then
         -- Nither player nor confirmed player-owned pet.
         return;
     end
 
-    class = class or sourceGUID and select(2, GetPlayerInfoByGUID(sourceGUID));
+    local class = select(2, GetPlayerInfoByGUID(playerGUID));
 
     if(not class) then
         return;
@@ -229,17 +216,27 @@ function DataCollector:HandleSpellID(spellID, spellName, isAura, sourceGUID, cla
     FindOrAdd_Spell(class, spellID, spellName, isAura, isPet);
 end
 
-function DataCollector:TryFindPetOwnerGUID(petGUID)
-    if(petGUID == UnitGUID("pet")) then
-        return Helpers:UnitGUID("player");
+function DataCollector:ToPlayerOrOwnerGUID(GUID)
+    if(not GUID) then
+        return nil, nil;
+    end
+
+    if(GUID:find("Player-", 1, true)) then
+        return GUID, false;
+    elseif(not GUID:find("Pet-", 1, true)) then
+        return nil, nil;
+    end
+
+    if(GUID == UnitGUID("pet")) then
+        return Helpers:UnitGUID("player"), true;
     end
 
     for i=1, 4 do
         local unitToken = "party"..i.."pet";
-        if(petGUID == UnitGUID(unitToken)) then
-            return UnitOwnerGUID(unitToken);
+        if(GUID == UnitGUID(unitToken)) then
+            return UnitOwnerGUID(unitToken), true;
         end
     end
 
-    return nil;
+    return nil, nil;
 end
