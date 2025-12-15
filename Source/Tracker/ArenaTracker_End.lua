@@ -51,7 +51,7 @@ function ArenaTracker:HandleArenaEnd()
 	currentArena.ended = true;
 	currentArena.endTime = tonumber(currentArena.endTime) or time();
 
-	Debug:LogGreen("HandleArenaEnd!", #currentArena.players, currentArena.startTime, currentArena.endTime);
+	Debug:LogGreen("HandleArenaEnd!", #currentArena.players, currentArena.startTime, currentArena.endTime, GetNumBattlefieldScores());
 
 	-- Solo Shuffle
 	ArenaTracker:HandleRoundEnd(true);
@@ -75,7 +75,8 @@ function ArenaTracker:HandleArenaEnd()
 		if(not player) then
 			-- Use scoreboard info
 			Debug:Log("Creating new player by scoreboard:", score.name);
-			player = ArenaTracker:CreatePlayerTable(nil, nil, score.name);
+			player = ArenaTracker:CreatePlayerTable(nil, score.name);
+			Debug:Log("Adding player: ", score.name);
 		end
 
 		-- Fill missing data
@@ -104,7 +105,7 @@ function ArenaTracker:HandleArenaEnd()
 				player.isSelf = true;
 
 				-- Probably not useful, keeping at warning log level for non-shuffles, in case I learn more.
-				if(not ArenaTracker:IsShuffle() and myTeamIndex ~= GetBattlefieldArenaFaction()) then
+				if(not isShuffle and myTeamIndex ~= GetBattlefieldArenaFaction()) then
 					Debug:LogWarning("My team index API mismatch! GetBattlefieldArenaFaction cannot be trusted?");
 				end
 
@@ -121,7 +122,7 @@ function ArenaTracker:HandleArenaEnd()
 		TablePool:Release(score);
 	end
 
-	if(ArenaTracker:IsShuffle()) then
+	if(isShuffle) then
 		-- Determine match outcome
 		currentArena.outcome = ArenaTracker:GetShuffleOutcome()
 	else
@@ -151,4 +152,6 @@ function ArenaTracker:HandleArenaEnd()
 	currentArena.players = players;
 
 	Debug:Log("Match ended!", #currentArena.players, "players tracked.");
+
+	ArenaTracker:SetState("Locked"); -- TODO: Convert to currentArena.locked?
 end

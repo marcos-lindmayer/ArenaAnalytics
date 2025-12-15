@@ -4,6 +4,7 @@ local Constants = ArenaAnalytics.Constants;
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
 local Debug = ArenaAnalytics.Debug;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -109,10 +110,13 @@ local arenaMessages = {
 
 -- Check if a message indicates the match has started (0 seconds)
 function Constants:CheckTimerMessage(msg)
+    if(API:IsSecretValue(msg)) then
+        return;
+    end
+
     local timeTillStart = msg and tonumber(arenaMessages[msg]);
     local isStart = (timeTillStart == 0);
 
-    Debug:Log("ParseArenaTimerMessages message passed:", msg, timeTillStart, isStart);
     return isStart, timeTillStart;
 end
 

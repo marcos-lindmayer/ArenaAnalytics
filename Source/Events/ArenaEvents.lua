@@ -51,7 +51,9 @@ local globalEvents = {
 
 -- Register an event as a response to a 
 function Events:CreateEventListenerForRequest(event, repeatable, callback)
-    local frame = CreateFrame("Frame")
+    local frame = nil;
+	frame = CreateFrame("Frame");
+
     frame:RegisterEvent(event)
     frame:SetScript("OnEvent", function(self)
         if(not repeatable) then
@@ -89,7 +91,7 @@ local function HandleZoneChanged(isLoad)
 
 		-- Handle exit
 		if(ArenaTracker:IsTrackingArena(true)) then
-			Debug:Log("Zone changed calling HandleArenaExit!");
+			Debug:Log("Zone changed calling HandleArenaExit!", isLoad, isInArena);
 			C_Timer.After(0, ArenaTracker.HandleArenaExit);
 		end
 
@@ -121,7 +123,6 @@ local function UpdateArenaEnded()
 
 	if(alreadyEnded == true and not hasEnded) then
 		currentZoneState.wasInArena = false;
-		Events:CheckZoneChanged();
 	end
 end
 
@@ -206,6 +207,10 @@ end
 
 -------------------------------------------------------------------------
 
+local function IsExcludedEvent(event)
+	return not event or (API.excludedEvents and API.excludedEvents[event]);
+end
+
 local function registerEvents(eventFrame, events, func)
 	if(not eventFrame or type(events) ~= "table" or type(func) ~= "function") then
 		Debug:LogError("RegisterEvents failed.", eventFrame, type(events), type(func));
@@ -217,7 +222,7 @@ local function registerEvents(eventFrame, events, func)
 	end
 
 	for _,event in ipairs(events) do
-		if(C_EventUtils.IsEventValid(event)) then
+		if(not IsExcludedEvent(event) and C_EventUtils.IsEventValid(event)) then
 			eventFrame:RegisterEvent(event);
 		end
 	end
@@ -232,7 +237,7 @@ local function unregisterEvents(eventFrame, events)
 	end
 
 	for _,event in ipairs(events) do
-		if(C_EventUtils.IsEventValid(event)) then
+		if(not IsExcludedEvent(event) and C_EventUtils.IsEventValid(event)) then
 			eventFrame:UnregisterEvent(event);
 		end
 	end

@@ -81,16 +81,10 @@ function ArenaTracker:HandleArenaStart(stateData)
 	-- Add self
 	if (currentArena.playerName and not ArenaTracker:IsTrackingPlayer(currentArena.playerName)) then
 		-- Add player
-		local GUID = UnitGUID("player");
-		local name = currentArena.playerName;
-		local race_id = Helpers:GetUnitRace("player");
-		local isFemale = Helpers:IsUnitFemale("player");
-		local class_id = Helpers:GetUnitClass("player");
-		local spec_id = currentArena.mySpec or class_id;
-		Debug:Log("Using MySpec:", spec_id, isFemale);
-
-		local player = ArenaTracker:CreatePlayerTable(false, GUID, name, race_id, isFemale, spec_id);
+		local player = ArenaTracker:CreatePlayerTable(false, currentArena.playerName, "player", currentArena.mySpec);
 		table.insert(currentArena.players, player);
+
+		Debug:Log("Using MySpec:", player.spec, player.isFemale);
 	end
 
 	if(ArenaAnalytics.DataSync) then

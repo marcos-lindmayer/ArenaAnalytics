@@ -64,7 +64,7 @@ local function ProcessTeam(players, cachedValues, isEnemyTeam)
             newPlayer.spec = Localization:GetSpecID(class, spec);
 
             -- Determine if the player is self
-            newPlayer.isSelf = (name == UnitName("player"));
+            newPlayer.isSelf = (name == API:GetPlayerName(true));
             if(newPlayer.isSelf) then
                 -- Get player stats (Index 8, 9, 10)
                 newPlayer.kills = tonumber(cachedValues[8]);
@@ -87,7 +87,9 @@ function Import.ProcessNextMatch_ReflexArenas(arenaString)
         return nil;
     end
 
-    local cachedValues = strsplittable(';', arenaString);
+    local cachedValues = nil;
+    cachedValues = strsplittable(';', arenaString);
+
     if(not IsValidArena(cachedValues)) then
         local index = Import.state and Import.state.index;
         ArenaAnalytics:PrintSystem("Import (Reflex): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);

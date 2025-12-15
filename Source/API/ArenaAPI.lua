@@ -29,6 +29,11 @@ API.classTokens = {
 };
 
 
+function API:IsSecretValue(value)
+    return issecretvalue and value ~= nil and issecretvalue(value);
+end
+
+
 function API:GetClassToken(index)
     index = tonumber(index);
     return index and API.classTokens[index];
@@ -41,10 +46,21 @@ end
 
 
 function API:GetAddonVersion()
-    if(GetAddOnMetadata) then
-        return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
-    end
+--    if(type(GetAddOnMetadata) == "function") then
+--        return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
+--    end
     return C_AddOns and C_AddOns.GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
+end
+
+
+function API:SendChatMessage(...)
+    if(C_ChatInfo and C_ChatInfo.SendChatMessage) then
+        return securecall(C_ChatInfo.SendChatMessage, ...);
+    end
+
+--	if(SendChatMessage) then
+--        return securecall(SendChatMessage, ...);
+--  end
 end
 
 
@@ -67,7 +83,7 @@ function API:GetUnitFullName(unitToken, skipRealm)
     -- Get the realm
     local realm = select(2, UnitFullName(unitToken));
     if(not Helpers:IsValidValue(realm)) then
-        realm = select(2, UnitFullName("player")); -- Local player's realm
+        realm = API:GetLocalRealm();
     end
 
     if(not Helpers:IsValidValue(realm)) then
@@ -84,13 +100,24 @@ function API:GetPlayerName(skipRealm)
 end
 
 
+function API:IsSelf(unitToken)
+    return API:GetUnitFullName(unitToken) == API:GetPlayerName()
+end
+
+
+function API:GetLocalRealm()
+	local _, realm = UnitFullName("player");
+    return realm;
+end
+
+
 function API:ToFullName(name)
     if(not name) then
         return nil;
     end
 
     if(not name:find("-", 1, true)) then
-        local _,realm = UnitFullName("player"); -- Local player's realm
+        local realm = API:GetLocalRealm(); -- Local player's realm
         name = realm and (name.."-"..realm) or name;
     end
 
@@ -116,6 +143,10 @@ end
 
 
 function API:CanInspect(unitToken)
+    if(not API.enableInspection) then
+        return;
+    end
+
     -- TODO: Validate that this is allowed in all versions (To avoid inspect error message)
     if(not InCombatLockdown() and not CheckInteractDistance(unitToken, 1)) then
         Debug:Log("Inspection skipped due to out of combat interact distance.");
@@ -212,6 +243,8 @@ function API:GetWinner()
     end
 
     local winner = GetBattlefieldWinner();
+    Debug:Log("API:GetWinner:", winner);
+
     if(winner == 255) then
         return 2; -- Draw
     end
@@ -309,18 +342,14 @@ end
 
 
 function API:TrySurrenderArena(source)
-    if(not API:HasSurrenderAPI()) then
-        return nil;
-    end
-
     if(not IsActiveBattlefieldArena()) then
         return nil;
     end
 
     if(source == "afk" and not Options:Get("enableSurrenderAfkOverride")) then
-        return nil;
+        return nil; -- No afk override
     elseif(source == "gg" and not Options:Get("enableSurrenderGoodGameCommand")) then
-        return nil;
+        return nil; -- No GG override
     end
 
     if(CanSurrenderArena()) then
@@ -332,10 +361,12 @@ function API:TrySurrenderArena(source)
         if(not ArenaAnalytics.lastSurrenderAttempt or (ArenaAnalytics.lastSurrenderAttempt + 5 < time())) then
             ArenaAnalytics:PrintSystem("Type /afk again to leave.");
             ArenaAnalytics.lastSurrenderAttempt = time();
+            return false;
         else
             ArenaAnalytics:PrintSystem("Double /afk triggered.");
             ArenaAnalytics.lastSurrenderAttempt = nil;
             LeaveBattlefield();
+            return true;
         end
     else
         ArenaAnalytics:PrintSystem("You cannot surrender yet!");

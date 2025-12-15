@@ -344,13 +344,13 @@ local function CheckSimplePass(match)
         if(segmentResult == nil) then
             return nil; -- Segment detected conflict
         end
-        
+
         local successValue = not segment.inversed;
         if(segmentResult ~= successValue) then
             return false; -- Failed to pass.
-        end    
+        end
     end
-    
+
     -- All segments passed without conflict
     return true;
 end
@@ -363,13 +363,13 @@ local function PruneUniqueMatches(segmentMatches, playerMatches)
     if(#segmentMatches == 0 and #playerMatches == 0) then
         return;
     end
-    
+
     local changed = true;
 
     local function PruneLockedValues(tableToPrune, valueToRemove)
         for i = #tableToPrune, 1, -1 do
             local matches = tableToPrune[i];
-            
+
             for j = #matches, 1, -1 do
                 local value = matches[j];
                 if(value and value == valueToRemove) then
@@ -389,12 +389,12 @@ local function PruneUniqueMatches(segmentMatches, playerMatches)
     local function LockUniqueMatches(tableToCheck, pairedTable)
         for i = #tableToCheck, 1, -1 do
             local matches = tableToCheck[i];
-            
+
             if #matches == 1 then
                 local value = matches[1];
                 if(pairedTable[value] ~= nil and #pairedTable[value] > 0) then
                     table.remove(tableToCheck, i);
-                    
+
                     PruneLockedValues(tableToCheck, value);
                     pairedTable[value] = nil;
                 else

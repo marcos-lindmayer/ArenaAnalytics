@@ -282,7 +282,7 @@ local unknownValues = {
     [UNKNOWNOBJECT or "Unknown"] = true,
 };
 function Helpers:IsValidValue(value)
-    return value and not unknownValues[value];
+    return value ~= nil and not API:IsSecretValue(value) and not unknownValues[value];
 end
 
 function Helpers:ToValidValue(value)
@@ -291,4 +291,10 @@ function Helpers:ToValidValue(value)
     end
 
     return value;
+end
+
+
+function Helpers:UnitGUID(...)
+    local GUID = UnitGUID(...);
+    return GUID and not API:IsSecretValue(GUID) and GUID;
 end

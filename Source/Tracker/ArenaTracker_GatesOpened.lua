@@ -33,7 +33,6 @@ function ArenaTracker:HandleArenaMessages(msg)
 	local isStart, timeTillStart = Constants:CheckTimerMessage(msg);
 
 	if(not timeTillStart) then
-		Debug:LogWarning("Invalid msg:", msg);
 		return;
 	end
 

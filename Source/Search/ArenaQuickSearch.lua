@@ -8,6 +8,7 @@ local Helpers = ArenaAnalytics.Helpers;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Debug = ArenaAnalytics.Debug;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 -- Short Names
@@ -92,7 +93,7 @@ local function GetPlayerName(player)
         local includeRealmSetting = Options:Get("quickSearchIncludeRealm");
         local includeRealm = true;
 
-        local _, realm = UnitFullName("player");
+        local realm = API:GetLocalRealm();
         local isMyRealm = realm and name:find(realm, 1, true);
 
         if(includeRealmSetting == "All") then
@@ -268,7 +269,7 @@ local function FindExistingNameMatch(segments, newName)
     assert(segments);
 
     if(not newName or newName == "" or type(newName) ~= "string") then
-        return nil, nil;
+        return nil, nil, nil;
     end
 
     for i,segment in ipairs(segments) do
@@ -280,6 +281,8 @@ local function FindExistingNameMatch(segments, newName)
             end
         end
     end
+
+    return nil, nil, nil;
 end
 
 local function RemoveSeparatorFromTokens(tokens)
@@ -362,7 +365,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
     end
 
     local newSegment = {}
-    local segmentIndex = 0;
+    local segmentIndex = nil;
 
     -- Check for name match
     local nameMatch = nil;
@@ -399,7 +402,7 @@ function Search:QuickSearch(playerFrame, mouseButton)
             end
         end
 
-        segmentIndex = matchedSegmentIndex;
+        segmentIndex = tonumber(matchedSegmentIndex);
     end
 
     if(not nameMatch) then

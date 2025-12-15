@@ -6,6 +6,7 @@ local TablePool = ArenaAnalytics.TablePool;
 local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Debug = ArenaAnalytics.Debug;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -80,7 +81,7 @@ local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionInde
 
     local player = {
         isEnemy = isEnemyTeam,
-        isSelf = (name == UnitName("player")),
+        isSelf = (name == API:GetPlayerName(true)),
         name = name,
         race = Localization:GetRaceID(race, factionIndex),
     };
@@ -101,7 +102,9 @@ function Import.ProcessNextMatch_ArenaStatsCata(arenaString)
         return nil;
     end
 
-    local cachedValues = strsplittable(',', arenaString);
+    local cachedValues = nil;
+    cachedValues = strsplittable(',', arenaString);
+
     if(not IsValidArena(cachedValues)) then
         local index = Import.state and Import.state.index;
         Debug:LogError("Import (ArenaStats Cata): Corrupt arena at index:", index, "Value count:", cachedValues and #cachedValues);

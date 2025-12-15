@@ -51,8 +51,14 @@ local statsPadding = 10;
 
 -- General function to fill a container with a list of values
 local function FillContainerValues(container, values, rowHeight, padding, yOffset)
-    padding = padding or 0;
     yOffset = yOffset or 0;
+
+    if(not container or not values) then
+        return yOffset;
+    end
+
+    rowHeight = rowHeight or 0;
+    padding = padding or 0;
 
     -- Ensure the frames table exists on the container for reuse
     container.frames = container.frames or TablePool:Acquire();
@@ -104,7 +110,7 @@ local function FillContainerValues(container, values, rowHeight, padding, yOffse
             end
 
             frame:Show();
-            frame:SetText(value);
+            frame:SetText(value or "");
 
             -- Position the value in either the left or right column
             frame:SetPoint("TOPLEFT", column, "TOPLEFT", 0, -yOffset);

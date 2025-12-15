@@ -1,8 +1,9 @@
-## Interface: 30404, 30405
+## Interface: 120000
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
 ## Author: Lingo, Zeetrax
 ## Version: 1.2.0
+## IconTexture: Interface\Icons\achievement_arena_3v3_7
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsSharedSettingsDB
 ## SavedVariablesPerCharacter: ArenaAnalyticsDB, ArenaAnalyticsTransientDB, ArenaAnalyticsMapIconPos
@@ -43,7 +44,7 @@ Source/Tracker/ArenaTracker_Deaths.lua
 
 Source/API/ArenaHelpers.lua
 Source/API/ArenaAPI.lua
-Source/API/ArenaAPI_Wrath.lua
+Source/API/ArenaAPI_Midnight.lua
 Source/API/ArenaInspection.lua
 
 Source/UI/ArenaMatchSelection.lua
@@ -56,7 +57,6 @@ Source/UI/Tooltips/ArenaTooltips_Shuffle.lua
 Source/Data/ArenaInternalIDs.lua
 Source/Data/ArenaConstants.lua
 Source/Data/ArenaBitmap.lua
-Source/Data/ArenaSpecSpells_Wrath.lua
 Source/Data/ArenaLocalizationTables.lua
 
 Source/Search/ArenaSearch.lua

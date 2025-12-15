@@ -7,35 +7,49 @@ local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
+local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
-API.enableInspection = true;
-API.disableSpecInfoAPI = true;
+API.showPerPlayerRatedInfo = true;
+API.useThirdTooltipBackdrop = true;
 API.hasDampening = true;
+
+API.excludedEvents = { ["COMBAT_LOG_EVENT_UNFILTERED"] = true }
 
 -- Order defines the UI order of maps bracket dropdown
 API.availableBrackets = {
-    -- { name = "Solo", key = 4, requireMatches = true },    -- TODO: Implement requireMatches logic
-    { name = "2v2", key = 1 },
-    { name = "3v3", key = 2 },
-    { name = "5v5", key = 3 },
+    { name = "Solo", key = 4},
+	{ name = "2v2", key = 1},
+	{ name = "3v3", key = 2},
+	{ name = "5v5", key = 3, requireMatches = true },    -- TODO: Implement requireMatches logic
 };
 
 -- Order defines the UI order of maps filter dropdown
 API.availableMaps = {
-    "BladesEdgeArena",
     "NagrandArena",
     "RuinsOfLordaeron",
+    "TheRobodrome",
+    "NokhudonProvingGrounds",
+    "AshamanesFall",
+    "BladesEdgeArena",
+    "Mugambala",
+    "BlackRookHoldArena",
+    "HookPoint",
+    "EmpyreanDomain",
     "DalaranArena",
     "TigersPeak",
+    "EnigmaCrucible",
+    "MaldraxxusColiseum",
     "TolVironArena",
+    "CageOfCarnage",
 };
 
+
 function API:IsRatedArena()
-    return API:IsInArena() and C_PvP.IsRatedMap() and not API:IsWargame() and not API:IsSkirmish();
+    return API:IsInArena() and (C_PvP.IsRatedArena() or C_PvP.IsRatedSoloShuffle()) and not API:IsWargame() and not API:IsSkirmish();
 end
 
 function API:GetBattlefieldStatus(battlefieldId)
@@ -44,7 +58,12 @@ function API:GetBattlefieldStatus(battlefieldId)
         return nil;
     end
 
-    local status, _, _, _, _, teamSize = GetBattlefieldStatus(battlefieldId);
+    local status, _, teamSize = GetBattlefieldStatus(battlefieldId);
+
+    -- Shuffle team size
+    if(API:IsSoloShuffle()) then
+        teamSize = 3;
+    end
 
     local bracket = API:DetermineBracket(teamSize);
     local matchType = API:DetermineMatchType();
@@ -60,7 +79,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
 
     -- Solo Shuffle
     if(bracketIndex == 4) then
-        return nil;
+        bracketIndex = 7;
     end
 
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
@@ -68,32 +87,52 @@ function API:GetPersonalRatedInfo(bracketIndex)
 end
 
 function API:GetPlayerScore(index)
-    local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(index);
-    name = API:ToFullName(name);
+    local scoreInfo = C_PvP.GetScoreInfo(index);
 
-    -- Convert values
-    local race_id = Localization:GetRaceID(race);
-    local class_id = Internal:GetAddonClassID(classToken);
+    local score = TablePool:Acquire();
+    if(not scoreInfo or not scoreInfo.name) then
+        return score;
+    end
 
-    local score = {
-        name = name,
-        race = race_id,
-        spec = class_id,
-        team = teamIndex,
-        kills = kills,
-        deaths = deaths,
-        damage = damage,
-        healing = healing,
-    };
+    local spec_id = Localization:GetSpecID(scoreInfo.classToken, scoreInfo.talentSpec);
+    if(not spec_id) then
+        spec_id = Internal:GetAddonClassID(scoreInfo.classToken);
+    end
+
+    score.name = API:ToFullName(scoreInfo.name);
+    score.race = Localization:GetRaceID(scoreInfo.raceName);
+    score.spec = spec_id;
+    score.team = scoreInfo.faction;
+    score.kills = scoreInfo.killingBlows;
+    score.deaths = scoreInfo.deaths;
+    score.damage = scoreInfo.damageDone;
+    score.healing = scoreInfo.healingDone;
+    score.rating = scoreInfo.rating;
+    score.ratingDelta = scoreInfo.ratingChange;
+
+    if(API:IsSoloShuffle()) then
+        -- Assume shuffle only has one stat (ID changes randomly)
+        local firstStat = scoreInfo.stats and scoreInfo.stats[1];
+        if(firstStat) then
+            score.wins = firstStat.pvpStatValue;
+        end
+    end
+
+    -- MMR
+    local oldMMR = tonumber(scoreInfo.prematchMMR);
+    local newMMR = tonumber(scoreInfo.postmatchMMR);
+    if(oldMMR and oldMMR > 0) then
+        score.mmr = oldMMR;
+
+        if(newMMR and newMMR > 0) then
+            score.mmrDelta = newMMR - oldMMR;
+        end
+    end
 
     return score;
 end
 
 function API:GetSpecialization(unitToken, explicit)
-    if(unitToken ~= nil) then
-        Debug:Log("API:GetSpecialization", unitToken, explicit)
-    end
-
     if(explicit and not unitToken) then
         return nil;
     end
@@ -104,22 +143,16 @@ function API:GetSpecialization(unitToken, explicit)
     end
 
     if(API:IsSelf(unitToken)) then
-        local currentSpec = C_SpecializationInfo.GetSpecialization();
+        local currentSpec = GetSpecialization();
 		if(currentSpec == 5) then
 			return nil;
 		end
 
-        local id = currentSpec and C_SpecializationInfo.GetSpecializationInfo(currentSpec);
+        local id = currentSpec and GetSpecializationInfo(currentSpec);
         return API:GetMappedAddonSpecID(id);
     end
 
-    -- TODO: Figure out what will work in MoP Beta
-    --local specID = C_SpecializationInfo.GetSpecialization(true);
     local specID = GetInspectSpecialization(unitToken);
-    if(specID == nil or specID == 0) then
-        return nil;
-    end
-
     return API:GetMappedAddonSpecID(specID);
 end
 
@@ -154,7 +187,7 @@ API.specMappingTable = {
 
     [261] = 61, -- Subtlety Rogue
     [259] = 62, -- Assassination Rogue
-    [260] = 63, -- Outlaw Rogue
+    [260] = 64, -- Outlaw Rogue
 
     [265] = 71, -- Affliction Warlock
     [267] = 72, -- Destruction Warlock
@@ -187,7 +220,7 @@ API.roleBitmapOverrides = nil;
 local function InitializeRoleBitmapOverrides()
     API.roleBitmapOverrides = {
         [43] = Bitmap.roles.melee_damager, -- Survival hunter
-    }
+    };
 end
 
 API.specIconOverrides = nil;

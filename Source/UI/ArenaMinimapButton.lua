@@ -5,6 +5,7 @@ local MinimapButton = ArenaAnalytics.MinimapButton;
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
 local Colors = ArenaAnalytics.Colors;
+local API = ArenaAnalytics.API;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -14,7 +15,7 @@ local function OnClick(button)
         -- Open ArenaAnalytics Options
         ArenaAnalyticsOpenOptions();
     elseif(button == "MiddleButton") then
-        if(Options:GetSafe("surrenderByMiddleMouseClick")) then
+        if(API:HasSurrenderAPI() and Options:GetSafe("surrenderByMiddleMouseClick")) then
             ArenaAnalytics.API:TrySurrenderArena();
         end
     else

@@ -85,10 +85,10 @@ function ArenaAnalytics:InitializeTransientDB()
 	local currentSeason = API:GetCurrentSeason();
 
 	if(not ArenaAnalyticsTransientDB.ratedInfo) then
-		Debug:LogWarning("Initiating transient DB ratedInfo!", ArenaAnalyticsTransientDB.ratedInfo);
+		Debug:Log("Initiating transient DB ratedInfo!", ArenaAnalyticsTransientDB.ratedInfo);
 		ArenaAnalyticsTransientDB.ratedInfo = { season = currentSeason };
 	elseif(currentSeason and currentSeason ~= ArenaAnalyticsTransientDB.ratedInfo.season) then
-		Debug:LogWarning("Resetting transient DB ratedInfo due to season:", currentSeason, ArenaAnalyticsTransientDB.ratedInfo.season);
+		Debug:Log("Resetting transient DB ratedInfo due to season:", currentSeason, ArenaAnalyticsTransientDB.ratedInfo.season);
 		ArenaAnalyticsTransientDB.ratedInfo = { season = currentSeason }; -- Force reset invalid season data
 	end
 end
@@ -100,13 +100,12 @@ function ArenaAnalytics:InitializeArenaAnalyticsDB()
     ArenaAnalyticsDB.formatVersion = ArenaAnalyticsDB.formatVersion or 0;
 
 	if(#ArenaAnalyticsDB.names == 0) then
-		local name = UnitNameUnmodified("player");
+		local name = API:GetPlayerName(true);
 		ArenaAnalyticsDB.names[1] = name;
 	end
 
 	if(#ArenaAnalyticsDB.realms == 0) then
-		local _, realm = UnitFullName("player");
-		ArenaAnalyticsDB.realms[1] = realm;
+		ArenaAnalyticsDB.realms[1] = API:GetLocalRealm();
 	end
 end
 
@@ -250,7 +249,9 @@ function ArenaAnalytics:GetIndexedFullName(fullName)
 	end
 
 	-- Assume realm is only given when name is not full
-	local name, realm = strsplit('-', fullName, 2);
+	local name, realm = nil, nil;
+	name, realm = strsplit('-', fullName, 2);
+
 	name = ArenaAnalytics:GetNameIndex(name) or "";
 
 	-- Combine expanded realm suffix
@@ -353,8 +354,8 @@ function ArenaAnalytics:GetLocalRealmIndex()
 		return ArenaAnalytics.localRealmIndex;
 	end
 
-	local _, realm = UnitFullName("player");
-	return realm and ArenaAnalytics:GetRealmIndex(realm);
+	local localRealm = API:GetLocalRealm();
+	return localRealm and ArenaAnalytics:GetRealmIndex(localRealm);
 end
 
 function ArenaAnalytics:IsLocalRealm(realm)
@@ -366,7 +367,7 @@ function ArenaAnalytics:IsLocalRealm(realm)
 		realm = ArenaAnalytics:GetRealm(realm);
 	end
 
-	local _, localRealm = UnitFullName("player");
+	local localRealm = API:GetLocalRealm();
 	return realm == localRealm;
 end
 

@@ -141,7 +141,7 @@ function API:GetSpecialization(unitToken, explicit)
         return nil;
     end
 
-    if(UnitGUID(unitToken) == UnitGUID("player")) then
+    if(API:IsSelf(unitToken)) then
         local currentSpec = GetSpecialization();
 		if(currentSpec == 5) then
 			return nil;

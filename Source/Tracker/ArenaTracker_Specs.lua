@@ -40,7 +40,7 @@ function ArenaTracker:ProcessUnitAuraEvent(...)
 	if(updateInfo.addedAuras) then
 		for _,aura in ipairs(updateInfo.addedAuras) do
 			if(aura and aura.sourceUnit and aura.isFromPlayerOrPlayerPet) then
-				local sourceGUID = UnitGUID(aura.sourceUnit);
+				local sourceGUID = Helpers:UnitGUID(aura.sourceUnit);
 
 				ArenaTracker:DetectSpec(sourceGUID, aura.spellId, aura.name);
 			end
@@ -75,10 +75,10 @@ end
 function ArenaTracker:RequestPartySpecs()
 	for i = 1, currentArena.size do
 		local unitToken = "party"..i;
-		local player = ArenaTracker:GetPlayer(UnitGUID(unitToken));
+		local player = ArenaTracker:GetPlayer(Helpers:UnitGUID(unitToken));
 		if(player and not Helpers:IsSpecID(player.spec)) then
 			if(Inspection and Inspection.RequestSpec) then
-				Debug:Log("Tracker: HandlePartyUpdate requesting spec:", unitToken, UnitGUID(unitToken));
+				Debug:Log("Tracker: HandlePartyUpdate requesting spec:", unitToken, Helpers:UnitGUID(unitToken));
 				Inspection:RequestSpec(unitToken);
 			end
 		end
@@ -94,20 +94,95 @@ function ArenaTracker:DetectSpec(sourceGUID, spellID, spellName)
 	end
 
 	-- Only players matter for spec detection
-	if (not sourceGUID or not sourceGUID:find("Player-", 1, true)) then
+	if(not sourceGUID) then
+		return;
+	end
+
+	if(sourceGUID:find("Pet-", 1, true)) then
+		-- Find owner if possible
+		sourceGUID = ArenaTracker:TryFindPetOwnerGUID(sourceGUID);
+	end
+
+	if(not sourceGUID or not sourceGUID:find("Player-", 1, true)) then
 		return;
 	end
 
 	-- Check if spell belongs to spec defining spells
-	local spec_id = SpecSpells:GetSpec(spellID);
+	local spec_id, points = SpecSpells:GetSpec(spellID, spellName);
+
 	if (spec_id ~= nil) then
 		-- Check if unit should be added
-		ArenaTracker:FillMissingPlayers(sourceGUID, spec_id);
-		ArenaTracker:OnSpecDetected(sourceGUID, spec_id);
+		ArenaTracker:FillMissingPlayers(); -- sourceGUID, spec_id);		@TODO: Determine if there were any advantage to adding params for filling
+		ArenaTracker:UpdateSpecData(sourceGUID, spec_id, points);
 	end
 end
 
 
+function ArenaTracker:UpdateSpecData(playerID, spec_id, points)
+	if(not playerID or not spec_id) then
+		return;
+	end
+
+	local player = ArenaTracker:GetPlayer(playerID);
+	if(not player) then
+		return;
+	end
+
+	-- Get whether spec has been proven
+	if(Helpers:IsSpecID(player.spec) and player.spec ~= 13) then -- Preg doesn't count as a known spec
+		Debug:Log("Tracker: Keeping old spec:", player.spec, " for player: ", player.name);
+		return;
+	end
+
+	ArenaTracker:AssignSpecData(player, spec_id, points);
+end
+
+
+function ArenaTracker:AssignSpecData(player, spec_id, points)
+	if(not player) then
+		return;
+	end
+
+	-- Sanitize points
+	points = tonumber(points) or -1;
+
+	if(not player.specData) then
+		player.specData = {};
+	end
+
+	local data = player.specData;
+	data[spec_id] = tonumber(data[spec_id]) or -2;
+
+	if(data[spec_id] < points) then
+		data[spec_id] = points;
+		Debug:Log("Assigned spec data for player:", player.name, spec_id, points);
+	end
+end
+
+-- Compute spec from existing specData
+function ArenaTracker:ComputeSpec(player)
+	local data = player.specData;
+	if(not data) then
+		Debug:Log("No spec data found for player:", player.name);
+		return;
+	end
+
+	local bestSpec, bestPoints = nil, nil;
+	for spec_id, points in pairs(data) do
+		if(not bestSpec or bestSpec == 13 or not bestPoints or points > bestPoints) then
+			bestSpec = spec_id;
+			bestPoints = points;
+		end
+	end
+
+	if(bestSpec ~= player.spec and Helpers:IsSpecID(bestSpec)) then
+		Debug:Log("Updating player spec from:", player.spec, "to:", bestSpec, "for player:", player.name);
+		player.spec = bestSpec;
+	end
+end
+
+
+-- Assign explicit spec
 function ArenaTracker:OnSpecDetected(playerID, spec_id)
 	if(not playerID or not spec_id) then
 		return;

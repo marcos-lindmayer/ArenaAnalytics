@@ -250,17 +250,24 @@ end
 -------------------------------------------------------------------------
 -- afk / surrender commands
 
+SLASH_ArenaAnalyticsSurrender1 = nil;
+
 function Commands.HandleChatAfk(message)
 	Debug:Log("/afk override triggered.");
 	local surrendered = API:TrySurrenderArena("afk");
 	if(surrendered == nil) then
 		-- Fallback to base /afk
-		SendChatMessage(message, "AFK");
+		API:SendChatMessage(message, "AFK");
 	end
 end
 
 function Commands.HandleGoodGame()
 	Debug:Log("/gg triggered.");
+
+    if(not API:HasSurrenderAPI()) then
+        return nil;
+    end
+
 	API:TrySurrenderArena("gg");
 end
 

@@ -54,6 +54,9 @@ ArenaAnalytics.VersionManager = {};
 
 ArenaAnalytics.Initialization = {};
 
+-- Dev Helpers
+ArenaAnalytics.DataCollector = {};
+
 
 -------------------------------------------------------------------------
 -- Local module aliases

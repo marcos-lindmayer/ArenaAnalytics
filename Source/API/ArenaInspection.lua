@@ -6,6 +6,7 @@ local API = ArenaAnalytics.API;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local Internal = ArenaAnalytics.Internal;
 local Debug = ArenaAnalytics.Debug;
+local Helpers = ArenaAnalytics.Helpers;
 
 -------------------------------------------------------------------------
 
@@ -51,7 +52,7 @@ local function getPartyUnitToken(GUID)
 
     for i=1, 4 do
         local unitToken = "party"..i;
-        if(UnitGUID(unitToken) == GUID) then
+        if(Helpers:UnitGUID(unitToken) == GUID) then
             return unitToken;
         end
     end
@@ -66,7 +67,7 @@ function Inspection:RequestSpec(unitToken)
 
     Debug:Log("RequestSpec:", unitToken, "CanInspect", API:CanInspect(unitToken));
 
-    local GUID = UnitGUID(unitToken);
+    local GUID = Helpers:UnitGUID(unitToken);
     if(not GUID) then
         Debug:Log("RequestSpec rejected: Nil GUID.");
         return;

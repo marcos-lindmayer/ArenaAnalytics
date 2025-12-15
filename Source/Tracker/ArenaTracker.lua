@@ -17,13 +17,19 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 
 -------------------------------------------------------------------------
 
+-- ArenaEnter and Compare declaration
+ArenaTracker.stateData = {};
+
 ArenaTracker.States = {
 	None = 1,		-- Not in arena and not tracking
 	Initiated = 2,	-- Tracking initiated, awaiting battlefieldId to enter pending state
-	Pending = 3,	-- Tracking is starting up, awaiting data 
+	Pending = 3,	-- Tracking is starting up, awaiting data
 	Starting = 4,	-- HandleArenaStart in progress, not yet fully active
 	Active = 5,		-- Arena is actively being tracked
 	Ended = 6,		-- HandleArenaEnd has been triggered
+	Locked = 7,		-- Tracking complete, save required
+	Saving = 8,		-- Attempted insert to match history
+	Saved = 9,
 };
 ArenaTracker.state = ArenaTracker.States.None;
 
@@ -61,7 +67,7 @@ function ArenaTracker:GetState(stateName)
 		return self.state;
 	end
 
-	return self.States[stateName] or "Invalid";
+	return self.States[stateName] or -1;
 end
 
 
@@ -96,6 +102,11 @@ function ArenaTracker:IsInState(...)
 	end
 
 	return false;
+end
+
+
+function ArenaTracker:IsLocked()
+	return ArenaTracker:IsInState("Saving", "Locked");
 end
 
 -------------------------------------------------------------------------
@@ -140,6 +151,7 @@ function ArenaTracker:Reset()
 
 	-- Current Arena
 	currentArena.isTracking = nil;
+	currentArena.isHandlingExit = false;
 
 	currentArena.winner = nil; -- Raw winner team ID (2 = draw)
 
@@ -153,6 +165,7 @@ function ArenaTracker:Reset()
 	currentArena.hasRealStartTime = nil; -- Start time was set explicitly by gates opening
 	currentArena.startTime = nil;
 	currentArena.endTime = nil;
+	currentArena.duration = nil;
 
 	currentArena.oldRating = nil;
 	currentArena.seasonPlayed = nil;
@@ -184,10 +197,16 @@ function ArenaTracker:Reset()
 	currentArena.round.team = TablePool:Acquire();
 	currentArena.round.hasStarted = nil;
 	currentArena.round.startTime = nil;
+
+	currentArena.locked = false;
 end
 
 
-function ArenaTracker:Clear()
+function ArenaTracker:Clear(respectLock)
+	if(respectLock and ArenaTracker:IsLocked()) then
+		return;
+	end
+
 	Debug:Log("Clearing current arena.");
 
 	ArenaTracker.hasReceivedScore = nil;
@@ -269,7 +288,7 @@ end
 
 
 function ArenaTracker:GetPlayer(playerID)
-	if(not playerID or playerID == "") then
+	if(not Helpers:IsValidValue(playerID)) then
 		return nil;
 	end
 
@@ -285,8 +304,8 @@ function ArenaTracker:GetPlayer(playerID)
 			elseif(player.GUID == playerID) then
 				return player;
 			else -- Unit Token
-				local GUID = UnitGUID(playerID);
-				if(GUID and GUID == player.GUID) then
+				local GUID = Helpers:UnitGUID(playerID);
+				if(GUID and not API:IsSecretValue(GUID) and GUID == player.GUID) then
 					return player;
 				end
 			end
@@ -334,7 +353,7 @@ end
 -- Search for missing members of group (party or arena), 
 -- Adds each non-tracked player to currentArena.players table.
 -- If spec and GUID are passed, include them when creating the player table
-function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
+function ArenaTracker:FillMissingPlayers()
 	if(not currentArena.size) then
 		Debug:Log("FillMissingPlayers missing size.");
 		return;
@@ -351,20 +370,16 @@ function ArenaTracker:FillMissingPlayers(unitGUID, unitSpec)
 			local name = API:GetUnitFullName(unitToken);
 			local player = ArenaTracker:GetPlayer(name);
 			if(name and not player) then
-				local GUID = UnitGUID(unitToken);
+				local GUID = Helpers:UnitGUID(unitToken);
 				local isEnemy = (group == "arena");
-				local race_id = Helpers:GetUnitRace(unitToken);
-				local class_id = Helpers:GetUnitClass(unitToken);
-				local isFemale = Helpers:IsUnitFemale(unitToken);
-				local spec_id = GUID and GUID == unitGUID and tonumber(unitSpec);
-				Debug:Log("Creating player table. IsFemale:", isFemale);
 
 				if(GUID and name) then
-					player = ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, isFemale, (spec_id or class_id));
+					player = ArenaTracker:CreatePlayerTable(isEnemy, name, unitToken);
 					table.insert(currentArena.players, player);
 
+					Debug:Log("Creating player table. IsFemale:", player.isFemale);
+
 					if(not isEnemy and Inspection and Inspection.RequestSpec) then
-						Debug:Log(unitToken, GUID);
 						Inspection:RequestSpec(unitToken);
 					end
 				end
@@ -379,20 +394,47 @@ end
 
 
 -- Returns a table with unit information to be placed inside arena.players
-function ArenaTracker:CreatePlayerTable(isEnemy, GUID, name, race_id, isFemale, spec_id, kills, deaths, damage, healing)
-	return {
-		["isEnemy"] = isEnemy,
-		["GUID"] = GUID,
-		["name"] = name,
-		["race"] = race_id,
-		["isFemale"] = isFemale,
-		["spec"] = spec_id,
-		["kills"] = kills,
-		["deaths"] = deaths,
-		["damage"] = damage,
-		["healing"] = healing,
-		["isSelf"] = currentArena.playerName and name == currentArena.playerName or nil;
+function ArenaTracker:CreatePlayerTable(isEnemy, name, unitToken, spec_id)
+	unitToken = tostring(unitToken);
+
+	local data = {
+		isEnemy = isEnemy,
+		name = name,
+		GUID = Helpers:UnitGUID(unitToken),
+		race = Helpers:GetUnitRace(unitToken),
+		isFemale = Helpers:IsUnitFemale(unitToken),
+		spec = spec_id or Helpers:GetUnitClass(unitToken),
+
+		isSelf = currentArena.playerName and name == currentArena.playerName or nil,
+
+		unitToken = unitToken,
+		petToken = unitToken and unitToken.."pet",
 	};
+
+	return data;
+end
+
+function ArenaTracker:TryFindPetOwnerGUID(petGUID)
+	if(not API:IsInArena()) then
+		return;
+	end
+
+	if(type(currentArena.players) ~= "table") then
+		return nil;
+	end
+
+	if(not petGUID or not petGUID:find("Pet-", 1, true)) then
+		return nil;
+	end
+
+	for _,player in ipairs(currentArena.players) do
+		local petToken = player and player.petToken;
+		if(petToken and petGUID == UnitGUID(petToken)) then
+			return player.GUID;
+		end
+	end
+
+	return nil;
 end
 
 
@@ -453,6 +495,7 @@ function ArenaTracker:Initialize()
 	ArenaTracker:SetState("None");
 
 	-- Initialize submodules
+	ArenaTracker:InitializeSubmodule_Compare();
 	ArenaTracker:InitializeSubmodule_Enter();
 	ArenaTracker:InitializeSubmodule_Start();
 	ArenaTracker:InitializeSubmodule_GatesOpened();

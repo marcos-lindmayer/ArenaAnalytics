@@ -615,7 +615,7 @@ local function Refresh_Internal()
 
         if(Filters.forceNewRefresh) then
             -- Restart refresh next frame
-            C_Timer.After(0, function() Filters:Refresh_Internal() end);
+            C_Timer.After(0, Refresh_Internal);
             return;
         end
 

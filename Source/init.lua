@@ -19,6 +19,7 @@ local Debug = ArenaAnalytics.Debug;
 local MinimapButton = ArenaAnalytics.MinimapButton;
 local Commands = ArenaAnalytics.Commands;
 local Prints = ArenaAnalytics.Prints;
+local DataCollector = ArenaAnalytics.DataCollector;
 
 -------------------------------------------------------------------------
 -- This file always must be loaded last,
@@ -32,6 +33,8 @@ Events:Initialize();
 -- Initialization state
 Initialization.locked = false;
 Initialization.lastStep = 0;
+Initialization.isLogin = nil;
+Initialization.isReload = nil;
 
 Initialization.receivedEvents = {}
 
@@ -53,6 +56,13 @@ function Initialization:HandleLoadEvents(event, ...)
 
 	if(Initialization.hasLoaded) then
 		return;
+	end
+
+	if(event == "PLAYER_ENTERING_WORLD") then
+		local isLogin, isReload = ...;
+
+		Initialization.isLogin = isLogin;
+		Initialization.isReload = isReload;
 	end
 
 	if(Initialization.receivedEvents[event]) then
@@ -114,6 +124,10 @@ function stages.Step2_VariablesLoaded()
 	API:Initialize();
 	FilterTables:Initialize();
 	Filters:Initialize();
+
+	if(DataCollector.Initiate) then
+		DataCollector:Initiate();
+	end
 end
 
 
@@ -123,22 +137,30 @@ function stages.Step3_PlayerLogin()
 
 	VersionManager:OnInit();
 	AAtable:OnLoad();
+
+	ArenaTracker:Initialize();
 end
 
 
 function stages.Step4_EnteringWorld()
 	Initialization:InitiateStep(4);
-	Debug:Log("Step4_EnteringWorld");
+	Debug:Log("Step4_EnteringWorld: isLogin:", Initialization.isLogin, "isReload:", Initialization.isReload);
 
 	-- TODO: Implement to inform users of latest versions (Avoid false positives from development versions!)
 	-- Version Message (Unused)
 	if(IsInInstance() or IsInGroup(1)) then
 		--local channel = IsInInstance() and "INSTANCE_CHAT" or "PARTY";
-		--local messageSuccess = C_ChatInfo.SendAddonMessage("ArenaAnalytics", UnitGUID("player") .. "_deliver|version#?=" .. version, channel)
+		--local messageSuccess = API:SendAddonMessage("ArenaAnalytics", Helpers:UnitGUID("player") .. "_deliver|version#?=" .. version, channel)
 	end
 
 	-- Don't wait for battlefield event outside of arena, let step 5 happen immediately
 	if(not API:IsInArena()) then
+		if(ArenaTracker:IsTrackingArena(true)) then
+			ArenaTracker:Save(ArenaAnalyticsTransientDB.currentArena);
+			ArenaTracker:Clear();
+		end
+
+		Debug:Log("Skipping battlefield status event outside arena.");
 		Initialization.receivedEvents["UPDATE_BATTLEFIELD_STATUS"] = true;
 	end
 end
@@ -148,8 +170,6 @@ end
 function stages.Step5_InitiateTracking()
 	Initialization:InitiateStep(5);
 	Debug:Log("Step5_InitiateTracking()", API:IsInArena());
-
-	ArenaTracker:Initialize();
 
 	-- Force a status update and set initial wasInArena
 	Events:CheckZoneChanged(true);

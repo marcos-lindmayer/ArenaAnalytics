@@ -20,29 +20,29 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 -- Responsible for starting tracking, after event or OnLoad says so.
 -------------------------------------------------------------------------
 
-local MAX_TIMESTAMP_DIFFERENCE = 3600; -- The limit in time before forcing new tracking
 local SCORE_UPDATE_TIMEOUT = 3;
 
-local stateData = {
-	-- Current match idenfification
-	battlefieldId = nil,
-	mapId = nil,
-	bracket = nil,
-	bracketIndex = nil,
-	matchType = nil,
-	mySpec = nil,
+-- Current match idenfification
+local stateData = ArenaTracker.stateData;
+stateData.battlefieldId = nil;
+stateData.mapId = nil;
+stateData.bracket = nil;
+stateData.bracketIndex = nil;
+stateData.matchType = nil;
+stateData.mySpec = nil;
 
-	-- Season Played state
-	seasonPlayed = nil,
-	seasonPlayedConfirmed = nil,
-	isProvenSeasonPlayed = nil,
-	scoreReceived = nil,
-	scoreTimedOut = nil,
-	hasMatchEnded = nil,
+-- Season Played state
+stateData.seasonPlayed = nil;
+stateData.seasonPlayedConfirmed = nil;
+stateData.isProvenSeasonPlayed = nil;
+stateData.scoreReceived = nil;
+stateData.scoreTimedOut = nil;
+stateData.hasMatchEnded = nil;
 
-	hasRequestedRated = nil,
-	hasRequestedScore = nil,
-};
+stateData.hasRequestedRated = nil;
+stateData.hasRequestedScore = nil;
+
+stateData.isLoad = nil;
 
 -- TransientDB currentArena alias
 local currentArena = {};
@@ -52,7 +52,7 @@ end
 
 
 local function UpdatePostMatchSeasonPlayed(shouldLock)
-	if(stateData.seasonPlayedConfirmed) then
+	if(stateData.seasonPlayedConfirmed or stateData.matchType ~= "rated") then
 		return;
 	end
 
@@ -73,7 +73,7 @@ local function IsAwaitingSeasonPlayed()
 	end
 
 	if(stateData.matchType ~= "rated") then
-		return false;
+		--return false;
 	end
 
 	if(stateData.seasonPlayedConfirmed) then
@@ -201,7 +201,7 @@ function ArenaTracker:HandleArenaInitiate(isLoad)
 	Debug:LogGreen("HandleArenaInitiate triggered!");
 
 	-- Clear the old stateData
-	stateData = {};
+	wipe(ArenaTracker.stateData);
 	stateData.isLoad = isLoad;
 
 	local battlefieldId = API:GetActiveBattlefieldID();
@@ -260,69 +260,6 @@ function ArenaTracker:HandleArenaEnter(battlefieldId)
 	else
 		ArenaTracker:StartNewOrContinueTracking();
 	end
-end
-
--- Must be valid and equal on existing and new tracking
-local function CheckRequiredField(field)
-	local success = currentArena[field] and currentArena[field] == stateData[field];
-	if(not success) then
-		Debug:LogWarning("CheckRequiredField failing field:", field, currentArena[field], stateData[field]);
-	end
-	return success;
-end
-
--- Must be equal, if both existing and new tracking has a valid value
-local function CheckOptionalField(field)
-	local success = not currentArena[field] or not stateData[field] or currentArena[field] == stateData[field];
-	if(not success) then
-		Debug:LogWarning("CheckOptionalField failing field:", field, currentArena[field], stateData[field]);
-	end
-	return success;
-end
-
-function ArenaTracker:CompareExistingTracking()
-	-- Returns true if the stateData matches the currentArena, false if it needs to reset before tracking
-	assert(currentArena);
-
-	-- No point keeping, if we never started tracking
-	if(not currentArena.isTracking) then
-		Debug:Log("CompareExistingTracking forcing reset: No previous tracking.", currentArena.isTracking)
-		return false;
-	end
-
-	if(currentArena.startTime) then
-		local timeDifference = (time() - currentArena.startTime);
-		if(timeDifference > MAX_TIMESTAMP_DIFFERENCE) then
-			return false;
-		end
-	end
-
-	if(stateData.matchType == "rated" and not CheckRequiredField("seasonPlayed")) then
-		return false;
-	end
-
-	if(not CheckRequiredField("mapId")) then
-		return false;
-	end
-
-	if(not CheckRequiredField("bracket")) then
-		return false;
-	end
-
-	if(not CheckRequiredField("bracketIndex")) then
-		return false;
-	end
-
-	if(not CheckRequiredField("matchType")) then
-		return false;
-	end
-
-	if(not CheckOptionalField("mySpec")) then
-		return false;
-	end
-
-	Debug:LogGreen("CompareExistingTracking passed!");
-	return true;
 end
 
 

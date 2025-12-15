@@ -4,6 +4,7 @@ local Prints = ArenaAnalytics.Prints;
 -- Local module aliases
 local Options = ArenaAnalytics.Options;
 local Colors = ArenaAnalytics.Colors;
+local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -66,7 +67,7 @@ end
 function Prints:PrintWelcomeMessage()
 	local welcomeMessageSeed = random(1, 10000);
 
-	local name = UnitNameUnmodified("player");
+	local name = API:GetPlayerName(true) or "";
 
 	local text;
 	if(welcomeMessageSeed < 13) then

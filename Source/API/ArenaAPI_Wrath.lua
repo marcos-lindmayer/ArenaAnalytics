@@ -12,6 +12,7 @@ local Debug = ArenaAnalytics.Debug;
 -------------------------------------------------------------------------
 
 API.defaultButtonTemplate = "UIServiceButtonTemplate";
+API.legacySpecs = true;
 
 API.availableBrackets = {
 	{ name = "2v2", key = 1},
@@ -138,7 +139,7 @@ function API:GetSpecialization(unitToken, explicit)
         return nil;
     end
 
-    local isInspect = (UnitGUID(unitToken) ~= UnitGUID("player"));
+    local isInspect = not API:IsSelf(unitToken);
 
     local spec, currentSpecPoints = nil, 0;
     local isPlausiblePreg = true;
