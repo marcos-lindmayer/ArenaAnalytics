@@ -161,6 +161,44 @@ function Commands.HandleCommand_Test()
 	print(" ");
 	ArenaAnalytics:Print("================================================ ");
 
+	local name = UnitName("target");
+	local isSame = UnitIsUnit("arena2", "arena1");
+
+	Debug:Log("Unit comp:", name, isSame);
+
+	ArenaAnalytics:Print("================================================ ");
+end
+
+function Commands.HandleCommand_DumpSpecs()
+	print(" ");
+	ArenaAnalytics:Print("================================================ ");
+
+	Debug:Log("Logging Specializations..")
+
+	for classIndex=1, GetNumClasses() + 2 do
+		local className, classFile, classID = GetClassInfo(classIndex);
+		if(classFile) then
+			Debug:Log("     ", classFile);
+
+			for specIndex=1, C_SpecializationInfo.GetNumSpecializationsForClassID(classIndex) do
+				local id, name, description, icon, role, recommended, allowedForBoost, masterySpell1, masterySpell2 = GetSpecializationInfoForClassID(classIndex, specIndex);
+				local spec_id = API:GetMappedAddonSpecID(id);
+				local class, spec = ArenaAnalytics.Internal:GetClassAndSpec(spec_id);
+
+				local fakeSearchToken = {
+					value = Helpers:ToSafeLower(spec or ""),
+					explicitType = "spec",
+					exact = true,
+				};
+
+				local _, value, _, shortValue = ArenaAnalytics.Search:FindSearchValueDataForToken(fakeSearchToken);
+				if(spec_id ~= value) then
+					Debug:Log("          ", name, id, "  ///  ", class, spec, spec_id, " / ", value);
+				end
+			end
+		end
+	end
+
 	ArenaAnalytics:Print("================================================ ");
 end
 
@@ -175,8 +213,9 @@ function Commands.HandleCommand_FixDurations()
 	ArenaAnalytics:Print("Recomputed shuffle durations.");
 end
 
-function Commands.HandleCommand_Inspect(...)
-	Debug:NotifyInspectSpec(...);
+function Commands.HandleCommand_Inspect()
+	Debug:Log("Attempting debug inspection..")
+	Debug:NotifyInspectSpec("target");
 end
 
 --------------------------------------
@@ -195,9 +234,10 @@ Commands.list = {
 
 	-- Debug commands
 	["debug"] = Commands.HandleCommand_Debug,				-- Debug level
-	["dumprealms"] = Commands.HandleCommand_DumpRealms,		-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["test"] = Commands.HandleCommand_Test,					-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
 	["dump"] = Commands.HandleCommand_Dump,					-- Debugging: Used to gather zone and version info from users helping with version update.
+	["dumprealms"] = Commands.HandleCommand_DumpRealms,		-- Debugging: Used for temporary explicit triggering of logic, for testing purposes.
+	["dumpspecs"] = Commands.HandleCommand_DumpSpecs,
 
 	-- Conversions
 	["convert"] = Commands.HandleCommand_Convert,

@@ -243,8 +243,6 @@ function API:GetWinner()
     end
 
     local winner = GetBattlefieldWinner();
-    Debug:Log("API:GetWinner:", winner);
-
     if(winner == 255) then
         return 2; -- Draw
     end

@@ -56,6 +56,8 @@ end
 
 -- Gates opened, match has officially started
 function ArenaTracker:HandleArenaGatesOpened(...)
+	Debug:Log("ArenaTracker:HandleArenaGatesOpened() triggered!");
+
 	currentArena.startTime = time();
 	currentArena.hasRealStartTime = true; -- The start time has been set by gates opened
 

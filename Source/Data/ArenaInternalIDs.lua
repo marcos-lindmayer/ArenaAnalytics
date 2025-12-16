@@ -134,6 +134,7 @@ local addonRaceIDs = {
     [23] = { token = "Earthen",              name = "Earthen" },
     [25] = { token = "KulTiran",             name = "Kul Tiran" },
     [27] = { token = "Mechagnome",           name = "Mechagnome" },
+    [29] = { token = "Haranir",              name = "Haranir" },
 
     [2]  = { token = "Orc",                  name = "Orc" },
     [4]  = { token = "Undead",               name = "Undead" },
@@ -149,6 +150,7 @@ local addonRaceIDs = {
     [24] = { token = "Earthen",              name = "Earthen" },
     [26] = { token = "ZandalariTroll",       name = "Zandalari Troll" },
     [28] = { token = "Vulpera",              name = "Vulpera" },
+    [30] = { token = "Haranir",              name = "Haranir" },
 };
 
 function Internal:GetAddonRaceIDByToken(token, factionIndex)
@@ -351,6 +353,7 @@ function InitializeSpecIDs()
         [110] = { role = roles.melee },
         [111] = { spec = "Vengeance", role = roles.melee_tank },
         [112] = { spec = "Havoc", role = roles.melee_damager },
+        [113] = { spec = "Devourer", role = roles.melee_damager },
 
         -- Evoker
         [120] = { role = roles.caster },

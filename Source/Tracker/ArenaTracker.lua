@@ -364,24 +364,22 @@ function ArenaTracker:FillMissingPlayers()
 	end
 
 	for _,group in ipairs({"party", "arena"}) do
-		for i = 1, currentArena.size do
+		local count = (group == "party") and currentArena.size - 1 or currentArena.size;
+		for i = 1, count do
 			local unitToken = group..i;
 
 			local name = API:GetUnitFullName(unitToken);
 			local player = ArenaTracker:GetPlayer(name);
 			if(name and not player) then
-				local GUID = Helpers:UnitGUID(unitToken);
 				local isEnemy = (group == "arena");
 
-				if(GUID and name) then
-					player = ArenaTracker:CreatePlayerTable(isEnemy, name, unitToken);
-					table.insert(currentArena.players, player);
+				player = ArenaTracker:CreatePlayerTable(isEnemy, name, unitToken);
+				table.insert(currentArena.players, player);
 
-					Debug:Log("Creating player table. IsFemale:", player.isFemale);
+				Debug:Log("Creating player table.", name, "IsFemale:", player.isFemale);
 
-					if(not isEnemy and Inspection and Inspection.RequestSpec) then
-						Inspection:RequestSpec(unitToken);
-					end
+				if(not isEnemy and Inspection and Inspection.RequestSpec) then
+					Inspection:RequestSpec(unitToken);
 				end
 			end
 		end
@@ -439,6 +437,8 @@ end
 
 
 function ArenaTracker:HandlePartyUpdate()
+	Debug:Log("ArenaTracker:HandlePartyUpdate()")
+
 	if (not API:IsInArena()) then
 		return;
 	end

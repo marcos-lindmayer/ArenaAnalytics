@@ -504,7 +504,7 @@ end
 -- Check Match for Search
 ---------------------------------
 
-local function CheckSearchPassInternal(match)
+local function CheckSearchPass_Internal(match)
     if(#activeSearchData.segments == 0) then
         return true;
     end
@@ -538,7 +538,7 @@ end
 function Search:DoesMatchPassSearch(match)
     --debugprofilestart();
 
-    local result = CheckSearchPassInternal(match);
+    local result = CheckSearchPass_Internal(match);
 
     --Debug:Log("Search pass elapsed:", debugprofilestop());
 

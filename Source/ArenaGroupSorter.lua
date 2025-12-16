@@ -73,6 +73,7 @@ local specPriorities = {
     -- Demon Hunter
     111,-- Vengeance Demon Hunter (Melee Tank)
     112,-- Havoc Demon Hunter (Melee DPS)
+    113,-- Devourer Demon Hunter (Mid-range DPS)
 
     -- Warrior
     81, -- Protection Warrior (Melee Tank)

@@ -79,6 +79,7 @@ local neutralRaceRedirects = {
     [14] = 13,
     [16] = 15,
     [24] = 23,
+    [30] = 29,
 };
 
 function Search:GetNormalizedRace(race_id)
@@ -90,6 +91,7 @@ local ambiguousSpecMappings = {
     [-2] = { 1, 21 },
     [-3] = { 11, 92 },
     [-4] = { 12, 81 },
+    [-5] = { 113, 123 },
 };
 
 -- Get a shared id for ambiguous
@@ -146,10 +148,11 @@ local SearchTokenTypeTable = {
         noSpace = false,
         values = {
             -- Ambiguous
-            [-1] = { "frost" },                 -- frost (mage or DK)
+            [-1] = { "frost" },                 -- (Mage or DK)
             [-2] = { "restoration", "resto" },  -- (Shaman or Druid)
             [-3] = { "holy" },                  -- (Pala or Priest)
             [-4] = { "protection", "prot" },    -- (Pala or Warrior)
+            [-5] = { "dev" },                   -- (Devastation or Devourer)
 
             -- Druid
             [1] = { "restoration druid", "resto druid", "rdruid", "rd" },
@@ -212,11 +215,12 @@ local SearchTokenTypeTable = {
             -- Demon Hunter
             [111] = { "vengeance", "vdh" },
             [112] = { "havoc", "hdh" },
+            [113] = { "devourer", "devo" },
 
             -- Evoker
             [121] = { "preservation", "prevoker", "pres" },
             [122] = { "augmentation", "augvoker", "aug" },
-            [123] = { "devastation", "devoker", "dev" },
+            [123] = { "devastation", "devoker", "deva" },
         },
     },
     ["race"] = {
@@ -247,6 +251,7 @@ local SearchTokenTypeTable = {
             [26] = { "zandalari troll", "zandalaritroll", "ztroll" },
             [27] = { "mechagnome", "mgnome" },
             [28] = { "vulpera" },
+            [29] = { "haranir" }, -- Also matches 30, by neutralRaceRedirects table
         }
     },
     ["faction"] = {

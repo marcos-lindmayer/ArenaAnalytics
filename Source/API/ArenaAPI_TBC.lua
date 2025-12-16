@@ -14,11 +14,13 @@ local Debug = ArenaAnalytics.Debug;
 API.defaultButtonTemplate = "UIPanelButtonTemplate"; --"UIServiceButtonTemplate";
 API.legacySpecs = true;
 
+
 API.availableBrackets = {
 	{ name = "2v2", key = 1},
 	{ name = "3v3", key = 2},
 	{ name = "5v5", key = 3},
 };
+
 
 API.availableMaps = {
     "BladesEdgeArena",
@@ -26,9 +28,11 @@ API.availableMaps = {
     "RuinsOfLordaeron",
 };
 
+
 function API:IsRatedArena()
     return API:IsInArena() and C_PvP.IsRatedMap() and not API:IsWargame() and not API:IsSkirmish();
 end
+
 
 function API:GetBattlefieldStatus(battlefieldId)
     if(not battlefieldId) then
@@ -44,6 +48,7 @@ function API:GetBattlefieldStatus(battlefieldId)
     return status, bracket, teamSize, matchType;
 end
 
+
 function API:GetPersonalRatedInfo(bracketIndex)
     bracketIndex = tonumber(bracketIndex);
     if(not bracketIndex) then
@@ -58,6 +63,7 @@ function API:GetPersonalRatedInfo(bracketIndex)
     local rating,_,_,seasonPlayed = GetPersonalRatedInfo(bracketIndex);
     return tonumber(rating), tonumber(seasonPlayed);
 end
+
 
 function API:GetPlayerScore(index)
     local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(index);
@@ -81,20 +87,6 @@ function API:GetPlayerScore(index)
     return score;
 end
 
---[[
-local specByIndex = {
-    ["DRUID"] = { 3, 2, 1 }, -- Balance, Feral, Resto
-    ["PALADIN"] = { 11, 12, 14 }, -- Holy, Prot, Ret
-    ["SHAMAN"] = { 22, 23, 21 }, -- Ele, Enh, Resto
-    ["DEATHKNIGHT"] = { 33, 32, 31 }, -- Blood, Frost, Unholy
-    ["HUNTER"] = { 41, 42, 43 }, -- BM, MM, Surv
-    ["MAGE"] = { 53, 52, 51 }, -- Arcane, Fire, Frost
-    ["ROGUE"] = { 62, 63, 61 }, -- Assa, Combat, Sub
-    ["WARLOCK"] = { 71, 73, 72 }, -- Affli, Demo, Destro
-    ["WARRIOR"] = { 82, 83, 81 }, -- Arms, Fury, Prot
-    ["PRIEST"] = { 91, 92, 93 }, -- Disc, Holy, Shadow
-};
---]]
 
 local function getPointsSpent(index, isInspect)
     if(isInspect) then
@@ -105,6 +97,7 @@ local function getPointsSpent(index, isInspect)
     local id, name, _, _, pointsSpent = GetTalentTabInfo(index);
     return tonumber(id), tonumber(pointsSpent), name;
 end
+
 
 local function checkPlausiblePreg(spec_id, pointsSpent)
     if(pointsSpent > 45) then
@@ -126,6 +119,7 @@ local function checkPlausiblePreg(spec_id, pointsSpent)
     -- No change to plausibility proven
     return true;
 end
+
 
 -- Get local player current spec
 function API:GetSpecialization(unitToken, explicit)
@@ -226,6 +220,7 @@ API.specMappingTable = {
     [202] = 92, -- Holy Priest
     [203] = 93, -- Shadow Priest
 };
+
 
 -------------------------------------------------------------------------
 -- Overrides

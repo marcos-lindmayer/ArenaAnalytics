@@ -46,7 +46,7 @@ local globalEvents = {
 	"PVP_RATED_STATS_UPDATE",
 	"UPDATE_BATTLEFIELD_STATUS",
 
-	--"INSPECT_READY", -- Used when testing inspection
+	"INSPECT_READY", -- Used when testing inspection
 };
 
 -- Register an event as a response to a 

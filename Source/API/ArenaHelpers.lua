@@ -296,5 +296,5 @@ end
 
 function Helpers:UnitGUID(...)
     local GUID = UnitGUID(...);
-    return GUID and not API:IsSecretValue(GUID) and GUID;
+    return not API:IsSecretValue(GUID) and GUID;
 end

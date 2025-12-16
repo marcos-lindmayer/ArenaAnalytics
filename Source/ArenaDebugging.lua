@@ -259,6 +259,7 @@ function Debug:NotifyInspectSpec(unitToken)
 
     unitToken = unitToken or "target";
     if(not API:CanInspect(unitToken)) then
+        Debug:Log("Rejecting inspect by API:CanInspect for unit:", unitToken);
         return;
     end
 

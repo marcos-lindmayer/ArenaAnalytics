@@ -15,6 +15,7 @@ local Debug = ArenaAnalytics.Debug;
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
 API.showPerPlayerRatedInfo = true;
 API.useThirdTooltipBackdrop = true;
+API.enableInspection = true;
 API.hasDampening = true;
 
 API.excludedEvents = { ["COMBAT_LOG_EVENT_UNFILTERED"] = true }
@@ -207,6 +208,7 @@ API.specMappingTable = {
 
     [581] = 111, -- Vengeance Demon Hunter
     [577] = 112, -- Havoc Demon Hunter
+    [1480] = 113, -- Devourer Demon Hunter
 
     [1468] = 121, -- Preservation Evoker
     [1473] = 122, -- Augmentation Evoker

@@ -433,6 +433,18 @@ local raceMapping = {
         zhTW = {  },
         zhCN = { "狐人" },
     },
+    Haranir = {
+        enGB = { "Haranir", "Harronir" },
+        esES = {  },
+        deDE = {  },
+        frFR = {  },
+        itIT = {  },
+        ptBR = {  },
+        ruRU = {  },
+        koKR = {  },
+        zhTW = {  },
+        zhCN = {  },
+    },
 };
 
 local raceLookupTable = nil;
