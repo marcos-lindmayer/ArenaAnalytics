@@ -2,6 +2,8 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
 local API = ArenaAnalytics.API;
 
+if not ArenaAnalytics.isMidnight then return end; -- @TEMP: Awaiting AllowLoadGameType midnight
+
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;

@@ -101,7 +101,8 @@ end
 
 
 function API:IsSelf(unitToken)
-    return API:GetUnitFullName(unitToken) == API:GetPlayerName()
+    return unitToken and UnitIsUnit(unitToken, "player");
+    -- return API:GetUnitFullName(unitToken) == API:GetPlayerName();
 end
 
 

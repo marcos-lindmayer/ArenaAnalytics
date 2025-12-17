@@ -64,6 +64,7 @@ function ArenaTracker:HandleOpponentUpdate()
 			if(player) then
 				if(not Helpers:IsSpecID(player.spec)) then
 					local spec_id = API:GetArenaPlayerSpec(i, true);
+					Debug:Log("Assigning spec for:", unitToken, spec_id);
 					ArenaTracker:OnSpecDetected(unitToken, spec_id);
 				end
 			end

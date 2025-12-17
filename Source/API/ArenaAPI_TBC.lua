@@ -13,6 +13,7 @@ local Debug = ArenaAnalytics.Debug;
 
 API.defaultButtonTemplate = "UIPanelButtonTemplate"; --"UIServiceButtonTemplate";
 API.legacySpecs = true;
+--API.enableInspection = true;  -- @TODO: Find a way to inspect specialization in TBC
 
 
 API.availableBrackets = {

@@ -70,6 +70,7 @@ end
 -- Handle a player's death, through death or kill credit message
 function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
 	if(playerGUID == nil) then
+		Debug:LogWarning("HandlePlayerDeath called with invalid GUID.");
 		return;
 	end
 
@@ -89,16 +90,14 @@ function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
 
 	-- Store death
 	local deathData = ArenaTracker:GetDeathData();
-	local death = deathData[playerGUID] or TablePool:Acquire();
+	local death = type(deathData[playerGUID]) == "table" and deathData[playerGUID] or TablePool:Acquire();
 	death.time = time();
 	death.name = name;
 	death.isHunter = (class == "HUNTER") or nil;
 	death.hasKillCredit = isKillCredit or death.hasKillCredit;
 
-	-- Validate that this is always true
-	Debug:Assert(type(death) == "table");
-
 	deathData[playerGUID] = death;
+	Debug:LogGreen("Assigned death:", death.name, playerGUID);
 
 	if(ArenaTracker:IsTrackingShuffle() and (isKillCredit or class ~= "HUNTER")) then
 		C_Timer.After(0, ArenaTracker.HandleRoundEnd);
@@ -109,11 +108,13 @@ end
 -- Commits current deaths to player stats (May be overridden by scoreboard, if value is trusted for the expansion)
 function ArenaTracker:CommitDeaths()
 	local deathData = ArenaTracker:GetDeathData();
-	for GUID,data in pairs(deathData) do
-		local player = ArenaTracker:GetPlayer(GUID);
+	for key,data in pairs(deathData) do
+		local player = ArenaTracker:GetPlayer(key);
 		if(player and data) then
 			-- Increment deaths
 			player.deaths = (player.deaths or 0) + 1;
+		else
+			Debug:LogWarning("ArenaTracker:CommitDeaths failed to assign deaths for player:", player and player.name, key);
 		end
 	end
 
@@ -143,7 +144,7 @@ function ArenaTracker:GetFirstDeathFromCurrentArena()
 	end
 
 	if(not bestKey or not deathData[bestKey]) then
-		Debug:Log("Death data missing from currentArena.");
+		Debug:Log("Death data missing from currentArena. HasKey:", bestKey ~= nil);
 		return nil;
 	end
 

@@ -1,6 +1,12 @@
 local _, ArenaAnalytics = ...; -- Namespace
 
 -------------------------------------------------------------------------
+
+local tocVersion = (select(4, GetBuildInfo()) or -1);
+ArenaAnalytics.isTWW = tocVersion >= 110000 and tocVersion < 120000;
+ArenaAnalytics.isMidnight = tocVersion >= 120000;
+
+-------------------------------------------------------------------------
 -- Declare Module Namespaces
 
 ArenaAnalytics.Colors = {};
