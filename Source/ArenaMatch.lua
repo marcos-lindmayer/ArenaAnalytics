@@ -389,9 +389,9 @@ end
 
 -- rated, skirmish or wargame
 function ArenaMatch:GetMatchType(match)
-    if(not match) then 
-        return nil 
-    end;
+    if(not match) then
+        return nil;
+    end
 
     local typeIndex = match and tonumber(match[matchKeys.match_type]);
     return ArenaAnalytics:GetMatchType(typeIndex);
@@ -411,10 +411,10 @@ end
 -- Party Rating (6)
 
 function ArenaMatch:GetPartyRating(match)
-    if(not match) then 
-        return nil 
-    end;
-    
+    if(not match) then
+        return nil;
+    end
+
     local key = matchKeys.rating;
     return match and tonumber(match[key]);
 end

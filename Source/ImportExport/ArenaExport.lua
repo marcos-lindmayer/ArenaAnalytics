@@ -2,195 +2,447 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local Export = ArenaAnalytics.Export;
 
 -- Local module aliases
-local AAtable = ArenaAnalytics.AAtable;
+local Internal = ArenaAnalytics.Internal;
+local ArenaMatch = ArenaAnalytics.ArenaMatch;
+local Bitmap = ArenaAnalytics.Bitmap;
+local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
-
 -- ArenaAnalytics export
 
--- TODO: Improve the export format
 --[[
-    New line (\n) for separating matches.
-    Comma (;) for separating value types (Date,Bracket,Teams,etc).
-    Slash (,) for separating player entries (Player1/Player2/... etc).
-    Pipe (|) for separating specific player values (Zeetrax-Ravencrest|NightElf|91|... etc).
 
-    NOTE: Assume any value may be nil, when unknown or non-applicable!
+  Functions:
+    - Begin(exportFormat)
+    - Stop
+    - Process
 
-    Format:
-        Date
-        Season
-        Session
-        Map             (English Token?)
-        Bracket         ("2s", "3s", "5s", "shuffle")
-        MatchType       ("rated", "skirm", "wg")
-        Duration        (Number)
-        Outcome         ("W", "L", "D")
-        Team            (Team structure)
-        EnemyTeam       (Team structure)
-        RatedInfo       (RatedInfo structure)
-        Rounds          (List of Round structures)
-
-    Structures:
-        Teams:  List of / separated players
-            Player: (| separated values)
-                FullName    (name-realm)
-                bitmask     (1=isFirstDeath, 2=isEnemy, 4=isSelf)
-                Race        (English Token)
-                SpecID      (Addon spec_id, see addonSpecializationIDs table in Data/ArenaInternalIDs.lua)
-                RoleBitmap  (1=tank, 2=dps, 4=healer, 8=melee, 16=ranged, 32=caster)
-                Kills       (Number)
-                Deaths      (Number)
-                Damage      (Number)
-                Healing     (Number)
-                Wins        (Number)
-                Rating      (Number)
-                RatingDelta (Number)
-                Mmr         (Number)
-                MmrDelta    (Number)
-        RatedInfo:  List of / separated rating values   [Rated only!]
-            Rating
-            RatingDelta
-            Mmr
-            EnemyRating
-            EnemyRatingDelta
-            EnemyMMR
-        Rounds  List of / separated round structures    [Shuffles only!]
-            Round:  (| separated round values)
-                Team        (Index string, e.g., "35" = enemy index 3 and 5 are on your team. Self is implicit.)
-                Enemy       (Index string, e.g., "124" = enemy index 1, 2 and 4 are on your team.)
-                FirstDeath  (Enemy index of the first death. 0 = self)
-                Duration    (Number)
-                isWin       (1 = true, 0=loss, nil=unknown)
-            
 --]]
 
-local exportPrefix = "ArenaAnalytics:" ..
--- Match data
-"date,season,player,playerSpec,bracket,map,duration,outcome,matchType,rating,ratingDelta,mmr,enemyRating,enemyRatingDelta,enemyMMR,firstDeath,"..
+local BATCH_TIME_LIMIT = 0.01;
 
--- Team data
-"party1Name,party2Name,party3Name,party4Name,party5Name,"..
-"party1Race,party2Race,party3Race,party4Race,party5Race,"..
-"party1Class,party2Class,party3Class,party4Class,party5Class,"..
-"party1Spec,party2Spec,party3Spec,party4Spec,party5Spec,"..
-"party1Kills,party2Kills,party3Kills,party4Kills,party5Kills,"..
-"party1Deaths,party2Deaths,party3Deaths,party4Deaths,party5Deaths,"..
-"party1Damage,party2Damage,party3Damage,party4Damage,party5Damage,"..
-"party1Healing,party2Healing,party3Healing,party4Healing,party5Healing,"..
+Export.formats = {
+    None = -1,
+    Compact = 1,
+    CSV = 2,
+};
 
--- Enemy Team Data
-"enemy1Name,enemy2Name,enemy3Name,enemy4Name,enemy5Name,"..
-"enemy1Race,enemy2Race,enemy3Race,enemy4Race,enemy5Race,"..
-"enemy1Class,enemy2Class,enemy3Class,enemy4Class,enemy5Class,"..
-"enemy1Spec,enemy2Spec,enemy3Spec,enemy4Spec,enemy5Spec,"..
-"enemy1Kills,enemy2Kills,enemy3Kills,enemy4Kills,enemy5Kills,"..
-"enemy1Deaths,enemy2Deaths,enemy3Deaths,enemy4Deaths,enemy5Deaths,"..
-"enemy1Damage,enemy2Damage,enemy3Damage,enemy4Damage,enemy5Damage,"..
-"enemy1Healing,enemy2Healing,enemy3Healing,enemy4Healing,enemy5Healing"..
-"\n";
+local states = {
+    None = 0,
+    Starting = 1,
+    Exporting = 2,  -- Currently exporting
+    Finished = 3,   -- Export completed
+    Aborted = 4,    -- Aborting export
+    Locked = 5,     -- Blocking new export / Showing last export
+};
 
--- Returns a CSV-formatted string using ArenaAnalyticsDB info
-function Export:combineExportCSV()
-    if(not ArenaAnalytics:HasStoredMatches()) then
-        Debug:Log("Export: No games to export!");
-        return "No games to export!";
-    end
 
-    if(ArenaAnalyticsScrollFrame.exportDialogFrame) then
-        ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
-    end
+Export.state = states.None;
+Export.startTime = nil;
+Export.index = nil;
+Export.skippedArenaCount = nil;
 
-    local exportTable = {}
-    tinsert(exportTable, exportPrefix);
+Export.format = nil;
+Export.processorFunc = nil;
 
-    Export:addMatchesToExport(exportTable)
+Export.combinedString = nil;
+
+
+function Export:GetState()
+    return Export.state;
 end
 
-function Export:addMatchesToExport(exportTable, nextIndex)
-    Debug:Log("Attempting export.. addMatchesToExport", nextIndex);
+function Export:IsExporting()
+    return Export.state == states.Starting or Export.state == states.Exporting;
+end
 
-    nextIndex = nextIndex or 1;
-    
-    local playerData = {"name", "race", "class", "spec", "kills", "deaths", "damage", "healing"};
-    
-    local arenasAddedThisFrame = 0;
-    for i = nextIndex, #ArenaAnalyticsDB do
-        local match = ArenaAnalyticsDB[i];
-        
-        local victory = match["won"] ~= nil and (match["won"] and "1" or "0") or "";
-        
-        -- Add match data
-        local matchCSV = match["date"] .. ","
-        .. (match["season"] or "") .. ","
-        .. (match["bracket"] or "") .. ","
-        .. (match["map"] or "") .. ","
-        .. (match["duration"] or "") .. ","
-        .. victory .. ","
-        .. (match["isRated"] and "1" or "0") .. ","
-        .. (match["rating"] or "").. ","
-        .. (match["ratingDelta"] or "").. ","
-        .. (match["mmr"] or "") .. ","
-        .. (match["enemyRating"] or "") .. ","
-        .. (match["enemyRatingDelta"] or "").. ","
-        .. (match["enemyMmr"] or "") .. ","
-        .. (match["firstDeath"] or "") .. ","
-        .. (match["player"] or "") .. ","
+-------------------------------------------------------------------------
 
-        -- Add team data 
-        local teams = {"team", "enemyTeam"};
-        for _,teamKey in ipairs(teams) do
-            local team = match[teamKey];
+local function UpdateProcessorFunc()
+    if(Export.format == Export.formats.CSV) then
+        Export.processorFunc = nil;
+    elseif(Export.format == Export.formats.Compact) then
+        Export.processorFunc = nil;
+    else
+        Export.processorFunc = nil;
+    end
+end
 
-            for _,dataKey in ipairs(playerData) do
-                for i=1, 5 do
-                    local player = team and team[i] or nil;
-                    if(player ~= nil) then
-                        matchCSV = matchCSV .. (player[dataKey] or "");
-                    end
 
-                    matchCSV = matchCSV .. ",";
-                end
+local function CallProcessorFunc(index)
+    if(not Export.processorFunc) then
+        return;
+    end
+
+    Export:UpdateFormattedMatch(index);
+
+    return Export.processorFunc(index);
+end
+
+
+function Export:Start(exportFormat)
+    local currentState = Export:GetState();
+    if(currentState ~= states.None) then
+        Debug:Log("Export rejected: Invalid current state:", currentState);
+        return;
+    end
+
+    if(not exportFormat) then
+        Debug:Log("Export rejected: No format specified.");
+        return;
+    end
+
+    Export.state = states.Starting;
+
+    Export.index = 1;
+    Export.startTime = time();
+    Export.format = exportFormat;
+    Export.combinedString = "";
+    Export.skippedArenaCount = 0;
+
+    UpdateProcessorFunc();
+
+    local function ProcessBatch()
+        local batchEndTime = GetTimePreciseSec() + BATCH_TIME_LIMIT;
+
+        while Export:IsExporting() and GetTimePreciseSec() < batchEndTime do
+            local matchString = CallProcessorFunc(Export.index);
+            if(matchString) then
+                -- Add to combined export string
+                Export.combinedString = Export.combinedString .. matchString;
+            else
+                Export.skippedArenaCount = Export.skippedArenaCount + 1;
             end
         end
 
-        tinsert(exportTable, matchCSV);
-
-        arenasAddedThisFrame = arenasAddedThisFrame + 1;
-
-        if(arenasAddedThisFrame >= 10000 and i < #ArenaAnalyticsDB) then
-            C_Timer.After(0, function() Export:addMatchesToExport(exportTable, i + 1) end);
+        if(Export:GetState() == states.Aborted) then
+            -- Reset & Hide UI
+            Export:Reset();
             return;
+        end
+
+        if(Export:IsExporting()) then
+            Export.index = Export.index + 1;
+
+            if(Export.index > #ArenaAnalyticsDB) then
+                Export.state = states.Finished;
+            end
+        end
+
+        if(Export:GetState() == states.Finished) then
+            -- Finalize & provide combined export string
+            Export:Finalize();
+            return;
+        end
+
+        C_Timer.After(0, ProcessBatch);
+    end
+
+    if(Export.state ~= states.Starting) then
+        Export:Reset();
+        return;
+    end
+
+    -- Begin export
+    Export.state = states.Exporting;
+    C_Timer.After(0, ProcessBatch);
+end
+
+
+function Export:Stop()
+    if(not Export:IsExporting()) then
+        return;
+    end
+
+    Export.isExporting = false;
+end
+
+
+function Export:Abort()
+    if(Export:IsExporting()) then
+        Export.state = states.Aborted;
+    end
+end
+
+
+function Export:Finalize()
+    Export.state = states.Locked;
+
+    -- TODO: Hide progress frame
+    -- TODO: Show export frame
+end
+
+
+function Export:Reset()
+    Export:Hide();
+    Export.combinedString = nil;
+end
+
+
+function Export:Hide()
+
+end
+
+-------------------------------------------------------------------------
+--  @TODO: Implement formatted match table
+
+-- Match
+    -- MatchData
+    -- Players
+    -- RatedInfo
+    -- Rounds
+
+Export.formattedMatch = {};
+local formattedMatch = Export.formattedMatch;
+
+-- Helper functions
+local outcomes = { "L", "W", "D" };
+local function GetOutcome(outcome)
+    return outcome and outcomes[outcome] or "";
+end
+
+local genders = { "F", "M" };
+local function GetGender(player)
+    local gender = ArenaMatch:IsPlayerFemale(player);
+    gender = gender and genders[gender] or "";
+end
+
+local factions = { "A", "H" };
+local function GetFaction(race_id)
+    local faction = Internal:GetRaceFactionIndex(race_id);
+    return faction and factions[faction] or "";
+end
+
+local function GetTeam(player, isEnemy, isShuffle)
+    if(ArenaMatch:IsPlayerSelf(player)) then
+        return "self";
+    elseif(not isShuffle) then
+        return isEnemy and "enemy" or "ally";
+    end
+
+    return "";
+end
+
+local function GetClassAndSpec(player)
+    local spec_id = ArenaMatch:GetPlayerSpec(player);
+    local class, spec = Internal:GetClassAndSpec(spec_id);
+    return (class or ""), (spec or "");
+end
+
+local function GetRole(player)
+    local role_bitmap = ArenaMatch:GetPlayerRole(player);
+    local _,role = Bitmap:GetMainRole(role_bitmap);
+    local _,subRole = Bitmap:GetSubRole(role_bitmap);
+
+    return (role or ""), (subRole or "");
+end
+
+
+function Export:ResetFormattedMatch()
+    TablePool:Release(formattedMatch.RatedInfo);
+
+    if(formattedMatch.Players) then
+        -- Release players
+
+        TablePool:Release(formattedMatch.Players);
+    end
+
+    TablePool:Release(formattedMatch.Rounds);
+
+    wipe(formattedMatch)
+end
+
+function Export:UpdateFormattedMatch(index)
+    local index = tonumber(index);
+    local match = index and ArenaAnalyticsDB[index];
+    if(not match) then
+        Export:ResetFormattedMatch();
+        return;
+    end
+
+    local isShuffle = ArenaMatch:IsShuffle(match);
+
+    -- Match Data
+    formattedMatch.date = ArenaMatch:GetDate(match) or "";
+    formattedMatch.season = ArenaMatch:GetSeason(match) or "";
+    formattedMatch.seasonPlayed = ArenaMatch:GetSeasonPlayed(match) or "";
+    formattedMatch.map = ArenaMatch:GetMap(match) or "";
+    formattedMatch.bracket = ArenaMatch:GetBracket(match) or "";
+    formattedMatch.matchType = ArenaMatch:GetMatchType(match) or "";
+    formattedMatch.duration = ArenaMatch:GetDuration(match) or "";
+    formattedMatch.outcome = GetOutcome(ArenaMatch:GetMatchOutcome(match));
+    formattedMatch.dampening = nil; -- NYI
+    formattedMatch.queueTime = nil; -- NYI
+
+    -- Rated Info
+    formattedMatch.ratedInfo = Export:GetFormattedRatedInfo(match);
+
+    -- Players
+    formattedMatch.players = Export:GetFormattedPlayers(match, isShuffle);
+
+    -- Rounds
+    if(isShuffle) then
+        formattedMatch.rounds = Export:GetFormattedRounds(match);
+    else
+        formattedMatch.rounds = nil;
+    end
+end
+
+
+function Export:GetFormattedRatedInfo(match)
+    if(not ArenaMatch:IsRated(match)) then
+        return;
+    end
+
+    local ratedInfo = TablePool:Acquire();
+    ratedInfo.rating = ArenaMatch:GetPartyRating(match);
+    ratedInfo.ratingDelta = ArenaMatch:GetPartyRatingDelta(match);
+    ratedInfo.mmr = ArenaMatch:GetPartyMMR(match);
+
+    ratedInfo.enemyRating = ArenaMatch:GetEnemyRating(match);
+    ratedInfo.enemyRatingDelta = ArenaMatch:GetEnemyRatingDelta(match);
+    ratedInfo.enemyMmr = ArenaMatch:GetEnemyMMR(match);
+
+    return ratedInfo;
+end
+
+
+local function FormatPlayer(player, isEnemy, isShuffle)
+    local playerTable = TablePool:Acquire();
+    local race_id = ArenaMatch:GetPlayerRace(player);
+
+    local isFirstDeath = ArenaMatch:isFirstDeath(player);
+
+    playerTable.name = ArenaMatch:GetPlayerFullName(player) or "";
+    playerTable.race = ArenaMatch:GetRace(race_id) or "";
+    playerTable.faction = GetFaction(race_id);
+    playerTable.team = GetTeam(player, isEnemy, isShuffle); -- Self, Ally, Enemy
+    playerTable.isFirstDeath = isFirstDeath and "1" or ""; -- TODO: Y, N, ""?
+    playerTable.gender = GetGender(player);
+    playerTable.class, playerTable.spec = GetClassAndSpec(player);
+    playerTable.role, playerTable.subRole = GetRole(player);
+
+    local kills, deaths, damage, healing = ArenaMatch:GetPlayerStats(player);
+    playerTable.kills = tonumber(kills) or "";
+    playerTable.deaths = tonumber(deaths) or "";
+    playerTable.damage = tonumber(damage) or "";
+    playerTable.healing = tonumber(healing) or "";
+
+    playerTable.wins = isShuffle and tonumber(ArenaMatch:GetPlayerVariableStats(player)) or "";
+
+    local rating, ratingDelta, mmr, mmrDelta = ArenaMatch:GetPlayerRatedInfo(player);
+    playerTable.rating = rating or "";
+    playerTable.ratingDelta = ratingDelta or "";
+    playerTable.mmr = mmr or "";
+    playerTable.mmrDelta = mmrDelta or "";
+
+    return TablePool, isFirstDeath;
+end
+
+function Export:GetFormattedPlayers(match, isShuffle)
+    local players = TablePool:Acquire();
+
+    local teams = {"team", "enemyTeam"};
+    for _,teamKey in ipairs(teams) do
+        local team = match[teamKey];
+        local isEnemy = not isShuffle and (teamKey == "enemyTeam") or nil;
+
+        for i=1, 5 do
+            local player = team and team[i] or nil;
+            local formattedPlayer, isFirstDeath = FormatPlayer(player, isShuffle, isEnemy);
+            tinsert(players, formattedPlayer);
+
+            if(isFirstDeath) then
+                formattedMatch.firstDeath = formattedPlayer.name;
+                formattedMatch.firstDeathIndex = #players;
+            end
         end
     end
 
-    Export:FinalizeExportCSV(exportTable);
+    return players;
 end
 
-local function formatNumber(num)
-    assert(num ~= nil);
-    local left,num,right = string.match(num,'^([^%d]*%d)(%d*)(.-)')
-    return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
-end
+local function GetPlayerIndex(player)
+    local playerName = ArenaMatch:GetPlayerFullName(player);
 
-function Export:FinalizeExportCSV(exportTable)
-    Debug:Log("Attempting export.. FinalizeExportCSV");
-
-    -- Show export with the new CSV string
-    if (ArenaAnalytics:HasStoredMatches()) then
-        AAtable:CreateExportDialogFrame();
-        ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetText(table.concat(exportTable, "\n"));
-	    ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:HighlightText();
-
-        ArenaAnalyticsScrollFrame.exportDialogFrame.totalText:SetText("Total arenas: " .. formatNumber(#exportTable - 1));
-        ArenaAnalyticsScrollFrame.exportDialogFrame.lengthText:SetText("Export length: " .. formatNumber(#ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:GetText()));
-        ArenaAnalyticsScrollFrame.exportDialogFrame:Show();
-    elseif(ArenaAnalyticsScrollFrame.exportDialogFrame) then
-        ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
+    for i,player in ipairs(formattedMatch.players) do
+        if(player.name == playerName) then
+            return i;
+        end
     end
 
-    exportTable = nil;
-    collectgarbage("collect");
-    Debug:Log("Garbage Collection forced by Export finalize.");
+    return nil;
+end
+
+local function FormatRound(allies, enemies, firstDeath, duration, outcome)
+    local round = TablePool:Acquire();
+
+    round.duration = tonumber(duration) or "";
+    round.outcome = GetOutcome(outcome);
+    round.firstDeath = firstDeath and "Y" or "";
+    round.allies = allies;
+    round.enemies = enemies;
+
+end
+
+function Export:GetFormattedRounds(match)
+    local formattedRounds = TablePool:Acquire();
+
+    local selfPlayer = ArenaMatch:GetSelf(match);
+    local players = ArenaMatch:GetTeam(match, true);
+
+    local currentRounds = ArenaMatch:GetRounds(match);
+    for roundIndex=1, 6 do
+        local roundFrame = self.rounds[roundIndex];
+        assert(roundFrame, "ShuffleTooltip should always have 6 round frames!" .. (self.rounds and #self.rounds or "nil"));
+
+        local deaths = TablePool:Acquire();
+        local allies = TablePool:Acquire();
+        local enemies = TablePool:Acquire();
+
+        local roundData = currentRounds and ArenaMatch:GetRoundDataRaw(currentRounds[roundIndex]);
+        if(roundData) then
+            local team, enemy, firstDeath, duration, outcome = ArenaMatch:SplitRoundData(roundData);
+
+            if(firstDeath) then
+                deaths[firstDeath] = (deaths[firstDeath] or 0) + 1;
+            end
+
+            for i=1, 3 do
+                local index;
+
+                -- Deconstruct compact team (210) where each index is a player index, and match the values to firstDeath index.
+                if(type(team) == "string") then
+                    local playerIndex = (i == 0) and 0 or tonumber(team:sub(i,i));
+                    if(playerIndex) then
+                        local player = (playerIndex == 0) and selfPlayer or players[playerIndex];
+                        index = GetPlayerIndex(player);
+                    end
+                end
+
+                allies[i] = index or "";
+            end
+
+            for i=1, 3 do
+                local index;
+
+                -- Deconstruct compact enemy team (345) where each index is a player index, and match the values to firstDeath index.
+                if(type(enemy) == "string") then
+                    local playerIndex = tonumber(enemy:sub(i,i));
+                    if(playerIndex) then
+                        local player = players[playerIndex];
+                        index = GetPlayerIndex(player);
+                    end
+                end
+
+                enemies[i] = index or "";
+            end
+
+            -- Fill round
+            tinsert(formattedRounds, FormatRound(allies, enemies, firstDeath, duration, outcome));
+        end
+    end
+
+    return formattedRounds;
 end

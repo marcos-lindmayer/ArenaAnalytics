@@ -341,7 +341,7 @@ function PlayerTooltip:SetInfo(race_id, spec_id)
 end
 
 function PlayerTooltip:SetFaction(race_id)
-    local faction = tonumber(race_id) and tonumber(race_id) % 2;
+    local faction = Internal:GetRaceFactionIndex(race_id);
 
     local texture = "";
     if(faction == 0) then

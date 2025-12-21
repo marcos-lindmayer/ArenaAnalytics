@@ -27,6 +27,8 @@ Format: (Comma separated)
     MatchType       ("rated", "skirm", "wg")
     Duration        (Number)
     Outcome         ("W", "L", "D")
+    Dampening       (NOT YET IMPLEMENTED)
+    QueueTime       (NOT YET IMPLEMENTED)
     RatedInfo       (RatedInfo structure)
     Players         (Team structure)
     Rounds          (List of Round structures)
@@ -42,15 +44,15 @@ Structures:
     Teams:  List of Slash / separated players
         Player: (Colon : separated values)
             FullName        (name-realm)
+            isSelf          (boolean : 1 / nil)
+            isEnemy         (boolean : 1 / 0)
+            isFirstDeath    (boolean : 1 / nil)
             Race            (English Token)
-            isFemale        (boolean : 1 / 0 / nil)
+            Gender          (String : "F", "M", nil)
             Class           (English Token)
             Spec            (English Token)
             role            ("tank", "healer", "dps")
             sub_role        ("melee", "ranged", "caster")
-            isEnemy         (boolean : 1 / 0)
-            isSelf          (boolean : 1 / nil)
-            isFirstDeath    (boolean : 1 / nil)
             Kills           (Number)
             Deaths          (Number)
             Damage          (Number)
@@ -70,7 +72,7 @@ Structures:
 --]]
 
 -- Includes trailing comma, and expects ";\n" added at the end of the prefix and every match line.
-local exportPrefix = "ArenaAnalyticsExport_Compact:Date,Season,SeasonPlayed,Map,Bracket,MatchType,Duration,Outcome,RatedInfo,Players,Rounds,";
+local exportPrefix = "ArenaAnalyticsExport_Compact:Date,Season,SeasonPlayed,Map,Bracket,MatchType,Duration,Outcome,Dampening,QueueTime,RatedInfo,Players,Rounds,";
 
 -- Returns a CSV-formatted string using ArenaAnalyticsDB info
 function Export:combineExportCSV()

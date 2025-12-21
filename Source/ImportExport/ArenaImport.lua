@@ -41,7 +41,7 @@ local ImportProgressFrame = ArenaAnalytics.ImportProgressFrame;
 -------------------------------------------------------------------------
 
 -- Processing
-local batchTimeLimit = 0.01;
+local BATCH_TIME_LIMIT = 0.01;
 
 Import.isImporting = false;
 Import.raw = nil;
@@ -114,7 +114,7 @@ function Import:ProcessImportSource()
     end
 
     Import.current = newImportData;
-    return false;
+    return isValid;
 end
 
 function Import:SetPastedInput(pasteBuffer)
@@ -221,7 +221,7 @@ function Import:ProcessImport()
 
     -- Batched proccessing
     local function ProcessBatch()
-        local batchEndTime = GetTimePreciseSec() + batchTimeLimit;
+        local batchEndTime = GetTimePreciseSec() + BATCH_TIME_LIMIT;
 
         while GetTimePreciseSec() < batchEndTime do
             if(not Import.isImporting) then

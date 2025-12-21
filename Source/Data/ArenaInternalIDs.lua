@@ -186,6 +186,11 @@ function Internal:GetRace(race_id)
     return info.name;
 end
 
+function Internal:GetRaceFactionIndex(race_id)
+    race_id = tonumber(race_id);
+    return race_id and race_id % 2 or nil;
+end
+
 function Internal:GetRaceFaction(race_id)
     race_id = tonumber(race_id);
     if(not race_id) then
