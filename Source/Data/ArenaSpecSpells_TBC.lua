@@ -214,7 +214,7 @@ local specSpells = {
     -- Arcane
     [ 47000 ] = data(53, 21); -- Improved Blink [Rank 1]
     [ 46989 ] = data(53, 21); -- Improved Blink [Rank 2]
-    [ 12043 ] = data(53, 21); -- Presence of Mind
+    --[ 12043 ] = data(53, 21); -- Presence of Mind
     [ 12042 ] = data(53, 31); -- Arcane Power
     [ 31589 ] = data(53, 41); -- Slow
 
