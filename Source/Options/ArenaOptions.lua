@@ -13,6 +13,7 @@ local ImportBox = ArenaAnalytics.ImportBox;
 local Debug = ArenaAnalytics.Debug;
 local Commands = ArenaAnalytics.Commands;
 local Colors = ArenaAnalytics.Colors;
+local Export = ArenaAnalytics.Export;
 
 -------------------------------------------------------------------------
 
@@ -772,8 +773,8 @@ function SetupTab_ImportExport()
 
     parent.tabHeader = CreateHeader("Import / Export", TabHeaderSize, parent, nil, 15, -15);
 
-    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() end);
-    parent.exportButton:Disable(); -- TODO: Add export
+    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() Export:Start(Export.formats.Compact) end);
+    -- parent.exportButton:Disable(); -- TODO: Add export
     parent.exportButton.tooltip = { "ArenaAnalytics Export", "Not Yet Implemented" }
 
     CreateSpace();

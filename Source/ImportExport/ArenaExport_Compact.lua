@@ -3,6 +3,7 @@ local Export = ArenaAnalytics.Export;
 
 -- Local module aliases
 local AAtable = ArenaAnalytics.AAtable;
+local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -11,7 +12,7 @@ local Debug = ArenaAnalytics.Debug;
 
 -- TODO: Improve the export format
 --[[
-Semi-colon + New line   (;\n) for separating matches.
+Semi-colon + New line   (\n) for separating matches.
 Comma                   (,) for separating value types (Date,Bracket,Teams,etc).
 Slash                   (/) for separating player entries (Player1/Player2/... etc).
 Colon                   (:) for separating specific player values (Zeetrax-Ravencrest|NightElf|91|... etc).
@@ -68,112 +69,128 @@ Structures:
             EnemyIndices    (Index string, e.g., "124" = enemy index 1, 2 and 4 are on your team.)
             FirstDeath      (Enemy index of the first death. 0 = self)
             Duration        (Number)
-            isWin           (boolean : 1 = true, 0=loss, nil=unknown)
+            outcome         ("W", "L", "D", nil)
 --]]
 
--- Includes trailing comma, and expects ";\n" added at the end of the prefix and every match line.
-local exportPrefix = "ArenaAnalyticsExport_Compact:Date,Season,SeasonPlayed,Map,Bracket,MatchType,Duration,Outcome,Dampening,QueueTime,RatedInfo,Players,Rounds,";
+-- ArenaAnalytics_Compact export format:
+Export.exportPrefix_Compact = "ArenaAnalyticsExport_Compact:Date,Season,SeasonPlayed,Map,Bracket,MatchType,Duration,Outcome,FirstDeath,Dampening,QueueTime,RatedInfo,Players,Rounds,";
 
--- Returns a CSV-formatted string using ArenaAnalyticsDB info
-function Export:combineExportCSV()
-    if(not ArenaAnalytics:HasStoredMatches()) then
-        Debug:Log("Export: No games to export!");
-        return "No games to export!";
+Export.fieldCount_Compact = Export:CountFields(Export.exportPrefix_Compact);
+
+-- Reusable output table
+local outputTable = {};
+
+local baseKeys = { "date", "season", "seasonPlayed", "map", "bracket", "matchType", "duration", "outcome", "firstDeath", "dampening", "queueTime" };
+local baseDummy = Export:MakeDummyString(#baseKeys);
+local function GetBaseString(formattedMatch)
+    wipe(outputTable);
+
+    for i,key in ipairs(baseKeys) do
+        tinsert(outputTable, formattedMatch[key] or "");
     end
 
-    if(ArenaAnalyticsScrollFrame.exportDialogFrame) then
-        ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
-    end
-
-    local exportTable = {}
-    tinsert(exportTable, exportPrefix);
-
-    Export:addMatchesToExport(exportTable)
+    return table.concat(outputTable, ",");
 end
 
-function Export:addMatchesToExport(exportTable, nextIndex)
-    Debug:Log("Attempting export.. addMatchesToExport", nextIndex);
+local ratedInfoKeys = { "rating", "ratingDelta", "mmr", "enemyRating", "enemyRatingDelta", "enemyMmr" };
+local ratedInfoDummy = Export:MakeDummyString(#ratedInfoKeys);
+local function GetRatedInfo(ratedInfo)
+    if(type(ratedInfo) ~= "table") then
+        return "";
+    end
 
-    nextIndex = nextIndex or 1;
+    wipe(outputTable);
 
-    local playerData = {"name", "race", "class", "spec", "kills", "deaths", "damage", "healing"};
+    for i,key in ipairs(ratedInfoKeys) do
+        tinsert(outputTable, (ratedInfo[key] or ""));
+    end
 
-    local arenasAddedThisFrame = 0;
-    for i = nextIndex, #ArenaAnalyticsDB do
-        local match = ArenaAnalyticsDB[i];
+    return table.concat(outputTable, "/");
+end
 
-        local victory = match["won"] ~= nil and (match["won"] and "1" or "0") or "";
 
-        -- Add match data
-        local matchCSV = match["date"] .. ","
-        .. (match["season"] or "") .. ","
-        .. (match["bracket"] or "") .. ","
-        .. (match["map"] or "") .. ","
-        .. (match["duration"] or "") .. ","
-        .. victory .. ","
-        .. (match["isRated"] and "1" or "0") .. ","
-        .. (match["rating"] or "").. ","
-        .. (match["ratingDelta"] or "").. ","
-        .. (match["mmr"] or "") .. ","
-        .. (match["enemyRating"] or "") .. ","
-        .. (match["enemyRatingDelta"] or "").. ","
-        .. (match["enemyMmr"] or "") .. ","
-        .. (match["firstDeath"] or "") .. ","
-        .. (match["player"] or "") .. ","
+local playerKeys  = { "name", "race", "faction", "team", "gender", "class", "spec", "role", "subRole", "kills", "deaths", "damage", "healing", "wins", "rating", "ratingDelta", "mmr", "mmrDelta" };
+local playerDummy = Export:MakeDummyString(#playerKeys);
+local function GetPlayerString(player)
+    if(type(player) ~= "table") then
+        return "";
+    end
 
-        -- Add team data 
-        local teams = {"team", "enemyTeam"};
-        for _,teamKey in ipairs(teams) do
-            local team = match[teamKey];
+    wipe(outputTable);
 
-            for _,dataKey in ipairs(playerData) do
-                for i=1, 5 do
-                    local player = team and team[i] or nil;
-                    if(player ~= nil) then
-                        matchCSV = matchCSV .. (player[dataKey] or "");
-                    end
+    for i,key in ipairs(playerKeys) do
+        tinsert(outputTable, (player[key] or ""));
+    end
 
-                    matchCSV = matchCSV .. ",";
-                end
+    return table.concat(outputTable, ":");
+end
+
+
+local roundKeys = { "duration", "outcome", "firstDeath" };
+local roundDummy = Export:MakeDummyString(#roundKeys + 6);
+local function GetRoundString(round)
+    if(type(round) ~= "table") then
+        return "";
+    end
+
+    wipe(outputTable);
+
+    for _,key in ipairs(roundKeys) do
+        tinsert(outputTable, (round[key] or ""));
+    end
+
+    -- 3 allies
+    for _,ally in ipairs(round.allies) do
+        tinsert(outputTable, (ally or ""));
+    end
+
+    -- 3 enemies
+    for _,enemy in ipairs(round.enemies) do
+        tinsert(outputTable, (enemy or ""));
+    end
+
+    return table.concat(outputTable, ":");
+end
+
+local values = {};
+local parts = {};
+function Export:ProcessMatch_Compact()
+    local formattedMatch = Export.formattedMatch;
+    if(not formattedMatch or not formattedMatch.isValid) then
+        return;
+    end
+
+    -- Base match fields
+    tinsert(parts, GetBaseString(formattedMatch));
+
+    -- Rated info
+    tinsert(parts, (formattedMatch.isRated and GetRatedInfo(formattedMatch.ratedInfo) or ""));
+
+    -- Add players
+    if(type(formattedMatch.players) == "table") then
+        for i,player in ipairs(formattedMatch.players) do
+            tinsert(values, GetPlayerString(player));
+        end
+    end
+    tinsert(parts, table.concat(values, "/"));
+
+    wipe(values);
+
+    -- For each round
+    if(formattedMatch.isShuffle) then
+        if(type(formattedMatch.rounds) == "table") then
+            for i,round in ipairs(formattedMatch.rounds) do
+                tinsert(values, GetRoundString(round));
             end
         end
-
-        tinsert(exportTable, matchCSV);
-
-        arenasAddedThisFrame = arenasAddedThisFrame + 1;
-
-        if(arenasAddedThisFrame >= 10000 and i < #ArenaAnalyticsDB) then
-            C_Timer.After(0, function() Export:addMatchesToExport(exportTable, i + 1) end);
-            return;
-        end
     end
+    tinsert(parts, table.concat(values, "/"));
 
-    Export:FinalizeExportCSV(exportTable);
-end
+    wipe(values);
 
-local function formatNumber(num)
-    assert(num ~= nil);
-    local left,num,right = string.match(num,'^([^%d]*%d)(%d*)(.-)')
-    return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
-end
+    local matchCompact = table.concat(parts, ",") .. ",";
+    wipe(parts);
 
-function Export:FinalizeExportCSV(exportTable)
-    Debug:Log("Attempting export.. FinalizeExportCSV");
-
-    -- Show export with the new CSV string
-    if (ArenaAnalytics:HasStoredMatches()) then
-        AAtable:CreateExportDialogFrame();
-        ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetText(table.concat(exportTable, "\n"));
-	    ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:HighlightText();
-
-        ArenaAnalyticsScrollFrame.exportDialogFrame.totalText:SetText("Total arenas: " .. formatNumber(#exportTable - 1));
-        ArenaAnalyticsScrollFrame.exportDialogFrame.lengthText:SetText("Export length: " .. formatNumber(#ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:GetText()));
-        ArenaAnalyticsScrollFrame.exportDialogFrame:Show();
-    elseif(ArenaAnalyticsScrollFrame.exportDialogFrame) then
-        ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
-    end
-
-    exportTable = nil;
-    collectgarbage("collect");
-    Debug:Log("Garbage Collection forced by Export finalize.");
+    Debug:Log("Export match:", #matchCompact, Export:CountFields(matchCompact));
+    return matchCompact;
 end

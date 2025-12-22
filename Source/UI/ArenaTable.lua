@@ -11,6 +11,7 @@ local Dropdown = ArenaAnalytics.Dropdown;
 local Selection = ArenaAnalytics.Selection;
 local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
+local Export = ArenaAnalytics.Export;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
 local Constants = ArenaAnalytics.Constants;
@@ -348,6 +349,7 @@ function AAtable:CreateExportDialogFrame()
 			-- Garbage collect
 			self:SetText("");
             ArenaAnalyticsScrollFrame.exportDialogFrame = nil;
+            Export:Reset();
             Debug:Log("Export Frame going away..")
             collectgarbage("collect");
             Debug:Log("Garbage Collection forced by export frame.");
