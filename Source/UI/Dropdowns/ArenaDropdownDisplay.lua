@@ -257,7 +257,7 @@ function Display.SetComp(dropdownContext, display)
         totalWidth = totalWidth + 5;
     end
 
-    containerFrame:SetWidth(totalWidth);
+    containerFrame:SetWidth(totalWidth or 0);
 
     display:AddFrame(containerFrame, "CENTER", offsetX);
 end

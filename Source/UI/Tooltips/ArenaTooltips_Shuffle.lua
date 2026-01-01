@@ -343,7 +343,7 @@ function ShuffleTooltip:SetMatch(match)
     -- Set total wins text
     ArenaAnalytics:SetFrameText(self.winsText, "Wins: " .. wins, hex);
 
-    local newHeight = newHeight + #self.bottomStatTexts * 15 + 10;
+    newHeight = newHeight + #self.bottomStatTexts * 15 + 10;
 
     -- Update dynamic background height
     self.frame:SetHeight(newHeight);

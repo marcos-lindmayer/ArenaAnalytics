@@ -188,6 +188,7 @@ local function GetOrCreateSingleton()
 
         self.quickSearchContainer = CreateFrame("Frame", nil, self.frame);
         self.quickSearchContainer:SetPoint("TOPLEFT", self.statsContainer, "BOTTOMLEFT");
+        self.quickSearchContainer.desiredHeight = 0;
         self.quickSearchContainer:SetHeight(0);
 
         Debug:Log("Created new Player Tooltip singleton!");
@@ -305,7 +306,7 @@ function PlayerTooltip:UpdateQuickSearchVisibility()
     end
 
     if(self.shouldShowShortcuts) then
-        container:SetHeight(container.desiredHeight);
+        container:SetHeight(container.desiredHeight or 0);
         container:Show();
     else
         container:SetHeight(0);

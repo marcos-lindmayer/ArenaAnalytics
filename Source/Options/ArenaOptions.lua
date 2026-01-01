@@ -213,7 +213,16 @@ function Options:Get(setting)
         return nil;
     end
 
-    return value;
+    return tonumber(value) or value;
+end
+
+function Options:GetText(setting)
+    local text = tostring(Options:Get(setting));
+    return text or "";
+end
+
+function Options:GetBool(setting)
+    return Options:Get(setting) and true or false;
 end
 
 function Options:Set(setting, value)
@@ -365,11 +374,11 @@ local function CreateCheckbox(setting, parent, x, text, func)
     checkbox.text:SetTextHeight(TextSize);
     checkbox.text:SetText(text or "");
 
-    checkbox:SetChecked(Options:Get(setting));
+    checkbox:SetChecked(Options:GetBool(setting));
 
     checkbox:SetScript("OnClick", function()
 		Options:Set(setting, checkbox:GetChecked());
-        
+
         if(func) then
             func(setting);
         end
@@ -393,9 +402,9 @@ local function CreateInputBox(setting, parent, x, text, func)
     inputBox:SetNumeric();
     inputBox:SetAutoFocus(false);
     inputBox:SetMaxLetters(5);
-    inputBox:SetText(tonumber(Options:Get(setting)) or "");
+    inputBox:SetText(Options:GetText(setting));
     inputBox:SetCursorPosition(0);
-    inputBox:HighlightText(0,0);    
+    inputBox:HighlightText(0,0);
 
     -- Text
     inputBox.text = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -408,7 +417,7 @@ local function CreateInputBox(setting, parent, x, text, func)
     end);
 
     inputBox:SetScript("OnEscapePressed", function(self)
-		inputBox:SetText(Options:Get(setting) or "");
+		inputBox:SetText(Options:GetText(setting));
         self:ClearFocus();
     end);
 
@@ -416,7 +425,7 @@ local function CreateInputBox(setting, parent, x, text, func)
 		local oldValue = Helpers:ToSafeNumber(Options:Get(setting));
 		local newValue = Helpers:ToSafeNumber(inputBox:GetText());
         Options:Set(setting, newValue or oldValue)
-		inputBox:SetText(tonumber(Options:Get(setting)) or "");
+		inputBox:SetText(Options:GetText(setting));
         inputBox:SetCursorPosition(0);
 		inputBox:HighlightText(0,0);
 
@@ -773,9 +782,8 @@ function SetupTab_ImportExport()
 
     parent.tabHeader = CreateHeader("Import / Export", TabHeaderSize, parent, nil, 15, -15);
 
-    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() Export:Start(Export.formats.Compact) end);
-    -- parent.exportButton:Disable(); -- TODO: Add export
-    parent.exportButton.tooltip = { "ArenaAnalytics Export", "Not Yet Implemented" }
+    parent.exportButton = CreateButton(nil, parent, offsetX, 120, "Export", function() Export:Start(Export.formats.CSV) end);
+    parent.exportButton.tooltip = { "ArenaAnalytics Export", "Export as CSV." };
 
     CreateSpace();
 

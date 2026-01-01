@@ -2,7 +2,7 @@
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
 ## Author: Lingo, Zeetrax
-## Version: 1.2.1b
+## Version: 1.2.1c
 ## IconTexture: Interface\Icons\achievement_arena_3v3_7
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsSharedSettingsDB, ArenaAnalyticsDevData

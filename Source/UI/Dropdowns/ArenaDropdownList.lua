@@ -122,7 +122,7 @@ function List:AddEntries(entries)
     local desiredWidth = ceil(max(width, longestEntryWidth)) + desiredBuffer;
 
     for _,entry in ipairs(self.entryFrames) do
-        entry:SetWidth(desiredWidth);
+        entry:SetWidth(desiredWidth or 0);
     end
 
     self.scrollFrame.content:SetHeight(accumulatedHeight);

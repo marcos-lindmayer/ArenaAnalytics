@@ -142,7 +142,7 @@ function EntryFrame:Refresh()
 
     self.display:Refresh();
 
-    local desiredWidth = max(self.width, self:ComputeMinimumWidth());
+    local desiredWidth = max(self.width, self:ComputeMinimumWidth(), 0);
     self:SetWidth(desiredWidth);
 end
 
@@ -268,7 +268,7 @@ function EntryFrame:GetWidth()
 end
 
 function EntryFrame:SetWidth(width)
-    self.btn:SetWidth(width);
+    self.btn:SetWidth(tonumber(width) or 0);
 end
 
 -- Height
@@ -277,7 +277,7 @@ function EntryFrame:GetHeight()
 end
 
 function EntryFrame:SetHeight(height)
-    self.btn:SetHeight(height);
+    self.btn:SetHeight(tonumber(height) or 0);
 end
 
 ---------------------------------
