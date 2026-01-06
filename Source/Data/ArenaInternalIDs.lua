@@ -7,6 +7,7 @@ local Constants = ArenaAnalytics.Constants;
 local Bitmap = ArenaAnalytics.Bitmap;
 local API = ArenaAnalytics.API;
 local Debug = ArenaAnalytics.Debug;
+local TablePool = ArenaAnalytics.TablePool;
 
 -------------------------------------------------------------------------
 -- Maps
@@ -52,7 +53,7 @@ function Internal:GetMapToken(mapID)
     return token;
 end
 
-local addonMapIDs = {
+Internal.addonMapIDs = {
     [1]  =  { token = "BladesEdgeArena", shortName = "BEA", name = "Blade's Edge Arena" },
     [2]  =  { token = "RuinsOfLordaeron", shortName = "RoL", name = "Ruins of Lordaeron" },
     [3]  =  { token = "NagrandArena", shortName = "NA", name = "Nagrand Arena" },
@@ -67,7 +68,7 @@ local addonMapIDs = {
     [9]  =  { token = "BlackRookHoldArena", shortName = "BRH", name = "Black Rook Hold Arena" },
 
     [10] =  { token = "HookPoint", shortName = "HP", name = "Hook Point" },
-    [11] =  { token = "KulTirasArena", shortName = "KTA", name = "Kul Tiras Arena" },
+    [11] =  { token = "KulTirasArena", shortName = "KTA", name = "Kul Tiras Arena" }, -- Non-existent arena? (Hook Point by wrong name?)
     [12] =  { token = "Mugambala", shortName = "M", name = "Mugambala" },
     [13] =  { token = "TheRobodrome", shortName = "TR", name = "The Robodrome" },
 
@@ -79,39 +80,52 @@ local addonMapIDs = {
     [18] =  { token = "CageOfCarnage", shortName = "CoC", name = "Cage of Carnage" },
 };
 
-function Internal:GetAddonMapID(map)
-    if(tonumber(map)) then
-        map = Internal:GetMapToken(map);
-    end
+Internal.mapLookupTable = {};
 
-    if(not map) then
-        return nil;
-    end
+local function fillMapLookupTable()
+    local keys = { "token", "shortName", "name" };
 
-    map = Helpers:ToSafeLower(map);
+    for map_id, data in pairs(Internal.addonMapIDs) do
+        -- Support silently continuing from provided map_id.
+        Internal.mapLookupTable[map_id] = tonumber(map_id);
 
-    for map_id, data in pairs(addonMapIDs) do
-        assert(data and data.token);
-
-        if(map == Helpers:ToSafeLower(data.token)) then
-            return tonumber(map_id);
-        elseif(map == Helpers:ToSafeLower(data.shortName)) then
-            return tonumber(map_id);
-        elseif(map == Helpers:ToSafeLower(data.name)) then
-            return tonumber(map_id);
+        for i,key in ipairs(keys) do
+            local value = Helpers:ToSafeLower(data[key]);
+            if(Helpers:IsValidValue(value)) then
+                Internal.mapLookupTable[value] = tonumber(map_id);
+            end
         end
     end
 
-    return nil;
+    -- Add game map IDs to addon map_id mapping
+    for mapID,token in pairs(mapTokens) do
+        assert(mapID and Internal.addonMapIDs[mapID] == nil, "Game map ID found overlapping with addon ID, breaks assumptions.");
+
+        token = Helpers:ToSafeLower(token);
+        local spec_id = Internal.mapLookupTable[token];
+
+        if(not spec_id) then
+            Debug:LogWarning("Failed to find spec_id for map token:", token);
+        end
+
+        Internal.mapLookupTable[mapID] = tonumber(spec_id);
+    end
+end
+fillMapLookupTable();
+
+
+function Internal:GetAddonMapID(map)
+    map = tonumber(map) or Helpers:ToSafeLower(map);
+    return map and tonumber(Internal.mapLookupTable[map]);
 end
 
 function Internal:GetShortMapName(map_id)
-    local mapInfo = map_id and addonMapIDs[map_id];
+    local mapInfo = map_id and Internal.addonMapIDs[map_id];
     return mapInfo and mapInfo.shortName;
 end
 
 function Internal:GetMapName(map_id)
-    local mapInfo = map_id and addonMapIDs[map_id];
+    local mapInfo = map_id and Internal.addonMapIDs[map_id];
     return mapInfo and mapInfo.name;
 end
 
@@ -152,6 +166,22 @@ local addonRaceIDs = {
     [28] = { token = "Vulpera",              name = "Vulpera" },
     [30] = { token = "Haranir",              name = "Haranir" },
 };
+
+Internal.raceLookupTable = {};
+
+local function fillRaceLookupTable()
+    local keys = { "token", "name" };
+
+    for race_id, data in pairs(addonRaceIDs) do
+        for i,key in ipairs(keys) do
+            local value = Helpers:ToSafeLower(data[key]);
+            if(Helpers:IsValidValue(value)) then
+                Internal.raceLookupTable[value] = tonumber(race_id);
+            end
+        end
+    end
+end
+fillRaceLookupTable();
 
 function Internal:GetAddonRaceIDByToken(token, factionIndex)
     if(not token) then
@@ -212,7 +242,7 @@ end
 -------------------------------------------------------------------------
 -- Class indexes
 
-local addonClassIDs = {
+Internal.addonClassIDs = {
     [0]   = { token = "DRUID",        name = "Druid" },
     [10]  = { token = "PALADIN",      name = "Paladin" },
     [20]  = { token = "SHAMAN",       name = "Shaman" },
@@ -228,6 +258,29 @@ local addonClassIDs = {
     [120] = { token = "EVOKER",       name = "Evoker" },
 };
 
+Internal.classLookupTable = {};
+
+local function fillClassLookupTable()
+    local keys = { "token", "name" };
+
+    for class_id, data in pairs(Internal.addonClassIDs) do
+        for i,key in ipairs(keys) do
+            local value = Helpers:ToSafeLower(data[key]);
+            if(Helpers:IsValidValue(value)) then
+                Internal.classLookupTable[value] = tonumber(class_id);
+            end
+        end
+
+        Internal.classLookupTable[class_id] = tonumber(class_id);
+    end
+end
+fillClassLookupTable();
+
+function Internal:LookupClassID(class)
+    class = tonumber(class) or Helpers:ToSafeLower(class);
+    return class and tonumber(Internal.classLookupTable[class]);
+end
+
 function Internal:GetAddonClassID(class)
     if(class == nil) then
         return nil;
@@ -235,7 +288,7 @@ function Internal:GetAddonClassID(class)
 
     class = Helpers:ToSafeLower(class);
 
-    for class_id,data in pairs(addonClassIDs) do
+    for class_id,data in pairs(Internal.addonClassIDs) do
         if(class == Helpers:ToSafeLower(data.token) or class == Helpers:ToSafeLower(data.name)) then
             return tonumber(class_id);
         end
@@ -249,7 +302,7 @@ function Internal:GetClassInfo(class_id)
         return nil;
     end
 
-    return addonClassIDs[class_id];
+    return Internal.addonClassIDs[class_id];
 end
 
 function Internal:GetClassColor(spec_id)
@@ -270,7 +323,7 @@ function Internal:GetClassIcon(spec_id)
         return "Interface\\Icons\\spell_deathknight_classicon";
     end
 
-    local classInfo = addonClassIDs[class_id];
+    local classInfo = Internal.addonClassIDs[class_id];
     local classToken = classInfo and classInfo.token;
     return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or nil;
 end
@@ -278,7 +331,37 @@ end
 -------------------------------------------------------------------------
 -- Specialization IDs
 
-local addonSpecializationIDs = nil;
+local addonSpecializationIDs = {};
+Internal.specLookupTable = {};
+
+local function fillSpecLookupTable()
+    local function InsertAmbiguousSpec(ambiguousTable, spec_id)
+        if(Helpers:IsSpecID(spec_id)) then
+            local class = Helpers:GetClassID(spec_id);
+            if(class) then
+                ambiguousTable[class] = tonumber(spec_id);
+            end
+        end
+    end
+
+
+    for spec_id, data in pairs(addonSpecializationIDs) do
+        local value = Helpers:ToSafeLower(data["spec"]);
+        if(Helpers:IsValidValue(value) and Helpers:IsSpecID(spec_id)) then
+            local existingSpec = Internal.specLookupTable[value];
+
+            if(existingSpec ~= nil) then
+                local ambiguousTable = type(existingSpec) == "table" and existingSpec or {};
+                InsertAmbiguousSpec(ambiguousTable, existingSpec);
+                InsertAmbiguousSpec(ambiguousTable, spec_id);
+
+                Internal.specLookupTable[value] = ambiguousTable;
+            else
+                Internal.specLookupTable[value] = tonumber(spec_id);
+            end
+        end
+    end
+end
 
 function InitializeSpecIDs()
     assert(Bitmap.roles);
@@ -366,7 +449,33 @@ function InitializeSpecIDs()
         [122] = { spec = "Augmentation", role = roles.caster_damager },
         [123] = { spec = "Devastation", role = roles.caster_damager },
     };
+
+    fillSpecLookupTable();
 end
+
+
+function Internal:LookupSpecID(class, spec, requireSpec)
+    if(requireSpec and not Helpers:IsValidValue(spec)) then
+        return nil;
+    end
+
+    spec = Helpers:ToSafeLower(spec);
+    local value = spec and Internal.specLookupTable[spec];
+
+    local class_id = tonumber(class) or Internal:LookupClassID(class);
+    if(class_id) then
+        if(type(value) == "table") then
+            value = class_id and value[class_id];
+        end
+
+        if(not value and not requireSpec) then
+            return class_id;
+        end
+    end
+
+    return tonumber(value);
+end
+
 
 -- Get the ID from string class and spec. (For import and version control)
 function Internal:GetSpecFromSpecString(class_id, spec, forceExactSpec)
@@ -444,13 +553,13 @@ function Internal:GetClassAndSpec(spec_id)
     end
 
     if(Helpers:IsClassID(spec_id)) then
-        local classInfo = addonClassIDs[spec_id];
+        local classInfo = Internal.addonClassIDs[spec_id];
         return classInfo and classInfo.name;
     end
 
     -- Class
     local class_id = Helpers:GetClassID(spec_id)
-    local classInfo = addonClassIDs[class_id];
+    local classInfo = Internal.addonClassIDs[class_id];
     local class = classInfo and classInfo.name;
 
     -- Spec

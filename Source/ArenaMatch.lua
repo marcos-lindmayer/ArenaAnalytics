@@ -623,7 +623,7 @@ function ArenaMatch:AddPlayer(match, player)
         player.name = name;
         player.realm = realm;
     else
-        Debug:Log("Warning: Adding player to stored match without name!");
+        Debug:LogWarning("Adding player to stored match without name!");
     end
 
     local newPlayer = ArenaMatch:MakeCompactPlayerData(player);

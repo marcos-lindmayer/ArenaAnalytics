@@ -36,7 +36,6 @@ function Import:CheckDataSource_ArenaStatsWrath(outImportData)
     -- Get arena count
     outImportData.isValid = true;
     outImportData.sourceName = sourceName;
-    outImportData.prefixLength = #formatPrefix;
     outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsWrath;
     return true;
 end
@@ -117,7 +116,7 @@ function Import.ProcessNextMatch_ArenaStatsWrath(arenaString)
     local newArena = TablePool:Acquire();
 
     -- Set basic arena properties
-    newArena.isRated = Import:RetrieveBool(cachedValues[1]);
+    newArena.matchType = Import:RetrieveBool(cachedValues[1]) and "rated" or "skirmish";
 
     newArena.date = date;
     newArena.map = tonumber(cachedValues[4]);

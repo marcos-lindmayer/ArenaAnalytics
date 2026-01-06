@@ -389,7 +389,7 @@ function Search:FindSearchValueDataForToken(token)
     -- Evaluate best match so far, if any.
     if(bestMatch) then
         local shortName = Search:GetShortValueName(bestMatch.typeKey, bestMatch.valueKey);
-        Debug:Log("Search best match:", bestMatch.typeKey, bestMatch.valueKey, bestMatch.noSpace, shortName);
+        --Debug:Log("Search best match:", bestMatch.typeKey, bestMatch.valueKey, bestMatch.noSpace, shortName);
 
         return bestMatch.typeKey, bestMatch.valueKey, bestMatch.noSpace, shortName;
     end

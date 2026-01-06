@@ -3,6 +3,7 @@ local Bitmap = ArenaAnalytics.Bitmap;
 
 -- Local module aliases
 local Constants = ArenaAnalytics.Constants;
+local Debug = ArenaAnalytics.Debug;
 local Internal = ArenaAnalytics.Internal;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
@@ -30,12 +31,13 @@ end
 
 -------------------------------------------------------------------------
 
+-- Takes in numerical and string inputs to combine a complete role bitmap.
 function Bitmap:GetRoleBitmapValue(...)
     local bitmap = 0;
     for _,value in ipairs({...}) do
         if(type(value) == "string") then
             for i,data in ipairs(Constants.roleIndexes) do
-                if(data.token == value) then
+                if(data.token == value or data.name == value) then
                     value = i;
                     break;
                 end
@@ -48,7 +50,6 @@ function Bitmap:GetRoleBitmapValue(...)
         end
     end
 
-    assert(bitmap > 0);
     return bitmap > 0 and bitmap or nil;
 end
 
@@ -108,7 +109,7 @@ end
 function Bitmap:BitmapHasAll(bitmap, value)
     bitmap = tonumber(bitmap);
     value = tonumber(value);
-    
+
     if(not bitmap or not value) then
         return false;
     end
@@ -131,7 +132,7 @@ function Bitmap:HasBitByIndex(bitmap, index)
     if(not bitmap or not index) then
         return false;
     end
-    
+
     local value = Bitmap:IndexToBitmap(index);
     local bit = value and floor(bitmap / value) % 2;
     return bit == 1;

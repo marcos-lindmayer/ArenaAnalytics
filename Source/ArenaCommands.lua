@@ -121,7 +121,7 @@ function Commands.HandleCommand_Update(arg)
 end
 
 function Commands.HandleCommand_Purge()
-	ArenaAnalytics:ShowPurgeConfirmationDialog();
+	C_Timer.After(0, function() ArenaAnalytics:ShowPurgeConfirmationDialog() end);
 end
 
 function Commands.HandleCommand_DumpRealms()

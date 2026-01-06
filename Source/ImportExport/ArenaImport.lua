@@ -100,8 +100,7 @@ function Import:ProcessImportSource()
         return false;
     end
 
-    -- ArenaAnalytics v3
-    if(Import:CheckDataSource_ArenaAnalytics(newImportData)) then
+    if(Import:CheckDataSource_ArenaAnalytics_CSV(newImportData)) then
         isValid = true;
     elseif(Import:CheckDataSource_ArenaStatsCata(newImportData)) then
         isValid = true;
@@ -241,6 +240,9 @@ function Import:ProcessImport()
                 local processedArena = Import.current.processorFunc(arenaString);
                 if(processedArena) then
                     Import:SaveArena(processedArena);
+
+                    TablePool:Release(processedArena.players);
+                    TablePool:Release(processedArena.rounds);
                     TablePool:Release(processedArena);
                 else
                     state.skippedArenaCount = state.skippedArenaCount + 1;
@@ -301,18 +303,9 @@ function Import:SaveArena(arena)
 
 	ArenaMatch:SetBracket(newArena, arena.bracket);
 
-	local matchType = nil;
-	if(arena.isRated) then
-		matchType = "rated";
-	elseif(arena.isWargame) then
-		matchType = "wargame";
-	else
-		matchType = "skirmish";
-	end
+	ArenaMatch:SetMatchType(newArena, arena.matchType);
 
-	ArenaMatch:SetMatchType(newArena, matchType);
-
-	if (arena.isRated) then
+	if (arena.matchType == "rated") then
 		ArenaMatch:SetPartyRating(newArena, arena.partyRating);
 		ArenaMatch:SetPartyRatingDelta(newArena, arena.partyRatingDelta);
 		ArenaMatch:SetPartyMMR(newArena, arena.partyMMR);
@@ -348,6 +341,7 @@ end
 
 -------------------------------------------------------------------------
 
+local truthyValues = { ["yes"] = true, ["y"] = true, ["1"] = true, ["true"] = true, [true] = true };
 function Import:RetrieveBool(value)
     if(value == nil or value == "") then
         return nil;
@@ -356,7 +350,7 @@ function Import:RetrieveBool(value)
     value = Helpers:ToSafeLower(value);
 
     -- Support multiple affirmative values
-    return (value == "yes") or (value == "1") or (value == "true") or (value == true) or false;
+    return value and truthyValues[value] or false;
 end
 
 function Import:RetrieveSimpleOutcome(value)

@@ -247,7 +247,7 @@ Export.formattedMatch = {};
 local formattedMatch = Export.formattedMatch;
 
 -- Helper functions
-local outcomes = { [0] = "L", [1] = "W", [2] = "D" };
+local outcomes = { [0] = "loss", [1] = "win", [2] = "draw" };
 local function GetOutcome(outcome)
     outcome = tonumber(outcome);
     return outcome and outcomes[outcome] or "";
@@ -258,10 +258,10 @@ local function GetGender(player)
     if(gender == nil) then
         return "";
     end
-    return gender == 1 and "F" or "M";
+    return gender == 1 and "female" or "male";
 end
 
-local factions = { [0] = "H", [1] = "A" };
+local factions = { [0] = "Horde", [1] = "Alliance" };
 local function GetFaction(race_id)
     local faction = tonumber(Internal:GetRaceFactionIndex(race_id));
     return faction and factions[faction] or "";
@@ -375,7 +375,7 @@ function Export:GetFormattedPlayers(match, isShuffle)
 
             --local player = team and team[i] or nil;
 
-            local formattedPlayer, isFirstDeath = FormatPlayer(player, isShuffle, isEnemy);
+            local formattedPlayer, isFirstDeath = FormatPlayer(player, isEnemy, isShuffle);
             if(formattedPlayer) then
                 tinsert(players, formattedPlayer);
 

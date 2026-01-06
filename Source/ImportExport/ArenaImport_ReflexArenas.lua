@@ -28,7 +28,6 @@ function Import:CheckDataSource_ReflexArenas(outImportData)
     -- Get arena count
     outImportData.isValid = true;
     outImportData.sourceName = sourceName;
-    outImportData.prefixLength = #formatPrefix;
     outImportData.processorFunc = Import.ProcessNextMatch_ReflexArenas;
     return true;
 end
@@ -133,7 +132,7 @@ function Import.ProcessNextMatch_ReflexArenas(arenaString)
 
     --local mySpec = cachedValues[15];                    -- Specialization
 
-    newArena.isRated = Import:RetrieveBool(cachedValues[16]);   -- isRated (boolean)
+    newArena.matchType = Import:RetrieveBool(cachedValues[16]) and "rated" or "skirmish";
 
     return newArena;
 end

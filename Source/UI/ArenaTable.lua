@@ -63,6 +63,8 @@ end
 function ArenaAnalyticsCreateText(parent, anchor, relativeFrame, relPoint, xOff, yOff, text, fontSize)
     local fontString = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal");
     fontString:SetPoint(anchor, relativeFrame, relPoint, xOff, yOff);
+    fontString:SetJustifyH("LEFT");
+    fontString:SetJustifyV("TOP");
     fontString:SetText(text);
     fontString:SetFont(fontString:GetFont(), tonumber(fontSize) or 12, "");
     return fontString

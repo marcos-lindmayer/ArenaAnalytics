@@ -125,9 +125,10 @@ function ArenaAnalytics:PurgeArenaAnalyticsDB()
 	end);
 end
 
+local PURGE_DIALOGUE_NAME = "CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY";
 function ArenaAnalytics:ShowPurgeConfirmationDialog()
-	if(not StaticPopupDialogs["CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY"]) then
-		StaticPopupDialogs["CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY"] = {
+	if(not StaticPopupDialogs[PURGE_DIALOGUE_NAME]) then
+		StaticPopupDialogs[PURGE_DIALOGUE_NAME] = {
 			text = "Do you want to purge the " .. Colors:GetTitle() .. "match history?\nThis deletes all stored matches permanently!\n\nType " .. Colors:ColorText("DELETE", Colors.red) .. " into the field to confirm.",
 			button1 = "Purge",
 			button2 = "Cancel",
@@ -136,22 +137,31 @@ function ArenaAnalytics:ShowPurgeConfirmationDialog()
 				ArenaAnalytics:PurgeArenaAnalyticsDB();
 			end,
 			OnShow = function(self)
-				self.editBox:SetText("");
-				self.editBox:SetMaxLetters(10);
-				self.button1:Disable();  -- Disable the "Confirm" button initially
+				self:GetEditBox():SetText("");
+				self:GetEditBox():SetMaxLetters(10);
+				self:GetButton1():Disable();  -- Disable the "Confirm" button initially
 				self:SetWidth(550);
 
 				-- Handle Escape key press in the edit box
-				self.editBox:SetScript("OnEscapePressed", function(editBox)
-					StaticPopup_Hide("CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY");  -- Close the dialog when escape is pressed
+				self:GetEditBox():SetScript("OnEscapePressed", function(editBox)
+					StaticPopup_Hide(PURGE_DIALOGUE_NAME);  -- Close the dialog when escape is pressed
+				end);
+
+				self:GetEditBox():SetScript("OnEnterPressed", function(editBox)
+					local parent = editBox:GetParent()
+					local confirmButton = parent:GetButton1()
+
+					if confirmButton:IsEnabled() then
+						confirmButton:Click()
+					end
 				end);
 			end,
 			EditBoxOnTextChanged = function(self)
 				local parent = self:GetParent();
 				if self:GetText():upper() == "DELETE" then
-					parent.button1:Enable();
+					parent:GetButton1():Enable();
 				else
-					parent.button1:Disable();
+					parent:GetButton1():Disable();
 				end
 			end,
 			hasEditBox = true,  -- Add the input box
@@ -164,8 +174,8 @@ function ArenaAnalytics:ShowPurgeConfirmationDialog()
 		};
 	end
 
-	local dialog = StaticPopup_Show("CONFIRM_PURGE_ARENAANALYTICS_MATCH_HISTORY");
-	dialog.text:SetWidth(400);
+	local dialog = StaticPopup_Show(PURGE_DIALOGUE_NAME);
+	dialog:GetTextFontString():SetWidth(400);
 end
 
 -------------------------------------------------------------------------

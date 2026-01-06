@@ -9,7 +9,7 @@ local API = ArenaAnalytics.API;
 -------------------------------------------------------------------------
 
 -- NOTE: Indices here affect save data
-Constants.roleIndexes = { 
+Constants.roleIndexes = {
     -- Main roles
     { token = "tank", isMain = true, name = "Tank" },
     { token = "damager", isMain = true, name = "Dps" },
