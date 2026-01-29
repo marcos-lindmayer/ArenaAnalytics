@@ -147,8 +147,6 @@ function ArenaTracker:Reset()
 	-- Setup base tables
 	ReinitializeCurrentArena();
 
-	ArenaTracker.isTracking = false;
-
 	-- Current Arena
 	currentArena.isTracking = nil;
 	currentArena.isHandlingExit = false;
@@ -286,8 +284,12 @@ function ArenaTracker:HasMapData()
 	return currentArena and currentArena.mapId ~= nil;
 end
 
-
+-- TODO: Ensure all use cases are aware that Midnight cannot fetch player!
 function ArenaTracker:GetPlayer(playerID)
+	if(API.hasSecrets) then
+		return nil;
+	end
+
 	if(not Helpers:IsValidValue(playerID)) then
 		return nil;
 	end
@@ -305,7 +307,7 @@ function ArenaTracker:GetPlayer(playerID)
 				return player;
 			else -- Unit Token
 				local GUID = Helpers:UnitGUID(playerID);
-				if(GUID and not API:IsSecretValue(GUID) and GUID == player.GUID) then
+				if(GUID and GUID == player.GUID) then
 					return player;
 				end
 			end
@@ -405,6 +407,7 @@ function ArenaTracker:CreatePlayerTable(isEnemy, name, unitToken, spec_id)
 
 		isSelf = currentArena.playerName and name == currentArena.playerName or nil,
 
+		-- Unsafe in shuffles:  (?)
 		unitToken = unitToken,
 		petToken = unitToken and unitToken.."pet",
 	};

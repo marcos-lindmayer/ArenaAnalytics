@@ -13,6 +13,12 @@
                 </Texture>
             </Layer>
             <Layer level="ARTWORK">
+                <FontString parentKey="RecentImport" inherits="GameFontNormal" justifyH="LEFT">
+                    <Size x="140"/>
+                    <Anchors>
+                        <Anchor point="LEFT" x="5" y="0"/>
+                    </Anchors>
+                </FontString>
                 <FontString parentKey="Date" inherits="GameFontNormal" justifyH="LEFT">
                     <Size x="140"/>
                     <Anchors>

@@ -27,6 +27,7 @@ function Import:CheckDataSource_ArenaAnalytics_Compact(outImportData)
     -- Get arena count
     outImportData.isValid = true;
     outImportData.sourceName = sourceName;
+    outImportData.trustDate = true;
     outImportData.processorFunc = Import.ProcessNextMatch_ArenaAnalytics;
     return true;
 end

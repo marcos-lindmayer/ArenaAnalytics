@@ -37,6 +37,7 @@ function Import:CheckDataSource_ArenaStatsCata(outImportData)
     -- Get arena count
     outImportData.isValid = true;
     outImportData.sourceName = sourceName;
+    outImportData.trustDate = false;
     outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsCata;
     return true;
 end

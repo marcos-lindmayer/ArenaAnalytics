@@ -20,18 +20,23 @@ local function ColorSlashCommand(text)
 	return Colors:ColorText(text, Colors.slashCommandColor);
 end
 
+local function PrintCommandHelp(command, description)
+		ArenaAnalytics:PrintSystem(ColorSlashCommand(command), description);
+end
+
 -------------------------------------------------------------------------
 -- Command Handlers
 
 function Commands.HandleCommand_Help()
 	ArenaAnalytics:PrintSystemSpacer();
 	ArenaAnalytics:PrintSystem("List of slash commands:");
-	ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa"), "Togggles ArenaAnalytics main panel.");
-	ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa played"), "Prints total duration of tracked arenas.");
-	ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa version"), "Prints the current ArenaAnalytics version.");
-	ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa total"), "Prints total unfiltered matches.");
-	ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa purge"), "Show dialog to permanently delete match history.");
-	ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa credits"), "Print addon credits.");
+	PrintCommandHelp("/aa", "Togggles ArenaAnalytics main panel.");
+	PrintCommandHelp("/aa played", "Prints total duration of tracked arenas.");
+	PrintCommandHelp("/aa version", "Prints the current ArenaAnalytics version.");
+	PrintCommandHelp("/aa total", "Prints total unfiltered matches.");
+	PrintCommandHelp("/aa purge", "Show dialog to permanently delete match history.");
+	PrintCommandHelp("/aa undo", "Undo the latest import. (White * marked matches)");
+	PrintCommandHelp("/aa credits", "Print addon credits.");
 	ArenaAnalytics:PrintSystemSpacer();
 end
 
@@ -113,10 +118,11 @@ function Commands.HandleCommand_Update(arg)
 		Filters:Refresh();
 	else
 		-- Show /aa update help
-		ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa update"), "help:");
-		ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa update sessions"), "Recomputes sessions.");
-		ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa update groups"), "Sort players in all stored groups.");
-		ArenaAnalytics:PrintSystem(ColorSlashCommand("/aa update matches"), "Resorts the match history. Invalid dates last.");
+		ArenaAnalytics:PrintSystemSpacer();
+		PrintCommandHelp("/aa update", "help:");
+		PrintCommandHelp("/aa update sessions", "Recomputes sessions.");
+		PrintCommandHelp("/aa update groups", "Sort players in all stored groups.");
+		PrintCommandHelp("/aa update matches", "Resorts the match history. Invalid dates last.");
 	end
 end
 
@@ -157,14 +163,9 @@ function Commands.HandleCommand_Dump()
 	print(" ");
 end
 
-function Commands.HandleCommand_Test()
+function Commands.HandleCommand_Test(...)
 	print(" ");
 	ArenaAnalytics:Print("================================================ ");
-
-	local name = UnitName("target");
-	local isSame = UnitIsUnit("arena2", "arena1");
-
-	Debug:Log("Unit comp:", name, isSame);
 
 	ArenaAnalytics:Print("================================================ ");
 end
@@ -218,6 +219,21 @@ function Commands.HandleCommand_Inspect()
 	Debug:NotifyInspectSpec("target");
 end
 
+function Commands.HandleCommand_Undo(...)
+	local oldCount = #ArenaAnalyticsDB;
+
+	ArenaAnalytics:UndoLastImport();
+
+	local newCount = #ArenaAnalyticsDB;
+
+	if(oldCount ~= newCount) then
+		ArenaAnalytics:PrintSystem(string.format("Import undone - Removed %s arenas!", (oldCount - newCount)));
+	else
+		ArenaAnalytics:PrintSystem("Import undo made no changes.");
+	end
+end
+
+
 --------------------------------------
 -- Custom Slash Command
 --------------------------------------
@@ -231,6 +247,7 @@ Commands.list = {
 	["update"] = Commands.HandleCommand_Update,
 	["purge"] = Commands.HandleCommand_Purge,
 	["inspect"] = Commands.HandleCommand_Inspect,
+	["undo"] = Commands.HandleCommand_Undo,
 
 	-- Debug commands
 	["debug"] = Commands.HandleCommand_Debug,				-- Debug level

@@ -22,6 +22,18 @@ local Colors = ArenaAnalytics.Colors;
 ArenaAnalytics.matchTypes = { "rated", "skirmish", "wargame" };
 ArenaAnalytics.brackets = { "2v2", "3v3", "5v5", "shuffle" };
 
+-------------------------------------------------------------------------
+
+ArenaAnalytics.savedArenaCount = 0;
+ArenaAnalytics.filteredMatchCount = 0;
+ArenaAnalytics.filteredMatchHistory = {};
+
+function ArenaAnalytics:GetUnsavedCount()
+	return ArenaAnalyticsDB and (#ArenaAnalyticsDB - ArenaAnalytics.savedArenaCount) or 0;
+end
+
+-------------------------------------------------------------------------
+
 -- Toggles addOn view/hide (Global to allow XML access)
 function ArenaAnalyticsToggle()
     if (not ArenaAnalyticsScrollFrame:IsShown()) then
@@ -107,6 +119,8 @@ function ArenaAnalytics:InitializeArenaAnalyticsDB()
 	if(#ArenaAnalyticsDB.realms == 0) then
 		ArenaAnalyticsDB.realms[1] = API:GetLocalRealm();
 	end
+
+	ArenaAnalytics.savedArenaCount = #ArenaAnalyticsDB;
 end
 
 function ArenaAnalytics:PurgeArenaAnalyticsDB()
@@ -115,11 +129,11 @@ function ArenaAnalytics:PurgeArenaAnalyticsDB()
 	-- Give Import a frame to cancel
 	C_Timer.After(0, function()
 		ArenaAnalyticsDB = {};
+		ArenaAnalytics.savedArenaCount = 0;
+
 		ArenaAnalytics:InitializeArenaAnalyticsDB();
 
-		ArenaAnalytics.AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
-		ArenaAnalytics.unsavedArenaCount = 0;
-		ArenaAnalytics.Filters:Refresh();
+		Filters:Refresh();
 
 		ArenaAnalytics:PrintSystem("Match history purged!");
 	end);
@@ -479,11 +493,6 @@ end
 
 -------------------------------------------------------------------------
 
-ArenaAnalytics.unsavedArenaCount = 0;
-
-ArenaAnalytics.filteredMatchCount = 0;
-ArenaAnalytics.filteredMatchHistory = {};
-
 function ArenaAnalytics:GetMatch(index)
 	return index and ArenaAnalyticsDB and ArenaAnalyticsDB[index];
 end
@@ -614,4 +623,56 @@ function ArenaAnalytics:ClearLastMatchTransientValues(bracketIndex)
 	if(lastMatch) then
 		ArenaMatch:ClearTransientValues(lastMatch);
 	end
+end
+
+
+-------------------------------------------------------------------------
+-- Import
+
+function ArenaAnalytics:GetLastImportIndex()
+	local highestImportIndex = -1;
+
+	for i=1, #ArenaAnalyticsDB do
+		local match = ArenaAnalyticsDB[i];
+		local index = ArenaMatch:GetImportIndex(match);
+
+		if(index and index > highestImportIndex) then
+			highestImportIndex = index;
+		end
+	end
+
+	return highestImportIndex;
+end
+
+function ArenaAnalytics:UndoImportIndex(importIndex)
+	if(type(importIndex) ~= "number" or importIndex == -1) then
+		return;
+	end
+
+	for i=#ArenaAnalyticsDB, 1, -1 do
+		local match = ArenaAnalyticsDB[i];
+		local index = match and ArenaMatch:GetImportIndex(match);
+
+		if(index and index == importIndex) then
+			-- Delete match
+			table.remove(ArenaAnalyticsDB, i);
+		end
+	end
+
+    Import:UpdateImportIndex();
+	Filters:Refresh();
+end
+
+function ArenaAnalytics:UndoLastImport()
+	local lastImportIndex = ArenaAnalytics:GetLastImportIndex();
+	ArenaAnalytics:UndoImportIndex(lastImportIndex);
+end
+
+function ArenaAnalytics:ClearMatchImportIndices()
+	for i=1, #ArenaAnalyticsDB do
+		local match = ArenaAnalyticsDB[i];
+		ArenaMatch:ClearImportIndex(match, i);
+	end
+
+    Import:UpdateImportIndex();
 end

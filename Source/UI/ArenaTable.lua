@@ -214,11 +214,6 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame.unsavedWarning = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", ArenaAnalyticsScrollFrame, "BOTTOMRIGHT", -160, 13, "");
     AAtable:CheckUnsavedWarningThreshold();
 
-    -- First time user import popup if no matches are stored
-    if (not ArenaAnalytics:HasStoredMatches()) then
-        AAtable:TryShowimportDialogFrame(ArenaAnalyticsScrollFrame);
-    end
-
     -- Add esc to close frame
     _G["ArenaAnalyticsScrollFrame"] = ArenaAnalyticsScrollFrame 
     tinsert(UISpecialFrames, ArenaAnalyticsScrollFrame:GetName()) 
@@ -265,31 +260,57 @@ function AAtable:OnLoad()
     ArenaAnalyticsScrollFrame:Hide();
 end
 
-function AAtable:TryShowimportDialogFrame(parent)
-    if(ArenaAnalyticsScrollFrame.importDialogFrame == nil) then
-        ArenaAnalyticsScrollFrame.importDialogFrame = CreateFrame("Frame", "ArenaAnalyticsImportFrame", parent or UIParent, "BasicFrameTemplateWithInset")
-        ArenaAnalyticsScrollFrame.importDialogFrame:SetPoint("CENTER")
-        ArenaAnalyticsScrollFrame.importDialogFrame:SetSize(440, 125)
-        ArenaAnalyticsScrollFrame.importDialogFrame:SetFrameStrata("DIALOG");
-        ArenaAnalyticsScrollFrame.importDialogFrame.title = ArenaAnalyticsScrollFrame.importDialogFrame:CreateFontString(nil, "OVERLAY");
-        ArenaAnalyticsScrollFrame.importDialogFrame.title:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", -10, -5);
-        ArenaAnalyticsScrollFrame.importDialogFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
-        ArenaAnalyticsScrollFrame.importDialogFrame.title:SetText("Import |cffCCCCCC(Optional)|r");
 
-        local supportedSourcesText = "|cffffffffPaste the |cff00ccffArenaStats|r or |cff00ccffREFlex|r import string in the edit box.|r";
-        ArenaAnalyticsScrollFrame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -45, supportedSourcesText);
-
-        local noteText = "|cffCCCCCCNote:|r |cff888888Import may be missing data required for some filters.|r";
-        ArenaAnalyticsScrollFrame.importDialogFrame.Text2 = ArenaAnalyticsCreateText(ArenaAnalyticsScrollFrame.importDialogFrame, "CENTER", ArenaAnalyticsScrollFrame.importDialogFrame, "TOP", 0, -65, noteText);
-
-        -- Import Edit Box
-        ArenaAnalyticsScrollFrame.importDialogFrame.importBox = ImportBox:Create(ArenaAnalyticsScrollFrame.importDialogFrame, "ArenaAnalyticsImportDialogBox", 380, 25);
-        ArenaAnalyticsScrollFrame.importDialogFrame.importBox:SetPoint("TOP", ArenaAnalyticsScrollFrame.importDialogFrame.Text2, "BOTTOM", 0, -8);
+function AAtable:CreateImportDialog()
+    if(ArenaAnalytics:HasStoredMatches()) then
+        return;
     end
 
-    ArenaAnalyticsScrollFrame.importDialogFrame:SetParent(parent or UIParent);
-    ArenaAnalyticsScrollFrame.importDialogFrame:Show();
+    local frame = ArenaAnalyticsScrollFrame;
+    if(frame.importDialogFrame == nil) then
+        frame.importDialogFrame = CreateFrame("Frame", "ArenaAnalyticsImportFrame", frame or UIParent, "BasicFrameTemplateWithInset")
+        frame.importDialogFrame:SetPoint("CENTER")
+        frame.importDialogFrame:SetSize(440, 125)
+        frame.importDialogFrame:SetFrameStrata("DIALOG");
+        frame.importDialogFrame.title = frame.importDialogFrame:CreateFontString(nil, "OVERLAY");
+        frame.importDialogFrame.title:SetPoint("TOP", frame.importDialogFrame, "TOP", -10, -5);
+        frame.importDialogFrame.title:SetFont("Fonts\\FRIZQT__.TTF", 12, "");
+        frame.importDialogFrame.title:SetText("Import |cffCCCCCC(Optional)|r");
+
+        local supportedSourcesText = "|cffffffffPaste the |cff00ccffArenaStats|r or |cff00ccffREFlex|r import string in the edit box.|r";
+        frame.importDialogFrame.Text1 = ArenaAnalyticsCreateText(frame.importDialogFrame, "CENTER", frame.importDialogFrame, "TOP", 0, -45, supportedSourcesText);
+
+        local noteText = "|cffCCCCCCNote:|r |cff888888Import may be missing data required for some filters.|r";
+        frame.importDialogFrame.Text2 = ArenaAnalyticsCreateText(frame.importDialogFrame, "CENTER", frame.importDialogFrame, "TOP", 0, -65, noteText);
+
+        -- Import Edit Box
+        frame.importDialogFrame.importBox = ImportBox:Create(frame.importDialogFrame, "ArenaAnalyticsImportDialogBox", 380, 25);
+        frame.importDialogFrame.importBox:SetPoint("TOP", frame.importDialogFrame.Text2, "BOTTOM", 0, -8);
+    end
+
+    frame.importDialogFrame:SetParent(frame or UIParent);
+    frame.importDialogFrame:Show();
 end
+
+function AAtable:HideImportDialog(forced)
+    if(not ArenaAnalyticsScrollFrame.importDialogFrame) then
+        return;
+    end
+
+    if(forced or ArenaAnalytics:HasStoredMatches()) then
+        ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
+        ArenaAnalyticsScrollFrame.importDialogFrame = nil;
+    end
+end
+
+function AAtable:UpdateImportShown()
+    if(ArenaAnalytics:HasStoredMatches()) then
+        AAtable:HideImportDialog(true);
+    else
+        AAtable:CreateImportDialog();
+    end
+end
+
 
 -- Creates the Export DB frame
 function AAtable:CreateExportDialogFrame()
@@ -501,13 +522,13 @@ function AAtable:ForceRefreshFilterDropdowns(skipRefreshAll)
 end
 
 function AAtable:CheckUnsavedWarningThreshold()
-    if(not hasLoaded or not ArenaAnalytics.unsavedArenaCount) then
+    if(not hasLoaded) then
         return;
     end
 
-    if(ArenaAnalytics.unsavedArenaCount >= Options:Get("unsavedWarningThreshold")) then
+    if(ArenaAnalytics:GetUnsavedCount() >= Options:Get("unsavedWarningThreshold")) then
         -- Show and update unsaved arena threshold
-        local unsavedWarningText = "|cffff0000" .. ArenaAnalytics.unsavedArenaCount .." unsaved matches!\n |cff00cc66/reload|r |cffff0000to save!|r"
+        local unsavedWarningText = "|cffff0000" .. ArenaAnalytics:GetUnsavedCount() .." unsaved matches!\n |cff00cc66/reload|r |cffff0000to save!|r"
         ArenaAnalyticsScrollFrame.unsavedWarning:SetText(unsavedWarningText);
         ArenaAnalyticsScrollFrame.unsavedWarning:Show();
     else
@@ -541,7 +562,7 @@ function AAtable:HandleArenaCountChanged()
         return;
     end
 
-    Options:TriggerStateUpdates()
+    Options:TriggerStateUpdates();
     AAtable:RefreshLayout();
     AAtable:CheckUnsavedWarningThreshold();
 
@@ -654,6 +675,18 @@ function AAtable:UpdateSelected()
     ArenaAnalyticsScrollFrame.selectedStats:SetText(selectedPrefixText .. newSelectedText)
 end
 
+function AAtable:SetImportStarText(button, match)
+    local importIndex = match and ArenaMatch:GetImportIndex(match);
+
+	if(not importIndex or importIndex == -1) then
+		ArenaAnalytics:SetFrameText(button.RecentImport, "");
+    elseif(importIndex == Import.latestImportIndex) then
+        ArenaAnalytics:SetFrameText(button.RecentImport, "*", Colors.latestImport);
+    else
+        ArenaAnalytics:SetFrameText(button.RecentImport, "*", Colors.unsavedImport);
+    end
+end
+
 -- Refreshes matches table
 function AAtable:RefreshLayout()
     if(not hasLoaded) then
@@ -690,6 +723,8 @@ function AAtable:RefreshLayout()
             local map = ArenaMatch:GetMap(match, true);
             local duration = ArenaMatch:GetDuration(match);
             local bracket = ArenaMatch:GetBracket(match);
+
+            AAtable:SetImportStarText(button, match);
 
             ArenaAnalytics:SetFrameText(button.Date, Helpers:FormatDate(matchDate), Colors.valueColor);
             ArenaAnalytics:SetFrameText(button.Map, map, Colors.valueColor);

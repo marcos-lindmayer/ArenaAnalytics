@@ -36,7 +36,7 @@ ArenaMatch.matchKeys = {
     rounds = -18,
     seasonPlayed = -19,
 
-    transient_seasonPlayed_DEPRECATED = -100, -- TODO: Remove in favor of persistent seasonPlayed key
+    importIndex = -100,
     transient_requireRatingFix = -101,
 };
 local matchKeys = ArenaMatch.matchKeys;
@@ -165,7 +165,6 @@ end
 function ArenaMatch:ClearTransientValues(match)
     assert(match);
 
-    match[matchKeys.transient_seasonPlayed_DEPRECATED] = nil;
     match[matchKeys.transient_requireRatingFix] = nil;
 end
 
@@ -1515,5 +1514,26 @@ function ArenaMatch:RecomputeShuffleDurations(match)
 
     if(totalDuration > 0) then
 	    ArenaMatch:SetDuration(match, totalDuration);
+    end
+end
+
+
+-------------------------------------------------------------------------
+-- Import
+
+function ArenaMatch:GetImportIndex(match)
+    return match and tonumber(match[matchKeys.importIndex]);
+end
+
+function ArenaMatch:SetImportIndex(match, value)
+    assert(match);
+
+    match[matchKeys.importIndex] = tonumber(value);
+end
+
+function ArenaMatch:ClearImportIndex(match, index)
+    if(match and match[matchKeys.importIndex] ~= nil) then
+        Debug:Log("Clearing import index for match!", index);
+        match[matchKeys.importIndex] = nil;
     end
 end

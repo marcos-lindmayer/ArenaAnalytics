@@ -36,6 +36,7 @@ function Import:CheckDataSource_ArenaStatsWrath(outImportData)
     -- Get arena count
     outImportData.isValid = true;
     outImportData.sourceName = sourceName;
+    outImportData.trustDate = false;
     outImportData.processorFunc = Import.ProcessNextMatch_ArenaStatsWrath;
     return true;
 end

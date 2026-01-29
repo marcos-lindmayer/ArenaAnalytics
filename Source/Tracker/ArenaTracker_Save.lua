@@ -129,12 +129,6 @@ end
 
 
 function ArenaTracker:HandleArenaSaved()
-	ArenaAnalytics.unsavedArenaCount = ArenaAnalytics.unsavedArenaCount + 1;
-
-	if(Import.TryHide) then
-		Import:TryHide();
-	end
-
 	Filters:Refresh();
 
 	Sessions:TryStartSessionDurationTimer();

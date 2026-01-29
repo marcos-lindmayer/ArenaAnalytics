@@ -177,7 +177,7 @@ end
 
 
 function Helpers:FormatDate(value)
-    return value and date("%d.%m.%y  %H:%M", value);
+    return value and date("%d.%m.%y  %H:%M", value) or "";
 end
 
 
@@ -282,7 +282,7 @@ local unknownValues = {
     [UNKNOWNOBJECT or "Unknown"] = true,
 };
 function Helpers:IsValidValue(value)
-    return value ~= nil and not API:IsSecretValue(value) and not unknownValues[value];
+    return value ~= nil and (API:IsSecretValue(value) or not unknownValues[value]); -- Assume secrets are valid, untestable
 end
 
 function Helpers:ToValidValue(value)

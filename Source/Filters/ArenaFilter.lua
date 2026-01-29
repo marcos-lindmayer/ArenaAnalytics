@@ -12,6 +12,7 @@ local Sessions = ArenaAnalytics.Sessions;
 local Debug = ArenaAnalytics.Debug;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
+local Import = ArenaAnalytics.Import;
 
 -------------------------------------------------------------------------
 
@@ -565,6 +566,8 @@ local function Refresh_Internal()
     ArenaAnalytics.filteredMatchCount = 0;
     Selection:ClearSelectedMatches();
     ResetTransientCompData();
+
+    AAtable:UpdateImportShown();
 
     Filters.forceNewRefresh = nil;
 

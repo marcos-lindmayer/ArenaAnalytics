@@ -31,7 +31,7 @@ function Prints:PrintRaw(prefix, ...)
 end
 
 function ArenaAnalytics:Print(...)
-    local prefix = Colors:ColorText("ArenaAnalytics: ", Colors.themeColor);
+    local prefix = Colors:ColorText("ArenaAnalytics:", Colors.themeColor);
 	print(prefix, ...);
 end
 

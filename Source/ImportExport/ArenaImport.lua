@@ -10,6 +10,9 @@ local Helpers = ArenaAnalytics.Helpers;
 local Debug = ArenaAnalytics.Debug;
 local ImportBox = ArenaAnalytics.ImportBox;
 local ImportProgressFrame = ArenaAnalytics.ImportProgressFrame;
+local AAtable = ArenaAnalytics.AAtable;
+local Colors = ArenaAnalytics.Colors;
+local Options = ArenaAnalytics.Options;
 
 -------------------------------------------------------------------------
 
@@ -46,6 +49,13 @@ local BATCH_TIME_LIMIT = 0.01;
 Import.isImporting = false;
 Import.raw = nil;
 Import.current = nil;
+Import.dateCache = {};
+
+Import.latestImportIndex = -1;
+
+function Import:UpdateImportIndex()
+    Import.latestImportIndex = ArenaAnalytics:GetLastImportIndex();
+end
 
 function Import:IsLocked()
     return not Import.isImporting;
@@ -69,6 +79,7 @@ function Import:Reset()
     Import.raw = nil;
     Import.current = nil;
     Import.state = nil;
+    Import.currentImportIndex = nil;
 end
 
 function Import:Cancel()
@@ -80,15 +91,6 @@ function Import:Cancel()
     Import.isImporting = false;
 
     C_Timer.After(0, Import.Reset);
-end
-
-function Import:TryHide(forced)
-    if(ArenaAnalyticsScrollFrame.importDialogFrame ~= nil) then
-        if(ArenaAnalytics:HasStoredMatches() or forced) then
-            ArenaAnalyticsScrollFrame.importDialogFrame:Hide();
-            ArenaAnalyticsScrollFrame.importDialogFrame = nil;
-        end
-    end
 end
 
 function Import:ProcessImportSource()
@@ -138,52 +140,6 @@ function Import:ParseRawData()
     Import:ProcessImport();
 end
 
-local function GetFirstAndLastStoredDateLimits()
-    local first, last;
-
-    for i=1, #ArenaAnalyticsDB do
-        local match = ArenaAnalytics:GetMatch(i);
-        local date = ArenaMatch:GetDate(match);
-        if(date and date > 0) then
-            if(not first or date < first) then
-                first = date;
-            end
-
-            if(not last or date > last) then
-                last = date;
-            end
-        end
-    end
-
-    -- Adjust to limits
-    local minimumOffset = 86400;
-    first = first and first - minimumOffset; -- 24 hours before first match
-    last = last and last + minimumOffset; -- 24 hours after last match
-
-    return first, last;
-end 
-
--- Check a date for a duplicate, in case of repeating same import
-function Import:CheckDate(timestamp)
-    if(not timestamp or timestamp == 0) then
-        Debug:LogError("Rejecting import arena for invalid date:", timestamp);
-        return false;
-    end
-
-    if(Import.state) then
-        local firstLimit = Import.state.firstTimestampLimit;
-        local lastLimit = Import.state.lastTimestampLimit;
-
-        if(firstLimit and lastLimit) then
-            if(timestamp > firstLimit and timestamp < lastLimit) then
-                return false;
-            end
-        end
-    end
-
-    return true;
-end
-
 local function ArenaIterator()
     return coroutine.wrap(function()
         for arena in Import.raw:gmatch("[^\n]+") do
@@ -209,11 +165,14 @@ function Import:ProcessImport()
     state.existing = #ArenaAnalyticsDB;
     state.skippedArenaCount = 0;
 
-    state.firstTimestampLimit, state.lastTimestampLimit = GetFirstAndLastStoredDateLimits();
+    Import:UpdateDateCache();
+
+    Import.currentImportIndex = ArenaAnalytics:GetLastImportIndex() + 1;
+    Debug:Log("Import Index:", Import.currentImportIndex);
 
     if(importCount > 0) then
         -- Hide import dialogue
-        Import:TryHide(true);
+        AAtable:HideImportDialog(true);
     end
 
     ImportProgressFrame:Start();
@@ -268,6 +227,8 @@ function Import:Finalize()
 
     Import.isImporting = nil;
 
+    wipe(Import.dateCache);
+
     local state = Import.current and Import.state;
 
     local elapsed, existingCount;
@@ -280,18 +241,28 @@ function Import:Finalize()
     end
 
     Import:Reset();
-    Import:TryHide();
+    Import:UpdateImportIndex();
 
     ArenaAnalytics:ResortMatchHistory(true);
     Sessions:RecomputeSessionsForMatchHistory(true);
 
-    ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
-
     Filters:Refresh();
 
-    local elapsedText = elapsed and format(" in %.1f seconds.", elapsed) or "";
-    ArenaAnalytics:PrintSystem(format("Import complete. %d arenas added.%s", (#ArenaAnalyticsDB - existingCount), elapsedText));
-    Debug:Log(format("Import ignored %d arenas due to their date.", (state and state.skippedArenaCount or -1)));
+    local addedCount = max(0, #ArenaAnalyticsDB - existingCount);
+    local skippedCount = state and tonumber(state.skippedArenaCount) or 0;
+
+    ArenaAnalytics:PrintSystemSpacer();
+
+    local elapsedText = elapsed and format(" in %.1f seconds.", elapsed) or ".";
+    ArenaAnalytics:PrintSystem(format("Import complete. %d arenas added%s", addedCount, elapsedText));
+
+    if(skippedCount > 0) then
+        ArenaAnalytics:PrintSystem(format("Import skipped %d arenas!", skippedCount));
+    end
+
+    if(addedCount > 0) then
+        ArenaAnalytics:PrintSystem(format("Import Hint: %s to save, %s to undo import.", Colors:ColorText("/reload", Colors.slashCommandColor), Colors:ColorText("/aa undo", Colors.slashCommandColor)));
+    end
 end
 
 function Import:SaveArena(arena)
@@ -326,14 +297,7 @@ function Import:SaveArena(arena)
 		ArenaMatch:SetRounds(newArena, arena.committedRounds);
 	end
 
-	-- Assign session
-	local session = Sessions:GetLatestSession();
-	local lastMatch = ArenaAnalytics:GetLastMatch();
-	if (not Sessions:IsMatchesSameSession(lastMatch, newArena)) then
-		session = session + 1;
-	end
-
-	ArenaMatch:SetSession(newArena, session);
+    ArenaMatch:SetImportIndex(newArena, Import.currentImportIndex);
 
 	-- Insert arena data as a new ArenaAnalyticsDB entry
 	table.insert(ArenaAnalyticsDB, newArena);
@@ -361,4 +325,70 @@ function Import:RetrieveSimpleOutcome(value)
     end
 
     return isWin and 1 or 0;
+end
+
+-------------------------------------------------------------------------
+
+function Import:UpdateDateCache()
+    local first, last;
+
+    for i=1, #ArenaAnalyticsDB do
+        local match = ArenaAnalyticsDB[i];
+        local date = ArenaMatch:GetDate(match);
+
+        if(date and date > 0) then
+            -- Date mapping
+            Import.dateCache[date] = true;
+
+            -- Update first date
+            if(not first or date < first) then
+                first = date;
+            end
+
+            -- Update last date
+            if(not last or date > last) then
+                last = date;
+            end
+        end
+    end
+
+    local minimumOffset = 86400;
+    Import.dateCache.first = first and first - minimumOffset; -- 24 hours before first match
+    Import.dateCache.last = last and last + minimumOffset; -- 24 hours after last match
+end
+
+-- Check a date for a duplicate, in case of repeating same import
+function Import:CheckDate(timestamp)
+    timestamp = tonumber(timestamp);
+    if(not timestamp or timestamp == 0) then
+        Debug:LogWarning("Rejecting import arena for invalid date:", timestamp);
+        return false;
+    end
+
+    -- Duplicate timestamp
+    if(Import.dateCache[timestamp]) then
+        Debug:LogWarning("Rejecting import arena for duplicate date at index:", Import.state and Import.state.index, timestamp, Helpers:FormatDate(timestamp));
+        return false;
+    end
+
+    if(Import.current and not Import.current.trustDate) then
+        local firstLimit = Import.dateCache.first;
+        local lastLimit = Import.dateCache.last;
+
+        if(firstLimit and lastLimit) then
+            if(timestamp > firstLimit and timestamp < lastLimit) then
+                Debug:LogWarning("Rejecting import arena due to bounded timestamp limits.");
+                return false;
+            end
+        end
+    end
+
+    return true;
+end
+
+-------------------------------------------------------------------------
+-- Initialization
+
+function Import:Initiate()
+    ArenaAnalytics:ClearMatchImportIndices();
 end

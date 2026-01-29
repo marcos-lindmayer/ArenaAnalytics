@@ -13,7 +13,7 @@ local AAtable = ArenaAnalytics.AAtable;
 local Events = ArenaAnalytics.Events;
 local Search = ArenaAnalytics.Search;
 local VersionManager = ArenaAnalytics.VersionManager;
-local Selection = ArenaAnalytics.Selection;
+local Import = ArenaAnalytics.Import;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local Debug = ArenaAnalytics.Debug;
 local MinimapButton = ArenaAnalytics.MinimapButton;
@@ -115,6 +115,7 @@ function stages.Step2_VariablesLoaded()
 	-- Initialize modules
 	---------------------------------
 
+	Import:Initiate();
 	Options:Initialize();
 	Commands:Initialize();
 	Bitmap:Initialize();

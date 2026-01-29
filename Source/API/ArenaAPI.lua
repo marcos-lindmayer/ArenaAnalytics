@@ -258,8 +258,24 @@ function API:GetCurrentMapID()
     return tonumber(mapID);
 end
 
+-- Nuclear option! This should completely block tracking.
+function API:ForceSkipTracking()
+    if(API.disableTracking) then
+        return true;
+    end
+
+    if(API.disableShuffles and API:IsSoloShuffle()) then
+        return true;
+    end
+
+    return false;
+end
 
 function API:IsInArena()
+    if(API:ForceSkipTracking()) then
+        return false;
+    end
+
     return IsActiveBattlefieldArena() and not C_PvP.IsInBrawl();
 end
 

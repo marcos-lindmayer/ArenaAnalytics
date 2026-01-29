@@ -824,12 +824,9 @@ function VersionManager:ConvertRoundAndPlayerFormat()
 end
 
 function VersionManager:FinalizeConversionAttempts()
-	ArenaAnalytics.unsavedArenaCount = #ArenaAnalyticsDB;
-
 	ArenaAnalytics:ResortGroupsInMatchHistory();
 	Sessions:RecomputeSessionsForMatchHistory(true);
 
-    Import:TryHide();
     Filters:Refresh();
     ArenaAnalyticsScrollFrame:Hide();
 end

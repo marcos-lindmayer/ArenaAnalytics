@@ -29,6 +29,10 @@ Colors.invalidColor = "ff999999";
 Colors.allianceColor = "FF009DEC";
 Colors.hordeColor = "ffE00A05";
 
+-- Import Stars
+Colors.latestImport = "ffffffff";
+Colors.unsavedImport = "FF777777";
+
 -- Log Colors
 Colors.logColor = "ffff6ec7";
 Colors.logGreenColor = "ff1effa7";
@@ -39,6 +43,7 @@ Colors.slashCommandColor = "ff00cc66";
 
 -- Explicit colors (Makes it easier to find and modify later)
 Colors.white = "ffffffff";
+Colors.grey = "FF555555";
 Colors.red = "ffff0000";
 
 -------------------------------------------------------------------------
