@@ -46,7 +46,7 @@ local function removeFromQueue(GUID)
 end
 
 local function getPartyUnitToken(GUID)
-    if(not GUID) then
+    if(not GUID or API:IsSecretValue(GUID)) then
         return nil;
     end
 
@@ -68,7 +68,7 @@ function Inspection:RequestSpec(unitToken)
     Debug:Log("RequestSpec:", unitToken, "CanInspect", API:CanInspect(unitToken));
 
     local GUID = Helpers:UnitGUID(unitToken);
-    if(not GUID) then
+    if(not API:IsValidValue(GUID)) then
         Debug:Log("RequestSpec rejected: Nil GUID.");
         return;
     end
@@ -156,6 +156,11 @@ end
 
 function Inspection:HandleInspectReady(GUID)
     if(not API.enableInspection) then
+        return;
+    end
+
+    if(API:IsSecretValue(GUID)) then
+        Debug:LogWarning("Inspect GUID is secret!"); -- In case it changes
         return;
     end
 

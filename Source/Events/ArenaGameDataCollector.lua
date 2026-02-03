@@ -5,7 +5,7 @@ local DataCollector = ArenaAnalytics.DataCollector;
 local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
-local Inspection = ArenaAnalytics.Inspection;
+local ArenaTracker = ArenaAnalytics.ArenaTracker;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -24,7 +24,26 @@ end
 --- Local Event Handling
 
 -- Midnight test events
-local events = { };
+local events = { 
+    "PVP_MATCH_COMPLETE",
+    "PVP_MATCH_INACTIVE",
+    "PVP_MATCH_ACTIVE",
+    "PLAYER_ENTERING_BATTLEGROUND",
+    "PLAYER_JOINED_PVP_MATCH",
+    "GROUP_ROSTER_UPDATE",
+    "UPDATE_ACTIVE_BATTLEFIELD",
+    "PVP_MATCH_STATE_CHANGED",
+
+    "PARTY_MEMBER_DISABLE",
+    "PARTY_MEMBER_ENABLE",
+    "INSTANCE_GROUP_SIZE_CHANGED",
+    "UNIT_NAME_UPDATE",
+    "UNIT_CONNECTION",
+    "UPDATE_BATTLEFIELD_SCORE",
+
+    "ARENA_PREP_OPPONENT_SPECIALIZATIONS",
+    --"ARENA_OPPONENT_UPDATE", -- Seen, Unseen, ...?
+};
 
 local eventFrame = CreateFrame("Frame");
 
@@ -48,7 +67,17 @@ function DataCollector:RegisterEvents()
 end
 
 function DataCollector:HandleLocalEvents(event, ...)
-    Debug:LogForced("DataCollector test event:", event);
+    Debug:LogForced("DataCollector test event:", ArenaTracker:GetStateName(), event, ...);
+
+    if(event == "GROUP_ROSTER_UPDATE") then
+        local party1 = API:GetUnitFullName("party1");
+        local party2 = API:GetUnitFullName("party2");
+
+        Debug:LogForced("DataCollector party:", API:IsSecretValue(party1), party1, API:IsSecretValue(party2), party2);
+
+    elseif(event == "PVP_MATCH_STATE_CHANGED") then
+        --Debug:LogForced("DataCollector state changed:", "Missing API for HasGatesOpened...");
+    end
 end
 
 -------------------------------------------------------------------------

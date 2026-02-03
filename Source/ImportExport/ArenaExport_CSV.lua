@@ -78,7 +78,7 @@ Structures:
 --]]
 
 -- ArenaAnalytics_CSV export format:
-Export.exportPrefix_CSV = "ArenaAnalyticsExport_CSV:Date,Season,SeasonPlayed,Map,Bracket,MatchType,Duration,Outcome,firstDeath,Dampening,QueueTime,"
+Export.exportPrefix_CSV = "ArenaAnalyticsExport_CSV:Date,Season,isOFfSeason,SeasonPlayed,Map,Bracket,MatchType,Duration,Outcome,firstDeath,Dampening,QueueTime,"
                     .. "Rating,RatingDelta,Mmr,EnemyRating,EnemyRatingDelta,EnemyMmr,"
                     .. "Player1Name,Player1Race,Player1Faction,Player1Team,Player1Gender,Player1Class,Player1Spec,Player1Role,Player1Subrole,Player1Kills,Player1Deaths,Player1Damage,Player1Healing,Player1Wins,Player1Rating,Player1RatingDelta,Player1Mmr,Player1MmrDelta,"
                     .. "Player2Name,Player2Race,Player2Faction,Player2Team,Player2Gender,Player2Class,Player2Spec,Player2Role,Player2Subrole,Player2Kills,Player2Deaths,Player2Damage,Player2Healing,Player2Wins,Player2Rating,Player2RatingDelta,Player2Mmr,Player2MmrDelta,"
@@ -99,7 +99,7 @@ Export.exportPrefix_CSV = "ArenaAnalyticsExport_CSV:Date,Season,SeasonPlayed,Map
 
 Export.fieldCount_CSV = Export:CountFields(Export.exportPrefix_CSV);
 
-local baseKeys = { "date", "season", "seasonPlayed", "map", "bracket", "matchType", "duration", "outcome", "firstDeath", "dampening", "queueTime" };
+local baseKeys = { "date", "season", "isOFfSeason", "seasonPlayed", "map", "bracket", "matchType", "duration", "outcome", "firstDeath", "dampening", "queueTime" };
 local baseDummy = Export:MakeDummyString(#baseKeys);
 local function GetBaseString(formattedMatch)
     local output = "";

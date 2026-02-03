@@ -33,6 +33,17 @@ function API:IsSecretValue(value)
     return issecretvalue and value ~= nil and issecretvalue(value);
 end
 
+local unknownValues = {
+    [""] = true,
+    ["?"] = true,
+    [UNKNOWN or "Unknown"] = true,
+    [UKNOWNBEING or _G["UNKNOWNBEING"] or "Unknown Being"] = true, -- NOTE: Blizzard misspelled the constant ingame! (Missing N is intentional here!)
+    [UNKNOWNOBJECT or "Unknown"] = true,
+};
+function API:IsValidValue(value)
+    return value ~= nil and not API:IsSecretValue(value) and not unknownValues[value];
+end
+
 
 function API:GetClassToken(index)
     index = tonumber(index);
@@ -72,7 +83,7 @@ function API:GetUnitFullName(unitToken, skipRealm)
 
     local name = UnitNameUnmodified(unitToken);
 
-    if(not Helpers:IsValidValue(name)) then
+    if(not API:IsValidValue(name)) then
         return nil;
     end
 
@@ -82,11 +93,11 @@ function API:GetUnitFullName(unitToken, skipRealm)
 
     -- Get the realm
     local realm = select(2, UnitFullName(unitToken));
-    if(not Helpers:IsValidValue(realm)) then
+    if(not API:IsValidValue(realm)) then
         realm = API:GetLocalRealm();
     end
 
-    if(not Helpers:IsValidValue(realm)) then
+    if(not API:IsValidValue(realm)) then
         Debug:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm for unit:", unitToken);
         return name;
     end
@@ -182,8 +193,21 @@ function API:GetMaxSpecializationsForClass(classIndex)
 end
 
 
+function API:GetPreviousSeason()
+    return GetPreviousArenaSeason and GetPreviousArenaSeason() or 0;
+end
+
 function API:GetCurrentSeason()
-    return GetCurrentArenaSeason();
+    return GetCurrentArenaSeason and GetCurrentArenaSeason() or 0;
+end
+
+function API:IsOffSeason()
+    return API:GetCurrentSeason() == 0 and API:GetPreviousSeason() > 0;
+end
+
+function API:GetSeason()
+    local currentSeason = math.max(API:GetCurrentSeason(), API:GetPreviousSeason());
+    return currentSeason, API:IsOffSeason();
 end
 
 
@@ -394,13 +418,14 @@ end
 
 
 function API:UpdateDialogueVolume()
-    local hasPreviousValue = type(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue) ~= "number"
+    local hasPreviousValue = type(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue) == "number";
+    Debug:Log("UpdateDialogueVolume", hasPreviousValue, ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
 
     if(API:IsInArena() and Options:Get("muteArenaDialogSounds")) then
         if(not hasPreviousValue) then
             local previousValue = tonumber(GetCVar("Sound_DialogVolume"));
             if(previousValue ~= 0) then
-                Debug:Log("Muted dialogue sound.");
+                Debug:LogGreen("Muted dialogue sound.");
                 SetCVar("Sound_DialogVolume", 0);
                 local newValue = tonumber(GetCVar("Sound_DialogVolume"));
                 if(tonumber(newValue) == 0) then
@@ -412,7 +437,7 @@ function API:UpdateDialogueVolume()
     elseif(hasPreviousValue) then
         if(tonumber(GetCVar("Sound_DialogVolume")) == 0) then
             SetCVar("Sound_DialogVolume", ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
-            Debug:Log("Unmuted dialogue sound.");
+            Debug:LogGreen("Unmuted dialogue sound.");
         end
 
         ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = nil;
@@ -452,6 +477,10 @@ end
 function API:GetMappedAddonSpecID(specID)
     if(not API.specMappingTable) then
         Debug:Log("GetMappedAddonSpecID: Failed to find specMappingTable. Ignoring spec:", specID);
+        return nil;
+    end
+
+    if(API:IsSecretValue(specID)) then
         return nil;
     end
 

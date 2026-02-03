@@ -251,6 +251,7 @@ local specIconTable = {
         -- Demon Hunter
         [111] = [[Interface\Icons\ability_demonhunter_spectank]], -- Vengeance
         [112] = [[Interface\Icons\ability_demonhunter_specdps]], -- Havoc
+        [113] = [[Interface\Icons\classicon_demonhunter_void]], -- Devourer
 
         -- Evoker
         [121] = [[Interface\Icons\classicon_evoker_preservation]], -- Preservation

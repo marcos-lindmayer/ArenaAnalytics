@@ -12,7 +12,7 @@ local Debug = ArenaAnalytics.Debug;
 -- General Helpers
 
 function Helpers:ToSafeLower(value)
-    if(type(value) == "string") then
+    if(not API:IsSecretValue(value) and type(value) == "string") then
         return value:lower();
     end
 
@@ -273,20 +273,8 @@ function Helpers:IsSpecID(spec_id)
     return spec_id and (spec_id % 10 > 0);
 end
 
-
-local unknownValues = {
-    [""] = true,
-    ["?"] = true,
-    [UNKNOWN or "Unknown"] = true,
-    [UKNOWNBEING or _G["UNKNOWNBEING"] or "Unknown Being"] = true, -- NOTE: Blizzard misspelled the constant ingame! (Missing N is intentional here!)
-    [UNKNOWNOBJECT or "Unknown"] = true,
-};
-function Helpers:IsValidValue(value)
-    return value ~= nil and (API:IsSecretValue(value) or not unknownValues[value]); -- Assume secrets are valid, untestable
-end
-
 function Helpers:ToValidValue(value)
-    if(not Helpers:IsValidValue(value)) then
+    if(not API:IsValidValue(value)) then
         return nil;
     end
 

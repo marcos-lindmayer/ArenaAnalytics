@@ -170,7 +170,11 @@ end
 -- Initiate tracking if in arena, otherwise skip
 function stages.Step5_InitiateTracking()
 	Initialization:InitiateStep(5);
-	Debug:Log("Step5_InitiateTracking()", API:IsInArena());
+
+	local isOffSeason = API:IsOffSeason();
+	Debug:Log("Step5_InitiateTracking()", API:IsInArena(), isOffSeason);
+
+	ArenaAnalytics:InitializeTransientDB(isOffSeason);
 
 	-- Force a status update and set initial wasInArena
 	Events:CheckZoneChanged(true);

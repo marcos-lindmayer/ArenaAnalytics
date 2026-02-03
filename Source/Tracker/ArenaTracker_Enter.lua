@@ -57,7 +57,6 @@ local function UpdatePostMatchSeasonPlayed(shouldLock)
 	end
 
 	local seasonPlayed = API:GetSeasonPlayed(stateData.bracketIndex);
-
 	if(seasonPlayed and not stateData.hasMatchEnded) then
 		seasonPlayed = seasonPlayed + 1;
 	end

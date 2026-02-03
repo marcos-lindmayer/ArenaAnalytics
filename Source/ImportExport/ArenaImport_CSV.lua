@@ -5,7 +5,7 @@ local Import = ArenaAnalytics.Import;
 local Export = ArenaAnalytics.Export;
 local Debug = ArenaAnalytics.Debug;
 local TablePool = ArenaAnalytics.TablePool;
-local Localization = ArenaAnalytics.Localization;
+local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
 local Bitmap = ArenaAnalytics.Bitmap;
@@ -43,7 +43,7 @@ end
 -------------------------------------------------------------------------
 -- Process arenas
 
-local baseFieldCount = 17;
+local baseFieldCount = 18;
 local playerFieldCount = 18;
 local roundFieldCount = 9;
 
@@ -71,7 +71,7 @@ local function IsValidPlayer(player)
         return false;
     end
 
-    return Helpers:IsValidValue(player.name) or player.spec ~= nil;
+    return API:IsValidValue(player.name) or player.spec ~= nil;
 end
 
 -- 
@@ -136,7 +136,7 @@ local function ProcessRound(cachedValues, roundIndex)
     local round = TablePool:Acquire();
 
     -- TODO: Fill rounds
-    round.duration = tonumber(cachedValues[indexOffset + 1])
+    round.duration = tonumber(cachedValues[indexOffset + 1]);
     round.outcome = GetValueFromTable(outcomes, cachedValues[indexOffset + 2]);
     round.firstDeath = cachedValues[indexOffset + 3];
 
@@ -194,30 +194,31 @@ function Import.ProcessNextMatch_ArenaAnalytics(arenaString)
 
     newArena.date = date;
     newArena.season = tonumber(cachedValues[2]);
-    newArena.seasonPlayed = tonumber(cachedValues[3]);
-    newArena.map = GetMap(cachedValues[4]);
-    newArena.bracket = GetValueFromTable(brackets, cachedValues[5]);
-    newArena.matchType = cachedValues[6];
-    newArena.duration = tonumber(cachedValues[7]);
-    newArena.outcome = GetValueFromTable(outcomes, cachedValues[8]);
+    newArena.isOffSeason = cachedValues[3] == "Y";
+    newArena.seasonPlayed = tonumber(cachedValues[4]);
+    newArena.map = GetMap(cachedValues[5]);
+    newArena.bracket = GetValueFromTable(brackets, cachedValues[6]);
+    newArena.matchType = cachedValues[7];
+    newArena.duration = tonumber(cachedValues[8]);
+    newArena.outcome = GetValueFromTable(outcomes, cachedValues[9]);
 
     -- TODO: Convert first death to player data
-    local firstDeath = cachedValues[9];
+    local firstDeath = cachedValues[10];
 
     -- NYI
-    newArena.dampening = nil; -- 10
-    newArena.queueTime = nil; -- 11
+    newArena.dampening = nil; -- 11
+    newArena.queueTime = nil; -- 12
 
 
     -- Player rating and MMR data
-    newArena.partyRating = tonumber(cachedValues[12]);
-    newArena.partyRatingDelta = tonumber(cachedValues[13]);
-    newArena.partyMMR = tonumber(cachedValues[14]);
+    newArena.partyRating = tonumber(cachedValues[13]);
+    newArena.partyRatingDelta = tonumber(cachedValues[14]);
+    newArena.partyMMR = tonumber(cachedValues[15]);
 
     -- Enemy rating and MMR data
-    newArena.enemyRating = tonumber(cachedValues[15]);
-    newArena.enemyRatingDelta = tonumber(cachedValues[16]);
-    newArena.enemyMMR = tonumber(cachedValues[17]);
+    newArena.enemyRating = tonumber(cachedValues[16]);
+    newArena.enemyRatingDelta = tonumber(cachedValues[17]);
+    newArena.enemyMMR = tonumber(cachedValues[18]);
 
 
     newArena.players = TablePool:Acquire();

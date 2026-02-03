@@ -49,7 +49,8 @@ end
 -- Standardized Updated Option Response Functions
 
 local function HandleSettingsChanged()
-    Filters:ResetAll(false);
+    Filters:ResetAllFast(false);
+    Filters:Refresh();
     PlayerTooltip:OnSettingsChanged();
 end
 
@@ -127,6 +128,7 @@ function Options:LoadSettings()
 
     AddSetting("showSkirmish", true);
     AddSetting("showWarGames", true);
+    AddSetting("showOffSeason", true);
 
     AddSetting("showCompDropdownInfoText", true);
 
@@ -613,6 +615,7 @@ function SetupTab_Filters()
 
     CreateCheckbox("showSkirmish", parent, offsetX, "Show Skirmish in match history.");
     CreateCheckbox("showWarGames", parent, offsetX, "Show War Games in match history.");
+    CreateCheckbox("showOffSeason", parent, offsetX, "Show off-season games in match history.");
 
     CreateSpace();
 

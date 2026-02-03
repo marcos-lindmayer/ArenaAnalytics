@@ -40,9 +40,11 @@ function ArenaTracker:GetCurrentWins()
 	local myWins, totalWins = 0,0;
 	for i=1, GetNumBattlefieldScores() do
 		local score = API:GetPlayerScore(i);
-		if(score and score.wins) then
-			if(currentArena.playerName and score.name == currentArena.playerName) then
-				myWins = score.wins;
+		if(score and API:IsValidValue(score.wins)) then
+			if(API:IsValidValue(score.name) and API:IsValidValue(currentArena.playerName)) then
+				if(score.name == currentArena.playerName) then
+					myWins = score.wins;
+				end
 			end
 
 			totalWins = totalWins + score.wins;
@@ -63,8 +65,9 @@ function ArenaTracker:UpdateRoundTeam()
 		return;
 	end
 
-	wipe(currentArena.round.team)
+	TablePool:Release(currentArena.round.team);
 	currentArena.round.team = TablePool:Acquire();
+
 	for i=1, 2 do
 		local name = API:GetUnitFullName("party"..i);
 		if(name) then
@@ -77,16 +80,18 @@ function ArenaTracker:UpdateRoundTeam()
 end
 
 
-function ArenaTracker:RoundTeamContainsPlayer(playerName)
+function ArenaTracker:RoundTeamContainsPlayer(playerName, team)
 	if(not ArenaTracker:IsTrackingShuffle(true)) then
-		return;
+		return nil;
 	end
 
 	if(not playerName) then
 		return nil;
 	end
 
-	for _,teamMember in ipairs(currentArena.round.team) do
+	team = type(team) == "table" and team or currentArena.round.team;
+
+	for _,teamMember in ipairs(team) do
 		if(teamMember == playerName) then
 			return true;
 		end
@@ -114,31 +119,31 @@ end
 
 
 function ArenaTracker:GetShuffleOutcome()
-	if(currentArena.committedRounds) then
-		local roundWins = 0;
+	if(not currentArena.committedRounds) then
+		return nil;
+	end
 
-        -- Iterate through all the rounds
-        for _, round in ipairs(currentArena.committedRounds) do
-            -- Check if firstDeath exists
-            if(round.firstDeath) then
-                for _, enemyPlayer in ipairs(round.enemy) do
-                    if enemyPlayer == round.firstDeath then
-                        roundWins = roundWins + 1;
-						break;
-                    end
-                end
-            end
-        end
+	local roundWins = 0;
 
-        if(roundWins == 3) then
-			-- Draw
-			return 2;
-		else
-			return roundWins > 3 and 1 or 0;
+	-- Iterate through all the rounds
+	for _, round in ipairs(currentArena.committedRounds) do
+		-- Check if firstDeath exists
+		if(round.firstDeath) then
+			for _, enemyPlayer in ipairs(round.enemy) do
+				if enemyPlayer == round.firstDeath then
+					roundWins = roundWins + 1;
+					break;
+				end
+			end
 		end
 	end
 
-	return nil;
+	if(roundWins == 3) then
+		-- Draw
+		return 2;
+	else
+		return roundWins > 3 and 1 or 0;
+	end
 end
 
 
@@ -177,6 +182,7 @@ function ArenaTracker:HandleRoundEnd(force)
 
 	Debug:Log("HandleRoundEnd!", #currentArena.players);
 
+	Inspection:Clear();
 	ArenaTracker:CommitCurrentRound(force);
 end
 
@@ -226,8 +232,14 @@ function ArenaTracker:CommitCurrentRound(force)
 	-- Fill round teams
 	for _,player in ipairs(currentArena.players) do
 		if(player and player.name) then
-			local team = ArenaTracker:RoundTeamContainsPlayer(player.name) and roundData.team or roundData.enemy;
-			tinsert(team, player.name);
+			if(API.hasSecrets) then
+				if(ArenaTracker:RoundTeamContainsPlayer(player.name)) then
+					tinsert(roundData.team, player.name);
+				end
+			else -- Non-secret logic (Fill enemies immediately)
+				local team = ArenaTracker:RoundTeamContainsPlayer(player.name) and roundData.team or roundData.enemy;
+				tinsert(team, player.name);
+			end
 		end
 	end
 
@@ -249,5 +261,38 @@ function ArenaTracker:CommitCurrentRound(force)
 	if(not API:GetWinner()) then
 		Debug:LogGreen("Round commit forcing team update!");
 		ArenaTracker:UpdateRoundTeam();
+	end
+end
+
+
+local function FillRoundEnemyTeam(round, players, index)
+	if(not round or not round.team or #round.team ~= 3) then
+		return;
+	end
+
+	TablePool:Release(round.enemy);
+	round.enemy = TablePool:Acquire();
+
+	for i,player in ipairs(players) do
+		if(player.name and not ArenaTracker:RoundTeamContainsPlayer(player.name, round.team)) then
+			tinsert(round.enemy, player.name);
+		end
+	end
+
+	Debug:LogGreen("Filled round enemies:", index, #round.enemy);
+end
+
+-- Update committed rounds
+function ArenaTracker:UpdateRoundEnemyTeams()
+	if(not ArenaTracker:IsTrackingShuffle()) then
+		return;
+	end
+
+    if(not currentArena.players or #currentArena.players <= 3) then
+        return;
+    end
+
+	for i,round in ipairs(currentArena.committedRounds) do
+		FillRoundEnemyTeam(round, currentArena.players, i);
 	end
 end

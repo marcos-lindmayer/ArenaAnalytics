@@ -26,7 +26,11 @@ function ArenaTracker:InitializeSubmodule_GatesOpened()
 end
 
 function ArenaTracker:HandleArenaMessages(msg)
-	if(not msg or not ArenaTracker:IsTrackingArena()) then
+	if(msg and not API:IsSecretValue(msg)) then
+		return;
+	end
+
+	if(not ArenaTracker:IsTrackingArena()) then
 		return;
 	end
 
@@ -56,7 +60,8 @@ end
 
 -- Gates opened, match has officially started
 function ArenaTracker:HandleArenaGatesOpened(...)
-	Debug:Log("ArenaTracker:HandleArenaGatesOpened() triggered!");
+	local isShuffle = ArenaTracker:IsTrackingShuffle();
+	Debug:LogGreen("ArenaTracker:HandleArenaGatesOpened() triggered! IsShuffle:", isShuffle);
 
 	currentArena.startTime = time();
 	currentArena.hasRealStartTime = true; -- The start time has been set by gates opened
@@ -65,7 +70,7 @@ function ArenaTracker:HandleArenaGatesOpened(...)
 	ArenaTracker:ForceTeamsUpdate();
 	ArenaTracker:UpdateRoundTeam();
 
-	if(ArenaTracker:IsTrackingShuffle()) then
+	if(isShuffle) then
 		local myWins, totalWins = ArenaTracker:GetCurrentWins();
 		currentArena.round.wins = myWins;
 		currentArena.round.totalWins = totalWins;
@@ -75,5 +80,5 @@ function ArenaTracker:HandleArenaGatesOpened(...)
 		currentArena.round.hasStarted = true;
 	end
 
-	Debug:LogGreen("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
+	Debug:Log("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
 end

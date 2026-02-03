@@ -69,9 +69,9 @@ function ArenaTracker:Save(newArena)
 
 	Debug:Log("Duration for new arena:", newArena.duration, newArena.hasStartTime, newArena.hasRealStartTime, newArena.startTime, newArena.endTime);
 
-	local season = API:GetCurrentSeason();
-	if (not season or season == 0) then
-		Debug:Log("Failed to get valid season for new match.");
+	local season, isOffSeason = API:GetSeason();
+	if (season == 0) then
+		Debug:LogWarning("Failed to get valid season for new match.", season, isOffSeason);
 	end
 
 	-- Setup table data to insert into ArenaAnalyticsDB
@@ -95,8 +95,11 @@ function ArenaTracker:Save(newArena)
 		ArenaMatch:SetEnemyMMR(arenaData, newArena.enemyMMR);
 	end
 
-	ArenaMatch:SetSeason(arenaData, season);
-	ArenaMatch:SetSeasonPlayed(arenaData, newArena.seasonPlayed)
+	ArenaMatch:SetSeason(arenaData, season, isOffSeason);
+
+	if(not API:IsOffSeason()) then
+		ArenaMatch:SetSeasonPlayed(arenaData, newArena.seasonPlayed);
+	end
 
 	ArenaMatch:SetMatchOutcome(arenaData, newArena.outcome);
 

@@ -151,8 +151,7 @@ function Filters:Reset(filter, skipOverrides)
     return changed;
 end
 
--- Clearing filters, optionally keeping filters explicitly applied through options
-function Filters:ResetAll(skipOverrides)
+function Filters:ResetAllFast(skipOverrides)
     local changed = false;
 
     for _,filter in pairs(Filters.FilterKeys) do
@@ -160,6 +159,13 @@ function Filters:ResetAll(skipOverrides)
     end
 
     changed = Search:Reset() or changed;
+
+    return changed;
+end
+
+-- Clearing filters, optionally keeping filters explicitly applied through options
+function Filters:ResetAll(skipOverrides)
+    local changed = Filters:ResetAllFast(skipOverrides);
 
     if(changed) then
         Debug:Log("Filters has been reset. Refreshing.");
@@ -283,17 +289,16 @@ end
 local function doesMatchPassFilter_Season(match)
     if match == nil then return false end;
 
-    local season = Filters:Get(Filters.FilterKeys.Season);
-    Debug:Assert(season ~= nil);
-    if(season == "All") then
+    local seasonFilter = Filters:Get(Filters.FilterKeys.Season);
+    if(seasonFilter == "All") then
         return true;
     end
 
-    if(season == "Current Season") then
-        return ArenaMatch:GetSeason(match) == API:GetCurrentSeason();
+    if(seasonFilter == "Current Season") then
+        return ArenaMatch:GetSeason(match) == API:GetSeason();
     end
 
-    return ArenaMatch:GetSeason(match) == tonumber(season);
+    return ArenaMatch:GetSeason(match) == tonumber(seasonFilter);
 end
 
 -- check comp filters (comp / enemy comp)
@@ -329,6 +334,10 @@ function Filters:doesMatchPassGameSettings(match)
     end
 
     if (not Options:Get("showWarGames") and matchType == "wargame") then
+        return false;
+    end
+
+    if (not Options:Get("showOffSeason") and ArenaMatch:IsOffSeason(match)) then
         return false;
     end
 

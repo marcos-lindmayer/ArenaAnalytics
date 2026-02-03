@@ -120,14 +120,16 @@ function EntryFrame:SetConfig(config)
 end
 
 function EntryFrame:CreateNestedList()
-    if(self.nested ~= nil) then
-        local parent = self.parent;
-
-        local listInfo = Dropdown:RetrieveValue(self.nested, self);
-        local newDropdown = Dropdown.List:Create(self, parent.level + 1, listInfo);
-        newDropdown:SetPoint("TOPLEFT", self:GetFrame(), "TOPRIGHT", -2.5, 5 + Dropdown.List.verticalPadding);
-        newDropdown:Show();
+    if(self.nested == nil) then
+        return;
     end
+
+    local parent = self.parent;
+
+    local listInfo = Dropdown:RetrieveValue(self.nested, self);
+    local newDropdown = Dropdown.List:Create(self, parent.level + 1, listInfo);
+    newDropdown:SetPoint("TOPLEFT", self:GetFrame(), "TOPRIGHT", -2.5, 5 + Dropdown.List.verticalPadding);
+    newDropdown:Show();
 end
 
 function EntryFrame:Refresh()

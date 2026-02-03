@@ -35,6 +35,7 @@ ArenaMatch.matchKeys = {
     enemy_comp = -17,
     rounds = -18,
     seasonPlayed = -19,
+    isOffSeason = -20,
 
     importIndex = -100,
     transient_requireRatingFix = -101,
@@ -199,7 +200,7 @@ function ArenaMatch:TryFixLastRating(match)
 
     local season = ArenaMatch:GetSeason(match);
     local currentSeason = API:GetCurrentSeason();
-    if(season and currentSeason and currentSeason > 0 and season ~= currentSeason) then
+    if(season and currentSeason > 0 and season ~= currentSeason) then
         -- Season appears to have changed, too late to fix last rating.
         ArenaMatch:ClearTransientValues(match);
         Debug:Log("Rating fix cancelled - Incorrect season:", season, "current:", currentSeason);
@@ -513,16 +514,21 @@ end
 -- Season (12) and Season Played (19)
 
 function ArenaMatch:GetSeason(match)
-    if(not match) then 
-        return nil 
-    end;
+    if(not match) then
+        return nil;
+    end
 
     return tonumber(match[matchKeys.season]);
 end
 
-function ArenaMatch:SetSeason(match, value)
+function ArenaMatch:IsOffSeason(match)
+    return match and tonumber(match[matchKeys.isOffSeason]) == 1;
+end
+
+function ArenaMatch:SetSeason(match, season, isOffSeason)
     assert(match);
-    match[matchKeys.season] = ToPositiveNumber(value, true);
+    match[matchKeys.season] = ToPositiveNumber(season, true);
+    match[matchKeys.isOffSeason] = ToNumericalBool(isOffSeason, true); -- 1 or nil
 end
 
 
@@ -534,6 +540,7 @@ function ArenaMatch:SetSeasonPlayed(match, value)
     assert(match);
     match[matchKeys.seasonPlayed] = ToPositiveNumber(value, true);
 end
+
 
 -------------------------------------------------------------------------
 -- Session (13)
@@ -992,7 +999,7 @@ local function GetCompForSpecs(teamSpecs, requiredSize)
     end
 
     if(#teamSpecs ~= requiredSize) then
-        Debug:Log("GetCompForSpecs: Invalid team size.", #teamSpecs, requiredSize)
+        Debug:LogWarning("GetCompForSpecs: Invalid team size.", #teamSpecs, requiredSize);
         return nil;
     end
 
@@ -1266,10 +1273,10 @@ function ArenaMatch:SetRounds(match, rounds)
 
     ArenaMatch:SortGroups(match);
 
-    local enemyTeam = ArenaMatch:GetTeam(match, true);
+    local otherPlayers = ArenaMatch:GetTeam(match, true);
 
     -- Must already have players, to compact round data
-    if(not Debug:Assert(enemyTeam and #enemyTeam > 0)) then
+    if(not Debug:Assert(otherPlayers and #otherPlayers > 0)) then
         return;
     end
 
@@ -1286,7 +1293,7 @@ function ArenaMatch:SetRounds(match, rounds)
     -- Add self
     indexMapping[myName] = 0;
 
-    for index, player in ipairs(enemyTeam) do
+    for index, player in ipairs(otherPlayers) do
         local fullName = ArenaMatch:GetPlayerFullName(player);
         if(fullName and fullName ~= "" and fullName ~= myName) then
             indexMapping[fullName] = index;
@@ -1302,14 +1309,13 @@ function ArenaMatch:SetRounds(match, rounds)
         local specs = TablePool:Acquire();
 
         for _,member in ipairs(group) do
-            local spec_id = nil;
             local playerIndex = member and indexMapping[member] or nil;
             local player = nil;
 
             if(member == myName) then
                 player = ArenaMatch:GetSelf(match);
             elseif(playerIndex) then
-                player = enemyTeam[playerIndex];
+                player = otherPlayers[playerIndex];
                 tinsert(compactGroup, playerIndex);
             end
 
@@ -1320,7 +1326,7 @@ function ArenaMatch:SetRounds(match, rounds)
             end
         end
 
-        GroupSorter:SortIndexGroup(compactGroup, enemyTeam, selfPlayerInfo);
+        GroupSorter:SortIndexGroup(compactGroup, otherPlayers, selfPlayerInfo);
         local groupString = table.concat(compactGroup) or "";
         local comp = GetCompForSpecs(specs, requiredTeamSize);
 

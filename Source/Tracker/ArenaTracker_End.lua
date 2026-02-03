@@ -74,49 +74,54 @@ function ArenaTracker:HandleArenaEnd()
 		local player = ArenaTracker:GetPlayer(score.name);
 		if(not player) then
 			-- Use scoreboard info
-			Debug:Log("Creating new player by scoreboard:", score.name);
-			player = ArenaTracker:CreatePlayerTable(nil, score.name);
+			player = ArenaTracker:CreatePlayer(nil, score.name);
+
+			if(player) then
+				Debug:Log("Creating new player by scoreboard:", player.name, score.spec);
+			end
 			Debug:Log("Adding player: ", score.name);
 		end
 
-		-- Fill missing data
-		player.teamIndex = score.team;
-		player.spec = Helpers:IsSpecID(player.spec) and player.spec or score.spec;
-		player.race = player.race or score.race;
-		player.kills = score.kills;
-		player.deaths = API.trustScoreboardDeaths and score.deaths or player.deaths or 0;
-		player.damage = score.damage;
-		player.healing = score.healing;
+		if(player) then
+			-- Fill missing data
+			player.teamIndex = score.team;
+			player.spec = Helpers:IsSpecID(player.spec) and player.spec or score.spec;
+			player.race = player.race or score.race;
+			player.kills = score.kills;
+			player.deaths = API.trustScoreboardDeaths and score.deaths or player.deaths or 0;
+			player.damage = score.damage;
+			player.healing = score.healing;
 
-		if(ArenaTracker:IsRated()) then
-			player.rating = score.rating;
-			player.ratingDelta = score.ratingDelta;
-			player.mmr = score.mmr;
-			player.mmrDelta = score.mmrDelta;
-		end
-
-		if(isShuffle) then
-			player.wins = score.wins or 0;
-		end
-
-		if(player.name) then
-			if (currentArena.playerName and player.name == currentArena.playerName) then
-				myTeamIndex = player.teamIndex;
-				player.isSelf = true;
-
-				-- Probably not useful, keeping at warning log level for non-shuffles, in case I learn more.
-				if(not isShuffle and myTeamIndex ~= GetBattlefieldArenaFaction()) then
-					Debug:LogWarning("My team index API mismatch! GetBattlefieldArenaFaction cannot be trusted?");
-				end
-
-			elseif(isShuffle) then
-				-- Everyone else is an opponent in shuffle (1v5)
-				player.isEnemy = true;
+			if(ArenaTracker:IsRated()) then
+				player.rating = score.rating;
+				player.ratingDelta = score.ratingDelta;
+				player.mmr = score.mmr;
+				player.mmrDelta = score.mmrDelta;
 			end
 
-			table.insert(players, player);
-		else
-			Debug:LogWarning("Tracker: Invalid player name, player will not be stored!");
+			if(isShuffle) then
+				player.wins = score.wins or 0;
+			end
+
+			if(player.name) then
+				if (currentArena.playerName and player.name == currentArena.playerName) then
+					myTeamIndex = player.teamIndex;
+					player.isSelf = true;
+
+					-- Probably not useful, keeping at warning log level for non-shuffles, in case I learn more.
+					if(not isShuffle and myTeamIndex ~= GetBattlefieldArenaFaction()) then
+						Debug:LogWarning("My team index API mismatch! GetBattlefieldArenaFaction cannot be trusted?");
+					end
+
+				elseif(isShuffle) then
+					-- Everyone else is an opponent in shuffle (1v5)
+					player.isEnemy = true;
+				end
+
+				table.insert(players, player);
+			else
+				Debug:LogWarning("Tracker: Invalid player name, player will not be stored!");
+			end
 		end
 
 		TablePool:Release(score);

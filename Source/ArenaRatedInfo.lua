@@ -43,16 +43,16 @@ local function UpdateBracketCachedRatings(bracketIndex, seasonPlayed, rating)
 	local bracketRatedInfo = GetBracketRatedInfo(bracketIndex);
 
 	if(bracketRatedInfo[seasonPlayed] ~= rating) then
-		local oldValue = bracketRatedInfo[seasonPlayed];
+--		local oldRating = bracketRatedInfo[seasonPlayed];
+--		Debug:Log("UpdateBracketCachedRatings:", bracketIndex, seasonPlayed, rating, oldRating);
+
 		bracketRatedInfo[seasonPlayed] = rating;
-		Debug:Log("UpdateBracketCachedRatings:", bracketIndex, seasonPlayed, rating, bracketRatedInfo[seasonPlayed], oldValue);
 	end
 
 	-- Store the last season played known from outside arenas (May update twice after early leaves)
 	if(not API:IsInArena()) then
 		bracketRatedInfo.lastWorldSeasonPlayed = seasonPlayed;
 	end
-
 end
 
 function ArenaRatedInfo:UpdateRatedInfo()
@@ -98,24 +98,31 @@ end
 function ArenaRatedInfo:GetLastSeasonPlayed(bracketIndex)
 	bracketIndex = tonumber(bracketIndex);
 	if(not bracketIndex) then
+		Debug:LogWarning("ArenaRatedInfo:GetLastSeasonPlayed missing bracketIndex.");
 		return nil;
 	end
 
 	local bracketRatedInfo = ArenaAnalyticsTransientDB.ratedInfo[bracketIndex];
 	if(not bracketRatedInfo) then
+		Debug:LogWarning("ArenaRatedInfo:GetLastSeasonPlayed missing bracketRatedInfo.");
 		return nil;
 	end
 
-	local latestSeasonPlayed = 0;
+	local latestSeasonPlayed = -1;
 	for seasonPlayed,_ in pairs(bracketRatedInfo) do
 		if(type(seasonPlayed) == "number" and latestSeasonPlayed < seasonPlayed) then
 			latestSeasonPlayed = seasonPlayed;
 		end
 	end
 
-	if(latestSeasonPlayed == 0) then
+	if(latestSeasonPlayed == -1) then
 		return nil;
 	end
 
 	return latestSeasonPlayed;
+end
+
+function ArenaRatedInfo:GetCurrentRatedInfo(bracketIndex)
+	local lastSeasonPlayed = ArenaRatedInfo:GetLastSeasonPlayed(bracketIndex);
+	return ArenaRatedInfo:GetRatedInfo(bracketIndex, lastSeasonPlayed);
 end

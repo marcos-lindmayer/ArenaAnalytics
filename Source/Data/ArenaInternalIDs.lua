@@ -91,7 +91,7 @@ local function fillMapLookupTable()
 
         for i,key in ipairs(keys) do
             local value = Helpers:ToSafeLower(data[key]);
-            if(Helpers:IsValidValue(value)) then
+            if(API:IsValidValue(value)) then
                 Internal.mapLookupTable[value] = tonumber(map_id);
             end
         end
@@ -175,7 +175,7 @@ local function fillRaceLookupTable()
     for race_id, data in pairs(addonRaceIDs) do
         for i,key in ipairs(keys) do
             local value = Helpers:ToSafeLower(data[key]);
-            if(Helpers:IsValidValue(value)) then
+            if(API:IsValidValue(value)) then
                 Internal.raceLookupTable[value] = tonumber(race_id);
             end
         end
@@ -266,7 +266,7 @@ local function fillClassLookupTable()
     for class_id, data in pairs(Internal.addonClassIDs) do
         for i,key in ipairs(keys) do
             local value = Helpers:ToSafeLower(data[key]);
-            if(Helpers:IsValidValue(value)) then
+            if(API:IsValidValue(value)) then
                 Internal.classLookupTable[value] = tonumber(class_id);
             end
         end
@@ -347,7 +347,7 @@ local function fillSpecLookupTable()
 
     for spec_id, data in pairs(addonSpecializationIDs) do
         local value = Helpers:ToSafeLower(data["spec"]);
-        if(Helpers:IsValidValue(value) and Helpers:IsSpecID(spec_id)) then
+        if(API:IsValidValue(value) and Helpers:IsSpecID(spec_id)) then
             local existingSpec = Internal.specLookupTable[value];
 
             if(existingSpec ~= nil) then
@@ -455,7 +455,7 @@ end
 
 
 function Internal:LookupSpecID(class, spec, requireSpec)
-    if(requireSpec and not Helpers:IsValidValue(spec)) then
+    if(requireSpec and not API:IsValidValue(spec)) then
         return nil;
     end
 

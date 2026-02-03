@@ -6,6 +6,7 @@ local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Inspection = ArenaAnalytics.Inspection;
+local Internal = ArenaAnalytics.Internal;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
@@ -64,7 +65,7 @@ function ArenaTracker:HandleOpponentUpdate()
 			if(player) then
 				if(not Helpers:IsSpecID(player.spec)) then
 					local spec_id = API:GetArenaPlayerSpec(i, true);
-					Debug:Log("Assigning spec for:", unitToken, spec_id);
+					Debug:Log("Assigning opponent spec for:", unitToken, spec_id);
 					ArenaTracker:OnSpecDetected(unitToken, spec_id);
 				end
 			end
@@ -195,9 +196,9 @@ function ArenaTracker:OnSpecDetected(playerID, spec_id)
 	end
 
 	if(not Helpers:IsSpecID(player.spec) or player.spec == 13) then -- Preg doesn't count as a known spec
-		Debug:Log("Assigning spec: ", spec_id, " for player: ", player.name);
+		Debug:LogGreen("Assigning spec for player: ", player.name, spec_id, Internal:GetClassAndSpec(spec_id));
 		player.spec = spec_id;
 	elseif(player.spec) then
-		Debug:Log("Tracker: Keeping old spec:", player.spec, " for player: ", player.name);
+		Debug:Log("Tracker: Keeping old spec:", player.name, player.spec, Internal:GetClassAndSpec(spec_id));
 	end
 end

@@ -12,6 +12,8 @@ local VersionManager = ArenaAnalytics.VersionManager;
 local Debug = ArenaAnalytics.Debug;
 local Filters = ArenaAnalytics.Filters;
 local Helpers = ArenaAnalytics.Helpers;
+local Search = ArenaAnalytics.Search;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 -- Helper functions
@@ -184,7 +186,7 @@ function Commands.HandleCommand_DumpSpecs()
 			for specIndex=1, C_SpecializationInfo.GetNumSpecializationsForClassID(classIndex) do
 				local id, name, description, icon, role, recommended, allowedForBoost, masterySpell1, masterySpell2 = GetSpecializationInfoForClassID(classIndex, specIndex);
 				local spec_id = API:GetMappedAddonSpecID(id);
-				local class, spec = ArenaAnalytics.Internal:GetClassAndSpec(spec_id);
+				local class, spec = Internal:GetClassAndSpec(spec_id);
 
 				local fakeSearchToken = {
 					value = Helpers:ToSafeLower(spec or ""),
@@ -192,7 +194,7 @@ function Commands.HandleCommand_DumpSpecs()
 					exact = true,
 				};
 
-				local _, value, _, shortValue = ArenaAnalytics.Search:FindSearchValueDataForToken(fakeSearchToken);
+				local _, value, _, shortValue = Search:FindSearchValueDataForToken(fakeSearchToken);
 				if(spec_id ~= value) then
 					Debug:Log("          ", name, id, "  ///  ", class, spec, spec_id, " / ", value);
 				end

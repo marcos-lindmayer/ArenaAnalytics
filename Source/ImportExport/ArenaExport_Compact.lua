@@ -73,14 +73,14 @@ Structures:
 --]]
 
 -- ArenaAnalytics_Compact export format:
-Export.exportPrefix_Compact = "ArenaAnalyticsExport_Compact:Date,Season,SeasonPlayed,Map,Bracket,MatchType,Duration,Outcome,FirstDeath,Dampening,QueueTime,RatedInfo,Players,Rounds,";
+Export.exportPrefix_Compact = "ArenaAnalyticsExport_Compact:Date,Season,isOffSeason,SeasonPlayed,Map,Bracket,MatchType,Duration,Outcome,FirstDeath,Dampening,QueueTime,RatedInfo,Players,Rounds,";
 
 Export.fieldCount_Compact = Export:CountFields(Export.exportPrefix_Compact);
 
 -- Reusable output table
 local outputTable = {};
 
-local baseKeys = { "date", "season", "seasonPlayed", "map", "bracket", "matchType", "duration", "outcome", "firstDeath", "dampening", "queueTime" };
+local baseKeys = { "date", "season", "isOffSeason", "seasonPlayed", "map", "bracket", "matchType", "duration", "outcome", "firstDeath", "dampening", "queueTime" };
 local baseDummy = Export:MakeDummyString(#baseKeys);
 local function GetBaseString(formattedMatch)
     wipe(outputTable);

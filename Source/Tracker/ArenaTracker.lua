@@ -73,8 +73,8 @@ end
 
 -- Converts numeric → string tracking state
 function ArenaTracker:GetStateName(stateNum)
-	stateNum = stateNum or self.state;
-	return self.TrackingStateNames[stateNum] or "Invalid";
+	stateNum = tonumber(stateNum) or self.state;
+	return stateNum and self.TrackingStateNames[stateNum] or "Invalid";
 end
 
 
@@ -284,13 +284,21 @@ function ArenaTracker:HasMapData()
 	return currentArena and currentArena.mapId ~= nil;
 end
 
--- TODO: Ensure all use cases are aware that Midnight cannot fetch player!
-function ArenaTracker:GetPlayer(playerID)
-	if(API.hasSecrets) then
+local function SafeEqual(value, otherValue)
+	if(not API:IsValidValue(value) or not API:IsValidValue(otherValue)) then
 		return nil;
 	end
 
-	if(not Helpers:IsValidValue(playerID)) then
+	return Helpers:ToSafeLower(value) == Helpers:ToSafeLower(otherValue);
+end
+
+-- TODO: Ensure all use cases are aware that Midnight cannot fetch player!
+function ArenaTracker:GetPlayer(playerID)
+	if(API:IsSecretValue(playerID)) then
+		return nil;
+	end
+
+	if(not API:IsValidValue(playerID)) then
 		return nil;
 	end
 
@@ -301,13 +309,13 @@ function ArenaTracker:GetPlayer(playerID)
 	for i = 1, #currentArena.players do
 		local player = currentArena.players[i];
 		if (player) then
-			if(Helpers:ToSafeLower(player.name) == Helpers:ToSafeLower(playerID)) then
+			if(SafeEqual(playerID, player.name)) then
 				return player;
-			elseif(player.GUID == playerID) then
+			elseif(SafeEqual(playerID, player.GUID)) then
 				return player;
 			else -- Unit Token
 				local GUID = Helpers:UnitGUID(playerID);
-				if(GUID and GUID == player.GUID) then
+				if(SafeEqual(GUID, player.GUID)) then
 					return player;
 				end
 			end
@@ -374,10 +382,11 @@ function ArenaTracker:FillMissingPlayers()
 				if(name and not player) then
 					local isEnemy = (group == "arena");
 
-					player = ArenaTracker:CreatePlayerTable(isEnemy, name, unitToken);
-					table.insert(currentArena.players, player);
+					player = ArenaTracker:CreatePlayer(isEnemy, name, unitToken);
 
-					Debug:Log("Creating player table.", name, "IsFemale:", player.isFemale);
+					if(player) then
+						table.insert(currentArena.players, player);
+					end
 
 					if(not isEnemy and Inspection and Inspection.RequestSpec) then
 						Inspection:RequestSpec(unitToken);
@@ -394,10 +403,14 @@ end
 
 
 -- Returns a table with unit information to be placed inside arena.players
-function ArenaTracker:CreatePlayerTable(isEnemy, name, unitToken, spec_id)
+function ArenaTracker:CreatePlayer(isEnemy, name, unitToken, spec_id)
+	if(API:IsSecretValue(name)) then
+		return;
+	end
+
 	unitToken = tostring(unitToken);
 
-	local data = {
+	local newPlayer = {
 		isEnemy = isEnemy,
 		name = name,
 		GUID = Helpers:UnitGUID(unitToken),
@@ -412,7 +425,9 @@ function ArenaTracker:CreatePlayerTable(isEnemy, name, unitToken, spec_id)
 		petToken = unitToken and unitToken.."pet",
 	};
 
-	return data;
+	local class, spec = ArenaAnalytics.Internal:GetClassAndSpec(newPlayer.spec);
+	Debug:LogGreen("CreatePlayer:", newPlayer.name, class, spec, newPlayer.spec);
+	return newPlayer;
 end
 
 function ArenaTracker:TryFindPetOwnerGUID(petGUID)

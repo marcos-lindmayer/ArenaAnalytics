@@ -76,12 +76,16 @@ function ArenaTracker:HandleArenaStart(stateData)
 
 	if(ArenaTracker:IsRated()) then
 		currentArena.seasonPlayed = stateData.seasonPlayed; -- Post match season played
+
+		if(not API:GetWinner()) then
+			currentArena.oldRating = ArenaRatedInfo:GetCurrentRatedInfo(bracketIndex);
+		end
 	end
 
 	-- Add self
 	if (currentArena.playerName and not ArenaTracker:IsTrackingPlayer(currentArena.playerName)) then
 		-- Add player
-		local player = ArenaTracker:CreatePlayerTable(false, currentArena.playerName, "player", currentArena.mySpec);
+		local player = ArenaTracker:CreatePlayer(false, currentArena.playerName, "player", currentArena.mySpec);
 		table.insert(currentArena.players, player);
 
 		Debug:Log("Using MySpec:", player.spec, player.isFemale);

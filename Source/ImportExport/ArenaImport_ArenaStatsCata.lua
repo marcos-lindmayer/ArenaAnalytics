@@ -52,7 +52,7 @@ end
 local function GetMatchOutcome(cachedValues)
     local myTeam = cachedValues[7];
     local winningTeam = cachedValues[8];
-    if(not Helpers:IsValidValue(myTeam) or not Helpers:IsValidValue(winningTeam)) then
+    if(not API:IsValidValue(myTeam) or not API:IsValidValue(winningTeam)) then
         return nil;
     end
 
@@ -67,7 +67,7 @@ local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionInde
     local name = cachedValues[valueIndex];
 
     -- Assume invalid player, if name is missing
-    if(not Helpers:IsValidValue(name)) then
+    if(not API:IsValidValue(name)) then
         return nil;
     end
 
@@ -86,9 +86,9 @@ local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionInde
         race = Localization:GetRaceID(race, factionIndex),
     };
 
-    if(Helpers:IsValidValue(spec)) then
+    if(API:IsValidValue(spec)) then
         player.spec = Localization:GetSpecID(class, spec);
-    elseif(Helpers:IsValidValue(class)) then
+    elseif(API:IsValidValue(class)) then
         player.spec = Localization:GetClassID(class);
     else
         Debug:LogError("Import: Missing class and spec for player:", name);

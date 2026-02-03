@@ -286,7 +286,7 @@ function Import:SaveArena(arena)
 		ArenaMatch:SetEnemyMMR(newArena, arena.enemyMMR);
 	end
 
-	ArenaMatch:SetSeason(newArena, arena.season);
+	ArenaMatch:SetSeason(newArena, arena.season, arena.isOffSeason);
 
 	ArenaMatch:SetMatchOutcome(newArena, arena.outcome);
 

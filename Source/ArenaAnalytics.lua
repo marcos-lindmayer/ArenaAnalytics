@@ -90,18 +90,28 @@ end
 
 -------------------------------------------------------------------------
 
-function ArenaAnalytics:InitializeTransientDB()
+local function ShouldResetRatedInfo(currentSeason)
+	if(not ArenaAnalyticsTransientDB.ratedInfo) then
+		Debug:Log("Initiating transient DB ratedInfo!", ArenaAnalyticsTransientDB.ratedInfo);
+		return true;
+	end
+
+	if(currentSeason ~= ArenaAnalyticsTransientDB.ratedInfo.season) then
+		Debug:Log("Resetting transient DB ratedInfo due to season:", currentSeason, ArenaAnalyticsTransientDB.ratedInfo.season);
+		return true;
+	end
+
+	return false;
+end
+
+function ArenaAnalytics:InitializeTransientDB(forceRatedReset)
 	ArenaAnalyticsTransientDB = ArenaAnalyticsTransientDB or {};
 	ArenaAnalyticsTransientDB.currentArena = ArenaAnalyticsTransientDB.currentArena or {};
 
 	local currentSeason = API:GetCurrentSeason();
 
-	if(not ArenaAnalyticsTransientDB.ratedInfo) then
-		Debug:Log("Initiating transient DB ratedInfo!", ArenaAnalyticsTransientDB.ratedInfo);
+	if(forceRatedReset or ShouldResetRatedInfo(currentSeason)) then
 		ArenaAnalyticsTransientDB.ratedInfo = { season = currentSeason };
-	elseif(currentSeason and currentSeason ~= ArenaAnalyticsTransientDB.ratedInfo.season) then
-		Debug:Log("Resetting transient DB ratedInfo due to season:", currentSeason, ArenaAnalyticsTransientDB.ratedInfo.season);
-		ArenaAnalyticsTransientDB.ratedInfo = { season = currentSeason }; -- Force reset invalid season data
 	end
 end
 

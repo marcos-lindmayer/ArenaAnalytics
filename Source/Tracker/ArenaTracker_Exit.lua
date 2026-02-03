@@ -102,6 +102,12 @@ local function TryAssignRating()
 	end
 
 	local newRating, oldRating = ArenaRatedInfo:GetRatedInfo(currentArena.bracketIndex, currentArena.seasonPlayed);
+	Debug:LogGreen("TryAssignRating:", newRating, oldRating, currentArena.oldRating);
+
+	if(API:IsOffSeason()) then
+		newRating = oldRating;
+		oldRating = tonumber(currentArena.oldRating);
+	end
 
 	if(newRating) then
 		currentArena.partyRating = newRating;
@@ -114,7 +120,11 @@ local function TryAssignRating()
 		currentArena.requireRatingFix = true;
 	end
 
-	currentArena.requireRatingFix = currentArena.requireRatingFix or CheckRequiresRatingFix() or nil;
+	if(API:IsOffSeason()) then
+		currentArena.requireRatingFix = nil;
+	else
+		currentArena.requireRatingFix = currentArena.requireRatingFix or CheckRequiresRatingFix() or nil;
+	end
 
 	Debug:Log("Requires rating fix:", currentArena.requireRatingFix, "New rating:", newRating, "Old rating:", oldRating, "season played:", currentArena.seasonPlayed);
 end
@@ -142,6 +152,7 @@ function ArenaTracker:HandleArenaExit()
 	-- Solo Shuffle
 	if(ArenaTracker:IsShuffle()) then
 		ArenaTracker:HandleRoundEnd(true);
+		ArenaTracker:UpdateRoundEnemyTeams();
 	end
 
 	currentArena.hasStartTime = Helpers:IsPositiveNumber(currentArena.startTime);

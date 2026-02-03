@@ -193,8 +193,8 @@ end
 
 local function formatNumber(num)
     assert(num ~= nil);
-    local left,num,right = string.match(num,'^([^%d]*%d)(%d*)(.-)')
-    return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
+    local left,num,right = string.match(num,'^([^%d]*%d)(%d*)(.-)');
+    return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right;
 end
 
 function Export:Finalize()
@@ -492,7 +492,7 @@ end
 
 
 function Export:UpdateFormattedMatch(index)
-    local index = tonumber(index);
+    index = tonumber(index);
     local match = index and ArenaAnalyticsDB[index];
     if(not match) then
         Export:ResetFormattedMatch();
@@ -509,6 +509,7 @@ function Export:UpdateFormattedMatch(index)
     -- Match Data
     formattedMatch.date = ArenaMatch:GetDate(match) or "";
     formattedMatch.season = ArenaMatch:GetSeason(match) or "";
+    formattedMatch.isOffSeason = ArenaMatch:IsOffSeason(match) and "Y" or "N";
     formattedMatch.seasonPlayed = ArenaMatch:GetSeasonPlayed(match) or "";
     formattedMatch.map = ArenaMatch:GetMap(match) or "";
     formattedMatch.bracket = ArenaMatch:GetBracket(match) or "";
@@ -528,32 +529,4 @@ function Export:UpdateFormattedMatch(index)
     formattedMatch.rounds = isShuffle and Export:GetFormattedRounds(match) or nil;
 
     formattedMatch.isValid = true;
-end
-
-
-local function formatNumber(num)
-    assert(num ~= nil);
-    local left,num,right = string.match(num,'^([^%d]*%d)(%d*)(.-)')
-    return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
-end
-
-function Export:FinalizeExportCSV(exportTable)
-    Debug:Log("Attempting export.. FinalizeExportCSV", #exportTable);
-
-    -- Show export with the new CSV string
-    if (ArenaAnalytics:HasStoredMatches()) then
-        AAtable:CreateExportDialogFrame();
-        ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:SetText(table.concat(exportTable, "\n"));
-	    ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:HighlightText();
-
-        ArenaAnalyticsScrollFrame.exportDialogFrame.totalText:SetText("Total arenas: " .. formatNumber(#exportTable - 1));
-        ArenaAnalyticsScrollFrame.exportDialogFrame.lengthText:SetText("Export length: " .. formatNumber(#ArenaAnalyticsScrollFrame.exportDialogFrame.exportFrame:GetText()));
-        ArenaAnalyticsScrollFrame.exportDialogFrame:Show();
-    elseif(ArenaAnalyticsScrollFrame.exportDialogFrame) then
-        ArenaAnalyticsScrollFrame.exportDialogFrame:Hide();
-    end
-
-    wipe(exportTable);
-    collectgarbage("collect");
-    Debug:Log("Garbage Collection forced by Export finalize.");
 end
