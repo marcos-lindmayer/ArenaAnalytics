@@ -2,7 +2,6 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local DataCollector = ArenaAnalytics.DataCollector;
 
 -- Local module aliases
-local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local ArenaTracker = ArenaAnalytics.ArenaTracker;
@@ -54,9 +53,9 @@ end
 function DataCollector:RegisterEvents()
 	for _,event in ipairs(events) do
         if(IsExcludedEvent(event)) then
-            Debug:LogForced("DataCollector skipping excluded event:", event);
+            Debug:Log("DataCollector skipping excluded event:", event);
         elseif(not C_EventUtils.IsEventValid(event)) then
-            Debug:LogForced("DataCollector skipping invalid event:", event);
+            Debug:Log("DataCollector skipping invalid event:", event);
         else
             eventFrame:RegisterEvent(event);
         end
@@ -67,16 +66,16 @@ function DataCollector:RegisterEvents()
 end
 
 function DataCollector:HandleLocalEvents(event, ...)
-    Debug:LogForced("DataCollector test event:", ArenaTracker:GetStateName(), event, ...);
+    Debug:Log("DataCollector test event:", ArenaTracker:GetStateName(), event, ...);
 
     if(event == "GROUP_ROSTER_UPDATE") then
         local party1 = API:GetUnitFullName("party1");
         local party2 = API:GetUnitFullName("party2");
 
-        Debug:LogForced("DataCollector party:", API:IsSecretValue(party1), party1, API:IsSecretValue(party2), party2);
+        Debug:Log("DataCollector party:", API:IsSecretValue(party1), party1, API:IsSecretValue(party2), party2);
 
     elseif(event == "PVP_MATCH_STATE_CHANGED") then
-        --Debug:LogForced("DataCollector state changed:", "Missing API for HasGatesOpened...");
+        --Debug:Log("DataCollector state changed:", "Missing API for HasGatesOpened...");
     end
 end
 

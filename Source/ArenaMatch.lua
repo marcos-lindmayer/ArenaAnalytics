@@ -1258,14 +1258,14 @@ function ArenaMatch:SetRounds(match, rounds)
     assert(match);
     assert(not match[matchKeys.rounds]);
 
-    if(not rounds or #rounds == 0) then
-        Debug:Log("ArenaMatch:SetRounds bailing out due to invalid incoming rounds:", rounds and #rounds);
-        return;
-    end
-
     -- Only solo shuffle supports multiple rounds
     if(not ArenaMatch:IsShuffle(match)) then
         Debug:Log("ArenaMatch:SetRounds skipping shuffle match type.", ArenaMatch:GetBracket(match));
+        return;
+    end
+
+    if(not rounds or #rounds == 0) then
+        Debug:Log("ArenaMatch:SetRounds bailing out due to invalid incoming rounds:", rounds and #rounds);
         return;
     end
 
@@ -1285,7 +1285,7 @@ function ArenaMatch:SetRounds(match, rounds)
     -- Cache values to help sort
     local myName = API:GetPlayerName();
     local selfPlayerInfo = ArenaMatch:GetSelfInfo(match, true);
-    local requiredTeamSize = ArenaMatch:GetTeamSize(match);
+    local requiredTeamSize = ArenaMatch:GetTeamSize(match); -- 3v3 in all shuffles
 
     -- Fill player name to index mapping
     local indexMapping = TablePool:Acquire();
@@ -1347,6 +1347,9 @@ function ArenaMatch:SetRounds(match, rounds)
             [roundKeys.comp] = comp,
             [roundKeys.enemy_comp] = enemyComp,
         };
+
+        Debug:LogGreen("Compact round:", i);
+        Debug:LogTable(compactRound);
 
         tinsert(match[matchKeys.rounds], compactRound);
     end

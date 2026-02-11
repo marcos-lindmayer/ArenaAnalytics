@@ -139,7 +139,7 @@ function ArenaTracker:GetFirstDeathFromCurrentArena()
 		else
 			local player = ArenaTracker:GetPlayer(key);
 			Debug:LogError("Invalid death data found:", key, player and player.name, type(data));
-			Debug:LogTable(deathData);
+			--Debug:LogTable(deathData);
 		end
 	end
 

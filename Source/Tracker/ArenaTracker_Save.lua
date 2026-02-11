@@ -4,7 +4,6 @@ local ArenaTracker = ArenaAnalytics.ArenaTracker;
 -- Local module aliases
 local AAmatch = ArenaAnalytics.AAmatch;
 local Constants = ArenaAnalytics.Constants;
-local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Inspection = ArenaAnalytics.Inspection;
@@ -37,6 +36,11 @@ end
 -- and triggers a layout refresh on ArenaAnalytics.AAtable
 function ArenaTracker:Save(newArena)
 	if(not newArena) then
+		return;
+	end
+
+	if(API.disableTracking or (API.disableShuffles and newArena.bracket == "shuffle")) then
+		ArenaTracker:Clear();
 		return;
 	end
 

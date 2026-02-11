@@ -15,7 +15,7 @@ local Debug = ArenaAnalytics.Debug;
 -------------------------------------------------------------------------
 
 API.disableTracking = false; -- Nuclear option: Midnight currently does not support tracking at all.
-API.disableShuffles = false;
+API.disableShuffles = true;
 
 API.hasSecrets = true;
 API.defaultButtonTemplate = "UIPanelButtonTemplate";

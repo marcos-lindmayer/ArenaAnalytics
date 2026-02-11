@@ -4,7 +4,6 @@ local ArenaTracker = ArenaAnalytics.ArenaTracker;
 -- Local module aliases
 local AAmatch = ArenaAnalytics.AAmatch;
 local Constants = ArenaAnalytics.Constants;
-local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
@@ -44,6 +43,7 @@ function ArenaTracker:GetCurrentWins()
 			if(API:IsValidValue(score.name) and API:IsValidValue(currentArena.playerName)) then
 				if(score.name == currentArena.playerName) then
 					myWins = score.wins;
+					currentArena.wins = score.wins;
 				end
 			end
 
@@ -55,7 +55,7 @@ function ArenaTracker:GetCurrentWins()
 end
 
 
-function ArenaTracker:UpdateRoundTeam()
+function ArenaTracker:UpdateRoundTeam_Internal()
 	if(not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
@@ -77,6 +77,11 @@ function ArenaTracker:UpdateRoundTeam()
 	end
 
 	Debug:Log("UpdateRoundTeam", #currentArena.round.team);
+end
+
+function ArenaTracker:UpdateRoundTeam()
+	-- TODO: Test if this even matters for correct spec fix...
+	C_Timer.After(1, ArenaTracker.UpdateRoundTeam_Internal);
 end
 
 
@@ -124,25 +129,30 @@ function ArenaTracker:GetShuffleOutcome()
 	end
 
 	local roundWins = 0;
-
-	-- Iterate through all the rounds
-	for _, round in ipairs(currentArena.committedRounds) do
-		-- Check if firstDeath exists
-		if(round.firstDeath) then
-			for _, enemyPlayer in ipairs(round.enemy) do
-				if enemyPlayer == round.firstDeath then
-					roundWins = roundWins + 1;
-					break;
+	if(currentArena.wins) then
+		roundWins = currentArena.wins;
+	else
+		-- Iterate through all the rounds
+		for _, round in ipairs(currentArena.committedRounds) do
+			-- Check if firstDeath exists
+			if(round.firstDeath) then
+				for _, enemyPlayer in ipairs(round.enemy) do
+					if enemyPlayer == round.firstDeath then
+						roundWins = roundWins + 1;
+						break;
+					end
 				end
 			end
 		end
 	end
 
-	if(roundWins == 3) then
+	currentArena.wins = tonumber(roundWins) or 0;
+
+	if(currentArena.wins == 3) then
 		-- Draw
 		return 2;
 	else
-		return roundWins > 3 and 1 or 0;
+		return currentArena.wins > 3 and 1 or 0;
 	end
 end
 
@@ -171,6 +181,7 @@ function ArenaTracker:CheckRoundEnded()
 
 	Debug:Log("CheckRoundEnded");
 	ArenaTracker:HandleRoundEnd();
+	return true;
 end
 
 
@@ -266,7 +277,11 @@ end
 
 
 local function FillRoundEnemyTeam(round, players, index)
-	if(not round or not round.team or #round.team ~= 3) then
+	if(not round or not round.team) then
+		return;
+	end
+
+	if(round.enemy and #round.enemy == 3) then
 		return;
 	end
 
@@ -284,11 +299,11 @@ end
 
 -- Update committed rounds
 function ArenaTracker:UpdateRoundEnemyTeams()
-	if(not ArenaTracker:IsTrackingShuffle()) then
+	if(not ArenaTracker:IsShuffle()) then
 		return;
 	end
 
-    if(not currentArena.players or #currentArena.players <= 3) then
+    if(not currentArena.players) then
         return;
     end
 

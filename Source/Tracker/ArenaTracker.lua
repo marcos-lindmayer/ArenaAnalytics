@@ -4,7 +4,6 @@ local ArenaTracker = ArenaAnalytics.ArenaTracker;
 -- Local module aliases
 local AAmatch = ArenaAnalytics.AAmatch;
 local Constants = ArenaAnalytics.Constants;
-local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
@@ -195,6 +194,7 @@ function ArenaTracker:Reset()
 	currentArena.round.team = TablePool:Acquire();
 	currentArena.round.hasStarted = nil;
 	currentArena.round.startTime = nil;
+	currentArena.wins = nil;
 
 	currentArena.locked = false;
 end
@@ -374,13 +374,14 @@ function ArenaTracker:FillMissingPlayers()
 	end
 
 	for _,group in ipairs({"party", "arena"}) do
+		local isEnemy = (group == "arena");
+
 		for i = 1, currentArena.size do
 			local unitToken = group..i;
 			if(UnitExists(unitToken)) then
 				local name = API:GetUnitFullName(unitToken);
 				local player = ArenaTracker:GetPlayer(name);
 				if(name and not player) then
-					local isEnemy = (group == "arena");
 
 					player = ArenaTracker:CreatePlayer(isEnemy, name, unitToken);
 
@@ -404,7 +405,7 @@ end
 
 -- Returns a table with unit information to be placed inside arena.players
 function ArenaTracker:CreatePlayer(isEnemy, name, unitToken, spec_id)
-	if(API:IsSecretValue(name)) then
+	if(not API:IsValidValue(name)) then
 		return;
 	end
 
@@ -418,7 +419,7 @@ function ArenaTracker:CreatePlayer(isEnemy, name, unitToken, spec_id)
 		isFemale = Helpers:IsUnitFemale(unitToken),
 		spec = spec_id or Helpers:GetUnitClass(unitToken),
 
-		isSelf = currentArena.playerName and name == currentArena.playerName or nil,
+		isSelf = API:IsValidValue(currentArena.playerName) and name == currentArena.playerName or nil,
 
 		-- Unsafe in shuffles:  (?)
 		unitToken = unitToken,
@@ -466,8 +467,11 @@ function ArenaTracker:HandlePartyUpdate()
 	ArenaTracker:RequestPartySpecs();
 
 	-- Internal IsTrackingShuffle() check
-	ArenaTracker:CheckRoundEnded();
-	ArenaTracker:UpdateRoundTeam();
+	local ended = ArenaTracker:CheckRoundEnded();
+
+	if(ended) then
+		ArenaTracker:UpdateRoundTeam();
+	end
 end
 
 

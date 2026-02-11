@@ -65,13 +65,13 @@ function Inspection:RequestSpec(unitToken)
         return;
     end
 
-    Debug:Log("RequestSpec:", unitToken, "CanInspect", API:CanInspect(unitToken));
-
     local GUID = Helpers:UnitGUID(unitToken);
     if(not API:IsValidValue(GUID)) then
         Debug:Log("RequestSpec rejected: Nil GUID.");
         return;
     end
+
+    Debug:Log("RequestSpec:", unitToken, "CanInspect", API:CanInspect(unitToken));
 
     -- Already tracked the spec_id
     if(ArenaTracker:HasSpec(GUID)) then
@@ -171,11 +171,10 @@ function Inspection:HandleInspectReady(GUID)
     if(currentInspectGUID) then
         if(GUID == currentInspectGUID) then
             ClearInspectPlayer();
+            currentInspectGUID = nil;
         else
             Debug:Log("WARNING: Inspection:HandleInspectReady with different GUID from valid currentInspectGUID! May fail to clean up?");
         end
-
-        currentInspectGUID = nil;
     end
 end
 

@@ -4,7 +4,6 @@ local ArenaTracker = ArenaAnalytics.ArenaTracker;
 -- Local module aliases
 local AAmatch = ArenaAnalytics.AAmatch;
 local Constants = ArenaAnalytics.Constants;
-local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Inspection = ArenaAnalytics.Inspection;

@@ -283,7 +283,7 @@ function API:GetCurrentMapID()
 end
 
 -- Nuclear option! This should completely block tracking.
-function API:ForceSkipTracking()
+function API:IsTrackingDisabled()
     if(API.disableTracking) then
         return true;
     end
@@ -296,7 +296,7 @@ function API:ForceSkipTracking()
 end
 
 function API:IsInArena()
-    if(API:ForceSkipTracking()) then
+    if(API:IsTrackingDisabled()) then
         return false;
     end
 
@@ -476,11 +476,11 @@ end
 
 function API:GetMappedAddonSpecID(specID)
     if(not API.specMappingTable) then
-        Debug:Log("GetMappedAddonSpecID: Failed to find specMappingTable. Ignoring spec:", specID);
+        Debug:LogWarning("GetMappedAddonSpecID: Failed to find specMappingTable. Ignoring spec:", specID);
         return nil;
     end
 
-    if(API:IsSecretValue(specID)) then
+    if(not API:IsValidValue(specID)) then
         return nil;
     end
 

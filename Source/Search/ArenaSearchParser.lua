@@ -24,7 +24,7 @@ local function ParseTokenString(raw)
     -- Remove all excluded characters using gsub  + " ( ) !
     local raw = raw and raw:gsub("[+\"()!]", "") or "";
     local value = "";
-    
+
     -- Remove '-', if it's neither the first symbol nor directly following a colon.
     local lastChar = nil;
     for i=1, #raw do
@@ -40,13 +40,13 @@ local function ParseTokenString(raw)
 
         lastChar = char;
     end
-    
+
     return Helpers:ToSafeLower(value);
 end
 
 function Search:CreateToken(raw, isExact)
     assert(raw);
-    
+
     local newToken = {}
     local value = ParseTokenString(raw);
     local explicitType, tokenValue, noSpace = Search:GetTokenPrefixKey(value);
@@ -54,7 +54,7 @@ function Search:CreateToken(raw, isExact)
     if(raw == "") then
         explicitType = "empty";
     end
-    
+
     newToken.explicitType = explicitType;
     newToken.value = tokenValue;
     newToken.exact = isExact or nil;
@@ -96,7 +96,7 @@ function Search:CreateToken(raw, isExact)
     elseif(newToken.explicitType == "symbol") then
         newToken.transient = true;
     end
-    
+
     -- Valid if it has a keyword or no spaces
     newToken.isValid = newToken.value and not newToken.noSpace or type(newToken.value) == "number" or not newToken.value:find(' ', 1, true);
 
@@ -185,11 +185,11 @@ function Search:ProcessInput(input, oldCursorPosition)
 
     local function HandleCaretPosition(token)
         assert(token and token.raw);
-        
+
         if(not sanitizedCaretIndex) then
             return;
         end
-        
+
         if(hasHandledCaret) then
             return;
         end
@@ -211,7 +211,7 @@ function Search:ProcessInput(input, oldCursorPosition)
             -- Add space symbol token
             unhandledSpaces = max(0, unhandledSpaces - 1);
             local newSpaceToken = Search:CreateSymbolToken(' ');
-            
+
             HandleCaretPosition(newSpaceToken);
 
             tinsert(currentSegment.tokens, newSpaceToken);
@@ -230,13 +230,13 @@ function Search:ProcessInput(input, oldCursorPosition)
     local function CommitCurrentToken()
         if(currentToken and currentToken.raw and #currentToken.raw > 0) then
             currentToken.negated = isTokenNegated or nil;
-            
+
             HandleCaretPosition(currentToken);
-            
+
             -- Commit a real search token
             tinsert(currentSegment.tokens, currentToken);
             committedTokenRawLength = committedTokenRawLength + #currentToken.raw;
-            
+
             CommitUnhandledSpace();
         end
 
@@ -250,11 +250,11 @@ function Search:ProcessInput(input, oldCursorPosition)
         if(currentToken and currentWord ~= "") then
             local combinedValue = currentToken.raw .. " " .. currentWord;
             local newCombinedToken = Search:CreateToken(combinedValue);
-            
+
             if(newCombinedToken and newCombinedToken.isValid) then
                 currentToken = newCombinedToken;
                 unhandledSpaces = max(0, unhandledSpaces - 1);
-                
+
                 currentWord = ""; -- Already added to the token
             else
                 CommitCurrentToken();
@@ -281,7 +281,7 @@ function Search:ProcessInput(input, oldCursorPosition)
     local lastChar = nil;
     while index <= #sanitizedInput do
         local char = sanitizedInput:sub(index, index);
-        
+
         if char == '-'  and currentWord ~= "" and lastChar ~= ':' then -- Separator for name-realm
             currentWord = currentWord .. char;
         elseif char == '!' or char == '-' then -- Negated token
@@ -305,7 +305,7 @@ function Search:ProcessInput(input, oldCursorPosition)
         elseif IsPlayerSegmentSeparatorChar(char) then -- comma, period or semicolon
             CommitCurrentWord();
             CommitCurrentToken();
-            
+
             if(#currentSegment.tokens > 0) then
                 -- Add the separator at the end of the segment
                 currentToken = Search:CreateSymbolToken(char, true);
@@ -371,7 +371,7 @@ function Search:ProcessInput(input, oldCursorPosition)
         lastChar = char;
         index = index + 1
     end
-    
+
     ----------------------------------------
     -- Final commit for any remaining data
 
@@ -387,7 +387,7 @@ function Search:ProcessScope(input, startIndex, endSymbol)
 
     -- Add the scope opening char
     local scope = "";
-    
+
     -- Loop fron next index
     local index = startIndex;
     while index <= #input do

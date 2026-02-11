@@ -2,7 +2,6 @@ local _, ArenaAnalytics = ...; -- Addon Namespace
 local SpecSpells = ArenaAnalytics.SpecSpells;
 
 -- Local module aliases
-local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Debug = ArenaAnalytics.Debug;

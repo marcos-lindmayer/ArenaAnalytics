@@ -4,7 +4,6 @@ local ArenaTracker = ArenaAnalytics.ArenaTracker;
 -- Local module aliases
 local AAmatch = ArenaAnalytics.AAmatch;
 local Constants = ArenaAnalytics.Constants;
-local SpecSpells = ArenaAnalytics.SpecSpells;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
 local Internal = ArenaAnalytics.Internal;
@@ -77,12 +76,19 @@ function ArenaTracker:HandleArenaEnd()
 			player = ArenaTracker:CreatePlayer(nil, score.name);
 
 			if(player) then
-				Debug:Log("Creating new player by scoreboard:", player.name, score.spec);
+				Debug:LogGreen("Creating new player by scoreboard:", player.name, score.name, score.spec);
 			end
-			Debug:Log("Adding player: ", score.name);
+		else
+			Debug:LogGreen("Keeping tracked player after match:", player.name, player.spec, score.name, score.spec);
 		end
 
 		if(player) then
+			-- Midnight forced fix:
+			if(isShuffle and Helpers:IsSpecID(score.spec)) then
+				-- Trust scoreboard, not round tracking for now!
+				player.spec = score.spec;
+			end
+
 			-- Fill missing data
 			player.teamIndex = score.team;
 			player.spec = Helpers:IsSpecID(player.spec) and player.spec or score.spec;
@@ -108,6 +114,8 @@ function ArenaTracker:HandleArenaEnd()
 					myTeamIndex = player.teamIndex;
 					player.isSelf = true;
 
+					currentArena.wins = player.wins;
+
 					-- Probably not useful, keeping at warning log level for non-shuffles, in case I learn more.
 					if(not isShuffle and myTeamIndex ~= GetBattlefieldArenaFaction()) then
 						Debug:LogWarning("My team index API mismatch! GetBattlefieldArenaFaction cannot be trusted?");
@@ -128,8 +136,8 @@ function ArenaTracker:HandleArenaEnd()
 	end
 
 	if(isShuffle) then
-		-- Determine match outcome
-		currentArena.outcome = ArenaTracker:GetShuffleOutcome()
+		ArenaTracker:UpdateRoundEnemyTeams();
+		currentArena.outcome = ArenaTracker:GetShuffleOutcome();
 	else
 		-- Assign isEnemy value
 		for _,player in ipairs(players) do
