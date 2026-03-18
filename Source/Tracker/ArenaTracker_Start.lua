@@ -77,7 +77,7 @@ function ArenaTracker:HandleArenaStart(stateData)
 		currentArena.seasonPlayed = stateData.seasonPlayed; -- Post match season played
 
 		if(not API:GetWinner()) then
-			currentArena.oldRating = ArenaRatedInfo:GetCurrentRatedInfo(bracketIndex);
+			currentArena.oldRating = ArenaRatedInfo:GetLatestRating(bracketIndex);
 		end
 	end
 

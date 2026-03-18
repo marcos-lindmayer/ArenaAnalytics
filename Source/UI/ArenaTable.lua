@@ -14,7 +14,7 @@ local Import = ArenaAnalytics.Import;
 local Export = ArenaAnalytics.Export;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Internal = ArenaAnalytics.Internal;
-local Constants = ArenaAnalytics.Constants;
+local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 local ImportBox = ArenaAnalytics.ImportBox;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local Helpers = ArenaAnalytics.Helpers;
@@ -540,9 +540,10 @@ local function GetArenaText(arenaCount)
     return arenaCount == 1 and "arena" or "arenas";
 end
 
-local function CombineStatsText(total, wins, losses, draws)
+local function CombineStatsText(total, wins, losses, draws, ratingDelta)
     total = tonumber(total) or 0;
     wins = tonumber(wins) or 0;
+    ratingDelta = tonumber(ratingDelta);
 
     local winrateText = Helpers:GetSafePercentage(wins, total);
     local winsText =  Colors:ColorText(wins, Colors.winColor);
@@ -551,8 +552,53 @@ local function CombineStatsText(total, wins, losses, draws)
     local includeDraws = draws ~= nil; -- Add option?
     local drawText = includeDraws and (" / " .. Colors:ColorText(draws, Colors.drawColor)) or "";
 
-    local valueText = total .. " " .. GetArenaText(total) .. "   " .. winsText .. " / " .. lossesText .. drawText .. "  " .. winrateText .. "% Winrate";
+    local deltaText = "";
+    local includeSessionDelta = true; -- @TODO: Add option?
+    if(includeSessionDelta and ratingDelta) then
+        local includeZeroDelta = true; -- @TODO: Add option?
+
+        if(ratingDelta < 0) then
+            deltaText = Colors:ColorText("   " .. ratingDelta, Colors.lossColor);
+        elseif(ratingDelta > 0 or includeZeroDelta) then
+            deltaText = Colors:ColorText("   +" .. ratingDelta, Colors.winColor);
+        end
+    end
+
+    local valueText = total .. " " .. GetArenaText(total) .. "   " .. winsText .. " / " .. lossesText .. drawText .. "  " .. winrateText .. "% Winrate" .. deltaText;
     return Colors:ColorText(valueText, Colors.statsColor);
+end
+
+local function GetSessionRatingDelta()
+    local firstMatchIndex, lastMatchIndex = nil, nil;
+
+    -- Find the boundaries of the current session (Session 1)
+    for i = ArenaAnalytics.filteredMatchCount, 1, -1 do
+        local match, filteredSession = ArenaAnalytics:GetFilteredMatch(i);
+        if (match and filteredSession == 1) then
+            if(filteredSession == 1) then
+                firstMatchIndex = firstMatchIndex or i
+                lastMatchIndex = i;
+            elseif(filteredSession and filteredSession > 1) then
+                break;
+            end
+        end
+    end
+
+    local firstMatch = ArenaAnalytics:GetFilteredMatch(firstMatchIndex)
+    local lastMatch = ArenaAnalytics:GetFilteredMatch(lastMatchIndex)
+
+    if not firstMatch or not lastMatch then
+        return nil;
+    end
+
+    -- Get the ratings
+    local currentRating = ArenaMatch:GetPartyRating(firstMatch);
+    local startRating = ArenaMatch:GetPartyRating(lastMatch);
+    local startDelta = ArenaMatch:GetPartyRatingDelta(lastMatch) or 0;
+
+    if(currentRating and startRating) then
+        return currentRating - (startRating - startDelta);
+    end
 end
 
 -- Updates the displayed data for a new match
@@ -576,6 +622,9 @@ function AAtable:HandleArenaCountChanged()
 
     local wins, losses, draws = 0,0,0;
     local sessionGames, sessionWins, sessionLosses, sessionDraws = 0,0,0,0;
+
+    local sessionRatingDelta = GetSessionRatingDelta();
+    Debug:Log("sessionRatingDelta", sessionRatingDelta)
 
     -- Update arena count & winrate
     for i=1, ArenaAnalytics.filteredMatchCount do
@@ -608,7 +657,7 @@ function AAtable:HandleArenaCountChanged()
     local sessionText = expired and "Last session: " or "Current session: ";
     sessionText = Colors:ColorText(sessionText, Colors.prefixColor);
 
-    local valuesText = CombineStatsText(sessionGames, sessionWins, sessionLosses, sessionDraws);
+    local valuesText = CombineStatsText(sessionGames, sessionWins, sessionLosses, sessionDraws, sessionRatingDelta);
     ArenaAnalyticsScrollFrame.sessionStats:SetText(sessionText .. valuesText);
 
     -- Update the overall stats

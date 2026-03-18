@@ -69,7 +69,7 @@ function ArenaRatedInfo:UpdateRatedInfo()
 	end
 end
 
-function ArenaRatedInfo:GetRatedInfo(bracketIndex, seasonPlayed)
+function ArenaRatedInfo:GetBracketRating(bracketIndex, seasonPlayed)
 	bracketIndex = tonumber(bracketIndex);
 	seasonPlayed = tonumber(seasonPlayed);
 	if(not bracketIndex or not seasonPlayed) then
@@ -122,7 +122,7 @@ function ArenaRatedInfo:GetLastSeasonPlayed(bracketIndex)
 	return latestSeasonPlayed;
 end
 
-function ArenaRatedInfo:GetCurrentRatedInfo(bracketIndex)
+function ArenaRatedInfo:GetLatestRating(bracketIndex)
 	local lastSeasonPlayed = ArenaRatedInfo:GetLastSeasonPlayed(bracketIndex);
-	return ArenaRatedInfo:GetRatedInfo(bracketIndex, lastSeasonPlayed);
+	return ArenaRatedInfo:GetBracketRating(bracketIndex, lastSeasonPlayed);
 end

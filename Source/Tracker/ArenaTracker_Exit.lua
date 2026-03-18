@@ -100,7 +100,7 @@ local function TryAssignRating()
 		return;
 	end
 
-	local newRating, oldRating = ArenaRatedInfo:GetRatedInfo(currentArena.bracketIndex, currentArena.seasonPlayed);
+	local newRating, oldRating = ArenaRatedInfo:GetBracketRating(currentArena.bracketIndex, currentArena.seasonPlayed);
 	Debug:LogGreen("TryAssignRating:", newRating, oldRating, currentArena.oldRating);
 
 	if(API:IsOffSeason()) then

@@ -217,7 +217,7 @@ function ArenaMatch:TryFixLastRating(match)
         return;
     end
 
-    local newRating, oldRating = ArenaRatedInfo:GetRatedInfo(bracketIndex, trackedSeasonPlayed);
+    local newRating, oldRating = ArenaRatedInfo:GetBracketRating(bracketIndex, trackedSeasonPlayed);
     if(not newRating) then
         if(currentSeasonPlayed > trackedSeasonPlayed) then
             -- Lacking data, and already passed the match. We cannot recover.
@@ -1347,9 +1347,6 @@ function ArenaMatch:SetRounds(match, rounds)
             [roundKeys.comp] = comp,
             [roundKeys.enemy_comp] = enemyComp,
         };
-
-        Debug:LogGreen("Compact round:", i);
-        Debug:LogTable(compactRound);
 
         tinsert(match[matchKeys.rounds], compactRound);
     end
