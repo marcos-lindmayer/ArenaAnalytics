@@ -39,6 +39,8 @@ local arenaEvents = {
 	"UNIT_AURA", -- TODO: Modify to allow expansion specfic toggles for events
 	"CHAT_MSG_BG_SYSTEM_NEUTRAL",
 	"COMBAT_LOG_EVENT_UNFILTERED",
+	"UNIT_DIED",
+	"PVP_MATCH_STATE_CHANGED",
 };
 
 local globalEvents = {
@@ -202,6 +204,13 @@ function Events:HandleArenaEvent(event, ...)
 			Debug:Log(event, "triggered!");
 			Inspection:HandleInspectReady(...);
 		end
+
+	elseif(event == "UNIT_DIED") then
+		local GUID = ...;
+		ArenaTracker:HandlePlayerDeath(GUID, false);
+
+	elseif(event == "PVP_MATCH_STATE_CHANGED") then
+		ArenaTracker:HandleMatchStateChanged();
 	end
 end
 

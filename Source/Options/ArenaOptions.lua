@@ -17,17 +17,17 @@ local Export = ArenaAnalytics.Export;
 
 -------------------------------------------------------------------------
 
+local ArenaAnalyticsOptionsFrame = nil;
+
 function Options:RegisterCategory(frame, name, parent)
-    assert(frame)
+    assert(frame ~= nil);
 
     frame.name = name;
+    parent = parent or ArenaAnalyticsOptionsFrame;
+    assert(parent ~= nil);
 
     if parent and parent.category then
-        local parentcategory = Settings.GetCategory(parent)
         frame.category = Settings.RegisterCanvasLayoutSubcategory(parent.category, frame, name);
-    else
-        frame.category = Settings.RegisterCanvasLayoutCategory(frame, name);
-        Settings.RegisterAddOnCategory(frame.category);
     end
 end
 
@@ -40,7 +40,6 @@ function Options:OpenCategory(frame)
     Settings.OpenToCategory(frame.category.ID);
 end
 
-local ArenaAnalyticsOptionsFrame = nil;
 function Options:Open()
     Options:OpenCategory(ArenaAnalyticsOptionsFrame);
 end
@@ -106,7 +105,8 @@ function Options:LoadSettings()
     AddSetting("compactLargeNumbers", true);
     AddSetting("hideZeroRatingDelta", true);
     AddSetting("hidePlayerTooltipZeroRatingDelta", false);
-    --AddSetting("ignoreGroupForSkirmishSession", true);
+    AddSetting("hideSessionRatingDelta", false);
+    AddSetting("ignoreGroupForSkirmishSession", true);
 
     AddSetting("muteArenaDialogSounds", false);
 
@@ -309,6 +309,8 @@ local function CreateSpace(explicit)
 end
 
 local function CreateHeader(text, size, parent, relative, x, y, icon)
+    y = (y or 0) + offsetY;
+
     local frame = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     frame:SetPoint("TOPLEFT", relative or parent, "TOPLEFT", x, y)
     frame:SetTextHeight(size);
@@ -569,6 +571,9 @@ function SetupTab_General()
     CreateCheckbox("compactLargeNumbers", parent, offsetX, "Compact large numbers.");
     CreateCheckbox("hideZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating.");
     CreateCheckbox("hidePlayerTooltipZeroRatingDelta", parent, offsetX, "Hide delta for unchanged rating on player tooltips.");
+    CreateCheckbox("hideSessionRatingDelta", parent, offsetX, "Hide delta for session in bottom stats.");
+
+
     --CreateCheckbox("ignoreGroupForSkirmishSession", parent, offsetX, "Sessions ignore skirmish team check.");
 
     CreateSpace();
@@ -604,7 +609,7 @@ end
 
 function SetupTab_Filters()
     local filterOptionsFrame = CreateFrame("frame");
-    Options:RegisterCategory(filterOptionsFrame, "Filters", ArenaAnalyticsOptionsFrame);
+    Options:RegisterCategory(filterOptionsFrame, "Filters");
 
     -- Title
     InitializeTab(filterOptionsFrame);
@@ -670,7 +675,7 @@ end
 function SetupTab_Search()
     local filterOptionsFrame = CreateFrame("frame");
     --filterOptionsFrame.name = "Search";
-    Options:RegisterCategory(filterOptionsFrame, "Search", ArenaAnalyticsOptionsFrame);
+    Options:RegisterCategory(filterOptionsFrame, "Search");
 
     -- Title
     InitializeTab(filterOptionsFrame);
@@ -721,7 +726,7 @@ end
 function SetupTab_QuickSearch()
     local filterOptionsFrame = CreateFrame("frame");
     --filterOptionsFrame.name = "Quick Search";
-    Options:RegisterCategory(filterOptionsFrame, "Quick Search", ArenaAnalyticsOptionsFrame);
+    Options:RegisterCategory(filterOptionsFrame, "Quick Search");
 
     -- Title
     InitializeTab(filterOptionsFrame);
@@ -777,7 +782,7 @@ end
 
 function SetupTab_ImportExport()
     exportOptionsFrame = CreateFrame("frame");
-    Options:RegisterCategory(exportOptionsFrame, "Import / Export", ArenaAnalyticsOptionsFrame);
+    Options:RegisterCategory(exportOptionsFrame, "Import / Export");
 
     InitializeTab(exportOptionsFrame);
     local parent = exportOptionsFrame;
@@ -806,6 +811,24 @@ function SetupTab_ImportExport()
 end
 
 -------------------------------------------------------------------
+-- Streamer Overlay     (External AddOn)
+-------------------------------------------------------------------
+
+function SetupTab_StreamOverlay()
+    exportOptionsFrame = CreateFrame("frame");
+    Options:RegisterCategory(exportOptionsFrame, "Stream Overlay");
+
+    InitializeTab(exportOptionsFrame);
+    local parent = exportOptionsFrame;
+    local offsetX = 20;
+
+    parent.tabHeader = CreateHeader("Stream Overlay     (Separate AddOn)", TabHeaderSize, parent, nil, 15, -15);
+
+    parent.note = CreateHeader("|cff88cc44[ArenaStreamOverlay]|r is available on Curse for an on-screen overlay intended mainly for streamers.", TextSize, parent, nil, offsetX, -10);
+    parent.note = CreateHeader("Overlay made by |cff88cc44[Hadoukenww]|r.   Available on TBC.", TextSize, parent, nil, offsetX, 45);
+end
+
+-------------------------------------------------------------------
 -- Initialize Options Menu
 -------------------------------------------------------------------
 
@@ -814,7 +837,9 @@ function Options:Initialize()
 
     if not ArenaAnalyticsOptionsFrame then
         ArenaAnalyticsOptionsFrame = CreateFrame("Frame");
-        Options:RegisterCategory(ArenaAnalyticsOptionsFrame, "Arena|cff00ccffAnalytics|r");
+
+        ArenaAnalyticsOptionsFrame.category = Settings.RegisterCanvasLayoutCategory(ArenaAnalyticsOptionsFrame, "Arena|cff00ccffAnalytics|r");
+        Settings.RegisterAddOnCategory(ArenaAnalyticsOptionsFrame.category);
 
         -- Setup tabs
         SetupTab_General();
@@ -822,5 +847,7 @@ function Options:Initialize()
         SetupTab_Search();
         SetupTab_QuickSearch();
         SetupTab_ImportExport();   -- TODO: Implement updated import/export
+
+        SetupTab_StreamOverlay(); -- Suggest downloading ArenaStreamerOverlay by Hadoukenww
     end
 end

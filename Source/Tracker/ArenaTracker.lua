@@ -138,6 +138,10 @@ function ArenaTracker:IsSkirmish()
 	return currentArena.matchType == "skirmish";
 end
 
+function ArenaTracker:GetMatchState()
+	return currentArena.matchState or 0;
+end
+
 
 -- Reset current arena values
 function ArenaTracker:Reset()
@@ -147,6 +151,8 @@ function ArenaTracker:Reset()
 	ReinitializeCurrentArena();
 
 	-- Current Arena
+	currentArena.matchState = 0;
+
 	currentArena.isTracking = nil;
 	currentArena.isHandlingExit = false;
 
@@ -359,6 +365,47 @@ function ArenaTracker:HandleRatedUpdate()
 	end
 end
 
+function ArenaTracker:CheckMatchState()
+	if(not C_PvP.GetActiveMatchState) then
+		return;
+	end
+
+	local newState = C_PvP.GetActiveMatchState();
+	if(newState ~= ArenaTracker:GetMatchState()) then
+		ArenaTracker:HandleMatchStateChanged(newState);
+	end
+end
+
+-- 0: Inactive, 1: Waiting, 2: StartUp, 3: Engaged, 4: PostRound, 5: Complete
+function ArenaTracker:HandleMatchStateChanged(newState)
+	newState = tonumber(newState);
+	if(not newState) then
+		return;
+	end
+
+	if(newState == 0) then -- Inactive
+		Debug:Log("Match state: Inactive");
+
+	elseif(newState == 1) then -- Waiting
+		Debug:Log("Match state: Waiting");
+
+	elseif(newState == 2) then -- StartUp
+		Debug:Log("Match state: StartUp");
+
+	elseif(newState == 3) then -- Engaged
+		Debug:Log("Match state: Engaged");
+		ArenaTracker:HandleArenaGatesOpened();
+
+	elseif(newState == 4) then -- PostRound
+		Debug:Log("Match state: PostRound");
+
+	elseif(newState == 5) then -- Complete
+		Debug:Log("Match state: Complete");
+	end
+
+	currentArena.matchState = newState;
+end
+
 
 -- Search for missing members of group (party or arena), 
 -- Adds each non-tracked player to currentArena.players table.
@@ -379,8 +426,9 @@ function ArenaTracker:FillMissingPlayers()
 		for i = 1, currentArena.size do
 			local unitToken = group..i;
 			if(UnitExists(unitToken)) then
+				local GUID = Helpers:UnitGUID(unitToken);
 				local name = API:GetUnitFullName(unitToken);
-				local player = ArenaTracker:GetPlayer(name);
+				local player = ArenaTracker:GetPlayer(GUID);
 				if(name and not player) then
 
 					player = ArenaTracker:CreatePlayer(isEnemy, name, unitToken);
@@ -495,15 +543,10 @@ function ArenaTracker:ProcessCombatLogEvent(...)
 		ArenaTracker:TryRemoveFromDeaths(sourceGUID, spellName);
 	elseif(logEventType == "SPELL_AURA_APPLIED" or logEventType == "SPELL_AURA_REMOVED") then
 		ArenaTracker:DetectSpec(sourceGUID, spellID, spellName);
-	elseif(destGUID and destGUID:find("Player-", 1, true)) then
-		-- Player Death
-		if (logEventType == "UNIT_DIED") then
-			ArenaTracker:HandlePlayerDeath(destGUID, false);
-		end
-		-- Player killed
-		if (logEventType == "PARTY_KILL") then
-			ArenaTracker:HandlePlayerDeath(destGUID, true);
-		end
+	elseif (logEventType == "UNIT_DIED") then
+		ArenaTracker:HandlePlayerDeath(destGUID, false);
+	elseif (logEventType == "PARTY_KILL") then
+		ArenaTracker:HandlePlayerDeath(destGUID, true);
 	end
 end
 

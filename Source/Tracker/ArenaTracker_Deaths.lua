@@ -69,21 +69,26 @@ end
 
 -- Handle a player's death, through death or kill credit message
 function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
-	if(playerGUID == nil) then
+	if(not API:IsValidValue(playerGUID)) then
 		Debug:LogWarning("HandlePlayerDeath called with invalid GUID.");
 		return;
 	end
 
+	if(not playerGUID:find("Player-", 1, true)) then
+		Debug:LogWarning("HandlePlayerDeath with non-player GUID.");
+		return;
+	end
+
 	local name, realm, class, race, isFemale = API:GetPlayerInfoByGUID(playerGUID);
-	if(name == nil or name == "") then
+	if(not API:IsValidValue(name)) then
 		Debug:LogError("Invalid name of dead player. Skipping..");
 		return;
 	end
 
-	if(not realm or realm == "") then
-		name = API:ToFullName(name);
-	else
+	if(API:IsValidValue(realm)) then
 		name = name .. "-" .. realm;
+	else
+		name = API:ToFullName(name);
 	end
 
 	Debug:LogGreen("Player Kill!", isKillCredit, name);

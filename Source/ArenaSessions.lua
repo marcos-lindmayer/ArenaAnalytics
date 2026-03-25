@@ -11,7 +11,7 @@ local Debug = ArenaAnalytics.Debug;
 -------------------------------------------------------------------------
 
 local SESSION_EXPIRATION_TIME = 3600;
-local SKIRMISH_IGNORE_PARTY = true; -- Options:Get("ignoreGroupForSkirmishSession");
+local SKIRMISH_IGNORE_PARTY = Options:Get("ignoreGroupForSkirmishSession");
 
 function Sessions:AssignSession(match)
     assert(match);

@@ -571,7 +571,7 @@ function ArenaAnalytics:GetLastMatch(ignoreInvalidDate, explicitBracketIndex)
 			if(not explicitBracketIndex or explicitBracketIndex == ArenaMatch:GetBracketIndex(match)) then
 				local date = ArenaMatch:GetDate(match);
 				if(date and date > 0) then
-					return match;
+					return match, i;
 				end
 			end
 		end
@@ -622,9 +622,9 @@ function ArenaAnalytics:GetLatestRating(bracketIndex, explicitSeason, explicitSe
 end
 
 function ArenaAnalytics:TryFixLastMatchRating()
-	local lastMatch = ArenaAnalytics:GetLastMatch();
+	local lastMatch, matchIndex = ArenaAnalytics:GetLastMatch();
 	if(ArenaMatch:DoesRequireRatingFix(lastMatch)) then
-		ArenaMatch:TryFixLastRating(lastMatch);
+		ArenaMatch:TryFixLastRating(lastMatch, matchIndex);
 	end
 end
 

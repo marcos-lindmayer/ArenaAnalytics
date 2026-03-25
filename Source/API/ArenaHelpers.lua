@@ -282,7 +282,52 @@ function Helpers:ToValidValue(value)
 end
 
 
-function Helpers:UnitGUID(...)
-    local GUID = UnitGUID(...);
+local validUnitTokens = {
+    ["player"] = true,
+    ["target"] = true,
+
+    ["party1"] = true,
+    ["party2"] = true,
+    ["party3"] = true,
+    ["party4"] = true,
+
+    ["arena1"] = true,
+    ["arena2"] = true,
+    ["arena3"] = true,
+    ["arena4"] = true,
+    ["arena5"] = true,
+
+    ["pet"] = true,
+    ["targetpet"] = true,
+
+    ["party1pet"] = true,
+    ["party2pet"] = true,
+    ["party3pet"] = true,
+    ["party4pet"] = true,
+
+    ["arena1pet"] = true,
+    ["arena2pet"] = true,
+    ["arena3pet"] = true,
+    ["arena4pet"] = true,
+    ["arena5pet"] = true,
+};
+
+function Helpers:IsValidUnitToken(unitToken)
+    local isValid = unitToken and not API:IsSecretValue(unitToken) and validUnitTokens[unitToken];
+
+    if(not isValid and unitToken) then
+        --Debug:LogWarning("Attempted to check unitToken against validUnitTokens and found no match:", unitToken);
+    end
+
+    return isValid;
+end
+
+
+function Helpers:UnitGUID(unitToken)
+    if(not Helpers:IsValidUnitToken(unitToken)) then
+        return nil;
+    end
+
+    local GUID = UnitGUID(unitToken);
     return API:IsValidValue(GUID) and GUID or nil;
 end

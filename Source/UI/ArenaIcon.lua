@@ -15,6 +15,7 @@ function ArenaIcon:Create(parent, size, skipDeath)
     local newFrame = CreateFrame("Frame", "ArenaIconFrame", parent);
     newFrame:SetPoint("CENTER");
     newFrame:SetSize(size, size);
+    newFrame.skipDeath = skipDeath;
 
     local baseFrameLevel = newFrame:GetFrameLevel();
 
@@ -30,7 +31,15 @@ function ArenaIcon:Create(parent, size, skipDeath)
 
         newFrame.deathOverlay.texture = newFrame.deathOverlay:CreateTexture();
         newFrame.deathOverlay.texture:SetAllPoints(newFrame.deathOverlay);
-        newFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.31);
+
+        local isReadDeathOverlay = true;
+        if(isReadDeathOverlay) then -- red
+            newFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.3);
+        else -- Desaturated
+            newFrame.deathOverlay.texture:SetColorTexture(0, 0, 0, 0.5);
+        end
+
+        newFrame.deathOverlay:Hide();
     end
 
     local halfSize = floor(size/2);
@@ -43,9 +52,9 @@ function ArenaIcon:Create(parent, size, skipDeath)
     newFrame.specOverlay.texture:SetAllPoints(newFrame.specOverlay);
 
     -- Functions
-    function newFrame:SetSpecVisibility(visible) 
+    function newFrame:UpdateSpecVisibility(forcedVisible)
         if(self.specOverlay and self.specOverlay.texture) then
-            if(visible) then
+            if(forcedVisible or Options:Get("alwaysShowSpecOverlay")) then
                 self.specOverlay:Show();
             else
                 self.specOverlay:Hide();
@@ -53,9 +62,13 @@ function ArenaIcon:Create(parent, size, skipDeath)
         end
     end
 
-    function newFrame:SetDeathVisibility(visible)
+    function newFrame:UpdateDeathVisibility(visible)
+        local isDeathVisible = not self.skipDeath and self.isFirstDeath and (visible or Options:Get("alwaysShowDeathOverlay"));
+
+        self.classTexture:SetDesaturated(isDeathVisible);
+
         if(self.deathOverlay and self.deathOverlay.texture) then
-            if(visible and self.isFirstDeath) then
+            if(isDeathVisible) then
                 self.deathOverlay:Show();
             else
                 self.deathOverlay:Hide();
@@ -94,18 +107,13 @@ function ArenaIcon:Create(parent, size, skipDeath)
         newFrame.specOverlay.texture:SetTexture(specOverlayIcon);
     end
 
-    function newFrame:SetIsFirstDeath(value, alwaysShown)
-        if(skipDeath) then
+    function newFrame:SetIsFirstDeath(value)
+        if(self.skipDeath) then
             return;
         end
 
         self.isFirstDeath = value and true or nil;
-
-        if(not self.isFirstDeath or not alwaysShown) then
-            self.deathOverlay:Hide();
-        else
-            self.deathOverlay:Show();
-        end
+        self:UpdateDeathVisibility(true);
     end
 
     return newFrame;

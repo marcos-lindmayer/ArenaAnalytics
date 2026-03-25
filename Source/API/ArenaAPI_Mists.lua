@@ -2,6 +2,8 @@
 local _, ArenaAnalytics = ...; -- Addon Namespace
 local API = ArenaAnalytics.API;
 
+ArenaAnalytics.isMists = true;
+
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
 local Localization = ArenaAnalytics.Localization;

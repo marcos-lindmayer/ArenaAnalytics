@@ -11,6 +11,7 @@ local API = ArenaAnalytics.API;
 local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
+local Filters = ArenaAnalytics.Filters;
 
 -------------------------------------------------------------------------
 
@@ -160,6 +161,7 @@ local function ToNumericalBool(value, ignoreFalse)
     return 1;
 end
 
+
 -------------------------------------------------------------------------
 -- Rating fixup
 
@@ -168,6 +170,7 @@ function ArenaMatch:ClearTransientValues(match)
 
     match[matchKeys.transient_requireRatingFix] = nil;
 end
+
 
 function ArenaMatch:TrySetRequireRatingFix(match, value)
     assert(match);
@@ -181,11 +184,13 @@ function ArenaMatch:TrySetRequireRatingFix(match, value)
     match[matchKeys.transient_requireRatingFix] = value;
 end
 
+
 function ArenaMatch:DoesRequireRatingFix(match)
     return match and (match[matchKeys.transient_requireRatingFix] ~= nil);
 end
 
-function ArenaMatch:TryFixLastRating(match)
+
+function ArenaMatch:TryFixLastRating(match, matchIndex)
     assert(match);
 
     if(not ArenaMatch:DoesRequireRatingFix(match)) then
@@ -240,7 +245,9 @@ function ArenaMatch:TryFixLastRating(match)
     ArenaMatch:ClearTransientValues(match);
 
     Debug:Log("Fixed last rating:", ArenaMatch:GetBracket(match), newRating, oldRating, currentSeasonPlayed);
+    Filters:Refresh();
 end
+
 
 -------------------------------------------------------------------------
 -- Date (1)

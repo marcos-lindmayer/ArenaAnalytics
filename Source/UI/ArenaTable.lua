@@ -406,15 +406,8 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
             local isFirstDeath = ArenaMatch:IsPlayerFirstDeath(playerFrame.player);
 
             playerFrame.icon:SetSpec(spec_id);
-            playerFrame.icon:SetIsFirstDeath(isFirstDeath, Options:Get("alwaysShowDeathOverlay"));
-
-            if (not Options:Get("alwaysShowSpecOverlay")) then
-                playerFrame.icon:SetSpecVisibility(false);
-            end
-
-            if (not Options:Get("alwaysShowDeathOverlay")) then
-                playerFrame.icon:SetDeathVisibility(false);
-            end
+            playerFrame.icon:SetIsFirstDeath(isFirstDeath);
+            playerFrame.icon:UpdateSpecVisibility();
 
             -- Quick Search
             playerFrame:RegisterForClicks("LeftButtonDown", "RightButtonDown");
@@ -443,7 +436,7 @@ local function setupTeamPlayerFrames(teamPlayerFrames, match, matchIndex, isEnem
 end
 
 -- Hide/Shows Spec icons on the class' bottom-right corner
-function AAtable:ToggleSpecsAndDeathOverlay(entry)
+function AAtable:UpdateSpecsAndDeathOverlay(entry)
     if (entry == nil) then
         return;
     end
@@ -456,8 +449,8 @@ function AAtable:ToggleSpecsAndDeathOverlay(entry)
         assert(playerFrame);
 
         if(playerFrame.icon) then
-            playerFrame.icon:SetSpecVisibility(visible or Options:Get("alwaysShowSpecOverlay"));
-            playerFrame.icon:SetDeathVisibility(visible or Options:Get("alwaysShowDeathOverlay"));
+            playerFrame.icon:UpdateSpecVisibility(visible);
+            playerFrame.icon:UpdateDeathVisibility(visible);
         end
     end
 end
@@ -543,7 +536,6 @@ end
 local function CombineStatsText(total, wins, losses, draws, ratingDelta)
     total = tonumber(total) or 0;
     wins = tonumber(wins) or 0;
-    ratingDelta = tonumber(ratingDelta);
 
     local winrateText = Helpers:GetSafePercentage(wins, total);
     local winsText =  Colors:ColorText(wins, Colors.winColor);
@@ -552,9 +544,10 @@ local function CombineStatsText(total, wins, losses, draws, ratingDelta)
     local includeDraws = draws ~= nil; -- Add option?
     local drawText = includeDraws and (" / " .. Colors:ColorText(draws, Colors.drawColor)) or "";
 
+    -- Rating Delta
     local deltaText = "";
-    local includeSessionDelta = true; -- @TODO: Add option?
-    if(includeSessionDelta and ratingDelta) then
+    ratingDelta = tonumber(ratingDelta);
+    if(ratingDelta) then
         local includeZeroDelta = true; -- @TODO: Add option?
 
         if(ratingDelta < 0) then
@@ -569,6 +562,10 @@ local function CombineStatsText(total, wins, losses, draws, ratingDelta)
 end
 
 local function GetSessionRatingDelta()
+    if(Options:Get("hideSessionRatingDelta")) then
+        return nil;
+    end
+
     local firstMatchIndex, lastMatchIndex = nil, nil;
 
     -- Find the boundaries of the current session (Session 1)
@@ -822,14 +819,14 @@ function AAtable:RefreshLayout()
             button:SetAttribute("selected", isSelected);
             if(isSelected) then
                 button.Tooltip:Show();
-                AAtable:ToggleSpecsAndDeathOverlay(button);
+                AAtable:UpdateSpecsAndDeathOverlay(button);
             else
                 button.Tooltip:Hide();
             end
 
             button:SetScript("OnEnter", function(args)
                 args:SetAttribute("hovered", true);
-                AAtable:ToggleSpecsAndDeathOverlay(args);
+                AAtable:UpdateSpecsAndDeathOverlay(args);
 
                 if(ArenaMatch:IsShuffle(match)) then
                     button.isShowingTooltip = true;
@@ -839,10 +836,10 @@ function AAtable:RefreshLayout()
                 end
             end);
 
-            button:SetScript("OnLeave", function(args) 
+            button:SetScript("OnLeave", function(args)
                 args:SetAttribute("hovered", false);
                 button.isShowingTooltip = nil;
-                AAtable:ToggleSpecsAndDeathOverlay(args);
+                AAtable:UpdateSpecsAndDeathOverlay(args);
                 Tooltips:HideShuffleTooltip();
             end);
 
@@ -863,7 +860,7 @@ function AAtable:RefreshLayout()
                 Selection:handleMatchEntryClicked(key, true, matchIndex);
             end);
 
-            AAtable:ToggleSpecsAndDeathOverlay(button);
+            AAtable:UpdateSpecsAndDeathOverlay(button);
 
             button:SetWidth(ArenaAnalyticsScrollFrame.ListScrollFrame.scrollChild:GetWidth());
             button:Show();

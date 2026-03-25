@@ -191,8 +191,6 @@ local function GetOrCreateSingleton()
         self.quickSearchContainer.desiredHeight = 0;
         self.quickSearchContainer:SetHeight(0);
 
-        Debug:Log("Created new Player Tooltip singleton!");
-
         -- Update quick search tips
         PlayerTooltip:UpdateQuickSearchTips();
     end

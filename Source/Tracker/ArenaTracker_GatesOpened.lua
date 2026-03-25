@@ -53,12 +53,13 @@ function ArenaTracker:HandleArenaMessages(msg)
 
 	-- Trigger Start handling logic
 	if(isStart) then
-		ArenaTracker:HandleArenaGatesOpened(msg);
+		ArenaTracker:HandleArenaGatesOpened();
+		currentArena.matchState = 3;
 	end
 end
 
 -- Gates opened, match has officially started
-function ArenaTracker:HandleArenaGatesOpened(...)
+function ArenaTracker:HandleArenaGatesOpened()
 	local isShuffle = ArenaTracker:IsTrackingShuffle();
 	Debug:LogGreen("ArenaTracker:HandleArenaGatesOpened() triggered! IsShuffle:", isShuffle);
 

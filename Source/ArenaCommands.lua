@@ -134,19 +134,19 @@ end
 
 function Commands.HandleCommand_DumpRealms()
 	print(" ");
-	ArenaAnalytics:Print(" ================================================  ");
+	ArenaAnalytics:Print("============================= ");
 	ArenaAnalytics:Print("  Known Realms:     (Current realm: " .. (ArenaAnalytics:GetLocalRealmIndex() or "").. ")");
 
 	for i,realm in ipairs(ArenaAnalyticsDB.realms) do
 		ArenaAnalytics:Print("     ", i, "   ", realm);
 	end
-	ArenaAnalytics:Print("  ================================================  ");
+	ArenaAnalytics:Print("============================= ");
 	print(" ");
 end
 
 function Commands.HandleCommand_Dump()
 	print(" ");
-	ArenaAnalytics:Print("================================================  ");
+	ArenaAnalytics:Print("============================= ");
 
 	local interfaceVersion = select(4, GetBuildInfo());
 	ArenaAnalytics:Print("Interface Version:", interfaceVersion);
@@ -161,20 +161,23 @@ function Commands.HandleCommand_Dump()
 		ArenaAnalytics:Print("IsArenaPreparation:", API:IsArenaPreparation());
 	end
 
-	ArenaAnalytics:Print("================================================  ");
+	ArenaAnalytics:Print("============================= ");
 	print(" ");
 end
 
 function Commands.HandleCommand_Test(...)
 	print(" ");
-	ArenaAnalytics:Print("================================================ ");
+	ArenaAnalytics:Print("============================= ");
 
-	ArenaAnalytics:Print("================================================ ");
+	local newState = C_PvP.GetActiveMatchState();
+	ArenaTracker:HandleMatchStateChanged(newState);
+
+	ArenaAnalytics:Print("============================= ");
 end
 
 function Commands.HandleCommand_DumpSpecs()
 	print(" ");
-	ArenaAnalytics:Print("================================================ ");
+	ArenaAnalytics:Print("============================= ");
 
 	Debug:Log("Logging Specializations..")
 
@@ -202,7 +205,7 @@ function Commands.HandleCommand_DumpSpecs()
 		end
 	end
 
-	ArenaAnalytics:Print("================================================ ");
+	ArenaAnalytics:Print("============================= ");
 end
 
 function Commands.HandleCommand_FixDurations()

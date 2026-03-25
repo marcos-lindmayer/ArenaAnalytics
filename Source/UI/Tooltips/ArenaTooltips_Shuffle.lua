@@ -124,7 +124,7 @@ local function CreateRoundEntryFrame(index, parent)
 
             local playerIcon = self.team[i+1];
             playerIcon:SetSpec(spec_id);
-            playerIcon:SetIsFirstDeath(isFirstDeath, true);
+            playerIcon:SetIsFirstDeath(isFirstDeath);
         end
 
         for i=1, 3 do
@@ -142,7 +142,7 @@ local function CreateRoundEntryFrame(index, parent)
 
             local playerIcon = self.enemyTeam[i];
             playerIcon:SetSpec(spec_id);
-            playerIcon:SetIsFirstDeath(isFirstDeath, true);
+            playerIcon:SetIsFirstDeath(isFirstDeath);
         end
     end
 
@@ -185,8 +185,6 @@ local function GetOrCreateSingleton()
         end
 
         self.bottomStatTexts = {}
-
-        Debug:Log("Created new Shuffle Tooltip singleton!");
     end
 
     assert(tooltipSingleton);
