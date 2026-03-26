@@ -561,28 +561,21 @@ local function CombineStatsText(total, wins, losses, draws, ratingDelta)
     return Colors:ColorText(valueText, Colors.statsColor);
 end
 
-local function GetSessionRatingDelta()
-    if(Options:Get("hideSessionRatingDelta")) then
-        return nil;
-    end
-
-    local firstMatchIndex, lastMatchIndex = nil, nil;
+function GetSessionRatingDelta()
+    local firstMatch, lastMatch = nil, nil;
 
     -- Find the boundaries of the current session (Session 1)
     for i = ArenaAnalytics.filteredMatchCount, 1, -1 do
         local match, filteredSession = ArenaAnalytics:GetFilteredMatch(i);
-        if (match and filteredSession == 1) then
+        if (match and filteredSession) then
             if(filteredSession == 1) then
-                firstMatchIndex = firstMatchIndex or i
-                lastMatchIndex = i;
-            elseif(filteredSession and filteredSession > 1) then
+                firstMatch = firstMatch or match
+                lastMatch = match;
+            elseif(filteredSession > 1) then
                 break;
             end
         end
     end
-
-    local firstMatch = ArenaAnalytics:GetFilteredMatch(firstMatchIndex)
-    local lastMatch = ArenaAnalytics:GetFilteredMatch(lastMatchIndex)
 
     if not firstMatch or not lastMatch then
         return nil;
@@ -620,7 +613,7 @@ function AAtable:HandleArenaCountChanged()
     local wins, losses, draws = 0,0,0;
     local sessionGames, sessionWins, sessionLosses, sessionDraws = 0,0,0,0;
 
-    local sessionRatingDelta = GetSessionRatingDelta();
+    local sessionRatingDelta = not Options:Get("hideSessionRatingDelta") and GetSessionRatingDelta() or nil;
 
     -- Update arena count & winrate
     for i=1, ArenaAnalytics.filteredMatchCount do
