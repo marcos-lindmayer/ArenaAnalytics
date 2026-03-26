@@ -621,7 +621,6 @@ function AAtable:HandleArenaCountChanged()
     local sessionGames, sessionWins, sessionLosses, sessionDraws = 0,0,0,0;
 
     local sessionRatingDelta = GetSessionRatingDelta();
-    Debug:Log("sessionRatingDelta", sessionRatingDelta)
 
     -- Update arena count & winrate
     for i=1, ArenaAnalytics.filteredMatchCount do

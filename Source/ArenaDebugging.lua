@@ -202,48 +202,6 @@ function Debug:DrawDebugBackground(frame, r, g, b, a)
     frame.debugBackground:SetColorTexture(r or 1, g or 0, b or 0, a or 0.4);
 end
 
--- TEMP debugging
-function Debug:PrintScoreboardStats(numPlayers)
-	if(Debug:GetDebugLevel() < 10) then
-        return;
-	end
-
-    local statIDs = {}
-    local statNames = {}
-
-    numPlayers = numPlayers or 1;
-
-    for playerIndex=1, numPlayers do
-        Debug:LogSpacer();
-
-        local scoreInfo = C_PvP.GetScoreInfo(playerIndex);
-        if(scoreInfo and scoreInfo.stats) then
-            for i=1, #scoreInfo.stats do
-                local stat = scoreInfo.stats[i];
-                Debug:Log("Stat:", stat.pvpStatID, stat.pvpStatValue, stat.name);
-
-                if(stat.pvpStatID) then
-                    if(statIDs[stat.pvpStatID] and statIDs[stat.pvpStatID] ~= stat.name) then
-                        Debug:Log("New stat name for ID!", stat.pvpStatID, stat.name);
-                    end
-                    statIDs[stat.pvpStatID] = stat.name;
-                end
-
-                if(stat.name) then
-                    if(statIDs[stat.name] and statIDs[stat.name] ~= stat.pvpStatID) then
-                        Debug:Log("New stat ID for name!", stat.pvpStatID, stat.name);
-                    end
-                    statNames[stat.name] = stat.pvpStatID;
-                end
-            end
-
-            Debug:LogTable(scoreInfo and scoreInfo.stats);
-        else
-            Debug:Log("No current stats found!");
-        end
-    end
-end
-
 -------------------------------------------------------------------------
 -- Inspection Debugging
 

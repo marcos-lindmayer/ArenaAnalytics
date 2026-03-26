@@ -169,8 +169,6 @@ function Commands.HandleCommand_Test(...)
 	print(" ");
 	ArenaAnalytics:Print("============================= ");
 
-	local newState = C_PvP.GetActiveMatchState();
-	ArenaTracker:HandleMatchStateChanged(newState);
 
 	ArenaAnalytics:Print("============================= ");
 end

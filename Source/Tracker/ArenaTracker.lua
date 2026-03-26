@@ -536,6 +536,10 @@ function ArenaTracker:ProcessCombatLogEvent(...)
 		return;
 	end
 
+	if(type(CombatLogGetCurrentEventInfo) ~= "function") then
+		return;
+	end
+
 	-- Tracking teams for spec/race and in case arena is quitted
 	local timestamp,logEventType,_,sourceGUID,_,_,_,destGUID,_,_,_,spellID,spellName = CombatLogGetCurrentEventInfo();
 	if (logEventType == "SPELL_CAST_SUCCESS") then

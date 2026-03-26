@@ -448,14 +448,7 @@ local currentCompData = {
 };
 
 function ArenaAnalytics:SetCurrentCompData(newCompDataTable)
-	assert(newCompDataTable and newCompDataTable.Filter_Comp and newCompDataTable.Filter_EnemyComp);
 	currentCompData = Helpers:DeepCopy(newCompDataTable);
-
-	currentCompData.Filter_Comp = currentCompData.Filter_Comp or {};
-	currentCompData.Filter_EnemyComp = currentCompData.Filter_EnemyComp or {};
-
-	currentCompData.Filter_Comp.All = currentCompData.Filter_Comp.All or {};
-	currentCompData.Filter_EnemyComp.All = currentCompData.Filter_EnemyComp.All or {};
 end
 
 function ArenaAnalytics:GetCurrentCompData(compKey, comp)

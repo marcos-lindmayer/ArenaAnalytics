@@ -39,6 +39,7 @@ local function GetBatchLimit()
     return ArenaAnalyticsScrollFrame:IsShown() and BATCH_LIMIT or BACKGROUND_BATCH_LIMIT;
 end
 
+
 -- Currently applied filters
 local currentFilters = {}
 local defaults = {}
@@ -69,6 +70,7 @@ function Filters:Initialize()
     AddFilter(Filters.FilterKeys.TeamComp, "All");
     AddFilter(Filters.FilterKeys.EnemyComp, "All");
 end
+
 
 function Filters:IsValidCompKey(compKey)
     return compKey == Filters.FilterKeys.TeamComp or compKey == Filters.FilterKeys.EnemyComp;
@@ -106,6 +108,7 @@ function Filters:GetDefault(filter, skipOverrides)
     return defaults[filter];
 end
 
+
 function Filters:Set(filter, value, skipRefresh)
     assert(filter and currentFilters[filter] ~= nil);
 
@@ -133,6 +136,7 @@ function Filters:Set(filter, value, skipRefresh)
     return true;
 end
 
+
 function Filters:ResetFast(filter, skipOverrides)
     assert(filter and currentFilters[filter] ~= nil and defaults[filter] ~= nil, "Invalid filter: " .. (filter and filter or "nil"));
     local default = Filters:GetDefault(filter, skipOverrides);
@@ -140,6 +144,7 @@ function Filters:ResetFast(filter, skipOverrides)
     -- Return true if value changed
     return Filters:Set(filter, default, true);
 end
+
 
 function Filters:Reset(filter, skipOverrides)
     local changed = Filters:ResetFast(filter, skipOverrides);
@@ -150,6 +155,7 @@ function Filters:Reset(filter, skipOverrides)
 
     return changed;
 end
+
 
 function Filters:ResetAllFast(skipOverrides)
     local changed = false;
@@ -163,6 +169,7 @@ function Filters:ResetAllFast(skipOverrides)
     return changed;
 end
 
+
 -- Clearing filters, optionally keeping filters explicitly applied through options
 function Filters:ResetAll(skipOverrides)
     local changed = Filters:ResetAllFast(skipOverrides);
@@ -173,6 +180,7 @@ function Filters:ResetAll(skipOverrides)
     end
 end
 
+
 function Filters:IsFilterActive(filter, ignoreOverrides)
     local current = Filters:Get(filter);
     if (current ~= nil) then
@@ -182,6 +190,7 @@ function Filters:IsFilterActive(filter, ignoreOverrides)
     Debug:LogWarning("isFilterActive failed to find filter: ", filter);
     return false;
 end
+
 
 function Filters:GetActiveFilterCount()
     local count = 0;
@@ -199,6 +208,7 @@ function Filters:GetActiveFilterCount()
     return count;
 end
 
+
 -- check map filter
 local function doesMatchPassFilter_Map(match)
     if match == nil then return false end;
@@ -210,6 +220,7 @@ local function doesMatchPassFilter_Map(match)
 
     return ArenaMatch:GetMapID(match) == filter;
 end
+
 
 -- check outcome filter
 local function doesMatchPassFilter_Outcome(match)
@@ -224,6 +235,7 @@ local function doesMatchPassFilter_Outcome(match)
 
     return ArenaMatch:GetMatchOutcome(match) == filter;
 end
+
 
 -- check outcome filter
 local function doesMatchPassFilter_Mirror(match)
@@ -243,6 +255,7 @@ local function doesMatchPassFilter_Mirror(match)
     return teamComp and teamComp == enemyComp;
 end
 
+
 -- check bracket filter
 local function doesMatchPassFilter_Bracket(match)
     if not match then
@@ -255,6 +268,7 @@ local function doesMatchPassFilter_Bracket(match)
 
     return ArenaMatch:GetBracketIndex(match) == Filters:Get(Filters.FilterKeys.Bracket);
 end
+
 
 -- check season filter
 local function doesMatchPassFilter_Date(match)
@@ -285,6 +299,7 @@ local function doesMatchPassFilter_Date(match)
     return (ArenaMatch:GetDate(match) or 0) > (time() - seconds);
 end
 
+
 -- check season filter
 local function doesMatchPassFilter_Season(match)
     if match == nil then return false end;
@@ -300,6 +315,7 @@ local function doesMatchPassFilter_Season(match)
 
     return ArenaMatch:GetSeason(match) == tonumber(seasonFilter);
 end
+
 
 -- check comp filters (comp / enemy comp)
 local function doesMatchPassFilter_Comp(match, isEnemyComp)
@@ -327,6 +343,7 @@ local function doesMatchPassFilter_Comp(match, isEnemyComp)
     return ArenaMatch:HasComp(match, comp, isEnemyComp);
 end
 
+
 function Filters:doesMatchPassGameSettings(match)
     local matchType = ArenaMatch:GetMatchType(match);
     if (not Options:Get("showSkirmish") and matchType == "skirmish") then
@@ -343,6 +360,7 @@ function Filters:doesMatchPassGameSettings(match)
 
     return true;
 end
+
 
 -- check all filters
 function Filters:DoesMatchPassAllFilters(match, excluded)
@@ -417,9 +435,11 @@ local function ResetTransientCompData()
     };
 end
 
+
 local function SafeIncrement(table, key, delta)
     table[key] = (table[key] or 0) + (delta or 1);
 end
+
 
 local lastIndex = nil;
 local function findOrAddCompValues(compsTable, comp, isWin, mmr, isEnemy)
@@ -445,6 +465,7 @@ local function findOrAddCompValues(compsTable, comp, isWin, mmr, isEnemy)
         SafeIncrement(compData, "mmrCount");
     end
 end
+
 
 local function AddToCompData(match, isEnemyTeam, index)
     assert(match);
@@ -477,39 +498,44 @@ local function AddToCompData(match, isEnemyTeam, index)
     end
 end
 
+
 local function FinalizeCompDataTables()
     local compKeys = { Filters.FilterKeys.TeamComp, Filters.FilterKeys.EnemyComp }
     for _,compKey in ipairs(compKeys) do
         -- Compute winrates and average mmr
+        transientCompData[compKey] = transientCompData[compKey] or {};
         local compData = transientCompData[compKey];
-        if(compData) then
-            for _, compTable in pairs(compData) do
-                -- Calculate winrate
-                local played = tonumber(compTable.played) or 0;
-                local wins = tonumber(compTable.wins) or 0;
-                compTable.winrate = Helpers:GetSafePercentage(wins, played, 3); -- Keep 3 decimals for sorting accuracy. (Rounded by UI)
+        compData.All = compData.All or {};
 
-                -- Calculate average MMR
-                local mmr = tonumber(compTable.mmr);
-                local mmrCount = tonumber(compTable.mmrCount);
-                if mmr and mmrCount and mmrCount > 0 then
-                    compTable.mmr = math.floor(mmr / mmrCount);
-                    compTable.mmrCount = nil;
-                else
-                    -- No MMR data
-                    compTable.mmr = nil;
-                    compTable.mmrCount = nil;
-                end
+        for _, compTable in pairs(compData) do
+            -- Calculate winrate
+            local played = tonumber(compTable.played) or 0;
+            local wins = tonumber(compTable.wins) or 0;
+            compTable.winrate = Helpers:GetSafePercentage(wins, played, 3); -- Keep 3 decimals for sorting accuracy. (Rounded by UI)
+
+            -- Calculate average MMR
+            local mmr = tonumber(compTable.mmr);
+            local mmrCount = tonumber(compTable.mmrCount) or 0;
+            if mmr and mmrCount > 0 then
+                compTable.mmr = math.floor(mmr / mmrCount);
+            else
+                -- No MMR data
+                compTable.mmr = nil;
             end
+
+            -- No need for mmrCount after the calculations
+            compTable.mmrCount = nil;
         end
     end
 end
+
 
 local function CommitTransientCompData()
     FinalizeCompDataTables();
     ArenaAnalytics:SetCurrentCompData(transientCompData);
     ResetTransientCompData();
 end
+
 
 local lastSession = nil;
 local lastFilteredSession = nil;
@@ -566,6 +592,7 @@ local function ProcessMatchIndex(index)
         lastFilteredSession = filteredSession;
     end
 end
+
 
 Filters.isRefreshing = nil;
 Filters.forceNewRefresh = nil;
@@ -637,6 +664,7 @@ local function Refresh_Internal()
     -- Start processing batches
     ProcessBatch();
 end
+
 
 -- Returns matches applying current match filters
 function Filters:Refresh(forcedQuickRefresh)
