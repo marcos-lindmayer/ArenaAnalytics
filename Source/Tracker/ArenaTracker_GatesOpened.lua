@@ -16,13 +16,14 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 
 -------------------------------------------------------------------------
 -- ArenaTracker subsection
--- Responsible for processing when gates open, through chat messages.
+-- Responsible for processing when gates open, through chat messages or match state.
 -------------------------------------------------------------------------
 
 local currentArena = {};
 function ArenaTracker:InitializeSubmodule_GatesOpened()
     currentArena = ArenaAnalyticsTransientDB.currentArena;
 end
+
 
 function ArenaTracker:HandleArenaMessages(msg)
 	if(msg and not API:IsSecretValue(msg)) then
@@ -58,27 +59,35 @@ function ArenaTracker:HandleArenaMessages(msg)
 	end
 end
 
+
+function ArenaTracker:CheckHasGatesOpened()
+	local state = API:GetActiveMatchState() or 0;
+
+	if(state > 2) then
+		ArenaTracker:HandleArenaGatesOpened();
+	end
+end
+
+
 -- Gates opened, match has officially started
 function ArenaTracker:HandleArenaGatesOpened()
+	if(not ArenaTracker:IsTrackingArena()) then
+		return;
+	end
+
 	local isShuffle = ArenaTracker:IsTrackingShuffle();
-	Debug:LogGreen("ArenaTracker:HandleArenaGatesOpened() triggered! IsShuffle:", isShuffle);
+	if(not isShuffle and currentArena.hasRealStartTime or currentArena.round.hasStarted) then
+		return;
+	end
 
 	currentArena.startTime = time();
 	currentArena.hasRealStartTime = true; -- The start time has been set by gates opened
 
-	ArenaTracker:FillMissingPlayers();
-	ArenaTracker:ForceTeamsUpdate();
-	ArenaTracker:UpdateRoundTeam();
-
 	if(isShuffle) then
-		local myWins, totalWins = ArenaTracker:GetCurrentWins();
-		currentArena.round.wins = myWins;
-		currentArena.round.totalWins = totalWins;
-		Debug:Log("Assigned round wins:", myWins, totalWins);
-
 		currentArena.round.startTime = time();
 		currentArena.round.hasStarted = true;
 	end
 
-	Debug:Log("Match started!", API:GetCurrentMapID(), GetZoneText(), #currentArena.players);
+	ArenaTracker:FillMissingPlayers();
+	ArenaTracker:ForceTeamsUpdate();
 end

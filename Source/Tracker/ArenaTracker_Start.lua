@@ -102,6 +102,8 @@ function ArenaTracker:HandleArenaStart(stateData)
 	ArenaTracker:SetState("Active");
 	Events:RegisterArenaEvents();
 
+	ArenaTracker:CheckMatchState();
+
 	-- End immediately
 	if(API:GetWinner() ~= nil) then
 		ArenaTracker:HandleArenaEnd(); -- TODO: Consider 1 frame delay?

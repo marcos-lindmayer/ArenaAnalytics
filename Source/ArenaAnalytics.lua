@@ -497,10 +497,12 @@ end
 -------------------------------------------------------------------------
 
 function ArenaAnalytics:GetMatch(index)
+	index = tonumber(index);
 	return index and ArenaAnalyticsDB and ArenaAnalyticsDB[index];
 end
 
 function ArenaAnalytics:GetFilteredMatch(index)
+	index = tonumber(index);
 	if(not index) then
 		return nil;
 	end

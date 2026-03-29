@@ -16,7 +16,7 @@ function Localization:GetClassID(class)
         return nil;
     end
 
-    if(not class or class == "") then
+    if(not API:IsValidValue(class)) then
         return nil;
     end
 
@@ -72,7 +72,7 @@ function Localization:GetSpecID(classToken, spec)
         return nil;
     end
 
-    if(not classToken or not spec or spec == "") then
+    if(not classToken or not API:IsValidValue(spec)) then
         return nil;
     end
 
@@ -454,7 +454,7 @@ function Localization:GetRaceID(race, factionIndex)
         return nil;
     end
 
-    if(not race) then
+    if(not API:IsValidValue(race)) then
         return nil;
     end
 
@@ -519,7 +519,7 @@ local function InitializeLookupTable_Race()
 end
 
 function Localization:GetFactionIndex(faction)
-    if(not faction) then
+    if(not API:IsValidValue(faction)) then
         return nil;
     end
 

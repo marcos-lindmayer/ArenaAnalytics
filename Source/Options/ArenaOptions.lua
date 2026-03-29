@@ -14,6 +14,7 @@ local Debug = ArenaAnalytics.Debug;
 local Commands = ArenaAnalytics.Commands;
 local Colors = ArenaAnalytics.Colors;
 local Export = ArenaAnalytics.Export;
+local Interface = ArenaAnalytics.Interface;
 
 -------------------------------------------------------------------------
 
@@ -51,6 +52,8 @@ local function HandleSettingsChanged()
     Filters:ResetAllFast(false);
     Filters:Refresh();
     PlayerTooltip:OnSettingsChanged();
+
+    API:TriggerEvent(Interface.Events.OptionsChanged);
 end
 
 -------------------------------------------------------------------------
@@ -111,7 +114,7 @@ function Options:LoadSettings()
     AddSetting("muteArenaDialogSounds", false);
 
     if(API:HasSurrenderAPI()) then
-        AddSetting("surrenderByMiddleMouseClick", false);
+        AddSetting("surrenderByMiddleMouseClick", true);
         AddSetting("enableSurrenderAfkOverride", true);
         AddSetting("enableDoubleAfkToLeave", true);
         AddSetting("enableSurrenderGoodGameCommand", true);

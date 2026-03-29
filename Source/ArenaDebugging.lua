@@ -131,7 +131,7 @@ end
 function Debug:Assert(value, msg)
 	if(Debug:GetDebugLevel() >= 3) then
         if(not value) then
-            Debug:LogError("Assert failed:", msg or "-")
+            Debug:LogError("Assert failed:", msg or "(No Message Provided)");
             assert(value, "Debug Assertion failed! " .. (msg or ""));
         end
 	end

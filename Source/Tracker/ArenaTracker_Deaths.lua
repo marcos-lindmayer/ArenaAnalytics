@@ -103,10 +103,6 @@ function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
 
 	deathData[playerGUID] = death;
 	Debug:LogGreen("Assigned death:", death.name, playerGUID);
-
-	if(ArenaTracker:IsTrackingShuffle() and (isKillCredit or class ~= "HUNTER")) then
-		C_Timer.After(0, ArenaTracker.HandleRoundEnd);
-	end
 end
 
 

@@ -202,6 +202,11 @@ function ArenaTracker:Reset()
 	currentArena.round.startTime = nil;
 	currentArena.wins = nil;
 
+	currentArena.lastRoundTeam = TablePool:Acquire();
+
+	ArenaTracker:ResetShuffleRounds();
+	ArenaTracker:ResetShuffleWins();
+
 	currentArena.locked = false;
 end
 
@@ -290,6 +295,7 @@ function ArenaTracker:HasMapData()
 	return currentArena and currentArena.mapId ~= nil;
 end
 
+
 local function SafeEqual(value, otherValue)
 	if(not API:IsValidValue(value) or not API:IsValidValue(otherValue)) then
 		return nil;
@@ -365,16 +371,15 @@ function ArenaTracker:HandleRatedUpdate()
 	end
 end
 
-function ArenaTracker:CheckMatchState()
-	if(not C_PvP.GetActiveMatchState) then
-		return;
-	end
 
-	local newState = C_PvP.GetActiveMatchState();
-	if(newState ~= ArenaTracker:GetMatchState()) then
+function ArenaTracker:CheckMatchState()
+	local newState = API:GetActiveMatchState();
+
+	if(newState and newState ~= ArenaTracker:GetMatchState()) then
 		ArenaTracker:HandleMatchStateChanged(newState);
 	end
 end
+
 
 -- 0: Inactive, 1: Waiting, 2: StartUp, 3: Engaged, 4: PostRound, 5: Complete
 function ArenaTracker:HandleMatchStateChanged(newState)
@@ -383,24 +388,22 @@ function ArenaTracker:HandleMatchStateChanged(newState)
 		return;
 	end
 
-	if(newState == 0) then -- Inactive
-		Debug:Log("Match state: Inactive");
+	local lastState = ArenaTracker:GetMatchState();
 
-	elseif(newState == 1) then -- Waiting
-		Debug:Log("Match state: Waiting");
+	if(ArenaTracker:IsTrackingShuffle()) then
+		if(newState < 4) then
+			if(lastState == 4) then
+				ArenaTracker:CommitRound();
+			end
 
-	elseif(newState == 2) then -- StartUp
-		Debug:Log("Match state: StartUp");
+			if(not ArenaTracker:HasRoundInitiated() and not ArenaTracker:IsSameRoundTeam()) then
+				ArenaTracker:InitiateRound();
+			end
+		end
+	end
 
-	elseif(newState == 3) then -- Engaged
-		Debug:Log("Match state: Engaged");
+	if(newState == 3) then -- Engaged
 		ArenaTracker:HandleArenaGatesOpened();
-
-	elseif(newState == 4) then -- PostRound
-		Debug:Log("Match state: PostRound");
-
-	elseif(newState == 5) then -- Complete
-		Debug:Log("Match state: Complete");
 	end
 
 	currentArena.matchState = newState;
@@ -428,7 +431,7 @@ function ArenaTracker:FillMissingPlayers()
 			if(UnitExists(unitToken)) then
 				local GUID = Helpers:UnitGUID(unitToken);
 				local name = API:GetUnitFullName(unitToken);
-				local player = ArenaTracker:GetPlayer(GUID);
+				local player = ArenaTracker:GetPlayer(name);
 				if(name and not player) then
 
 					player = ArenaTracker:CreatePlayer(isEnemy, name, unitToken);
@@ -454,9 +457,12 @@ end
 -- Returns a table with unit information to be placed inside arena.players
 function ArenaTracker:CreatePlayer(isEnemy, name, unitToken, spec_id)
 	if(not API:IsValidValue(name)) then
-		return;
+		return nil;
 	end
 
+	if(not unitToken) then
+		unitToken = Helpers:GetUnitTokenByName(name);
+	end
 	unitToken = tostring(unitToken);
 
 	local newPlayer = {
@@ -471,7 +477,7 @@ function ArenaTracker:CreatePlayer(isEnemy, name, unitToken, spec_id)
 
 		-- Unsafe in shuffles:  (?)
 		unitToken = unitToken,
-		petToken = unitToken and unitToken.."pet",
+		petToken = API:IsValidValue(unitToken) and unitToken.."pet",
 	};
 
 	local class, spec = ArenaAnalytics.Internal:GetClassAndSpec(newPlayer.spec);
@@ -571,6 +577,7 @@ function ArenaTracker:Initialize()
 	ArenaTracker:InitializeSubmodule_End();
 	ArenaTracker:InitializeSubmodule_Exit();
 
+	ArenaTracker:InitializeSubmodule_Scoreboard();
 	ArenaTracker:InitializeSubmodule_Shuffle();
 	ArenaTracker:InitializeSubmodule_Deaths();
 	ArenaTracker:InitializeSubmodule_Specs();

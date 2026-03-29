@@ -30,6 +30,10 @@ end
 
 
 function Helpers:SanitizeValue(value)
+    if(API:IsSecretValue(value)) then
+        return nil;
+    end
+
     if(type(value) == "string") then
         value = value:gsub(" ", ""):lower();
     end
@@ -330,4 +334,61 @@ function Helpers:UnitGUID(unitToken)
 
     local GUID = UnitGUID(unitToken);
     return API:IsValidValue(GUID) and GUID or nil;
+end
+
+
+local teams = { "party", "arena" };
+function Helpers:GetUnitTokenByName(name)
+    if(not API:IsValidValue(name)) then
+        return;
+    end
+
+    -- Check party1-4 and arena1-5
+    for _,team in ipairs(teams) do
+        for i=1, 5 do
+            local unitToken = team .. i;
+            if(UnitExists(unitToken)) then
+                local fullname = API:GetUnitFullName(unitToken);
+                if(name == fullname) then
+                    return unitToken;
+                end
+            end
+        end
+    end
+
+    -- Check local player too
+    local fullname = API:GetUnitFullName("player");
+    if(name == fullname) then
+        return "player";
+    end
+
+    return nil;
+end
+
+
+function Helpers:GetUnitTokenByGUID(guid)
+    if(not API:IsValidValue(guid)) then
+        return;
+    end
+
+    -- Check party1-4 and arena1-5
+    for _,team in ipairs(teams) do
+        for i=1, 5 do
+            local unitToken = team .. i;
+            if(UnitExists(unitToken)) then
+                local otherGUID = Helpers:UnitGUID(unitToken);
+                if(guid == otherGUID) then
+                    return unitToken;
+                end
+            end
+        end
+    end
+
+    -- Check local player too
+    local otherGUID = Helpers:UnitGUID("player");
+    if(guid == otherGUID) then
+        return "player";
+    end
+
+    return nil;
 end

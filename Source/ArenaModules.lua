@@ -9,6 +9,10 @@ ArenaAnalytics.isMidnight = tocVersion >= 120000;
 -------------------------------------------------------------------------
 -- Declare Module Namespaces
 
+-- The interface is accessible globally through ARENAANALYTICS_GLOBAL_API table for other AddOns.
+ArenaAnalytics.Interface = {};
+ArenaAnalytics.Interface_Internal = {};
+
 ArenaAnalytics.Colors = {};
 ArenaAnalytics.Prints = {};
 ArenaAnalytics.Debug = {};

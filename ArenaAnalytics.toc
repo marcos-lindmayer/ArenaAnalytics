@@ -10,6 +10,10 @@
 
 
 Source/ArenaModules.lua
+
+Source/Interface/ArenaAnalyticsInterface.lua
+Source/Interface/ArenaInterface_Implementation.lua
+
 Source/Data/ArenaColors.lua
 Source/ArenaPrints.lua
 Source/ArenaDebugging.lua
@@ -40,6 +44,7 @@ Source/Tracker/ArenaTracker_Exit.lua
 Source/Tracker/ArenaTracker_Shuffle.lua
 Source/Tracker/ArenaTracker_Specs.lua
 Source/Tracker/ArenaTracker_Deaths.lua
+Source/Tracker/ArenaTracker_Scoreboard.lua
 
 Source/API/ArenaHelpers.lua
 Source/API/ArenaAPI.lua

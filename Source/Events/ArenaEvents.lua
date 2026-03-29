@@ -175,6 +175,12 @@ function Events:HandleArenaEvent(event, ...)
 	if (event == "UPDATE_BATTLEFIELD_SCORE") then
 		ArenaTracker:HandleScoreUpdate();
 
+		-- Solo Shuffle
+		local matchState = API:GetActiveMatchState();
+		if(matchState == 4 or matchState == 5) then
+			ArenaTracker:HandleRoundEnd(true);
+		end
+
 		if(API:GetWinner() ~= nil) then
 			C_Timer.After(0, ArenaTracker.HandleArenaEnd);
 		end
@@ -210,7 +216,7 @@ function Events:HandleArenaEvent(event, ...)
 		ArenaTracker:HandlePlayerDeath(GUID, false);
 
 	elseif(event == "PVP_MATCH_STATE_CHANGED") then
-		ArenaTracker:HandleMatchStateChanged();
+		ArenaTracker:CheckMatchState();
 	end
 end
 
@@ -325,3 +331,14 @@ function Events:OnLoad()
 	-- Request events, in case critical events fired before loading in
 	RequestRatedInfo();
 end
+
+
+-------------------------------------------------------------------------
+
+-- UNRELATED TESTING:
+local function OnCustomEventReceived(ownerID, ...)
+    print("Received custom event!", ownerID, ...);
+end
+
+-- Register for the custom string-named event
+EventRegistry:RegisterCallback("Event.ArenaAnalytics.TestEvent", OnCustomEventReceived)

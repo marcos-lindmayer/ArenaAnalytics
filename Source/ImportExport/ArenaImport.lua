@@ -13,6 +13,8 @@ local ImportProgressFrame = ArenaAnalytics.ImportProgressFrame;
 local AAtable = ArenaAnalytics.AAtable;
 local Colors = ArenaAnalytics.Colors;
 local Options = ArenaAnalytics.Options;
+local API = ArenaAnalytics.API;
+local Interface = ArenaAnalytics.Interface;
 
 -------------------------------------------------------------------------
 
@@ -261,6 +263,9 @@ function Import:Finalize()
     end
 
     if(addedCount > 0) then
+        API:TriggerEvent(Interface.Events.MatchHistoryChanged);
+
+        -- Print for the player
         ArenaAnalytics:PrintSystem(format("Import Hint: %s to save, %s to undo import.", Colors:ColorText("/reload", Colors.slashCommandColor), Colors:ColorText("/aa undo", Colors.slashCommandColor)));
     end
 end
@@ -300,7 +305,7 @@ function Import:SaveArena(arena)
     ArenaMatch:SetImportIndex(newArena, Import.currentImportIndex);
 
 	-- Insert arena data as a new ArenaAnalyticsDB entry
-	table.insert(ArenaAnalyticsDB, newArena);
+	tinsert(ArenaAnalyticsDB, newArena);
 end
 
 -------------------------------------------------------------------------

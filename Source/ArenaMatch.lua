@@ -12,6 +12,7 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
 local Filters = ArenaAnalytics.Filters;
+local Interface = ArenaAnalytics.Interface;
 
 -------------------------------------------------------------------------
 
@@ -246,6 +247,9 @@ function ArenaMatch:TryFixLastRating(match, matchIndex)
 
     Debug:Log("Fixed last rating:", ArenaMatch:GetBracket(match), newRating, oldRating, currentSeasonPlayed);
     Filters:Refresh();
+
+    API:TriggerEvent(Interface.Events.RatingFixed, matchIndex);
+    API:TriggerEvent(Interface.Events.MatchHistoryChanged);
 end
 
 
@@ -1282,8 +1286,10 @@ function ArenaMatch:SetRounds(match, rounds)
 
     local otherPlayers = ArenaMatch:GetTeam(match, true);
 
+    -- TODO: Fix this failure?
     -- Must already have players, to compact round data
-    if(not Debug:Assert(otherPlayers and #otherPlayers > 0)) then
+    if(not otherPlayers or #otherPlayers == 0) then
+        Debug:LogWarning("ArenaMatch:SetRounds lacking otherPlayers:", otherPlayers and #otherPlayers);
         return;
     end
 

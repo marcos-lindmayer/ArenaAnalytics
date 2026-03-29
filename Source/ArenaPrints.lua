@@ -8,6 +8,18 @@ local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
+local function GetSanitizedParamTable(...)
+	local n = select("#", ...);
+	local params = {...};
+
+	for i=1, n do
+		params[i] = tostring(params[i]);
+	end
+
+	return params;
+end
+
+
 -- Evaluate this, consider use cases for refactoring or clearing it
 function Prints:PrintRaw(prefix, ...)
 	prefix = tostring(prefix);
@@ -19,21 +31,17 @@ function Prints:PrintRaw(prefix, ...)
 			print(...);
 		end
 	else
-		local params = {...};
-		for key in pairs(params) do
-			if(params[key] == nil) then
-				params[key] = "nil";
-			end
-		end
-
+		local params = GetSanitizedParamTable(...);
 		SendSystemMessage((prefix or "") .. Colors:ColorText(table.concat(params, " "), Colors.white))
 	end
 end
+
 
 function ArenaAnalytics:Print(...)
     local prefix = Colors:ColorText("ArenaAnalytics:", Colors.themeColor);
 	print(prefix, ...);
 end
+
 
 function ArenaAnalytics:PrintSystem(...)
 	if(not Options:GetSafe("printAsSystem")) then
@@ -42,16 +50,11 @@ function ArenaAnalytics:PrintSystem(...)
 	end
 
     -- Fix nil values
-	local params = {...};
-	for key in pairs(params) do
-		if(params[key] == nil) then
-			params[key] = "nil";
-		end
-	end
-
+	local params = GetSanitizedParamTable(...);
     local prefix = Colors:ColorText("ArenaAnalytics: ", Colors.themeColor);
 	SendSystemMessage(prefix .. Colors:ColorText(table.concat(params, " "), Colors.white));
 end
+
 
 function ArenaAnalytics:PrintSystemSpacer()
 	if(not Options:GetSafe("printAsSystem")) then
@@ -62,7 +65,9 @@ function ArenaAnalytics:PrintSystemSpacer()
 	SendSystemMessage(" ");
 end
 
+
 -------------------------------------------------------------------------
+
 
 function Prints:PrintWelcomeMessage()
 	local welcomeMessageSeed = random(1, 10000);

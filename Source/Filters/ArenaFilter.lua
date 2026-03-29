@@ -12,7 +12,7 @@ local Sessions = ArenaAnalytics.Sessions;
 local Debug = ArenaAnalytics.Debug;
 local API = ArenaAnalytics.API;
 local Helpers = ArenaAnalytics.Helpers;
-local Import = ArenaAnalytics.Import;
+local Interface = ArenaAnalytics.Interface;
 
 -------------------------------------------------------------------------
 
@@ -631,6 +631,8 @@ local function Refresh_Internal()
         Debug:Log("Refreshed filters in:", elapsed, "ms.");
 
         Filters.isRefreshing = nil;
+
+        API:TriggerEvent(Interface.Events.FiltersRefreshed);
     end
 
     local function ProcessBatch()

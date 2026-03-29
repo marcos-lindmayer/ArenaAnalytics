@@ -13,6 +13,7 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
 local Filters = ArenaAnalytics.Filters;
 local Import = ArenaAnalytics.Import;
+local Interface = ArenaAnalytics.Interface;
 
 -------------------------------------------------------------------------
 -- ArenaTracker subsection
@@ -123,7 +124,7 @@ function ArenaTracker:Save(newArena)
 	ArenaAnalytics:ClearLastMatchTransientValues(newArena.bracketIndex);
 
 	-- Insert arena data as a new ArenaAnalyticsDB entry
-	table.insert(ArenaAnalyticsDB, arenaData);
+	tinsert(ArenaAnalyticsDB, arenaData);
 	ArenaTracker:SetState("Saved");
 
 	-- Clear the tracking
@@ -137,8 +138,8 @@ end
 
 function ArenaTracker:HandleArenaSaved()
 	Filters:Refresh();
-
 	Sessions:TryStartSessionDurationTimer();
+    API:TriggerEvent(Interface.Events.MatchHistoryChanged);
 
 	-- Print in chat
 	ArenaAnalytics:PrintSystem("Arena recorded!");

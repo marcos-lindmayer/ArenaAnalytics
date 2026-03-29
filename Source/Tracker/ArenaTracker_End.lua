@@ -16,7 +16,7 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 
 -------------------------------------------------------------------------
 -- ArenaTracker subsection
--- Responsible for dealing with loading into an arena.
+-- Responsible for collecting final data including scoreboard
 -------------------------------------------------------------------------
 
 local currentArena = {};
@@ -50,8 +50,6 @@ function ArenaTracker:HandleArenaEnd()
 	currentArena.ended = true;
 	currentArena.endTime = tonumber(currentArena.endTime) or time();
 
-	Debug:LogGreen("HandleArenaEnd!", #currentArena.players, currentArena.startTime, currentArena.endTime, GetNumBattlefieldScores());
-
 	-- Solo Shuffle
 	ArenaTracker:HandleRoundEnd(true);
 
@@ -59,80 +57,24 @@ function ArenaTracker:HandleArenaEnd()
 
 	RequestRatedInfo();
 
-	local players = TablePool:Acquire();
-
-	-- Figure out how to default to nil, without failing to count losses.
-	local myTeamIndex = nil;
+	ArenaTracker:UpdatePlayersFromScoreboard();
 
 	local isShuffle = ArenaTracker:IsShuffle();
 
-	for i=1, GetNumBattlefieldScores() do
-		local score = API:GetPlayerScore(i) or TablePool:Acquire();
-
-		-- Find or add player
-		local player = ArenaTracker:GetPlayer(score.name);
-		if(not player) then
-			-- Use scoreboard info
-			player = ArenaTracker:CreatePlayer(nil, score.name);
-
-			if(player) then
-				Debug:LogGreen("Creating new player by scoreboard:", player.name, score.name, score.spec);
-			end
-		else
-			Debug:LogGreen("Keeping tracked player after match:", player.name, player.spec, score.name, score.spec);
-		end
-
+	-- Find myTeamIndex
+	local myTeamIndex = nil;
+	for i,player in ipairs(currentArena.players) do
 		if(player) then
-			-- Midnight forced fix:
-			if(isShuffle and Helpers:IsSpecID(score.spec)) then
-				-- Trust scoreboard, not round tracking for now!
-				player.spec = score.spec;
-			end
+			Debug:Log("IsEnemy before fixup:", player.name, player.teamIndex, player.isEnemy);
 
-			-- Fill missing data
-			player.teamIndex = score.team;
-			player.spec = Helpers:IsSpecID(player.spec) and player.spec or score.spec;
-			player.race = player.race or score.race;
-			player.kills = score.kills;
-			player.deaths = API.trustScoreboardDeaths and score.deaths or player.deaths or 0;
-			player.damage = score.damage;
-			player.healing = score.healing;
-
-			if(ArenaTracker:IsRated()) then
-				player.rating = score.rating;
-				player.ratingDelta = score.ratingDelta;
-				player.mmr = score.mmr;
-				player.mmrDelta = score.mmrDelta;
-			end
-
-			if(isShuffle) then
-				player.wins = score.wins or 0;
-			end
-
-			if(player.name) then
-				if (currentArena.playerName and player.name == currentArena.playerName) then
-					myTeamIndex = player.teamIndex;
-					player.isSelf = true;
-
-					currentArena.wins = player.wins;
-
-					-- Probably not useful, keeping at warning log level for non-shuffles, in case I learn more.
-					if(not isShuffle and myTeamIndex ~= GetBattlefieldArenaFaction()) then
-						Debug:LogWarning("My team index API mismatch! GetBattlefieldArenaFaction cannot be trusted?");
-					end
-
-				elseif(isShuffle) then
-					-- Everyone else is an opponent in shuffle (1v5)
-					player.isEnemy = true;
-				end
-
-				table.insert(players, player);
+			if(player.isSelf) then
+				myTeamIndex = player.teamIndex;
+				player.isEnemy = false;
+				Debug:Log("HandleArenaEnd found myTeamIndex:", myTeamIndex, isShuffle);
 			else
-				Debug:LogWarning("Tracker: Invalid player name, player will not be stored!");
+				player.isEnemy = true;
 			end
 		end
-
-		TablePool:Release(score);
 	end
 
 	if(isShuffle) then
@@ -140,7 +82,7 @@ function ArenaTracker:HandleArenaEnd()
 		currentArena.outcome = ArenaTracker:GetShuffleOutcome();
 	else
 		-- Assign isEnemy value
-		for _,player in ipairs(players) do
+		for _,player in ipairs(currentArena.players) do
 			if(player and player.teamIndex) then
 				player.isEnemy = (player.teamIndex ~= myTeamIndex);
 			end
@@ -162,9 +104,6 @@ function ArenaTracker:HandleArenaEnd()
 		currentArena.enemyMMR = API:GetTeamMMR(otherTeamIndex);
 	end
 
-	currentArena.players = players;
-
-	Debug:Log("Match ended!", #currentArena.players, "players tracked.");
-
+	Debug:LogGreen("HandleArenaEnd completed:", #currentArena.players, currentArena.startTime, currentArena.endTime, API:GetNumBattlefieldScores());
 	ArenaTracker:SetState("Locked"); -- TODO: Convert to currentArena.locked?
 end

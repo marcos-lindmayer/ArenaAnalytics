@@ -28,9 +28,17 @@ API.classTokens = {
     "EVOKER",       -- Dragonflight
 };
 
-
 function API:IsSecretValue(value)
     return issecretvalue and value ~= nil and issecretvalue(value);
+end
+
+
+function API:GetActiveMatchState()
+    if(not C_PvP.GetActiveMatchState) then
+        return nil;
+    end
+
+    return C_PvP.GetActiveMatchState() or -1;
 end
 
 local unknownValues = {
@@ -61,6 +69,13 @@ function API:GetAddonVersion()
 --        return GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
 --    end
     return C_AddOns and C_AddOns.GetAddOnMetadata("ArenaAnalytics", "Version") or "-";
+end
+
+
+function API:TriggerEvent(event, ...)
+    if(EventRegistry and EventRegistry.TriggerEvent) then
+        EventRegistry:TriggerEvent(event, ...);
+    end
 end
 
 
@@ -124,7 +139,7 @@ end
 
 
 function API:ToFullName(name)
-    if(not name) then
+    if(not API:IsValidValue(name)) then
         return nil;
     end
 
@@ -238,19 +253,23 @@ function API:GetTeamIndex(isEnemy)
     return tonumber(teamIndex);
 end
 
-function API:GetTeamMMR(team)
+function API:GetNumBattlefieldScores()
+    return GetNumBattlefieldScores and GetNumBattlefieldScores() or -1;
+end
+
+function API:GetTeamMMR(teamIndex)
     if(not API:IsInArena()) then
         return nil;
     end
 
     -- Must be a teamIndex by now
-    team = tonumber(team);
-    if(not team) then
+    teamIndex = tonumber(teamIndex);
+    if(not teamIndex) then
         return nil;
     end
 
     -- Get current MMR for the given team
-    local mmr = select(4, GetBattlefieldTeamInfo(team));
+    local mmr = select(4, GetBattlefieldTeamInfo(teamIndex));
     mmr = tonumber(mmr);
 
     -- Discard invalid MMR value
@@ -312,7 +331,7 @@ function API:IsSkirmish()
 end
 
 function API:IsSoloShuffle()
-    return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
+    return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle() or true;
 end
 
 

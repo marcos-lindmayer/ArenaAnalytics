@@ -13,6 +13,7 @@ local Internal = ArenaAnalytics.Internal;
 local Localization = ArenaAnalytics.Localization;
 local Sessions = ArenaAnalytics.Sessions;
 local Debug = ArenaAnalytics.Debug;
+local Interface = ArenaAnalytics.Interface;
 
 -------------------------------------------------------------------------
 
@@ -828,5 +829,6 @@ function VersionManager:FinalizeConversionAttempts()
 	Sessions:RecomputeSessionsForMatchHistory(true);
 
     Filters:Refresh();
+    API:TriggerEvent(Interface.Events.MatchHistoryChanged);
     ArenaAnalyticsScrollFrame:Hide();
 end

@@ -15,7 +15,7 @@ local Debug = ArenaAnalytics.Debug;
 -------------------------------------------------------------------------
 
 API.disableTracking = false; -- Nuclear option: Midnight currently does not support tracking at all.
-API.disableShuffles = true;
+API.disableShuffles = false;
 
 API.hasSecrets = true;
 API.defaultButtonTemplate = "UIPanelButtonTemplate";
@@ -53,6 +53,27 @@ API.availableMaps = {
     "TolVironArena",
     "CageOfCarnage",
 };
+
+-------------------------------------------------------------------------
+--- Secret Helpers
+
+local function SanitizeSecrets(...)
+
+end
+
+local function SanitizeSecretTable(tbl)
+    if(API:IsSecretValue(tbl) or type(tbl) ~= "table") then
+        return nil;
+    end
+
+    for i=#tbl, 1, -1 do
+        if(API:IsSecretValue(tbl[i])) then
+            tbl[i] = nil;
+        end
+    end
+end
+
+-------------------------------------------------------------------------
 
 
 function API:IsRatedArena()
@@ -95,6 +116,7 @@ end
 
 function API:GetPlayerScore(index)
     local scoreInfo = C_PvP.GetScoreInfo(index);
+    SanitizeSecretTable(scoreInfo);
 
     local score = TablePool:Acquire();
     if(not scoreInfo or not scoreInfo.name) then
@@ -126,13 +148,15 @@ function API:GetPlayerScore(index)
     end
 
     -- MMR
-    local oldMMR = tonumber(scoreInfo.prematchMMR);
-    local newMMR = tonumber(scoreInfo.postmatchMMR);
-    if(oldMMR and oldMMR > 0) then
-        score.mmr = oldMMR;
+    if(not API:IsSecretValue(scoreInfo.prematchMMR) and not API:IsSecretValue(scoreInfo.postmatchMMR)) then
+        local oldMMR = tonumber(scoreInfo.prematchMMR);
+        local newMMR = tonumber(scoreInfo.postmatchMMR);
+        if(oldMMR and oldMMR > 0) then
+            score.mmr = oldMMR;
 
-        if(newMMR and newMMR > 0) then
-            score.mmrDelta = newMMR - oldMMR;
+            if(newMMR and newMMR > 0) then
+                score.mmrDelta = newMMR - oldMMR;
+            end
         end
     end
 
