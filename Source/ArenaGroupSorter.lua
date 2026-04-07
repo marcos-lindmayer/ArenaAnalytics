@@ -212,13 +212,13 @@ end
 
 function GroupSorter:SortIndexGroup(group, players, selfPlayerInfo)
     if(not group or #group == 0) then
-        Debug:Log("SortIndexGroup got invalid group.")
+        Debug:Log("SortIndexGroup got invalid group.");
         return;
     end
 
     -- Requires players table to process indices
     if(not players or #players == 0) then
-        Debug:Log("SortIndexGroup got invalid players table")
+        Debug:Log("SortIndexGroup got invalid players table");
         return;
     end
 

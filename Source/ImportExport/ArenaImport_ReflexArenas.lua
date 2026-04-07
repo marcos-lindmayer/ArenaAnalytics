@@ -63,7 +63,7 @@ local function ProcessTeam(players, cachedValues, isEnemyTeam)
             newPlayer.spec = Localization:GetSpecID(class, spec);
 
             -- Determine if the player is self
-            newPlayer.isSelf = (name == API:GetPlayerName(true));
+            newPlayer.isSelf = (name == API:GetPlayerFullName(true));
             if(newPlayer.isSelf) then
                 -- Get player stats (Index 8, 9, 10)
                 newPlayer.kills = tonumber(cachedValues[8]);

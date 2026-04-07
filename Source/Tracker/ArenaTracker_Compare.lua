@@ -118,7 +118,7 @@ function ArenaTracker:CompareExistingTracking()
 
 	-- No point keeping, if we never started tracking
 	if(not currentArena.isTracking) then
-		Debug:Log("CompareExistingTracking forcing reset: No previous tracking.", currentArena.isTracking)
+		Debug:LogPurple("CompareExistingTracking forcing reset: No previous tracking.");
 		return false;
 	end
 

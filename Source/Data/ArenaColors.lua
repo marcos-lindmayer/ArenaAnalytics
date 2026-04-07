@@ -36,9 +36,10 @@ Colors.unsavedImport = "FF777777";
 -- Log Colors
 Colors.logColor = "ffff6ec7";
 Colors.logGreenColor = "ff1effa7";
+Colors.logPurpleColor = "FFBD4CFF";
 Colors.warningColor = "ffffd700";
 Colors.errorColor = "ffff1111";
-Colors.tempColor = "fffe42ee";
+Colors.tempColor = "FFF31CE1";
 Colors.slashCommandColor = "ff00cc66";
 
 -- Explicit colors (Makes it easier to find and modify later)

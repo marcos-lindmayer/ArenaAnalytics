@@ -601,7 +601,7 @@ function VersionManager:ConvertMatchHistoryDBToNewArenaAnalyticsDB()
         end
     end
 
-    local myName = API:GetPlayerName();
+    local myName = API:GetPlayerFullName();
     if(myName) then
         selfNames[myName] = true;
     else
@@ -741,7 +741,7 @@ function VersionManager:RevertIndexBasedNameAndRealm()
 end
 
 function VersionManager:ConvertRoundAndPlayerFormat()
-    assert(ArenaAnalyticsDB.names[1] == API:GetPlayerName(true), "Invalid or missing self as first name entry!");
+    assert(ArenaAnalyticsDB.names[1] == API:GetPlayerFullName(true), "Invalid or missing self as first name entry!");
 
     local realm = API:GetLocalRealm();
     assert(realm and ArenaAnalyticsDB.realms[1] == realm, "Invalid or missing local realm as first realm entry!");

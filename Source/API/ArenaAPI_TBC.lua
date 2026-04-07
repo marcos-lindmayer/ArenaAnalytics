@@ -143,7 +143,7 @@ function API:GetSpecialization(unitToken, explicit)
     -- Determine spec
     local _,classToken = UnitClass(unitToken);
     if(not classToken) then
-        Debug:LogWarning("API:GetSpecialization failed to retrieve class token. unitToken:", unitToken);
+        Debug:LogWarning("API:GetSpecialization failed to retrieve class token:", API:GetUnitFullName(unitToken), unitToken);
         return nil;
     end
 

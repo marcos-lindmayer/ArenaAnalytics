@@ -83,7 +83,7 @@ function ArenaTracker:SetState(stateName)
 	self.lastState = self.state;
 	self.state = stateNum;
 
-	Debug:Log("Setting tracking state:", self.state, stateName, "lastState:", self.lastState, ArenaTracker:GetStateName(self.lastState));
+	Debug:LogPurple("Setting tracking state:", self.state, stateName, "lastState:", self.lastState, ArenaTracker:GetStateName(self.lastState));
 end
 
 
@@ -145,7 +145,7 @@ end
 
 -- Reset current arena values
 function ArenaTracker:Reset()
-	Debug:Log("Resetting current arena values..");
+	Debug:LogGreen("Resetting current arena values..");
 
 	-- Setup base tables
 	ReinitializeCurrentArena();
@@ -193,19 +193,9 @@ function ArenaTracker:Reset()
 
 	currentArena.players = TablePool:Acquire();
 	currentArena.deathData = TablePool:Acquire();
-	currentArena.committedRounds = TablePool:Acquire();
 
-	-- Current Round
-	currentArena.round = TablePool:Acquire();
-	currentArena.round.team = TablePool:Acquire();
-	currentArena.round.hasStarted = nil;
-	currentArena.round.startTime = nil;
-	currentArena.wins = nil;
-
-	currentArena.lastRoundTeam = TablePool:Acquire();
-
-	ArenaTracker:ResetShuffleRounds();
-	ArenaTracker:ResetShuffleWins();
+	-- Reset shuffle specific data
+	ArenaTracker:ResetShuffleData();
 
 	currentArena.locked = false;
 end
@@ -216,7 +206,7 @@ function ArenaTracker:Clear(respectLock)
 		return;
 	end
 
-	Debug:Log("Clearing current arena.");
+	Debug:LogGreen("Clearing current arena.");
 
 	ArenaTracker.hasReceivedScore = nil;
 	ArenaTracker.isTracking = nil;
@@ -375,6 +365,10 @@ end
 function ArenaTracker:CheckMatchState()
 	local newState = API:GetActiveMatchState();
 
+	if(newState == 2 or newState == 3) then
+		ArenaTracker.transientLoginDetection = true;
+	end
+
 	if(newState and newState ~= ArenaTracker:GetMatchState()) then
 		ArenaTracker:HandleMatchStateChanged(newState);
 	end
@@ -389,17 +383,19 @@ function ArenaTracker:HandleMatchStateChanged(newState)
 	end
 
 	local lastState = ArenaTracker:GetMatchState();
+	Debug:LogGreen("HandleMatchStateChanged - New:", newState, "Old:", lastState);
+	ArenaTracker:LogMatchStateAndWins("[HandleMatchStateChanged]");
+
+	if(newState > 3) then -- PostRound or Complete
+		RequestBattlefieldScoreData();
+		Inspection:Clear();
+
+		ArenaTracker:TryUpdateCurrentShuffleWins();
+		ArenaTracker:UpdatePlayersFromScoreboard();
+	end
 
 	if(ArenaTracker:IsTrackingShuffle()) then
-		if(newState < 4) then
-			if(lastState == 4) then
-				ArenaTracker:CommitRound();
-			end
-
-			if(not ArenaTracker:HasRoundInitiated() and not ArenaTracker:IsSameRoundTeam()) then
-				ArenaTracker:InitiateRound();
-			end
-		end
+		ArenaTracker:CheckRoundState();
 	end
 
 	if(newState == 3) then -- Engaged
@@ -433,15 +429,10 @@ function ArenaTracker:FillMissingPlayers()
 				local name = API:GetUnitFullName(unitToken);
 				local player = ArenaTracker:GetPlayer(name);
 				if(name and not player) then
-
 					player = ArenaTracker:CreatePlayer(isEnemy, name, unitToken);
 
 					if(player) then
-						table.insert(currentArena.players, player);
-					end
-
-					if(not isEnemy and Inspection and Inspection.RequestSpec) then
-						Inspection:RequestSpec(unitToken);
+						tinsert(currentArena.players, player);
 					end
 				end
 			end
@@ -449,7 +440,11 @@ function ArenaTracker:FillMissingPlayers()
 	end
 
 	if(#currentArena.players == 2*currentArena.size) then
-		ArenaTracker:UpdateRoundTeam();
+		if(API:IsSoloShuffle()) then
+			ArenaTracker:UpdateRoundTeam();
+		else
+			ArenaTracker:RequestPartySpecs();
+		end
 	end
 end
 
@@ -510,22 +505,14 @@ end
 
 
 function ArenaTracker:HandlePartyUpdate()
-	Debug:Log("ArenaTracker:HandlePartyUpdate()")
+	Debug:LogPurple("ArenaTracker:HandlePartyUpdate()")
 
 	if (not API:IsInArena()) then
 		return;
 	end
 
+	ArenaTracker:CheckRoundState();
 	ArenaTracker:FillMissingPlayers();
-
-	ArenaTracker:RequestPartySpecs();
-
-	-- Internal IsTrackingShuffle() check
-	local ended = ArenaTracker:CheckRoundEnded();
-
-	if(ended) then
-		ArenaTracker:UpdateRoundTeam();
-	end
 end
 
 
@@ -581,4 +568,47 @@ function ArenaTracker:Initialize()
 	ArenaTracker:InitializeSubmodule_Shuffle();
 	ArenaTracker:InitializeSubmodule_Deaths();
 	ArenaTracker:InitializeSubmodule_Specs();
+end
+
+
+
+function ArenaTracker:LogMatchStateAndWins(sourceLabel)
+    -- Fetch the current cache using existing logic
+    local cache, hasAnyScores = self:GetScoreboardWinsCache();
+
+    for k, v in pairs(cache) do
+        if(API:IsSecretValue(v)) then
+            cache[k] = "Secret " .. (k or "unknown key");
+            Debug:LogError("LogMatchStateAndWins detected secret value!", k, v);
+        end
+    end
+
+    ArenaAnalytics:PrintSystem("--------------------------------------------------")
+    Debug:LogForced("DEBUG DUMP:", sourceLabel or "[Unknown]")
+    Debug:LogForced("Has Any Scores:", tostring(hasAnyScores), "Count:", API:GetNumBattlefieldScores())
+
+    -- Log the main transition states
+    Debug:LogForced("State Change:", 
+        tostring(self:GetMatchState() or "N/A"), 
+        "->", 
+        tostring(API:GetActiveMatchState() or "N/A")
+    );
+
+    -- Log specific win counts from the cache
+    if hasAnyScores then
+        Debug:LogForced("Current Player Wins:", cache.wins or -1)
+        Debug:LogForced("Total Wins in Match:", cache.total or -1)
+
+        Debug:LogForced("Detailed Scores:")
+        for name, wins in pairs(cache) do
+            -- Skip metadata keys
+            if name ~= "wins" and name ~= "total" then
+                Debug:LogForced("  -", name, ":", wins)
+            end
+        end
+    else
+        Debug:LogForced("No score data available in this dump.")
+    end
+
+    ArenaAnalytics:PrintSystem("--------------------------------------------------");
 end

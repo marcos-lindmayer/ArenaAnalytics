@@ -173,21 +173,19 @@ function Events:HandleArenaEvent(event, ...)
 	end
 
 	if (event == "UPDATE_BATTLEFIELD_SCORE") then
+		ArenaTracker:LogMatchStateAndWins("UPDATE_BATTLEFIELD_SCORE");
 		ArenaTracker:HandleScoreUpdate();
 
 		-- Solo Shuffle
-		local matchState = API:GetActiveMatchState();
-		if(matchState == 4 or matchState == 5) then
-			ArenaTracker:HandleRoundEnd(true);
-		end
+		ArenaTracker:CheckRoundState(true);
 
 		if(API:GetWinner() ~= nil) then
-			C_Timer.After(0, ArenaTracker.HandleArenaEnd);
+			ArenaTracker:HandleArenaEnd();
 		end
 
 	elseif(event == "PVP_RATED_STATS_UPDATE") then
 		ArenaTracker:HandleRatedUpdate();
-		ArenaTracker:CheckRoundEnded();
+		ArenaTracker:CheckRoundState();
 
 	elseif (event == "UNIT_AURA") then
 		ArenaTracker:ProcessUnitAuraEvent(...);
@@ -323,7 +321,7 @@ function Events:OnLoad()
 	end
 	hasLoaded = true;
 
-	Debug:LogGreen("Events:OnLoad() triggered!");
+	Debug:LogGreen("Events:OnLoad triggered!");
 	currentZoneState.wasInArena = API:IsInArena();
 
 	Events:RegisterGlobalEvents();

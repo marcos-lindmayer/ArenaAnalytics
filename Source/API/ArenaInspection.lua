@@ -71,7 +71,7 @@ function Inspection:RequestSpec(unitToken)
         return;
     end
 
-    Debug:Log("RequestSpec:", unitToken, "CanInspect", API:CanInspect(unitToken));
+    Debug:Log("RequestSpec:", API:GetUnitFullName(unitToken), unitToken, "CanInspect", API:CanInspect(unitToken));
 
     -- Already tracked the spec_id
     if(ArenaTracker:HasSpec(GUID)) then
@@ -91,7 +91,7 @@ local function TryInspectIndex_Internal(index)
     if(GUID and not ArenaTracker:HasSpec(GUID)) then
         local unitToken = getPartyUnitToken(GUID);
         if(unitToken and API:CanInspect(unitToken)) then
-            Debug:Log("NotifyInspect:", unitToken, time());
+            Debug:Log("NotifyInspect:", API:GetUnitFullName(unitToken), unitToken, time());
             currentInspectGUID = GUID;
             NotifyInspect(unitToken);
             lastNotifyInspect = time();
@@ -106,7 +106,6 @@ function Inspection:TryInspectNext()
     end
 
     if(currentInspectGUID or (time() - lastNotifyInspect) < 3) then
-        --Debug:Log("Skipping inspect attempt: Already/still inspecting!");
         return;
     end
 
@@ -173,7 +172,7 @@ function Inspection:HandleInspectReady(GUID)
             ClearInspectPlayer();
             currentInspectGUID = nil;
         else
-            Debug:Log("WARNING: Inspection:HandleInspectReady with different GUID from valid currentInspectGUID! May fail to clean up?");
+            Debug:LogWarning("Inspection:HandleInspectReady with different GUID from valid currentInspectGUID! May fail to clean up?");
         end
     end
 end
@@ -186,7 +185,7 @@ function Inspection:TryStartTimer()
     end
 
     if(not API:IsInArena()) then
-        Debug:Log("Inspection Timer rejected start: Not in arena!");
+        Debug:LogWarning("Inspection Timer rejected start: Not in arena!");
         Inspection:CancelTimer();
         return;
     end
@@ -217,6 +216,8 @@ function Inspection:CancelTimer()
 end
 
 function Inspection:Clear()
+    local wasRunning = timer ~= nil or #queue > 0 or currentInspectGUID;
+
     Inspection:CancelTimer();
     queue = {};
 
@@ -225,5 +226,7 @@ function Inspection:Clear()
     end
     currentInspectGUID = nil;
 
-    Debug:Log("Inspection Cleared!");
+    if(wasRunning) then
+        Debug:Log("Inspection Cleared!");
+    end
 end

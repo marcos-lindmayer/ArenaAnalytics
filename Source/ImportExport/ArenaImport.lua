@@ -134,7 +134,7 @@ function Import:ParseRawData()
     end
 
     if(not Import.current or not Import.current.isValid or not Import.current.processorFunc) then
-        Debug:Log("Invalid data for import attempt.. Bailing out immediately..");
+        Debug:LogWarning("Invalid data for import attempt.. Bailing out immediately..");
         Import:Reset();
         return;
     end

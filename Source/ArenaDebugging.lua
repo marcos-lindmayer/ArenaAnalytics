@@ -42,10 +42,16 @@ function Debug:LogSpacer()
 	print(" ");
 end
 
+function Debug:LogInternal(prefix, color, ...)
+    color = color or Colors.logColor;
+
+    prefix = Colors:ColorText(prefix or "ArenaAnalytics", color);
+	print(prefix, ...);
+end
+
 -- Basic log forced regardless of debug level
 function Debug:LogForced(...)
-    local prefix = Colors:ColorText("ArenaAnalytics (Debug):", Colors.logColor);
-	print(prefix, ...);
+    Debug:LogInternal("ArenaAnalytics (Debug)", Colors.logColor, ...)
 end
 
 -------------------------------------------------------------------------
@@ -56,8 +62,7 @@ function Debug:LogError(...)
         return;
     end
 
-    local prefix = Colors:ColorText("ArenaAnalytics (Error):", Colors.errorColor);
-	print(prefix, ...);
+    Debug:LogInternal("ArenaAnalytics (Error):", Colors.errorColor, ...);
 end
 
 function Debug:LogWarning(...)
@@ -65,8 +70,7 @@ function Debug:LogWarning(...)
 		return;
 	end
 
-    local prefix = Colors:ColorText("ArenaAnalytics (Warning):", Colors.warningColor);
-	print(prefix, ...);
+    Debug:LogInternal("ArenaAnalytics (Warning):", Colors.warningColor, ...);
 end
 
 -------------------------------------------------------------------------
@@ -100,8 +104,15 @@ function Debug:LogGreen(...)
 		return;
 	end
 
-    local prefix = Colors:ColorText("ArenaAnalytics (Debug):", Colors.logGreenColor);
-	print(prefix, ...);
+    Debug:LogInternal("ArenaAnalytics (Debug):", Colors.logGreenColor, ...);
+end
+
+function Debug:LogPurple(...)
+	if(Debug:GetDebugLevel() < 3) then
+		return;
+	end
+
+    Debug:LogInternal("ArenaAnalytics (Debug):", Colors.logPurpleColor, ...);
 end
 
 function Debug:LogEscaped(...)
@@ -146,8 +157,7 @@ function Debug:LogTemp(...)
 		return;
 	end
 
-    local prefix = Colors:ColorText("ArenaAnalytics (Temp):", Colors.tempColor);
-	print(prefix, ...);
+    Debug:LogInternal("ArenaAnalytics (Temp):", Colors.tempColor, ...);
 end
 
 function Debug:LogTable(table, level, maxLevel)
@@ -217,13 +227,13 @@ function Debug:NotifyInspectSpec(unitToken)
 
     unitToken = unitToken or "target";
     if(not API:CanInspect(unitToken)) then
-        Debug:Log("Rejecting inspect by API:CanInspect for unit:", unitToken);
+        Debug:Log("Rejecting inspect by API:CanInspect for unit:", API:GetUnitFullName(unitToken), unitToken);
         return;
     end
 
     ClearInspectPlayer();
     lastInspectUnitToken = unitToken;
-    Debug:Log("Inspecting:", unitToken);
+    Debug:Log("Inspecting:", API:GetUnitFullName(unitToken), unitToken);
     NotifyInspect(unitToken);
 end
 

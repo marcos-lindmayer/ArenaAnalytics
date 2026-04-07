@@ -72,7 +72,7 @@ end
 function Prints:PrintWelcomeMessage()
 	local welcomeMessageSeed = random(1, 10000);
 
-	local name = API:GetPlayerName(true) or "";
+	local name = API:GetPlayerFullName(true) or "";
 
 	local text;
 	if(welcomeMessageSeed < 13) then

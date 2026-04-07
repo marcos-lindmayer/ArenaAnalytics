@@ -63,13 +63,13 @@ end
 
 function Search:GetTokenDisplay(token)
     assert(token and token.raw);
-    
+
     local display = "";
     local caretOffset = (token.caret == 0) and 0 or nil;
 
     local isExactScope = false;
     local isPartialScope = false;
-    
+
     local lastChar = '';
     for i=1, #token.raw do
         local char = token.raw:sub(i,i);

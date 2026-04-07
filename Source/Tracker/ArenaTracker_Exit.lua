@@ -125,7 +125,7 @@ local function TryAssignRating()
 		currentArena.requireRatingFix = currentArena.requireRatingFix or CheckRequiresRatingFix() or nil;
 	end
 
-	Debug:Log("Requires rating fix:", currentArena.requireRatingFix, "New rating:", newRating, "Old rating:", oldRating, "season played:", currentArena.seasonPlayed);
+	Debug:LogPurple("Requires rating fix:", currentArena.requireRatingFix, "New rating:", newRating, "Old rating:", oldRating, "season played:", currentArena.seasonPlayed);
 end
 
 -- Player left an arena (Zone changed to non-arena with valid arena data)
@@ -150,8 +150,11 @@ function ArenaTracker:HandleArenaExit()
 
 	-- Solo Shuffle
 	if(ArenaTracker:IsShuffle()) then
-		ArenaTracker:HandleRoundEnd(true);
+		ArenaTracker:CheckRoundState();
 		ArenaTracker:UpdateRoundEnemyTeams();
+
+		-- Experimental
+		ArenaTracker:ResolveShuffleOutcomes();
 	end
 
 	currentArena.hasStartTime = Helpers:IsPositiveNumber(currentArena.startTime);

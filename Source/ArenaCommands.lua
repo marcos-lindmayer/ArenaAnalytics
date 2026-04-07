@@ -169,7 +169,10 @@ function Commands.HandleCommand_Test(...)
 	print(" ");
 	ArenaAnalytics:Print("============================= ");
 
-	
+	--ArenaTracker:LogMatchStateAndWins("[Command]");
+	--RequestBattlefieldScoreData();
+
+	ArenaAnalytics:RunScoreTest();
 
 	ArenaAnalytics:Print("============================= ");
 end
@@ -178,7 +181,7 @@ function Commands.HandleCommand_DumpSpecs()
 	print(" ");
 	ArenaAnalytics:Print("============================= ");
 
-	Debug:Log("Logging Specializations..")
+	Debug:LogGreen("Logging Specializations..")
 
 	for classIndex=1, GetNumClasses() + 2 do
 		local className, classFile, classID = GetClassInfo(classIndex);
@@ -219,7 +222,7 @@ function Commands.HandleCommand_FixDurations()
 end
 
 function Commands.HandleCommand_Inspect()
-	Debug:Log("Attempting debug inspection..")
+	Debug:LogGreen("Attempting debug inspection..")
 	Debug:NotifyInspectSpec("target");
 end
 
@@ -314,7 +317,7 @@ end
 SLASH_ArenaAnalyticsSurrender1 = nil;
 
 function Commands.HandleChatAfk(message)
-	Debug:Log("/afk override triggered.");
+	Debug:LogGreen("/afk override triggered.");
 	local surrendered = API:TrySurrenderArena("afk");
 	if(surrendered == nil) then
 		-- Fallback to base /afk
@@ -323,7 +326,7 @@ function Commands.HandleChatAfk(message)
 end
 
 function Commands.HandleGoodGame()
-	Debug:Log("/gg triggered.");
+	Debug:LogGreen("/gg triggered.");
 
     if(not API:HasSurrenderAPI()) then
         return nil;

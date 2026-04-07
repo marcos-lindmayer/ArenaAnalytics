@@ -317,13 +317,7 @@ local validUnitTokens = {
 };
 
 function Helpers:IsValidUnitToken(unitToken)
-    local isValid = unitToken and not API:IsSecretValue(unitToken) and validUnitTokens[unitToken];
-
-    if(not isValid and unitToken) then
-        --Debug:LogWarning("Attempted to check unitToken against validUnitTokens and found no match:", unitToken);
-    end
-
-    return isValid;
+    return API:IsValidValue(unitToken) and validUnitTokens[unitToken];
 end
 
 

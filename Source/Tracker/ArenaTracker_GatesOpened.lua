@@ -90,4 +90,6 @@ function ArenaTracker:HandleArenaGatesOpened()
 
 	ArenaTracker:FillMissingPlayers();
 	ArenaTracker:ForceTeamsUpdate();
+
+	ArenaTracker:RequestPartySpecs();
 end

@@ -20,6 +20,7 @@ local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
 -------------------------------------------------------------------------
 
 local currentArena = {};
+local currentRound = {};
 function ArenaTracker:InitializeSubmodule_Shuffle()
     currentArena = ArenaAnalyticsTransientDB.currentArena;
 end
@@ -59,12 +60,12 @@ function ArenaTracker:GetCurrentWins()
 		return nil, nil;
 	end
 
-	Debug:LogGreen("Current Wins:", myWins, totalWins);
+	Debug:LogPurple("Current Wins:", myWins, totalWins);
 	return myWins, totalWins;
 end
 
 
-function ArenaTracker:UpdateRoundTeam_Internal()
+function ArenaTracker:UpdateRoundTeam()
 	if(not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
@@ -74,48 +75,46 @@ function ArenaTracker:UpdateRoundTeam_Internal()
 		return;
 	end
 
-	currentArena.round.team = TablePool:Acquire();
+	Inspection:Clear();
 
+	currentRound.team = TablePool:Acquire();
+
+	Debug:LogGreen("UpdateRoundTeam filling team:");
 	for i=1, 2 do
 		local name = API:GetUnitFullName("party"..i);
 		if(name) then
-			tinsert(currentArena.round.team, name);
-			Debug:Log("Adding team player:", name, #currentArena.round.team);
+			tinsert(currentRound.team, name);
+			Debug:Log("   Adding team player:", name, #currentRound.team);
 		end
 	end
 
-	Debug:Log("UpdateRoundTeam", #currentArena.round.team);
+	Debug:Log("   Team Player Count:", #currentRound.team);
+
+	ArenaTracker:RequestPartySpecs();
+
+	currentArena.lastRoundTeam = currentRound.team;
 end
 
-function ArenaTracker:UpdateRoundTeam()
-	-- TODO: Test if this even matters for correct spec fix...
-	C_Timer.After(1, ArenaTracker.UpdateRoundTeam_Internal);
-end
-
-
-function ArenaTracker:RoundTeamContainsPlayer(playerName)
+function ArenaTracker:RoundTeamContainsPlayer(fullname)
 	if(not ArenaTracker:IsTrackingShuffle(true)) then
 		return nil;
 	end
 
-	if(not playerName) then
+	if(not fullname) then
 		return nil;
 	end
 
-	local team;
-	if(currentArena.lastRoundTeam and #currentArena.lastRoundTeam == 2) then
-		team = currentArena.lastRoundTeam;
-	else
-		team = currentArena.round.team;
+	if(not ArenaTracker:HasFullTeam(true)) then
+		return false;
 	end
 
-	for _,teamMember in ipairs(team) do
-		if(teamMember == playerName) then
+	for _,teamMember in ipairs(currentArena.lastRoundTeam) do
+		if(teamMember == fullname) then
 			return true;
 		end
 	end
 
-	return playerName == API:GetPlayerName();
+	return fullname == API:GetPlayerFullName();
 end
 
 
@@ -125,14 +124,22 @@ function ArenaTracker:IsSameRoundTeam()
 	end
 
 	for i=1, 2 do
-		local unitName = API:GetUnitFullName("party"..i);
-
-		if(unitName and not ArenaTracker:RoundTeamContainsPlayer(unitName)) then
+		local fullname = API:GetUnitFullName("party"..i);
+		if(fullname and not ArenaTracker:RoundTeamContainsPlayer(fullname)) then
 			return false;
 		end
 	end
 
 	return true;
+end
+
+
+function ArenaTracker:HasFullTeam(isLastTeamCheck)
+	if(isLastTeamCheck) then
+		return type(currentArena.lastRoundTeam) == "table" and #currentArena.lastRoundTeam == 2;
+	end
+
+	return type(currentRound.team) == "table" and #currentRound.team == 2;
 end
 
 
@@ -169,19 +176,19 @@ function ArenaTracker:GetShuffleOutcome()
 	end
 end
 
-
-function ArenaTracker:CheckRoundEnded()
+-- Pre-initiate round check?
+function ArenaTracker:CheckRoundEnded_Deprecated()
 	if(not API:IsInArena() or not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
-	if(not ArenaTracker:IsTrackingArena() or not currentArena.round.isInitiated) then
-		Debug:Log("CheckRoundEnded called while not tracking arena, or without active shuffle round.", currentArena.round.isInitiated);
+	if(not ArenaTracker:IsTrackingArena() or not currentRound.isInitiated) then
+		Debug:Log("CheckRoundEnded called while not tracking arena, or without active shuffle round.", currentRound.isInitiated);
 		return;
 	end
 
 	-- Check if this is a new round
-	if(#currentArena.round.team ~= 2) then
+	if(#currentRound.team ~= 2) then
 		Debug:Log("CheckRoundEnded missing players.");
 		return;
 	end
@@ -198,24 +205,25 @@ end
 
 
 -- Solo Shuffle specific round end
+-- TODO: Replace with CheckRoundState in all cases?
 function ArenaTracker:HandleRoundEnd(force)
 	if(not ArenaTracker:IsTrackingShuffle(true)) then
 		return;
 	end
 
-	Debug:Log("HandleRoundEnd!", #currentArena.players);
+	Debug:LogGreen("HandleRoundEnd!", #currentArena.players);
 
 	Inspection:Clear();
 	ArenaTracker:CommitRound();
 end
 
 
-function ArenaTracker:CommitCurrentRound(force)
+function ArenaTracker:CommitCurrentRound_DEPRECATED(force)
 	if(not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
-	if(not currentArena.round.hasStarted) then
+	if(not currentRound.hasStarted) then
 		return;
 	end
 
@@ -225,9 +233,9 @@ function ArenaTracker:CommitCurrentRound(force)
 		return;
 	end
 
-	Debug:LogGreen("CommitCurrentRound triggered!")
+	Debug:LogGreen("CommitCurrentRound_DEPRECATED triggered!")
 
-	local startTime = currentArena.round.startTime;
+	local startTime = currentRound.startTime;
 	local death, endTime = ArenaTracker:GetFirstDeathFromCurrentArena();
 	endTime = endTime or time();
 
@@ -245,13 +253,13 @@ function ArenaTracker:CommitCurrentRound(force)
 	local myWins, totalWins = ArenaTracker:GetCurrentWins();
 	if(not myWins or not totalWins) then
 		roundData.outcome = nil;
-	elseif(myWins == currentArena.round.wins and totalWins == currentArena.round.totalWins) then
+	elseif(myWins == currentRound.wins and totalWins == currentRound.totalWins) then
 		Debug:LogGreen("Neither wins changed since last round. Assuming draw.");
 		roundData.outcome = 2;
 	else
-		local isWin = (myWins > currentArena.round.wins);
+		local isWin = (myWins > currentRound.wins);
 		roundData.outcome = isWin and 1 or 0;
-		Debug:LogGreen("Outcome determined:", roundData.outcome, "New wins:", myWins, totalWins, "Old wins:", currentArena.round.wins, currentArena.round.totalWins, "Rounds played:", #currentArena.committedRounds);
+		Debug:LogGreen("Outcome determined:", roundData.outcome, "New wins:", myWins, totalWins, "Old wins:", currentRound.wins, currentRound.totalWins, "Rounds played:", #currentArena.committedRounds);
 	end
 
 	-- Fill round teams
@@ -277,12 +285,12 @@ function ArenaTracker:CommitCurrentRound(force)
 	currentArena.deathData = TablePool:Acquire();
 
 	-- Reset current round
-	currentArena.round.team = TablePool:Acquire();
-	currentArena.round.startTime = nil;
-	currentArena.round.hasStarted = false;
+	currentRound.team = TablePool:Acquire();
+	currentRound.startTime = nil;
+	currentRound.hasStarted = false;
 
-	currentArena.round.wins = myWins;
-	currentArena.round.totalWins = totalWins;
+	currentRound.wins = myWins;
+	currentRound.totalWins = totalWins;
 
 	-- Make sure we update the team, if we're not done playing.
 	if(not API:GetWinner()) then
@@ -294,17 +302,17 @@ end
 
 local function FillRoundEnemyTeam(round, players, index)
 	if(not round or not round.team) then
-		Debug:Log("Shuffle round missing team:", index);
+		Debug:Log("   Shuffle round missing team:", index);
 		return;
 	end
 
-	if(round.enemy and #round.enemy == 3) then
-		Debug:Log("Already filled shuffle enemy team for round:", index);
+	round.enemy = round.enemy or TablePool:Acquire();
+	if(#round.enemy == 3) then
+		Debug:Log("   Already filled shuffle enemy team for round:", index);
 		return;
 	end
 
-	TablePool:Release(round.enemy);
-	round.enemy = TablePool:Acquire();
+	wipe(round.enemy);
 
 	for i,player in ipairs(players) do
 		if(player.name and not ArenaTracker:RoundTeamContainsPlayer(player.name)) then
@@ -312,17 +320,19 @@ local function FillRoundEnemyTeam(round, players, index)
 		end
 	end
 
-	Debug:LogGreen("Filled shuffle round enemies:", index, #round.enemy);
+	Debug:LogPurple("   Filled shuffle round enemies:", index, #round.enemy);
 end
 
 -- Update committed rounds
 function ArenaTracker:UpdateRoundEnemyTeams()
-	if(not ArenaTracker:IsShuffle()) then
+	if(not ArenaTracker:IsShuffle() or true) then
 		return;
 	end
 
+	Debug:LogGreen("UpdateRoundEnemyTeams processing..");
+
     if(not currentArena.players or #currentArena.players < 6) then
-		Debug:Log("Missing players from shuffles match. Total players:", currentArena.players and #currentArena.players)
+		Debug:Log("   Missing players from shuffles match. Total players:", currentArena.players and #currentArena.players)
         return;
     end
 
@@ -335,56 +345,12 @@ end
 --- Midnight Refactoring WIP
 --- @TODO: Complete and replace with the following
 
-
-function ArenaTracker:ResetShuffleRounds()
-	currentArena.round = TablePool:Acquire();
-	currentArena.round.team = TablePool:Acquire();
-	currentArena.round.hasStarted = nil;
-	currentArena.round.startTime = nil;
-	currentArena.wins = nil;
-end
-
-
-function ArenaTracker:ResetShuffleWins()
-	currentArena.shuffleWinsCache = currentArena.shuffleWinsCache or {};
-	wipe(currentArena.shuffleWinsCache);
-
-	local cache = currentArena.shuffleWinsCache;
-	cache.wins = 0;
-	cache.total = 0;
-
-	cache.estimatedRound = 0;
-	cache.drawCount = 0;
-
-	cache.winsDelta = nil;
-	cache.totalDelta = nil;
-
-	cache.committedTotal = nil;
-end
-
-
-function ArenaTracker:TryUpdateCurrentShuffleWins()
-	if(not ArenaTracker:IsTrackingShuffle(true)) then
-		return;
-	end
-
-	-- Update the wins cache during match states: PostRound or Completed
-	local matchState = API:GetActiveMatchState();
-	if(matchState ~= 4 and matchState ~= 5) then
-		return;
-	end
-
+function ArenaTracker:GetScoreboardWinsCache()
 	local newCache = TablePool:Acquire();
 	newCache.wins = 0;
 	newCache.total = 0;
 
-	if(not currentArena.shuffleWinsCache) then
-		return;
-	end
-
-
 	local hasAnyScores = false;
-	local myWins, totalWins = 0,0;
 
 	for i=1, API:GetNumBattlefieldScores() do
 		local score = API:GetPlayerScore(i);
@@ -404,8 +370,29 @@ function ArenaTracker:TryUpdateCurrentShuffleWins()
 		end
 	end
 
+	return newCache, hasAnyScores;
+end
+
+
+function ArenaTracker:TryUpdateCurrentShuffleWins()
+	if(not ArenaTracker:IsTrackingShuffle(true)) then
+		return;
+	end
+
+	-- Update the wins cache during match states: PostRound or Completed
+	local matchState = API:GetActiveMatchState();
+	if(matchState ~= 4 and matchState ~= 5) then
+		return;
+	end
+
+	local newCache, hasAnyScores = ArenaTracker:GetScoreboardWinsCache();
+
+	if(not currentArena.shuffleWinsCache) then
+		ArenaTracker:ResetShuffleWins();
+	end
+
 	if(hasAnyScores) then
-		Debug:LogGreen("TryUpdateCurrentShuffleWins:", myWins, totalWins);
+		Debug:LogPurple("TryUpdateCurrentShuffleWins:", newCache.wins, newCache.total);
 		local cache = currentArena.shuffleWinsCache;
 
 		newCache.winsDelta = newCache.wins - cache.wins;
@@ -429,55 +416,75 @@ function ArenaTracker:GetCurrentShuffleWins()
 end
 
 
-function ArenaTracker:UpdateLastRoundTeam()
+function ArenaTracker:HasRoundInitiated()
+	return currentRound.isInitiated;
+end
+
+
+function ArenaTracker:CheckRoundState(isScoreEvent)
+	if(not API:IsInArena() or not ArenaTracker:IsTrackingShuffle()) then
+		return;
+	end
+
+	local isSameTeam = ArenaTracker:IsSameRoundTeam();
+	local hasFullTeam = ArenaTracker:HasFullTeam();
+
+	local state = API:GetActiveMatchState();
+	local lastState = ArenaTracker:GetMatchState();
+
+	-- PostRound or Completed
+	if(state > 3) then
+		Inspection:Clear();
+	end
+
+	if(not isSameTeam) then
+		ArenaTracker:CommitRound();
+		ArenaTracker:InitiateRound();
+	end
+
+	if(state == 3) then
+		ArenaTracker:HandleArenaGatesOpened();
+	end
+
+	ArenaTracker:AssignShuffleWinsCache(isScoreEvent);
+end
+
+
+function ArenaTracker:CanInitiate()
 	if(not ArenaTracker:IsTrackingShuffle()) then
 		return;
 	end
 
-	if(ArenaTracker:IsSameRoundTeam()) then
-		Debug:Log("Still same team, round team update delayed.");
-		return;
-	end
-
-	currentArena.round.team = TablePool:Acquire();
-
-	for i=1, 2 do
-		local fullname = API:GetUnitFullName("party"..i);
-		if(API:IsValidValue(fullname)) then
-			tinsert(currentArena.round.team, fullname);
-			Debug:Log("Adding team player:", fullname, #currentArena.round.team);
-		end
-	end
-
-	currentArena.lastRoundTeam = currentArena.round.team;
-	Debug:LogGreen("UpdateRoundTeam", #currentArena.round.team);
-end
-
-
-function ArenaTracker:HasRoundInitiated()
-	return currentArena.round.isInitiated;
+	return true;
 end
 
 
 function ArenaTracker:InitiateRound()
-	if(not ArenaTracker:IsTrackingShuffle()) then
-		return;
+	if(not API:IsInArena() or not ArenaTracker:IsTrackingShuffle()) then
+		return nil;
 	end
 
-	-- Try Commit previous round
+	if(ArenaTracker:IsSameRoundTeam()) then
+		return false;
+	end
+
+	Inspection:Clear();
 	ArenaTracker:CommitRound();
 
+	if(ArenaTracker:HasRoundInitiated()) then
+		return false;
+	end
+
+	ArenaTracker:FillMissingPlayers();
 	ArenaTracker:UpdateRoundTeam();
 
-	Debug:LogGreen("ArenaTracker:InitiateRound() triggered!");
 	local myWins, totalWins = ArenaTracker:GetCurrentShuffleWins();
-	currentArena.round.wins = myWins;
-	currentArena.round.totalWins = totalWins;
+	currentRound.wins = myWins;
+	currentRound.totalWins = totalWins;
 
 	Debug:LogGreen("Initiated round!", #currentArena.committedRounds, myWins, totalWins);
 
-	ArenaTracker:UpdateLastRoundTeam();
-	currentArena.round.isInitiated = true;
+	currentRound.isInitiated = true;
 
 	ArenaTracker:CheckHasGatesOpened();
 end
@@ -507,6 +514,8 @@ end
 
 
 local function FillRoundTeams(roundData)
+	Debug:LogGreen("Filling Round Teams..");
+
 	-- Fill round teams
 	for _,player in ipairs(currentArena.players) do
 		if(API:IsValidValue(player.name)) then
@@ -514,9 +523,11 @@ local function FillRoundTeams(roundData)
 			local isTeamMember = ArenaTracker:RoundTeamContainsPlayer(player.name);
 			local team = isTeamMember and roundData.team or roundData.enemy;
 			tinsert(team, player.name);
-			Debug:LogGreen("Added player to team. isTeamMember:", isTeamMember, player.name, Internal:GetClassAndSpec(player.spec));
+			Debug:LogPurple("   Added player to team. isTeamMember:", isTeamMember, player.name, Internal:GetClassAndSpec(player.spec));
 		end
 	end
+
+	Debug:Log("   Round Players:", #currentArena.players, "Team:", #roundData.team, "Enemy:", #roundData.enemy);
 end
 
 
@@ -526,18 +537,16 @@ function ArenaTracker:CommitRound()
 		return;
 	end
 
-	if(isCommittingRound or not ArenaTracker:HasRoundInitiated()) then
+	if(isCommittingRound or not currentRound.hasStarted or not ArenaTracker:HasRoundInitiated()) then
 		return;
 	end
 	isCommittingRound = true;
 
-	ArenaTracker:TryUpdateCurrentShuffleWins();
-	ArenaTracker:UpdatePlayersFromScoreboard();
+	Inspection:Clear();
 
 	local matchState = API:GetActiveMatchState();
-	local winsCache = currentArena.shuffleWinsCache or {};
 
-	local startTime = currentArena.round.startTime;
+	local startTime = currentRound.startTime;
 	local death, endTime = ArenaTracker:GetFirstDeathFromCurrentArena();
 	endTime = endTime or time();
 
@@ -558,11 +567,8 @@ function ArenaTracker:CommitRound()
 		roundData.outcome = GetRoundOutcome();
 	end
 
-	-- Update committed total
-	winsCache.committedTotal = winsCache.total;
-
 	-- Store committed round
-	Debug:LogGreen("Committed round:", roundData.duration, roundData.firstDeath, #roundData.team, #roundData.enemy, #currentArena.players, winsCache.wins, winsCache.total);
+	Debug:LogGreen("Committed round:", #currentArena.committedRounds, "duration:", roundData.duration, "death:", roundData.firstDeath, "teams:", #roundData.team, #roundData.enemy, "/", #currentArena.players);
 	tinsert(currentArena.committedRounds, roundData);
 
 	-- Reset for next round
@@ -572,18 +578,86 @@ function ArenaTracker:CommitRound()
 end
 
 
+function ArenaTracker:AssignShuffleWinsCache(isScoreEvent)
+	local state = API:GetActiveMatchState();
+	local lastState = ArenaTracker:GetMatchState();
+
+	-- nil = neither, true = new, false = old
+	local shouldAssignNew = nil;
+
+	if(state >= 4) then
+		if(isScoreEvent) then
+			-- assign as new
+			shouldAssignNew = true;
+		elseif(ArenaTracker.transientLoginDetection) then
+			-- assign old
+			shouldAssignNew = false;
+		end
+	elseif(isScoreEvent) then -- state <= 3
+		-- assign old
+		shouldAssignNew = false;
+	end
+
+	if(shouldAssignNew == nil) then
+		return;
+	end
+
+	local cache, hasAnyScores = ArenaTracker:GetScoreboardWinsCache();
+	if(not hasAnyScores) then
+		return;
+	end
+
+	if(shouldAssignNew) then
+		currentRound.oldWinsCache = cache;
+	else
+		currentRound.newWinsCache = cache;
+	end
+end
+
+
 function ArenaTracker:ResetRound()
+	currentArena.round = currentArena.round or {};
+	currentRound = currentArena.round;
+
 	-- Reset currentArena round data
 	currentArena.deathData = TablePool:Acquire();
 
 	-- Reset current round
-	currentArena.round.team = TablePool:Acquire();
-	currentArena.round.startTime = nil;
-	currentArena.round.hasStarted = false;
+	currentRound.team = TablePool:Acquire();
+	currentRound.enemy = TablePool:Acquire();
+	currentRound.startTime = nil;
+	currentRound.hasStarted = nil;
 
 	local myWins, totalWins = ArenaTracker:GetCurrentShuffleWins();
-	currentArena.round.wins = myWins;
-	currentArena.round.totalWins = totalWins;
+	currentRound.wins = myWins;
+	currentRound.totalWins = totalWins;
 
-	currentArena.round.isInitiated = false;
+	currentRound.isInitiated = false;
+end
+
+
+function ArenaTracker:ResetShuffleWins()
+	currentArena.wins = nil;
+
+	currentArena.shuffleWinsCache = currentArena.shuffleWinsCache or {};
+	wipe(currentArena.shuffleWinsCache);
+
+	local cache = currentArena.shuffleWinsCache;
+	cache.wins = 0;
+	cache.total = 0;
+
+	cache.estimatedRound = 0;
+	cache.drawCount = 0;
+
+	cache.winsDelta = nil;
+	cache.totalDelta = nil;
+end
+
+
+function ArenaTracker:ResetShuffleData()
+	ArenaTracker:ResetRound();
+	ArenaTracker:ResetShuffleWins();
+
+	currentArena.lastRoundTeam = TablePool:Acquire();
+	currentArena.committedRounds = TablePool:Acquire();
 end

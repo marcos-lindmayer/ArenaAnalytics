@@ -67,6 +67,28 @@ function ArenaTracker:TryRemoveFromDeaths(playerGUID, spell)
 end
 
 
+local function IsPartyFeignDeath(playerGUID)
+	if(not API:IsValidValue(playerGUID)) then
+		return;
+	end
+
+	-- local player
+	local unitToken = "player";
+	if(playerGUID == Helpers:UnitGUID(unitToken)) then
+		return API:UnitIsFeignDeath(unitToken);
+	end
+
+	for i=1, 2 do
+		unitToken = "party"..i;
+		if(playerGUID == Helpers:UnitGUID(unitToken)) then
+			return API:UnitIsFeignDeath(unitToken);
+		end
+	end
+
+	-- Unit was not found
+	return nil;
+end
+
 -- Handle a player's death, through death or kill credit message
 function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
 	if(not API:IsValidValue(playerGUID)) then
@@ -85,6 +107,12 @@ function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
 		return;
 	end
 
+	local isHunter = (class == "HUNTER") or nil;
+	if(isHunter and IsPartyFeignDeath(playerGUID)) then
+		Debug:LogPurple("Player death treated as feign death.");
+		return;
+	end
+
 	if(API:IsValidValue(realm)) then
 		name = name .. "-" .. realm;
 	else
@@ -98,7 +126,7 @@ function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
 	local death = type(deathData[playerGUID]) == "table" and deathData[playerGUID] or TablePool:Acquire();
 	death.time = time();
 	death.name = name;
-	death.isHunter = (class == "HUNTER") or nil;
+	death.isHunter = isHunter;
 	death.hasKillCredit = isKillCredit or death.hasKillCredit;
 
 	deathData[playerGUID] = death;

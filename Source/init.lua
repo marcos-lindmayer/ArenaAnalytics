@@ -51,6 +51,13 @@ local initializationStages = {
 
 local stages = {};
 
+local function LogStep(step, ...)
+	local stepData = step and initializationStages[step];
+	assert(stepData);
+
+	Debug:LogGreen("Initialization step:", step, stepData.func, stepData.event, ...);
+end
+
 function Initialization:HandleLoadEvents(event, ...)
 	assert(event);
 
@@ -66,12 +73,10 @@ function Initialization:HandleLoadEvents(event, ...)
 	end
 
 	if(Initialization.receivedEvents[event]) then
-		Debug:LogError("Initialization event received twice:", event, "!", ...);
+		Debug:LogWarning("Initialization event received twice:", event, "!", ...);
 		return;
 	end
 	Initialization.receivedEvents[event] = true;
-
-	--Debug:LogGreen("Initialization:HandleLoadEvent:", event, ...); -- TODO: Check critical APIs at different events?
 
 	-- Try the next step if state is currently unlocked
 	Initialization:TryAdvanceInitialization();
@@ -80,8 +85,7 @@ end
 
 function Initialization:InitiateStep(currentStep)
 	assert(tonumber(currentStep) and Initialization.lastStep < currentStep, ("Initialization:InitiateStep called twice for step: " .. currentStep .. " after step: " .. Initialization.lastStep));
-
-	--Debug:LogGreen("Initializing step:", currentStep);
+	LogStep(currentStep);
 
 	Initialization.locked = true;
 	Initialization.lastStep = currentStep;
@@ -89,11 +93,11 @@ end
 
 function stages.Step1_AddonLoaded()
 	Initialization:InitiateStep(1);
-	Debug:Log("Step1_AddonLoaded");
+	LogStep(1);
 
 	local successfulRequest = C_ChatInfo.RegisterAddonMessagePrefix("ArenaAnalytics");
 	if(not successfulRequest) then
-		Debug:Log("Failed to register Addon Message Prefix: 'ArenaAnalytics'!")
+		Debug:LogWarning("Failed to register Addon Message Prefix: 'ArenaAnalytics'!");
 	end
 
 	-- Welcome Message
@@ -103,7 +107,7 @@ end
 
 function stages.Step2_VariablesLoaded()
 	Initialization:InitiateStep(2);
-	Debug:Log("Step2_VariablesLoaded:", IsLoggedIn());
+	LogStep(2, "IsLoggedIn:", IsLoggedIn());
 
 	-- Initialize DBs
 	ArenaAnalytics:InitializeArenaAnalyticsDB();
@@ -134,7 +138,7 @@ end
 
 function stages.Step3_PlayerLogin()
 	Initialization:InitiateStep(3);
-	Debug:Log("Step3_PlayerLogin:", IsLoggedIn());
+	LogStep(3, "IsLoggedIn:", IsLoggedIn());
 
 	VersionManager:OnInit();
 	AAtable:OnLoad();
@@ -145,7 +149,7 @@ end
 
 function stages.Step4_EnteringWorld()
 	Initialization:InitiateStep(4);
-	Debug:Log("Step4_EnteringWorld: isLogin:", Initialization.isLogin, "isReload:", Initialization.isReload);
+	LogStep(4, "isLogin:", Initialization.isLogin, "isReload:", Initialization.isReload);
 
 	-- TODO: Implement to inform users of latest versions (Avoid false positives from development versions!)
 	-- Version Message (Unused)
@@ -172,7 +176,7 @@ function stages.Step5_InitiateTracking()
 	Initialization:InitiateStep(5);
 
 	local isOffSeason = API:IsOffSeason();
-	Debug:Log("Step5_InitiateTracking()", API:IsInArena(), isOffSeason);
+	LogStep(5, "IsInArena:", API:IsInArena(), "IsOffSeason", isOffSeason);
 
 	ArenaAnalytics:InitializeTransientDB(isOffSeason);
 
@@ -182,7 +186,7 @@ function stages.Step5_InitiateTracking()
 	if(API:IsInArena()) then
 		ArenaAnalytics.loadedIntoArena = true; -- Limit Events module from entering the arena
 	else
-		Debug:Log("Step5_InitiateTracking() triggering ArenaTracker:Clear()");
+		Debug:Log("Step5_InitiateTracking: Triggering ArenaTracker:Clear()");
 		ArenaTracker:Clear();
 	end
 end
@@ -190,7 +194,7 @@ end
 
 function stages.Step6_LoadComplete()
 	Initialization:InitiateStep(6);
-	Debug:LogGreen("Step6_LoadComplete()");
+	LogStep(6);
 
 	-- Mark initialization as done.
 	Initialization.hasLoaded = true;

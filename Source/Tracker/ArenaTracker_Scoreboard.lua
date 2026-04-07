@@ -40,7 +40,7 @@ function ArenaTracker:FindOrAddPlayer(fullname)
 		player = ArenaTracker:CreatePlayer(nil, fullname);
 
 		if(player and player.name) then
-			Debug:LogGreen("Creating new player by scoreboard:", player.name, fullname, player.GUID);
+			Debug:LogGreen("Creating new player by scoreboard:", player.name, fullname, Internal:GetClassAndSpec(player.spec));
 			tinsert(currentArena.players, player);
 		end
 	end
@@ -61,8 +61,6 @@ function ArenaTracker:UpdatePlayersFromScoreboard()
 
 	RequestRatedInfo();
 
-	local players = currentArena.players;
-
 	-- Figure out how to default to nil, without failing to count losses.
 	local myTeamIndex = nil;
 
@@ -78,14 +76,14 @@ function ArenaTracker:UpdatePlayersFromScoreboard()
 			-- Testing:
 			local pClass, pSpec = Internal:GetClassAndSpec(player.spec);
 			local sClass, sSpec = Internal:GetClassAndSpec(score.spec);
-			ArenaAnalytics:PrintSystem("Debug: Scoreboard test - Player:", player.name, player.teamIndex, player.deaths, score.deaths);
+			ArenaAnalytics:PrintSystem("Debug: Scoreboard test - Player:", player.name, pClass, pSpec, " to score:", sClass, sSpec);
 
 			-- Fill missing data
 			player.teamIndex = score.team;
 			player.spec = Helpers:IsSpecID(player.spec) and player.spec or score.spec;
 			player.race = player.race or score.race;
 			player.kills = score.kills;
-			player.deaths = ToNonZero(score.deaths) or player.deaths or 0;
+			player.deaths = ToNonZero(score.deaths) or ToNonZero(player.deaths) or 0;
 			player.damage = score.damage;
 			player.healing = score.healing;
 

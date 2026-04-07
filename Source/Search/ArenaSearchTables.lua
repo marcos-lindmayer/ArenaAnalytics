@@ -291,19 +291,19 @@ local SearchTokenTypeTable = {
 
 function Search:GetShortValueName(typeKey, valueKey)
     if(not typeKey or not valueKey) then
-        Debug:Log("GetShortValueName called with invalid params:", typeKey, valueKey);
+        Debug:LogWarning("GetShortValueName called with invalid params:", typeKey, valueKey);
         return nil;
     end
 
     local typeTable = SearchTokenTypeTable[typeKey];
     if(not typeTable or not typeTable.values) then
-        Debug:Log("GetShortValueName missing typeTable for params:", typeKey, valueKey);
+        Debug:LogWarning("GetShortValueName missing typeTable for params:", typeKey, valueKey);
         return nil;
     end
 
     local valueTable = typeTable.values[valueKey];
     if(not valueTable) then
-        Debug:Log("GetShortValueName missing valueTable for params:", typeKey, valueKey);
+        Debug:LogWarning("GetShortValueName missing valueTable for params:", typeKey, valueKey);
         return nil;
     end
 

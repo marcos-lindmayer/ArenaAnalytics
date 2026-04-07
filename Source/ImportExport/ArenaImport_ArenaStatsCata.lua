@@ -81,7 +81,7 @@ local function ProcessPlayer(cachedValues, isEnemyTeam, playerIndex, factionInde
 
     local player = {
         isEnemy = isEnemyTeam,
-        isSelf = (name == API:GetPlayerName(true)),
+        isSelf = (name == API:GetPlayerFullName(true)),
         name = name,
         race = Localization:GetRaceID(race, factionIndex),
     };

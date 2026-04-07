@@ -143,7 +143,7 @@ function AAtable:OnLoad()
         Search:Update(self:GetText());
     end);
 
-    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextSet", function(self) 
+    ArenaAnalyticsScrollFrame.searchBox:SetScript("OnTextSet", function(self)
         if(self:GetText() == "" and not Search:IsEmpty()) then
             Debug:Log("Clearing search..");
             Search:CommitSearch("");
@@ -373,9 +373,7 @@ function AAtable:CreateExportDialogFrame()
 			self:SetText("");
             ArenaAnalyticsScrollFrame.exportDialogFrame = nil;
             Export:Reset();
-            Debug:Log("Export Frame going away..")
             collectgarbage("collect");
-            Debug:Log("Garbage Collection forced by export frame.");
 		end);
 	end
 
@@ -505,7 +503,7 @@ end
 -- Forcefully clear and recreate the comp filters for new filters. Optionally staying visible.
 function AAtable:ForceRefreshFilterDropdowns(skipRefreshAll)
     if(not hasLoaded) then
-        Debug:Log("ForceRefresh called before OnLoad. Skipped.");
+        Debug:LogWarning("ForceRefresh called before OnLoad. Skipped.");
         return;
     end
 

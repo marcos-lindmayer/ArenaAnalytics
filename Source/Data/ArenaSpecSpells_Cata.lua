@@ -295,7 +295,7 @@ local debugSpells = {
 
 function SpecSpells:GetSpec(spellID)
     if(debugSpells[spellID]) then
-        Debug:Log("SpecSpells:GetSpec identified debug spell:", spellID, "for spec:", debugSpells[spellID]);
+        Debug:LogPurple("SpecSpells:GetSpec identified debug spell:", spellID, "for spec:", debugSpells[spellID]);
     end
 
     return specSpells[spellID];

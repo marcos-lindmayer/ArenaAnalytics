@@ -51,7 +51,7 @@ end
 
 
 function ArenaTracker:HandleOpponentUpdate()
-	if (not API:IsInArena()) then
+	if (not API:IsInArena() or API.hasSecrets) then
 		return;
 	end
 
@@ -62,12 +62,10 @@ function ArenaTracker:HandleOpponentUpdate()
 		for i = 1, currentArena.size do
 			local unitToken = "arena"..i;
 			local player = ArenaTracker:GetPlayer(unitToken);
-			if(player) then
-				if(not Helpers:IsSpecID(player.spec)) then
-					local spec_id = API:GetArenaPlayerSpec(i, true);
-					Debug:Log("Assigning opponent spec for:", unitToken, spec_id);
-					ArenaTracker:OnSpecDetected(unitToken, spec_id);
-				end
+			if(player and not Helpers:IsSpecID(player.spec)) then
+				local spec_id = API:GetArenaPlayerSpec(i, true);
+				Debug:Log("Assigning opponent spec for:", unitToken, spec_id);
+				ArenaTracker:OnSpecDetected(unitToken, spec_id);
 			end
 		end
 	end
@@ -75,12 +73,12 @@ end
 
 
 function ArenaTracker:RequestPartySpecs()
-	for i = 1, currentArena.size do
-		local unitToken = "party"..i;
-		local player = ArenaTracker:GetPlayer(Helpers:UnitGUID(unitToken));
-		if(player and not Helpers:IsSpecID(player.spec)) then
-			if(Inspection and Inspection.RequestSpec) then
-				Debug:Log("Tracker: HandlePartyUpdate requesting spec:", unitToken, Helpers:UnitGUID(unitToken));
+	if(Inspection and Inspection.RequestSpec) then
+		for i = 1, currentArena.size do
+			local unitToken = "party"..i;
+			local player = ArenaTracker:GetPlayer(unitToken);
+			if(player and not Helpers:IsSpecID(player.spec)) then
+				Debug:Log("Tracker: HandlePartyUpdate requesting spec:", unitToken, player.name, Helpers:UnitGUID(unitToken));
 				Inspection:RequestSpec(unitToken);
 			end
 		end

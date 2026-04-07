@@ -411,6 +411,6 @@ function SpecSpells:GetSpec(spellID, spellName)
         return nil, nil;
     end
 
-    Debug:LogGreen("SpecSpells:", data.id, data.points, "for spell:", spellName);
+    Debug:LogPurple("SpecSpells:", data.id, data.points, "for spell:", spellName);
     return data.id, data.points;
 end

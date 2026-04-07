@@ -167,11 +167,7 @@ function Sessions:IsMatchesSameSession(firstArena, secondArena)
 	local date2 = ArenaMatch:GetDate(secondArena) or 0;
 
 	if(date1 > 0 and date2 > 0) then
-		if(date1 > date2) then
-			Debug:LogError("IsMatchesSameSession called with first arena dated after second arena!", date1, date2, "Diff:", date1-date2)
-		end
-
-		if(date2 - date1 > SESSION_EXPIRATION_TIME) then
+		if(math.abs(date2 - date1) > SESSION_EXPIRATION_TIME) then
 			return false;
 		end
 	end

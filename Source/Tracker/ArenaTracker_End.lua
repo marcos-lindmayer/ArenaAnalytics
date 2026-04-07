@@ -35,6 +35,10 @@ function ArenaTracker:HandleArenaEnd()
 
 	Events:UnregisterArenaEvents();
 
+	if(Inspection and Inspection.Clear) then
+		Inspection:Clear();
+	end
+
 	-- Not ready to end yet
 	if(not ArenaTracker:IsInState("Active")) then
 		return;
@@ -51,7 +55,8 @@ function ArenaTracker:HandleArenaEnd()
 	currentArena.endTime = tonumber(currentArena.endTime) or time();
 
 	-- Solo Shuffle
-	ArenaTracker:HandleRoundEnd(true);
+	ArenaTracker:CheckRoundState();
+	ArenaTracker:LogMatchStateAndWins("[Match End]");
 
 	local winner = API:GetWinner();
 
@@ -65,7 +70,7 @@ function ArenaTracker:HandleArenaEnd()
 	local myTeamIndex = nil;
 	for i,player in ipairs(currentArena.players) do
 		if(player) then
-			Debug:Log("IsEnemy before fixup:", player.name, player.teamIndex, player.isEnemy);
+			Debug:LogTemp("IsEnemy before fixup:", player.name, player.teamIndex, player.isEnemy);
 
 			if(player.isSelf) then
 				myTeamIndex = player.teamIndex;

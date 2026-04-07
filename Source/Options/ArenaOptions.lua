@@ -34,7 +34,7 @@ end
 
 function Options:OpenCategory(frame)
     if(not frame or not frame.category) then
-        Debug:Log("Options: Invalid options frame, cannot open.");
+        Debug:LogWarning("Options: Invalid options frame, cannot open.");
         return;
     end
 
@@ -97,7 +97,7 @@ local hasOptionsLoaded = nil;
 function Options:LoadSettings()
     if hasOptionsLoaded then return end; -- Load only once
 
-    Debug:Log("Loading settings..");
+    Debug:LogGreen("Loading settings..");
 
     -- General
     AddSetting("fullSizeSpecIcons", true);
@@ -183,7 +183,7 @@ function Options:LoadSettings()
     RemoveSetting("enableMoPHealerCharacterPanelFix");
 
     hasOptionsLoaded = true;
-    Debug:Log("Settings loaded successfully.");
+    Debug:Log("Settings completed loading.");
     return true;
 end
 
@@ -206,7 +206,7 @@ function Options:Get(setting)
     assert(setting);
 
     if(hasOptionsLoaded == false) then
-        Debug:Log("Force loaded settings to immediately get:", setting);
+        Debug:LogWarning("Force loading settings to immediately get:", setting);
         local successful = Options:LoadSettings();
         if not successful then return end;
     end
@@ -214,7 +214,7 @@ function Options:Get(setting)
     local value = ArenaAnalyticsSharedSettingsDB[setting];
 
     if(value == nil) then
-        Debug:Log("Setting not found: ", setting, value)
+        Debug:LogWarning("Setting not found: ", setting, value);
         return nil;
     end
 
@@ -245,7 +245,7 @@ function Options:Set(setting, value)
 
     local oldValue = ArenaAnalyticsSharedSettingsDB[setting];
     ArenaAnalyticsSharedSettingsDB[setting] = value;
-    Debug:Log("Setting option:   ", setting, "  new:", value, "  old:", oldValue);
+    Debug:Log("Changed option:   ", setting, "  new:", value, "  old:", oldValue);
 
     HandleSettingsChanged();
 end

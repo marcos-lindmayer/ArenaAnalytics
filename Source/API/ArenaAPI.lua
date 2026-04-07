@@ -90,9 +90,17 @@ function API:SendChatMessage(...)
 end
 
 
+function API:UnitIsFeignDeath(unitToken)
+    if(not UnitIsFeignDeath or not Helpers:IsValidUnitToken(unitToken)) then
+        return nil;
+    end
+
+    return UnitIsFeignDeath(unitToken);
+end
+
 function API:GetUnitFullName(unitToken, skipRealm)
     if(not unitToken) then
-        Debug:LogWarning("API:GetUnitFullName called with invalid unitToken:", unitToken);
+        Debug:LogWarning("API:GetUnitFullName called with invalid unitToken:", API:GetUnitFullName(unitToken), unitToken);
         return nil;
     end
 
@@ -113,7 +121,7 @@ function API:GetUnitFullName(unitToken, skipRealm)
     end
 
     if(not API:IsValidValue(realm)) then
-        Debug:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm for unit:", unitToken);
+        Debug:LogWarning("Helpers:GetUnitFullName failed to retrieve any realm for unit:", API:GetUnitFullName(unitToken), unitToken);
         return name;
     end
 
@@ -121,14 +129,14 @@ function API:GetUnitFullName(unitToken, skipRealm)
 end
 
 
-function API:GetPlayerName(skipRealm)
+function API:GetPlayerFullName(skipRealm)
     return API:GetUnitFullName("player", skipRealm);
 end
 
 
 function API:IsSelf(unitToken)
     return unitToken and UnitIsUnit(unitToken, "player");
-    -- return API:GetUnitFullName(unitToken) == API:GetPlayerName();
+    -- return API:GetUnitFullName(unitToken) == API:GetPlayerFullName();
 end
 
 
@@ -176,7 +184,6 @@ function API:CanInspect(unitToken)
 
     -- TODO: Validate that this is allowed in all versions (To avoid inspect error message)
     if(not InCombatLockdown() and not CheckInteractDistance(unitToken, 1)) then
-        Debug:Log("Inspection skipped due to out of combat interact distance.");
         return;
     end
 
@@ -239,7 +246,6 @@ function API:GetTeamIndex(isEnemy)
 
     -- Invalid in shuffles, uncomfirmed otherwise
     local teamIndex = GetBattlefieldArenaFaction();
-    Debug:Log("GetTeamIndex my team:", teamIndex);
     if(not teamIndex) then
         return nil;
     end
@@ -297,7 +303,7 @@ end
 
 function API:GetCurrentMapID()
     local mapID = select(8,GetInstanceInfo());
-    Debug:Log("Map:", mapID)
+    Debug:Log("Current Map ID:", mapID)
     return tonumber(mapID);
 end
 
@@ -438,25 +444,25 @@ end
 
 function API:UpdateDialogueVolume()
     local hasPreviousValue = type(ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue) == "number";
-    Debug:Log("UpdateDialogueVolume", hasPreviousValue, ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
+    Debug:LogPurple("UpdateDialogueVolume", hasPreviousValue, ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
 
     if(API:IsInArena() and Options:Get("muteArenaDialogSounds")) then
         if(not hasPreviousValue) then
             local previousValue = tonumber(GetCVar("Sound_DialogVolume"));
             if(previousValue ~= 0) then
-                Debug:LogGreen("Muted dialogue sound.");
+                Debug:Log("Muted dialogue sound.");
                 SetCVar("Sound_DialogVolume", 0);
                 local newValue = tonumber(GetCVar("Sound_DialogVolume"));
                 if(tonumber(newValue) == 0) then
                     ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = previousValue;
-                    Debug:LogGreen("previousDialogMuteValue set to previous value:", previousValue);
+                    Debug:Log("previousDialogMuteValue set to previous value:", previousValue);
                 end
             end
         end
     elseif(hasPreviousValue) then
         if(tonumber(GetCVar("Sound_DialogVolume")) == 0) then
             SetCVar("Sound_DialogVolume", ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue);
-            Debug:LogGreen("Unmuted dialogue sound.");
+            Debug:Log("Unmuted dialogue sound.");
         end
 
         ArenaAnalyticsSharedSettingsDB.previousDialogMuteValue = nil;
@@ -507,7 +513,7 @@ function API:GetMappedAddonSpecID(specID)
 
     local spec_id = specID and tonumber(API.specMappingTable[specID]);
     if(not spec_id) then
-        Debug:Log("Failed to find spec_id for:", specID, type(specID));
+        Debug:LogWarning("Failed to find spec_id for:", specID, type(specID));
         return nil;
     end
 

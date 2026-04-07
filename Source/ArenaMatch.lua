@@ -245,7 +245,7 @@ function ArenaMatch:TryFixLastRating(match, matchIndex)
     -- Clear transient values
     ArenaMatch:ClearTransientValues(match);
 
-    Debug:Log("Fixed last rating:", ArenaMatch:GetBracket(match), newRating, oldRating, currentSeasonPlayed);
+    Debug:LogGreen("Fixed last rating:", ArenaMatch:GetBracket(match), newRating, oldRating, currentSeasonPlayed);
     Filters:Refresh();
 
     API:TriggerEvent(Interface.Events.RatingFixed, matchIndex);
@@ -333,7 +333,7 @@ function ArenaMatch:GetMap(match, useShortName)
             return map;
         end
 
-        Debug:Log("ArenaMatch failed to get short name for map_id:", map_id);
+        Debug:LogWarning("ArenaMatch failed to get short name for map_id:", map_id);
     end
 
     return Internal:GetMapName(map_id);
@@ -774,7 +774,7 @@ end
 function ArenaMatch:IsLocalPlayer(player)
     assert(player);
 
-    local localFullName = API:GetPlayerName();
+    local localFullName = API:GetPlayerFullName();
     local fullName = ArenaMatch:GetPlayerFullName(player);
     return fullName and fullName == localFullName;
 end
@@ -1063,7 +1063,7 @@ function ArenaMatch:GetCompInfo(match, isEnemyTeam, roundIndex)
 
     if(ArenaMatch:IsShuffle(match)) then
         if(not roundIndex) then
-            Debug:Log("ArenaMatch:GetCompInfo called for a shuffle without provided round index!");
+            Debug:LogWarning("ArenaMatch:GetCompInfo called for a shuffle without provided round index!");
             return;
         end
 
@@ -1267,16 +1267,15 @@ end
 -- Set rounds data
 function ArenaMatch:SetRounds(match, rounds)
     assert(match);
-    assert(not match[matchKeys.rounds]);
 
     -- Only solo shuffle supports multiple rounds
     if(not ArenaMatch:IsShuffle(match)) then
-        Debug:Log("ArenaMatch:SetRounds skipping shuffle match type.", ArenaMatch:GetBracket(match));
+        Debug:Log("ArenaMatch:SetRounds skipping due to match type.", ArenaMatch:GetBracket(match));
         return;
     end
 
     if(not rounds or #rounds == 0) then
-        Debug:Log("ArenaMatch:SetRounds bailing out due to invalid incoming rounds:", rounds and #rounds);
+        Debug:LogWarning("ArenaMatch:SetRounds bailing out due to invalid incoming rounds:", rounds and #rounds);
         return;
     end
 
@@ -1296,7 +1295,7 @@ function ArenaMatch:SetRounds(match, rounds)
     match[matchKeys.rounds] = TablePool:Acquire();
 
     -- Cache values to help sort
-    local myName = API:GetPlayerName();
+    local myName = API:GetPlayerFullName();
     local selfPlayerInfo = ArenaMatch:GetSelfInfo(match, true);
     local requiredTeamSize = ArenaMatch:GetTeamSize(match); -- 3v3 in all shuffles
 
@@ -1439,8 +1438,8 @@ function ArenaMatch:ResortPlayers(match)
                 indexMapping[oldIndex] = newIndex;
                 player.oldIndex = nil; -- Clear temporary tag
             else
-                Debug:Log("ERROR: Failed to retrieve old index for player! Sorting is likely to have broken the match data!");
-                assert(false); -- Force the addon to crash, preventing it from saving the match wrongly
+                Debug:LogError("Failed to retrieve old index for player! Sorting is likely to have broken the match data!");
+                return;
             end
         end
     end

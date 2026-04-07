@@ -510,7 +510,7 @@ local function CheckSearchPass_Internal(match)
     end
 
     if(match == nil) then
-        Debug:Log("Nil match reached search filter.")
+        Debug:LogWarning("Nil match reached search filter.");
         return false;
     end
 
@@ -540,7 +540,7 @@ function Search:DoesMatchPassSearch(match)
 
     local result = CheckSearchPass_Internal(match);
 
-    --Debug:Log("Search pass elapsed:", debugprofilestop());
+    --Debug:LogPurple("Search pass elapsed:", debugprofilestop());
 
     return result;
 end

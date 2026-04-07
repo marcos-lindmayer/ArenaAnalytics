@@ -175,7 +175,7 @@ function Filters:ResetAll(skipOverrides)
     local changed = Filters:ResetAllFast(skipOverrides);
 
     if(changed) then
-        Debug:Log("Filters has been reset. Refreshing.");
+        Debug:LogPurple("Filters has been reset. Refreshing.");
         Filters:Refresh();
     end
 end
@@ -628,7 +628,7 @@ local function Refresh_Internal()
         -- Log timing
         local newTime = GetTimePreciseSec();
         local elapsed = 1000 * (newTime - startTime);
-        Debug:Log("Refreshed filters in:", elapsed, "ms.");
+        Debug:LogPurple("Refreshed filters in:", elapsed, "ms.");
 
         Filters.isRefreshing = nil;
 
@@ -671,7 +671,7 @@ end
 -- Returns matches applying current match filters
 function Filters:Refresh(forcedQuickRefresh)
     if(Filters.isRefreshing ~= nil) then
-        Debug:LogWarning("Refreshing called while locked. Has onComplete: ", Filters.forceNewRefresh);
+        Debug:LogWarning("Refreshing called while locked. Desired force refresh:", Filters.forceNewRefresh);
         Filters.forceNewRefresh = true;
         return;
     end

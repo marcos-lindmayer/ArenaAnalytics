@@ -43,9 +43,6 @@ local function UpdateBracketCachedRatings(bracketIndex, seasonPlayed, rating)
 	local bracketRatedInfo = GetBracketRatedInfo(bracketIndex);
 
 	if(bracketRatedInfo[seasonPlayed] ~= rating) then
---		local oldRating = bracketRatedInfo[seasonPlayed];
---		Debug:Log("UpdateBracketCachedRatings:", bracketIndex, seasonPlayed, rating, oldRating);
-
 		bracketRatedInfo[seasonPlayed] = rating;
 	end
 

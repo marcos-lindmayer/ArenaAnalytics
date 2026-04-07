@@ -103,7 +103,7 @@ function ArenaTracker:HandlePreTrackingRatedEvent()
 		C_Timer.After(SCORE_UPDATE_TIMEOUT, ArenaTracker.HandleScoreTimeout);
 	end
 
-	Debug:Log("HandlePreTrackingRatedEvent", stateData.scoreReceived, stateData.scoreTimedOut, stateData.hasMatchEnded, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
+	Debug:LogPurple("HandlePreTrackingRatedEvent", stateData.scoreReceived, stateData.scoreTimedOut, stateData.hasMatchEnded, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
 end
 
 
@@ -129,7 +129,7 @@ function ArenaTracker:HandlePreTrackingScoreEvent()
 		RequestRatedInfo();
 	end
 
-	Debug:Log("HandlePreTrackingScoreEvent", stateData.scoreReceived, stateData.hasMatchEnded, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
+	Debug:LogPurple("HandlePreTrackingScoreEvent", stateData.scoreReceived, stateData.hasMatchEnded, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
 end
 
 
@@ -168,7 +168,7 @@ function ArenaTracker:OnSeasonPlayedReceived(isProvenSeasonPlayed)
 	UpdatePostMatchSeasonPlayed(true);
 
 	if(ArenaTracker:IsInState("Pending")) then
-		Debug:LogGreen("Post-match season played received:", stateData.seasonPlayed, ArenaTracker:GetStateName(),stateData.matchType);
+		Debug:LogPurple("Post-match season played received:", stateData.seasonPlayed, ArenaTracker:GetStateName(),stateData.matchType);
 		ArenaTracker:StartNewOrContinueTracking();
 	end
 end

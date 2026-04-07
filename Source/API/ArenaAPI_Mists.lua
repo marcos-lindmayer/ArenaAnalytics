@@ -93,7 +93,7 @@ end
 
 function API:GetSpecialization(unitToken, explicit)
     if(unitToken ~= nil) then
-        Debug:Log("API:GetSpecialization", unitToken, explicit)
+        Debug:LogPurple("API:GetSpecialization", API:GetUnitFullName(unitToken), unitToken, explicit);
     end
 
     if(explicit and not unitToken) then

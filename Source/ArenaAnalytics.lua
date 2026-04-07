@@ -122,7 +122,7 @@ function ArenaAnalytics:InitializeArenaAnalyticsDB()
     ArenaAnalyticsDB.formatVersion = ArenaAnalyticsDB.formatVersion or 0;
 
 	if(#ArenaAnalyticsDB.names == 0) then
-		local name = API:GetPlayerName(true);
+		local name = API:GetPlayerFullName(true);
 		ArenaAnalyticsDB.names[1] = name;
 	end
 

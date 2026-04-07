@@ -24,7 +24,7 @@ function Localization:GetClassID(class)
     local class_id = class and classLookupTable[class];
 
     if(not class_id) then
-        Debug:LogWarning("Localization:GetSpecID failed to find ID for:", class);
+        Debug:LogWarning("Localization:GetSpecID failed to find class_id for:", class);
     end
 
     return class_id;
@@ -84,7 +84,7 @@ function Localization:GetSpecID(classToken, spec)
 
     -- Logging
     if(not spec_id) then
-        Debug:LogWarning("Localization:GetSpecID failed to find ID for:", classToken, spec);
+        Debug:LogWarning("Localization:GetSpecID failed to find spec_id for:", classToken, spec);
     end
 
     return spec_id;
@@ -475,7 +475,7 @@ function Localization:GetRaceID(race, factionIndex)
 
     -- Logging
     if(not race_id) then
-        Debug:LogWarning("Localization:GetRaceID failed to find ID for:", race, factionIndex);
+        Debug:LogWarning("Localization:GetRaceID failed to find race_id for:", race, factionIndex);
     end
 
     return race_id;
