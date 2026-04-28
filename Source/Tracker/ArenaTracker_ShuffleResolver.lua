@@ -40,6 +40,7 @@ local outcomes_char = {
 	[1] = "W",
 	[2] = "D",
 };
+
 local outcomes_number = {
 	["L"] = 0,
 	["W"] = 1,
@@ -65,6 +66,18 @@ local function CheckScore(score)
 	return true;
 end
 
+local function IsPlayerInTeam(team, fullname)
+	if(type(team) ~= "table" or not fullname) then
+		return false;
+	end
+
+	for i,playerName in ipairs(team) do
+		if(playerName == fullname) then
+			return true;
+		end
+	end
+	return false;
+end
 
 local function AddRound(committedRound)
 	if(not committedRound or #committedRound.team ~= 3 or #committedRound.enemy ~= 3) then
@@ -78,13 +91,21 @@ local function AddRound(committedRound)
 	newRound.team = committedRound.team;
 	newRound.enemy = committedRound.enemy;
 
+	local firstDeath = committedRound.firstDeath;
+
 	local knownOutcome = GetNumberOutcome(committedRound.outcome);
 	if(knownOutcome ~= nil) then
 		newRound.possibleOutcomes = { knownOutcome };
-	elseif(committedRound.hasPartyDeath) then -- Presume feign death excluded here?
-		newRound.possibleOutcomes = { 0, 2 };
+	elseif(firstDeath) then
+		if(IsPlayerInTeam(newRound.team, firstDeath)) then
+			newRound.possibleOutcomes = { outcomes.draw, outcomes.loss };
+		elseif(IsPlayerInTeam(newRound.enemy, firstDeath)) then
+			newRound.possibleOutcomes = { outcomes.draw, outcomes.win };
+		else
+			newRound.possibleOutcomes = { outcomes.draw, outcomes.win, outcomes.loss };
+		end
 	else
-		newRound.possibleOutcomes = { 0, 1, 2 };
+		newRound.possibleOutcomes = { outcomes.draw, outcomes.win, outcomes.loss };
 	end
 
 	tinsert(rounds, newRound);
@@ -104,9 +125,9 @@ local function AddScore(scoreData, round, outcome)
 
     scoreData.total = (scoreData.total or 0) + 3;
 
-    for _, player in ipairs(team) do
-        if player and player.name then
-            scoreData[player.name] = (scoreData[player.name] or 0) + 1;
+    for _, fullname in ipairs(team) do
+        if fullname then
+            scoreData[fullname] = (scoreData[fullname] or 0) + 1;
         end
     end
 end
@@ -159,7 +180,7 @@ local function CommitKnownWins(matchedScores)
 			-- Commit outcome to round
 			local round = currentArena.committedRounds[roundIndex];
 			if(round) then
-				Debug:LogPurple("   Resolving outcome for round:", roundIndex, outcome, round.outcome);
+				Debug:LogPurple("   Resolving outcome for round:", roundIndex, outcome, round.outcome, round.firstDeath);
 				round.outcome = round.outcome or outcome;
 			end
 		else
@@ -168,13 +189,35 @@ local function CommitKnownWins(matchedScores)
 	end
 end
 
-function ArenaTracker:ResolveShuffleOutcomes(winsCache)
+
+local function GetWinsCache()
+	local cache = { total = 0 };
+
+	for i,player in ipairs(currentArena.players) do
+		local wins = tonumber(player.wins);
+		if(wins) then
+			cache[player.name] = wins;
+			cache.total = cache.total + wins;
+		end
+	end
+
+	Debug:Log("New computed wins cache:");
+	Debug:LogTable(cache);
+
+	return cache;
+end
+
+
+function ArenaTracker:ResolveShuffleOutcomes()
 	if(not ArenaTracker:IsTrackingShuffle(true)) then
+		Debug:Log("ResolveShuffleOutcomes rejected: No shuffle tracking.");
 		return;
 	end
 
+	local winsCache = GetWinsCache();
 	if(not winsCache) then
 		-- No scores to resolve outcomes for
+		Debug:Log("ResolveShuffleOutcomes rejected: No scores.");
 		return;
 	end
 
@@ -200,160 +243,4 @@ function ArenaTracker:ResolveShuffleOutcomes(winsCache)
 
 	wipe(rounds);
 	finalScore = nil;
-end
-
-
-
-
---@TODO: Remove the following:
--------------------------------------------------------------------------
---- Wins Resolver Tests
-
-local duplicateScoreTable = {};
-local scoreLookupCache = {};
-local uniqueOutcomeTable = {};
-
-local fixedRoundTeams = {
-	[1] = {{1,2,3}, {4,5,6}},
-	[2] = {{1,2,4}, {3,5,6}},
-	[3] = {{1,2,5}, {3,4,6}},
-	[4] = {{1,3,4}, {2,5,6}},
-	[5] = {{1,3,5}, {2,4,6}},
-	[6] = {{1,4,5}, {2,3,6}},
-};
-
-local maxDraws = 2;
-local unknownRounds = 6;
-
-local function CountDraws(scoreKey)
-	local count = 0;
-	for i=1, #scoreKey do
-		local outcome = tonumber(string.sub(scoreKey, i, i));
-		if(outcome == 0) then
-			count = count + 1;
-		end
-	end
-	return count;
-end
-
-local function FindOrAddLookupScore(scoreKey, outcome)
-	assert(outcome and uniqueOutcomeTable[outcome] == nil, "Attempting to add an already existing outcome to scoreLookupCache.");
-
-	scoreLookupCache[scoreKey] = scoreLookupCache[scoreKey] or {};
-	local scoreTable = scoreLookupCache[scoreKey];
-
-	scoreTable.count = scoreTable.count and (scoreTable.count + 1) or 1;
-
-	scoreTable.outcomes = scoreTable.outcomes or {};
-	tinsert(scoreTable.outcomes, outcome);
-
-	if(scoreTable.count > 1) then
-		duplicateScoreTable[scoreKey] = scoreTable.count;
-	end
-
-	return scoreTable;
-end
-
-local function GenerateOutcomesRecursive(roundIndex, outcomeKey, outcomeTable)
-	roundIndex = roundIndex or 1;
-	assert(roundIndex <= 6);
-
-	outcomeTable = outcomeTable or {};
-	local lastKey = outcomeKey or "";
-
-	for i=0, 2 do
-		-- Add current round outcome (win, loss or draw)
-		local newKey = lastKey .. i;
-
-		if(roundIndex < unknownRounds) then
-			GenerateOutcomesRecursive(roundIndex+1, newKey, outcomeTable);
-		elseif(CountDraws(newKey) <= maxDraws) then
-			tinsert(outcomeTable, newKey);
-		end
-	end
-
-	if(roundIndex == 1) then
-		Debug:Log("GenerateOutcomesRecursive generated #" .. #outcomeTable, "outcomes");
-		return outcomeTable;
-	end
-end
-
-
-local function AddScoreWins(score, team)
-	for _,playerIndex in ipairs(team) do
-		score[playerIndex] = score[playerIndex] + 1;
-	end
-	score.total = score.total + 3;
-end
-
-local hasGenerated = false;
-local function GenerateScoreLookup()
-	if(hasGenerated) then
-		return;
-	end
-	hasGenerated = true;
-
-	local outcomeTable = GenerateOutcomesRecursive();
-
-	local score = {};
-	local function ResetScore()
-		score.total = 0;
-		for i=1, 6 do
-			score[i] = 0;
-		end
-	end
-
-	for idx,outcomes in ipairs(outcomeTable) do
-		ResetScore();
-
-		for roundIndex=1, #outcomes do
-			local outcome = tonumber(string.sub(outcomes, roundIndex, roundIndex));
-
-			if(outcome == 1) then
-				AddScoreWins(score, fixedRoundTeams[roundIndex][1]);
-			elseif(outcome == 2) then
-				AddScoreWins(score, fixedRoundTeams[roundIndex][2]);
-			else
-				assert(outcome == 0);
-			end
-		end
-
-		-- Compute sorted key total-sortedHealers-sortedDps (T-hh-dddd)
-		local h = { score[1], score[6] };
-		--table.sort(h, function(a,b) return a > b end);
-
-		local d = { score[2], score[3], score[4], score[5] };
-		--table.sort(d, function(a,b) return a > b end);
-
-		local scorekey = string.format("%02d-%d%d-%d%d%d%d",
-			score.total,
-			h[1], h[2],
-			d[1], d[2], d[3], d[4]
-		);
-
-		Debug:Log("Shuffle Resolver: ScoreKey:", scorekey, outcomes)
-		FindOrAddLookupScore(scorekey, outcomes);
-	end
-
-	return #outcomeTable;
-end
-
-
-function ArenaAnalytics:RunScoreTest()
-	local outcomeCount = GenerateScoreLookup();
-
-	local uniqueCount, duplicateCount, total = 0, 0, 0;
-	for key,data in pairs(scoreLookupCache) do
-		if(data.count == 1) then
-			uniqueCount = uniqueCount + 1;
-		else
-			Debug:LogTable(data);
-			duplicateCount = duplicateCount + 1;
-		end
-
-		total = total + 1;
-	end
-
-	--Debug:LogTable(scoreLookupCache);
-	Debug:Log("Score Duplicate:", duplicateCount, "Unique:", uniqueCount, "Total:", total, outcomeCount);
 end

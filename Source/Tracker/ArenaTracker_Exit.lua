@@ -128,11 +128,43 @@ local function TryAssignRating()
 	Debug:LogPurple("Requires rating fix:", currentArena.requireRatingFix, "New rating:", newRating, "Old rating:", oldRating, "season played:", currentArena.seasonPlayed);
 end
 
+
+local function TryComputeDuration()
+	-- Calculate arena duration
+	if(ArenaTracker:IsShuffle()) then
+		currentArena.duration = 0;
+
+		if(currentArena.committedRounds) then
+			for _,round in ipairs(currentArena.committedRounds) do
+				if(round) then
+					currentArena.duration = currentArena.duration + (tonumber(round.duration) or 0);
+				end
+			end
+		end
+
+		Debug:Log("Shuffle combined duration:", currentArena.duration);
+	elseif(currentArena.hasStartTime and Helpers:IsPositiveNumber(currentArena.startTime)) then
+		currentArena.endTime = tonumber(currentArena.endTime) or time();
+		if(currentArena.startTime < currentArena.endTime) then
+			currentArena.duration = currentArena.endTime - currentArena.startTime;
+		end
+	else
+		currentArena.duration = nil;
+	end
+
+	Debug:Log("Duration for new arena:", currentArena.duration, currentArena.hasStartTime, currentArena.hasRealStartTime, currentArena.startTime, currentArena.endTime);
+end
+
+
 -- Player left an arena (Zone changed to non-arena with valid arena data)
 function ArenaTracker:HandleArenaExit()
 	if(not ArenaTracker:IsTrackingArena(true)) then
+		Debug:Log("Attempted handling exit while not tracking arena.");
 		return;
 	end
+
+	-- Stores raw arena to reuse for testing
+	Debug:TryStoreRawArena(currentArena);
 
 	if(currentArena.isHandlingExit) then
 		return;
@@ -150,7 +182,7 @@ function ArenaTracker:HandleArenaExit()
 
 	-- Solo Shuffle
 	if(ArenaTracker:IsShuffle()) then
-		ArenaTracker:CheckRoundState();
+		ArenaTracker:HandleRoundEnd();
 		ArenaTracker:UpdateRoundEnemyTeams();
 
 		-- Experimental
@@ -177,6 +209,7 @@ function ArenaTracker:HandleArenaExit()
 	end
 
 	TryComputeSpecs();
+	TryComputeDuration();
 
 	ArenaTracker:Save(currentArena);
 end

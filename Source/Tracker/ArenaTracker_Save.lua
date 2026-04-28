@@ -50,30 +50,6 @@ function ArenaTracker:Save(newArena)
 	end
 	ArenaTracker:SetState("Saving");
 
-	-- Calculate arena duration
-	if(newArena.bracket == "shuffle") then
-		newArena.duration = 0;
-
-		if(newArena.committedRounds) then
-			for _,round in ipairs(newArena.committedRounds) do
-				if(round) then
-					newArena.duration = newArena.duration + (tonumber(round.duration) or 0);
-				end
-			end
-		end
-
-		Debug:Log("Shuffle combined duration:", newArena.duration);
-	elseif(newArena.hasStartTime and Helpers:IsPositiveNumber(newArena.startTime)) then
-		newArena.endTime = tonumber(newArena.endTime) or time();
-		if(newArena.startTime < newArena.endTime) then
-			newArena.duration = newArena.endTime - newArena.startTime;
-		end
-	else
-		newArena.duration = nil;
-	end
-
-	Debug:Log("Duration for new arena:", newArena.duration, newArena.hasStartTime, newArena.hasRealStartTime, newArena.startTime, newArena.endTime);
-
 	local season, isOffSeason = API:GetSeason();
 	if (season == 0) then
 		Debug:LogWarning("Failed to get valid season for new match.", season, isOffSeason);

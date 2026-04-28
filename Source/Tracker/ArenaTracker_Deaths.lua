@@ -150,9 +150,8 @@ function ArenaTracker:CommitDeaths()
 	wipe(currentArena.deathData);
 end
 
-
 -- Fetch the real first death when saving the match
-function ArenaTracker:GetFirstDeathFromCurrentArena()
+function ArenaTracker:GetFirstDeathFromCurrentArena(skipHunter)
 	local deathData = ArenaTracker:GetDeathData();
 	if(deathData == nil) then
 		return;
@@ -162,13 +161,15 @@ function ArenaTracker:GetFirstDeathFromCurrentArena()
 	for key,data in pairs(deathData) do
 		if(key and type(data) == "table" and data.time) then
 			if(bestTime == nil or data.time < bestTime) then
-				bestKey = key;
-				bestTime = data.time;
+				local timeSince = time() - data.time;
+				if(not data.isHunter or not skipHunter) then -- Trusting hunters are risky, may break shuffles
+					bestKey = key;
+					bestTime = data.time;
+				end
 			end
 		else
 			local player = ArenaTracker:GetPlayer(key);
 			Debug:LogError("Invalid death data found:", key, player and player.name, type(data));
-			--Debug:LogTable(deathData);
 		end
 	end
 

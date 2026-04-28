@@ -63,7 +63,7 @@ end
 function ArenaTracker:CheckHasGatesOpened()
 	local state = API:GetActiveMatchState() or 0;
 
-	if(state > 2) then
+	if(state >= 3) then
 		ArenaTracker:HandleArenaGatesOpened();
 	end
 end

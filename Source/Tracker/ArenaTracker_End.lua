@@ -55,7 +55,7 @@ function ArenaTracker:HandleArenaEnd()
 	currentArena.endTime = tonumber(currentArena.endTime) or time();
 
 	-- Solo Shuffle
-	ArenaTracker:CheckRoundState();
+	ArenaTracker:HandleRoundEnd();
 	ArenaTracker:LogMatchStateAndWins("[Match End]");
 
 	local winner = API:GetWinner();

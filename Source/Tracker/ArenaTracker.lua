@@ -398,9 +398,7 @@ function ArenaTracker:HandleMatchStateChanged(newState)
 		ArenaTracker:CheckRoundState();
 	end
 
-	if(newState == 3) then -- Engaged
-		ArenaTracker:HandleArenaGatesOpened();
-	end
+	ArenaTracker:CheckHasGatesOpened();
 
 	currentArena.matchState = newState;
 end
@@ -480,6 +478,7 @@ function ArenaTracker:CreatePlayer(isEnemy, name, unitToken, spec_id)
 	return newPlayer;
 end
 
+
 function ArenaTracker:TryFindPetOwnerGUID(petGUID)
 	if(not API:IsInArena()) then
 		return;
@@ -511,7 +510,9 @@ function ArenaTracker:HandlePartyUpdate()
 		return;
 	end
 
-	ArenaTracker:CheckRoundState();
+	-- Solo Shuffle
+	ArenaTracker:CheckShufflePartyChanged();
+
 	ArenaTracker:FillMissingPlayers();
 end
 
@@ -566,6 +567,7 @@ function ArenaTracker:Initialize()
 
 	ArenaTracker:InitializeSubmodule_Scoreboard();
 	ArenaTracker:InitializeSubmodule_Shuffle();
+	ArenaTracker:InitializeSubmodule_ShuffleResolver();
 	ArenaTracker:InitializeSubmodule_Deaths();
 	ArenaTracker:InitializeSubmodule_Specs();
 end

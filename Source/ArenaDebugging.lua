@@ -45,13 +45,13 @@ end
 function Debug:LogInternal(prefix, color, ...)
     color = color or Colors.logColor;
 
-    prefix = Colors:ColorText(prefix or "ArenaAnalytics", color);
+    prefix = Colors:ColorText(prefix or "ArenaAnalytics:", color);
 	print(prefix, ...);
 end
 
 -- Basic log forced regardless of debug level
 function Debug:LogForced(...)
-    Debug:LogInternal("ArenaAnalytics (Debug)", Colors.logColor, ...)
+    Debug:LogInternal("ArenaAnalytics (Debug):", Colors.logColor, ...)
 end
 
 -------------------------------------------------------------------------
@@ -253,6 +253,43 @@ function Debug:HandleDebugInspect(GUID)
     local spec2 = GetInspectSpecialization(lastInspectUnitToken);
 
     Debug:Log("HandleDebugInspect:", spec, spec2, API:GetSpecialization(lastInspectUnitToken));
+end
+
+-------------------------------------------------------------------------
+
+function Debug:TryStoreRawArena(arena)
+	if(Debug:GetDebugLevel() < 10) then
+        return;
+    end
+
+    ArenaAnalyticsTransientDB.rawArena = Helpers:DeepCopy(arena);
+end
+
+function Debug:ForceApplyRawArena()
+	if(Debug:GetDebugLevel() < 1) then
+        return;
+    end
+
+    if(API:IsInArena()) then
+        Debug:LogTemp("In arena")
+        return;
+    end
+
+    local ArenaTracker = ArenaAnalytics.ArenaTracker;
+    if(ArenaTracker:IsTrackingArena(true)) then
+        Debug:LogTemp("Already tracking")
+        return;
+    end
+
+    if(type(ArenaAnalyticsTransientDB.rawArena) ~= "table") then
+        Debug:LogTemp("No raw arena", type(ArenaAnalyticsTransientDB.rawArena))
+        return;
+    end
+
+    Debug:LogWarning("Force replacing currentArena with cached rawArena!!");
+    ArenaAnalyticsTransientDB.currentArena = Helpers:DeepCopy(ArenaAnalyticsTransientDB.rawArena);
+    ArenaAnalyticsTransientDB.currentArena.startTime = time();
+    ArenaTracker:Initialize();
 end
 
 -------------------------------------------------------------------------

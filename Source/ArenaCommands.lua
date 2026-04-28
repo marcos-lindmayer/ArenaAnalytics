@@ -26,6 +26,7 @@ local function PrintCommandHelp(command, description)
 		ArenaAnalytics:PrintSystem(ColorSlashCommand(command), description);
 end
 
+
 -------------------------------------------------------------------------
 -- Command Handlers
 
@@ -42,17 +43,21 @@ function Commands.HandleCommand_Help()
 	ArenaAnalytics:PrintSystemSpacer();
 end
 
+
 function Commands.HandleCommand_Credits()
 	ArenaAnalytics:PrintSystem("ArenaAnalytics authors: Lingo, Zeetrax.   Developed in association with Hydra. www.twitch.tv/Hydramist");
 end
+
 
 function Commands.HandleCommand_Version()
 	ArenaAnalytics:PrintSystem("Current version: " .. Colors:GetVersionText("Invalid Version"));
 end
 
+
 function Commands.HandleCommand_Total()
 	ArenaAnalytics:PrintSystem("Total arenas stored: ", #ArenaAnalyticsDB);
 end
+
 
 function Commands.HandleCommand_Played()
 	local totalDurationInArenas = 0;
@@ -93,9 +98,11 @@ function Commands.HandleCommand_Played()
 	ArenaAnalytics:PrintSystem(Colors:ColorText("=============================", Colors.infoColor));
 end
 
+
 function Commands.HandleCommand_Debug(level)
 	Debug:SetDebugLevel(level);
 end
+
 
 function Commands.HandleCommand_Convert()
 	ArenaAnalytics:PrintSystem("Forcing data version conversion..");
@@ -104,6 +111,7 @@ function Commands.HandleCommand_Convert()
 	end
 	ArenaAnalyticsScrollFrame:Hide();
 end
+
 
 function Commands.HandleCommand_Update(arg)
 	if(arg == "sessions") then
@@ -128,9 +136,11 @@ function Commands.HandleCommand_Update(arg)
 	end
 end
 
+
 function Commands.HandleCommand_Purge()
 	C_Timer.After(0, function() ArenaAnalytics:ShowPurgeConfirmationDialog() end);
 end
+
 
 function Commands.HandleCommand_DumpRealms()
 	print(" ");
@@ -143,6 +153,7 @@ function Commands.HandleCommand_DumpRealms()
 	ArenaAnalytics:Print("============================= ");
 	print(" ");
 end
+
 
 function Commands.HandleCommand_Dump()
 	print(" ");
@@ -161,21 +172,19 @@ function Commands.HandleCommand_Dump()
 		ArenaAnalytics:Print("IsArenaPreparation:", API:IsArenaPreparation());
 	end
 
+	Debug:LogTable(ArenaAnalyticsTransientDB.rawArena.shuffleWinsCache);
 	ArenaAnalytics:Print("============================= ");
 	print(" ");
 end
+
 
 function Commands.HandleCommand_Test(...)
 	print(" ");
 	ArenaAnalytics:Print("============================= ");
 
-	--ArenaTracker:LogMatchStateAndWins("[Command]");
-	--RequestBattlefieldScoreData();
-
-	ArenaAnalytics:RunScoreTest();
-
 	ArenaAnalytics:Print("============================= ");
 end
+
 
 function Commands.HandleCommand_DumpSpecs()
 	print(" ");
@@ -210,6 +219,7 @@ function Commands.HandleCommand_DumpSpecs()
 	ArenaAnalytics:Print("============================= ");
 end
 
+
 function Commands.HandleCommand_FixDurations()
 	for i=1, #ArenaAnalyticsDB do
 		local match = ArenaAnalyticsDB[i];
@@ -221,10 +231,12 @@ function Commands.HandleCommand_FixDurations()
 	ArenaAnalytics:Print("Recomputed shuffle durations.");
 end
 
+
 function Commands.HandleCommand_Inspect()
 	Debug:LogGreen("Attempting debug inspection..")
 	Debug:NotifyInspectSpec("target");
 end
+
 
 function Commands.HandleCommand_Undo(...)
 	local oldCount = #ArenaAnalyticsDB;
