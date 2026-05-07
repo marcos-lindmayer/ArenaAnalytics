@@ -573,8 +573,9 @@ function ArenaTracker:Initialize()
 end
 
 
-
 function ArenaTracker:LogMatchStateAndWins(sourceLabel)
+	if(true) then return end;
+
     -- Fetch the current cache using existing logic
     local cache, hasAnyScores = self:GetScoreboardWinsCache();
 

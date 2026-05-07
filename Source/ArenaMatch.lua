@@ -38,6 +38,7 @@ ArenaMatch.matchKeys = {
     rounds = -18,
     seasonPlayed = -19,
     isOffSeason = -20,
+    shuffleWins = -21,
 
     importIndex = -100,
     transient_requireRatingFix = -101,
@@ -1263,6 +1264,21 @@ end
 
 -------------------------------------------------------------------------
 -- Solo Shuffle
+
+function ArenaMatch:GetShuffleWins(match)
+    return match and tonumber(match[matchKeys.shuffleWins]);
+end
+
+function ArenaMatch:SetShuffleWins(match, value)
+    assert(match);
+
+    if(not ArenaMatch:IsShuffle(match)) then
+        Debug:Log("ArenaMatch:SetShuffleWins skipping due to match type.", ArenaMatch:GetBracket(match));
+        return;
+    end
+
+    match[matchKeys.shuffleWins] = ToPositiveNumber(value, true);
+end
 
 -- Set rounds data
 function ArenaMatch:SetRounds(match, rounds)

@@ -76,7 +76,7 @@ function ArenaTracker:UpdatePlayersFromScoreboard()
 			-- Testing:
 			local pClass, pSpec = Internal:GetClassAndSpec(player.spec);
 			local sClass, sSpec = Internal:GetClassAndSpec(score.spec);
-			ArenaAnalytics:PrintSystem("Debug: Scoreboard test - Player:", player.name, pClass, pSpec, " to score:", sClass, sSpec);
+			Debug:LogTemp("Scoreboard test - Player:", player.name, pClass, pSpec, " to score:", sClass, sSpec);
 
 			-- Fill missing data
 			player.teamIndex = score.team;
@@ -137,5 +137,5 @@ function ArenaTracker:UpdatePlayersFromScoreboard()
 	end
 
 	-- @TEMP:
-	ArenaAnalytics:PrintSystem("Updated from scoreboard:", #currentArena.players);
+	Debug:LogTemp("Updated from scoreboard:", #currentArena.players);
 end

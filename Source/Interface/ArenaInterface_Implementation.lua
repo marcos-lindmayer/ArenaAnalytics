@@ -33,6 +33,10 @@ end
 
 -- TODO: Reuse Export formatting?
 function Interface_Internal:ConvertToReadableMatch(match)
+    if(not match) then
+        return nil;
+    end
+
     local readableMatch = {};
 
 

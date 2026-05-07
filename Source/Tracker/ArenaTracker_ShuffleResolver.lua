@@ -91,7 +91,10 @@ local function AddRound(committedRound)
 	newRound.team = committedRound.team;
 	newRound.enemy = committedRound.enemy;
 
-	local firstDeath = committedRound.firstDeath;
+	local firstDeath = nil;
+	if(not committedRound.isHunterDeath) then
+		firstDeath = committedRound.firstDeath;
+	end
 
 	local knownOutcome = GetNumberOutcome(committedRound.outcome);
 	if(knownOutcome ~= nil) then

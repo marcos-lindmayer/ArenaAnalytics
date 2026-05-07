@@ -157,12 +157,12 @@ function ArenaTracker:GetFirstDeathFromCurrentArena(skipHunter)
 		return;
 	end
 
-	local bestKey, bestTime;
+	local bestKey, bestTime, isHunter;
 	for key,data in pairs(deathData) do
 		if(key and type(data) == "table" and data.time) then
 			if(bestTime == nil or data.time < bestTime) then
 				local timeSince = time() - data.time;
-				if(not data.isHunter or not skipHunter) then -- Trusting hunters are risky, may break shuffles
+				if(not skipHunter or not data.isHunter) then -- Trusting hunters are risky, may break shuffles
 					bestKey = key;
 					bestTime = data.time;
 				end
@@ -178,6 +178,6 @@ function ArenaTracker:GetFirstDeathFromCurrentArena(skipHunter)
 		return nil;
 	end
 
-	local firstDeathData = deathData[bestKey];
-	return firstDeathData.name, firstDeathData.time;
+	local bestData = deathData[bestKey];
+	return bestData.name, bestData.time, bestData.isHunter;
 end

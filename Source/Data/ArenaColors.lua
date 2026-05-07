@@ -3,6 +3,8 @@ local Colors = ArenaAnalytics.Colors;
 
 -- Local module aliases
 local API = ArenaAnalytics.API;
+local Helpers = ArenaAnalytics.Helpers;
+local Internal = ArenaAnalytics.Internal;
 
 -------------------------------------------------------------------------
 
@@ -63,6 +65,7 @@ function Colors:ColorText(text, color)
     return "|c" .. color .. text .. "|r"
 end
 
+
 function Colors:GetTitle(asSingleColor)
 	if(asSingleColor) then
 		return Colors:ColorText("ArenaAnalytics", Colors.themeColor);
@@ -70,6 +73,7 @@ function Colors:GetTitle(asSingleColor)
 		return "Arena" .. Colors:ColorText("Analytics", Colors.themeColor);
 	end
 end
+
 
 function Colors:GetVersionText(invalidText)
     local version = API and API:GetAddonVersion();
@@ -79,4 +83,12 @@ function Colors:GetVersionText(invalidText)
     end
 
     return Colors:ColorText(invalidText or "v???", Colors.versionColor);
+end
+
+
+function Colors:GetClassColor(spec_id)
+    local class_id = Helpers:GetClassID(spec_id);
+    local classInfo = Internal:GetClassInfo(class_id);
+    local classToken = classInfo and classInfo.token;
+    return classToken and select(4, GetClassColor(classToken)) or Colors.invalidColor;
 end

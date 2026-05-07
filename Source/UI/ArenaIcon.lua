@@ -4,7 +4,6 @@ ArenaIcon.__index = ArenaIcon
 
 -- Local module aliases
 local Constants = ArenaAnalytics.Constants;
-local Internal = ArenaAnalytics.Internal;
 local Helpers = ArenaAnalytics.Helpers;
 local API = ArenaAnalytics.API;
 local Options = ArenaAnalytics.Options;
@@ -32,8 +31,8 @@ function ArenaIcon:Create(parent, size, skipDeath)
         newFrame.deathOverlay.texture = newFrame.deathOverlay:CreateTexture();
         newFrame.deathOverlay.texture:SetAllPoints(newFrame.deathOverlay);
 
-        local isReadDeathOverlay = true;
-        if(isReadDeathOverlay) then -- red
+        local isRedDeathOverlay = true;
+        if(isRedDeathOverlay) then -- red
             newFrame.deathOverlay.texture:SetColorTexture(1, 0, 0, 0.3);
         else -- Desaturated
             newFrame.deathOverlay.texture:SetColorTexture(0, 0, 0, 0.5);
@@ -81,10 +80,10 @@ function ArenaIcon:Create(parent, size, skipDeath)
 
         local classIcon, specIcon;
         if(Options:Get("fullSizeSpecIcons")) then
-            classIcon = isSpec and API:GetSpecIcon(spec_id) or Internal:GetClassIcon(spec_id);
+            classIcon = isSpec and API:GetSpecIcon(spec_id) or Helpers:GetClassIcon(spec_id);
             specIcon = ""; -- Hide spec icon
         else
-            classIcon = Internal:GetClassIcon(spec_id);
+            classIcon = Helpers:GetClassIcon(spec_id);
             specIcon = API:GetSpecIcon(spec_id);
         end
 

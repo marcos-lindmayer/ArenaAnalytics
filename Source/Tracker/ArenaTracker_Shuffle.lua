@@ -570,7 +570,7 @@ function ArenaTracker:CommitRound()
 	local matchState = API:GetActiveMatchState();
 
 	local startTime = currentRound.startTime;
-	local death, endTime = ArenaTracker:GetFirstDeathFromCurrentArena(true);
+	local death, endTime, isHunter = ArenaTracker:GetFirstDeathFromCurrentArena();
 	endTime = endTime or time();
 
 	ArenaTracker:CommitDeaths();
@@ -579,6 +579,7 @@ function ArenaTracker:CommitRound()
 	local roundData = {
 		duration = startTime and (endTime - startTime) or nil,
 		firstDeath = death,
+		isHunterDeath = isHunter,
 		team = TablePool:Acquire(),
 		enemy = TablePool:Acquire(),
 	};

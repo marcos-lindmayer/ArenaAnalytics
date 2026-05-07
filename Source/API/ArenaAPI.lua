@@ -337,7 +337,7 @@ function API:IsSkirmish()
 end
 
 function API:IsSoloShuffle()
-    return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle() or true;
+    return C_PvP and C_PvP.IsSoloShuffle and C_PvP.IsSoloShuffle();
 end
 
 

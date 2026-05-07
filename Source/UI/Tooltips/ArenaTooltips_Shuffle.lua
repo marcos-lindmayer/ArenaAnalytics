@@ -214,7 +214,7 @@ local function AddBottomStat(prefix, name, value, spec_id)
 
     -- Player Name
     if(name) then
-        local classColor = Internal:GetClassColor(spec_id);
+        local classColor = Colors:GetClassColor(spec_id);
         name = Colors:ColorText(name, classColor);
     end
 

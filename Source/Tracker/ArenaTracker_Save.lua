@@ -88,6 +88,7 @@ function ArenaTracker:Save(newArena)
 	ArenaMatch:AddPlayers(arenaData, newArena.players);
 
 	if(newArena.bracket == "shuffle") then
+		ArenaMatch:SetShuffleWins(arenaData, newArena.wins);
 		ArenaMatch:SetRounds(arenaData, newArena.committedRounds);
 	end
 

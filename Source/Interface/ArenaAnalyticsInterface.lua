@@ -47,30 +47,23 @@ Interface.Events.RatingFixed = "Event.ArenaAnalytics.RatingFixed";  -- Payload: 
 -------------------------------------------------------------------------
 --- Functions
 
-
 function Interface:GetMatchCount()
     return #ArenaAnalyticsDB;
 end
 
+-- Not yet implemented
 function Interface:GetMatch(index)
-    local match = ArenaAnalytics:GetMatch(index)
-    if(not match) then
-        return nil;
-    end
-
+    local match = ArenaAnalytics:GetMatch(index);
     return Interface_Internal:ConvertToReadableMatch(match);
 end
 
 
 function Interface:GetFilteredMatchCount()
-    return #ArenaAnalyticsDB;
+    return ArenaAnalytics.filteredMatchCount;
 end
 
+-- Not yet implemented
 function Interface:GetFilteredMatch(index)
-    local filteredMatch = ArenaAnalytics:GetFilteredMatch(index)
-    if(not filteredMatch) then
-        return nil;
-    end
-
+    local filteredMatch = ArenaAnalytics:GetFilteredMatch(index);
     return Interface_Internal:ConvertToReadableMatch(filteredMatch);
 end

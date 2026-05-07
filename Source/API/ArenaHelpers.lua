@@ -217,6 +217,23 @@ function Helpers:CreateDoubleBackdrop(parent, name, strata, level)
 end
 
 
+function Helpers:GetClassIcon(spec_id)
+    local class_id = Helpers:GetClassID(spec_id);
+    if(not class_id) then
+        return nil;
+    end
+
+    -- Death Knight
+    if(class_id == 30) then
+        return "Interface\\Icons\\spell_deathknight_classicon";
+    end
+
+    local classInfo = Internal.addonClassIDs[class_id];
+    local classToken = classInfo and classInfo.token;
+    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or nil;
+end
+
+
 -------------------------------------------------------------------------
 -- Data Helpers
 

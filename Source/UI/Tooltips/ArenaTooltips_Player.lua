@@ -329,7 +329,7 @@ function PlayerTooltip:SetInfo(race_id, spec_id)
     end
 
     if(specialization ~= "") then
-        local color = Internal:GetClassColor(spec_id) or "ffffff";
+        local color = Colors:GetClassColor(spec_id) or "ffffff";
         specialization = Colors:ColorText(specialization, color);
     end
 

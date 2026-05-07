@@ -305,29 +305,6 @@ function Internal:GetClassInfo(class_id)
     return Internal.addonClassIDs[class_id];
 end
 
-function Internal:GetClassColor(spec_id)
-    local class_id = Helpers:GetClassID(spec_id);
-    local classInfo = Internal:GetClassInfo(class_id);
-    local classToken = classInfo and classInfo.token;
-    return classToken and select(4, GetClassColor(classToken)) or "ffffffff";
-end
-
-function Internal:GetClassIcon(spec_id)
-    local class_id = Helpers:GetClassID(spec_id);
-    if(not class_id) then
-        return nil;
-    end
-
-    -- Death Knight
-    if(class_id == 30) then
-        return "Interface\\Icons\\spell_deathknight_classicon";
-    end
-
-    local classInfo = Internal.addonClassIDs[class_id];
-    local classToken = classInfo and classInfo.token;
-    return classToken and "Interface\\Icons\\classicon_" .. classToken:lower() or nil;
-end
-
 -------------------------------------------------------------------------
 -- Specialization IDs
 
