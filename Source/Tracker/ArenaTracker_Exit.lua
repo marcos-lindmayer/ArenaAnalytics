@@ -156,6 +156,29 @@ local function TryComputeDuration()
 end
 
 
+local function ComputeShuffleOutcome()
+	if(ArenaTracker:IsShuffle()) then
+		local winsCache = currentArena.shuffleWinsCache or {};
+
+		local trackedRoundCount = currentArena.committedRounds and #currentArena.committedRounds or 0;
+
+		local cachedRoundCount = math.floor((winsCache.total or 0) / 3);
+		local total = max(cachedRoundCount, trackedRoundCount);
+		local wins = winsCache.wins or 0;
+
+		-- Calculate outcomes from cache
+		local outcome = {};
+		outcome.total = total;
+		outcome.wins = wins;
+		outcome.losses = cachedRoundCount - wins;
+
+		if(total > cachedRoundCount) then
+			outcome.draws = total - cachedRoundCount;
+		end
+		return outcome;
+	end
+end
+
 -- Player left an arena (Zone changed to non-arena with valid arena data)
 function ArenaTracker:HandleArenaExit()
 	if(not ArenaTracker:IsTrackingArena(true)) then
@@ -180,25 +203,30 @@ function ArenaTracker:HandleArenaExit()
 		Inspection:Clear();
 	end
 
+	local isShuffle = ArenaTracker:IsShuffle();
+
+	if(not currentArena.endedProperly) then
+		currentArena.ended = true;
+
+		currentArena.outcome = 0;
+
+		Debug:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
+	end
+
 	-- Solo Shuffle
-	if(ArenaTracker:IsShuffle()) then
+	if(isShuffle) then
 		ArenaTracker:HandleRoundEnd();
 		ArenaTracker:UpdateRoundEnemyTeams();
 
 		-- Experimental
 		ArenaTracker:ResolveShuffleOutcomes();
+
+		ComputeShuffleOutcome();
 	end
 
 	currentArena.hasStartTime = Helpers:IsPositiveNumber(currentArena.startTime);
 	currentArena.startTime = tonumber(currentArena.startTime) or time();
 	currentArena.endTime = tonumber(currentArena.endTime) or time();
-
-	if(not currentArena.endedProperly) then
-		currentArena.ended = true;
-		currentArena.outcome = 0;
-
-		Debug:Log("Detected early leave. Has valid current arena: ", currentArena.mapId);
-	end
 
 	if(ArenaTracker:IsRated()) then
 		TryAssignRating();

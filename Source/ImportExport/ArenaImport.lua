@@ -293,14 +293,14 @@ function Import:SaveArena(arena)
 
 	ArenaMatch:SetSeason(newArena, arena.season, arena.isOffSeason);
 
-	ArenaMatch:SetMatchOutcome(newArena, arena.outcome);
-
 	-- Add players from both teams sorted, and assign comps.
 	ArenaMatch:AddPlayers(newArena, arena.players);
 
 	if(arena.isShuffle) then
 		ArenaMatch:SetRounds(newArena, arena.committedRounds);
 	end
+
+	ArenaMatch:SetMatchOutcome(newArena, arena.outcome);
 
     ArenaMatch:SetImportIndex(newArena, Import.currentImportIndex);
 

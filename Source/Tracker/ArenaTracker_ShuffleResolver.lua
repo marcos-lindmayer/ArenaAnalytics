@@ -29,11 +29,7 @@ end
 local rounds = {};
 local finalScore = nil;
 
-local outcomes = {
-	loss = 0,
-	win = 1,
-	draw = 2,
-}
+local outcomes = Constants.outcomes;
 
 local outcomes_char = {
 	[0] = "L",

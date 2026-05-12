@@ -13,8 +13,7 @@ local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
 local Export = ArenaAnalytics.Export;
 local ArenaMatch = ArenaAnalytics.ArenaMatch;
-local Internal = ArenaAnalytics.Internal;
-local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
+local Constants = ArenaAnalytics.Constants;
 local ImportBox = ArenaAnalytics.ImportBox;
 local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local Helpers = ArenaAnalytics.Helpers;
@@ -589,6 +588,29 @@ function GetSessionRatingDelta()
     end
 end
 
+function GetOutcomeStatIncrements(match, useRoundOutcomes)
+    local win,loss,draw = 0,0,0;
+
+    if(useRoundOutcomes and ArenaMatch:IsShuffle(match)) then
+        -- Treat draws as wins for stats
+        local wins = ArenaMatch:GetShuffleWins(match);
+        win = wins;
+        loss = 6 - wins; -- Flawed data? Eww..
+    else
+        local outcome = ArenaMatch:GetMatchOutcome(match);
+        if(outcome == Constants.outcomes.win) then
+            win = 1;
+        elseif(outcome == Constants.outcomes.loss) then
+            loss = 1;
+        elseif(outcome == Constants.outcomes.draw) then
+            draw = 1;
+        end
+    end
+
+    -- Added to stats elsewhere
+    return win,loss,draw;
+end
+
 -- Updates the displayed data for a new match
 function AAtable:HandleArenaCountChanged()
     if(not hasLoaded) then
@@ -613,28 +635,23 @@ function AAtable:HandleArenaCountChanged()
 
     local sessionRatingDelta = not Options:Get("hideSessionRatingDelta") and GetSessionRatingDelta() or nil;
 
+    local useRoundOutcomes = false;
+
     -- Update arena count & winrate
     for i=1, ArenaAnalytics.filteredMatchCount do
         local match, filteredSession = ArenaAnalytics:GetFilteredMatch(i);
         if(match and filteredSession) then
-            if(ArenaMatch:IsVictory(match)) then
-                wins = wins + 1;
-            elseif(ArenaMatch:IsLoss(match)) then
-                losses = losses + 1;
-            elseif(ArenaMatch:IsDraw(match)) then
-                draws = draws + 1;
-            end
+            local winIncrement,lossIncrement,drawIncrement = GetOutcomeStatIncrements(match, useRoundOutcomes);
+            wins = wins + winIncrement;
+            losses = losses + lossIncrement;
+            draws = draws + drawIncrement;
 
             if (filteredSession == 1) then
                 sessionGames = sessionGames + 1;
 
-                if(ArenaMatch:IsVictory(match)) then
-                    sessionWins = sessionWins + 1;
-                elseif(ArenaMatch:IsLoss(match)) then
-                    sessionLosses = sessionLosses + 1;
-                elseif(ArenaMatch:IsDraw(match)) then
-                    sessionDraws = sessionDraws + 1;
-                end
+                sessionWins = sessionWins + winIncrement;
+                sessionLosses = sessionLosses + lossIncrement;
+                sessionDraws = sessionDraws + drawIncrement;
             end
         end
     end

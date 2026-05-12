@@ -3,8 +3,6 @@ local Constants = ArenaAnalytics.Constants;
 
 -- Local module aliases
 local Helpers = ArenaAnalytics.Helpers;
-local Debug = ArenaAnalytics.Debug;
-local API = ArenaAnalytics.API;
 
 -------------------------------------------------------------------------
 
@@ -28,22 +26,15 @@ Constants.playerFlags = {
     isFemale = 4,
 };
 
--------------------------------------------------------------------------
-
-local matchStartedMessages = {
-    ["The Arena battle has begun!"] = true,          -- English / Default
-    ["¡La batalla en arena ha comenzado!"] = true,   -- esES / esMX
-    ["A batalha na Arena começou!"] = true,          -- ptBR
-    ["Der Arenakampf hat begonnen!"] = true,         -- deDE
-    ["Le combat d'arène commence\194\160!"] = true,  -- frFR
-    ["Бой начался!"] = true,                         -- ruRU
-    ["투기장 전투가 시작되었습니다!"] = true,           -- koKR
-    ["竞技场战斗开始了！"] = true,                     -- zhCN
-    ["竞技场的战斗开始了！"] = true,                   -- zhCN (Wotlk)
-    ["競技場戰鬥開始了！"] = true,                     -- zhTW (Unconfirmed, classic?)
+Constants.outcomes = {
+    loss = 0,
+    win = 1,
+    draw = 2,
 };
 
-local arenaMessages = {
+-------------------------------------------------------------------------
+
+Constants.arenaMessages = {
     -- English / Default
     ["One minute until the Arena battle begins!"] = 60,
     ["Thirty seconds until the Arena battle begins!"] = 30,
@@ -107,85 +98,6 @@ local arenaMessages = {
     ["15秒後競技場戰鬥開始!"] = 15,
     ["競技場戰鬥開始了!"] = 0,
 };
-
--- Check if a message indicates the match has started (0 seconds)
-function Constants:CheckTimerMessage(msg)
-    if(API:IsSecretValue(msg)) then
-        return;
-    end
-
-    local timeTillStart = msg and tonumber(arenaMessages[msg]);
-    local isStart = (timeTillStart == 0);
-
-    return isStart, timeTillStart;
-end
-
---[[
-local arenaTimer = {
-    ["default"] = {
-        [61] = "One minute until the Arena battle begins!",
-        [31] = "Thirty seconds until the Arena battle begins!",
-        [16] = "Fifteen seconds until the Arena battle begins!",
-        [0] = "The Arena battle has begun!",
-    },
-    ["esES"] = {
-        [61] = "¡Un minuto hasta que dé comienzo la batalla en arena!",
-        [31] = "¡Treinta segundos hasta que comience la batalla en arena!",
-        [16] = "¡Quince segundos hasta que comience la batalla en arena!",
-        [0] = "¡La batalla en arena ha comenzado!",
-    },
-    ["ptBR"] = {
-        [61] = "Um minuto até a batalha na Arena começar!",
-        [31] = "Trinta segundos até a batalha na Arena começar!",
-        [16] = "Quinze segundos até a batalha na Arena começar!",
-        [0] = "A batalha na Arena começou!",
-    },
-    ["deDE"] = {
-        [61] = "Noch eine Minute bis der Arenakampf beginnt!",
-        [31] = "Noch dreißig Sekunden bis der Arenakampf beginnt!",
-        [16] = "Noch fünfzehn Sekunden bis der Arenakampf beginnt!",
-        [0] = "Der Arenakampf hat begonnen!",
-    },
-    ["frFR"] = {
-        [61] = "Le combat d'arène commence dans une minute\194\160!",
-        [31] = "Le combat d'arène commence dans trente secondes\194\160!",
-        [16] = "Le combat d'arène commence dans quinze secondes\194\160!",
-        [0] = "Le combat d'arène commence\194\160!",
-    },
-    ["ruRU"] = {
-        [61] = "Одна минута до начала боя на арене!",
-        [31] = "Тридцать секунд до начала боя на арене!",
-        [16] = "До начала боя на арене осталось 15 секунд.",
-        [0] = "Бой начался!",
-    },
-    ["itIT"] = {
-        [61] = "La battaglia nell'arena inizierà tra 60 secondi.",
-        [31] = "La battaglia nell'arena inizierà tra 30 secondi.",
-        [16] = "La battaglia nell'arena inizierà tra 15 secondi.",
-        [0] = "La battaglia nell'arena è iniziata!",
-    },
-    ["koKR"] = {
-        [61] = "투기장 전투 시작 1분 전입니다!",
-        [31] = "투기장 전투 시작 30초 전입니다!",
-        [16] = "투기장 전투 시작 15초 전입니다!",
-        [0] = "투기장 전투가 시작되었습니다!",
-    },
-    ["zhCN"] = {
-        [61] = "竞技场战斗将在一分钟后开始！",
-        [31] = "竞技场战斗将在三十秒后开始！",
-        [16] = "竞技场战斗将在十五秒后开始！",
-        [0] = "竞技场的战斗开始了！",
-    },
-    ["zhTW"] = {
-        [61] = "1分鐘後競技場戰鬥開始!",
-        [31] = "30秒後競技場戰鬥開始!",
-        [16] = "15秒後競技場戰鬥開始!",
-        [0] = "競技場戰鬥開始了!",
-    },
-}
-arenaTimer["esMX"] = arenaTimer["esES"]
-arenaTimer["ptPT"] = arenaTimer["ptBR"]
---]]
 
 -------------------------------------------------------------------------
 

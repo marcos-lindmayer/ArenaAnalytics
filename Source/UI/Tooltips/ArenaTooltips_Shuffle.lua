@@ -32,7 +32,6 @@ local Debug = ArenaAnalytics.Debug;
 -------------------------------------------------------------------------
 
 local tooltipSingleton = nil;
-local currentRounds = nil;
 
 local function CreateRoundEntryFrame(index, parent)
     -- Create a frame for the round entry
@@ -244,13 +243,17 @@ function ShuffleTooltip:SetMatch(match)
     Tooltips:HideAll();
 
     local newHeight = 35;
-    local wins = 0;
     local deaths = TablePool:Acquire();
 
     local selfPlayer = ArenaMatch:GetSelf(match);
     local players = ArenaMatch:GetTeam(match, true);
 
-    currentRounds = ArenaMatch:GetRounds(match);
+    local wins = ArenaMatch:GetShuffleOutcome(match) or 0;
+    if(wins == 0) then
+        wins = selfPlayer and ArenaMatch:GetPlayerVariableStats(selfPlayer);
+    end
+
+    local currentRounds = ArenaMatch:GetRounds(match);
     for i=1, 6 do
         local roundFrame = self.rounds[i];
         assert(roundFrame, "ShuffleTooltip should always have 6 round frames!" .. (self.rounds and #self.rounds or "nil"));
@@ -266,10 +269,6 @@ function ShuffleTooltip:SetMatch(match)
             end
 
             roundFrame:SetData(team, enemy, firstDeath, duration, outcome, selfPlayer, players);
-
-            if(outcome == 1) then
-                wins = wins + 1;
-            end
 
             roundFrame:Show();
         else
@@ -308,9 +307,9 @@ function ShuffleTooltip:SetMatch(match)
     -- Most Wins
     local winsTable = TablePool:Acquire();
     local function AddWins(player, playerIndex)
-        local wins = player and ArenaMatch:GetPlayerVariableStats(player);
-        if(wins) then
-            winsTable[playerIndex] = wins;
+        local playerWins = player and ArenaMatch:GetPlayerVariableStats(player);
+        if(playerWins) then
+            winsTable[playerIndex] = playerWins;
         end
     end
 
@@ -378,7 +377,7 @@ end
 
 function ShuffleTooltip:Hide()
     local self = GetOrCreateSingleton();
-    
+
     if(self.parent) then
         self.parent.isShowingTooltip = nil;
     end

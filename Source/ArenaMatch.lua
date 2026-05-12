@@ -38,7 +38,6 @@ ArenaMatch.matchKeys = {
     rounds = -18,
     seasonPlayed = -19,
     isOffSeason = -20,
-    shuffleWins = -21,
 
     importIndex = -100,
     transient_requireRatingFix = -101,
@@ -66,6 +65,15 @@ ArenaMatch.roundKeys = {
     enemy_comp = -2,
 };
 local roundKeys = ArenaMatch.roundKeys;
+
+-- Shuffle specific outcome table
+ArenaMatch.outcomeKeys = {
+    total = 1,
+    wins = 2,
+    losses = 3,
+    draws = 4,
+};
+local outcomeKeys = ArenaMatch.outcomeKeys;
 
 -------------------------------------------------------------------------
 -- Temp conversion functions
@@ -111,6 +119,60 @@ function ArenaMatch:AddWinsToRoundData(match)
             end
         end
     end
+end
+
+function ArenaMatch:ConvertShuffleOutcome(match)
+    local outcome = match and match[matchKeys.outcome];
+    if(not ArenaMatch:IsShuffle(match) or type(outcome) == "table") then
+        return;
+    end
+
+    local newOutcome = {
+        wins = 0,
+        losses = 0,
+        draws = 0,
+        total = 0,
+    };
+    local trustRounds = false;
+
+    local currentRounds = ArenaMatch:GetRounds(match);
+    if(currentRounds) then
+        for i=1, #currentRounds do
+            local roundData = currentRounds and ArenaMatch:GetRoundDataRaw(currentRounds[i]);
+            if(roundData) then
+                local team, enemy, firstDeath, duration, roundOutcome = ArenaMatch:SplitRoundData(roundData);
+                if(tonumber(roundOutcome) ~= nil) then
+                    trustRounds = true;
+                end
+
+                if(roundOutcome == Constants.outcomes.win) then
+                    newOutcome.wins = newOutcome.wins + 1;
+                elseif(roundOutcome == Constants.outcomes.loss) then
+                    newOutcome.losses = newOutcome.losses + 1;
+                elseif(roundOutcome == Constants.outcomes.draw) then
+                    newOutcome.draws = newOutcome.draws + 1;
+                end
+            end
+        end
+    end
+
+    if(not trustRounds) then
+        local selfPlayer = ArenaMatch:GetSelf(match);
+        local playerWins = ArenaMatch:GetPlayerVariableStats(selfPlayer);
+        if(not playerWins) then
+            return;
+        end
+
+        newOutcome.wins = tonumber(playerWins) or 0;
+        newOutcome.losses = 6 - newOutcome.wins;
+        newOutcome.draws = 0;
+    end
+
+    newOutcome.total = newOutcome.wins + newOutcome.losses + newOutcome.draws;
+
+    Debug:LogPurple("Converted outcome from:", outcome);
+
+    ArenaMatch:SetMatchOutcome(match, newOutcome);
 end
 
 -------------------------------------------------------------------------
@@ -574,29 +636,58 @@ end
 -- Victory (14)
 
 function ArenaMatch:GetMatchOutcome(match)
-    return match and tonumber(match[matchKeys.outcome]);
-end
+    if(not match) then
+        return nil;
+    end
 
-function ArenaMatch:IsVictory(match)
-    local outcome = ArenaMatch:GetMatchOutcome(match);
-    return outcome ~= nil and (outcome == 1);
-end
+    local outcome = match[matchKeys.outcome];
+    if(type(outcome) == "table" and ArenaMatch:IsShuffle(match)) then
+        local wins = tonumber(outcome[outcomeKeys.wins]) or 0;
+        if(wins == 3) then
+            return Constants.outcomes.draw;
+        else
+            return (wins > 3) and Constants.outcomes.win or Constants.outcomes.loss;
+        end
+    end
 
-function ArenaMatch:IsDraw(match)
-    local outcome = ArenaMatch:GetMatchOutcome(match);
-    return outcome ~= nil and (outcome == 2);
+    return tonumber(outcome);
 end
 
 function ArenaMatch:IsLoss(match)
     local outcome = ArenaMatch:GetMatchOutcome(match);
-    return outcome ~= nil and (outcome == 0);
+    return outcome ~= nil and (outcome == Constants.outcomes.loss);
+end
+
+function ArenaMatch:IsVictory(match)
+    local outcome = ArenaMatch:GetMatchOutcome(match);
+    return outcome ~= nil and (outcome == Constants.outcomes.win);
+end
+
+function ArenaMatch:IsDraw(match)
+    local outcome = ArenaMatch:GetMatchOutcome(match);
+    return outcome ~= nil and (outcome == Constants.outcomes.draw);
 end
 
 function ArenaMatch:SetMatchOutcome(match, value)
     assert(match);
 
-    -- 0 = loss, 1 = win, 2 = draw, nil = unknown. 
-    match[matchKeys.outcome] = ToNumericalOutcome(value, 2);
+    Debug:Log("ArenaMatch:SetMatchOutcome", type(value));
+    Debug:LogTable(value);
+
+    if(type(value) == "table" and ArenaMatch:IsShuffle(match)) then
+        -- Calculate outcomes from cache
+        local outcome = {
+            [outcomeKeys.total] = value.total or 0,
+            [outcomeKeys.wins] = value.wins or 0,
+            [outcomeKeys.losses] = value.losses or 0,
+            [outcomeKeys.draws] = ToPositiveNumber(value.draws),
+        };
+
+        match[matchKeys.outcome] = outcome;
+    else
+        -- 0 = loss, 1 = win, 2 = draw, nil = unknown. 
+        match[matchKeys.outcome] = ToNumericalOutcome(value, 2);
+    end
 end
 
 -------------------------------------------------------------------------
@@ -1265,19 +1356,18 @@ end
 -------------------------------------------------------------------------
 -- Solo Shuffle
 
-function ArenaMatch:GetShuffleWins(match)
-    return match and tonumber(match[matchKeys.shuffleWins]);
-end
-
-function ArenaMatch:SetShuffleWins(match, value)
-    assert(match);
-
-    if(not ArenaMatch:IsShuffle(match)) then
-        Debug:Log("ArenaMatch:SetShuffleWins skipping due to match type.", ArenaMatch:GetBracket(match));
-        return;
+function ArenaMatch:GetShuffleOutcome(match)
+    local outcome = match and match[matchKeys.outcome];
+    if(type(outcome) ~= "table" or not ArenaMatch:IsShuffle(match)) then
+        return nil;
     end
 
-    match[matchKeys.shuffleWins] = ToPositiveNumber(value, true);
+    local function OutcomeGetter(key)
+        return tonumber(outcome[key]) or 0;
+    end
+
+    -- Outcome splits per rounds, with total known rounds
+    return OutcomeGetter(outcomeKeys.wins), OutcomeGetter(outcomeKeys.losses), OutcomeGetter(outcomeKeys.draws), OutcomeGetter(outcomeKeys.total);
 end
 
 -- Set rounds data

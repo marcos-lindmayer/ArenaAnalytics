@@ -3,9 +3,6 @@ local Bitmap = ArenaAnalytics.Bitmap;
 
 -- Local module aliases
 local Constants = ArenaAnalytics.Constants;
-local Debug = ArenaAnalytics.Debug;
-local Internal = ArenaAnalytics.Internal;
-local ArenaMatch = ArenaAnalytics.ArenaMatch;
 
 -------------------------------------------------------------------------
 

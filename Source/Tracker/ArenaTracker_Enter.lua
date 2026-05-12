@@ -70,10 +70,6 @@ local function IsAwaitingSeasonPlayed()
 		return false;
 	end
 
-	if(stateData.matchType ~= "rated") then
-		--return false;
-	end
-
 	if(stateData.seasonPlayedConfirmed) then
 		return false;
 	end

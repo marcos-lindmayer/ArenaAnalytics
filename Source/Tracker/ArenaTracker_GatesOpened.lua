@@ -25,6 +25,19 @@ function ArenaTracker:InitializeSubmodule_GatesOpened()
 end
 
 
+
+-- Check if a message indicates the match has started (0 seconds)
+local function CheckTimerMessage(msg)
+    if(API:IsSecretValue(msg)) then
+        return;
+    end
+
+    local timeTillStart = msg and tonumber(Constants.arenaMessages[msg]);
+    local isStart = (timeTillStart == 0);
+
+    return isStart, timeTillStart;
+end
+
 function ArenaTracker:HandleArenaMessages(msg)
 	if(msg and not API:IsSecretValue(msg)) then
 		return;
@@ -34,7 +47,7 @@ function ArenaTracker:HandleArenaMessages(msg)
 		return;
 	end
 
-	local isStart, timeTillStart = Constants:CheckTimerMessage(msg);
+	local isStart, timeTillStart = CheckTimerMessage(msg);
 
 	if(not timeTillStart) then
 		return;

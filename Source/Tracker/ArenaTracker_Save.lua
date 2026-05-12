@@ -82,8 +82,6 @@ function ArenaTracker:Save(newArena)
 		ArenaMatch:SetSeasonPlayed(arenaData, newArena.seasonPlayed);
 	end
 
-	ArenaMatch:SetMatchOutcome(arenaData, newArena.outcome);
-
 	-- Add players from both teams sorted, and assign comps.
 	ArenaMatch:AddPlayers(arenaData, newArena.players);
 
@@ -91,6 +89,8 @@ function ArenaTracker:Save(newArena)
 		ArenaMatch:SetShuffleWins(arenaData, newArena.wins);
 		ArenaMatch:SetRounds(arenaData, newArena.committedRounds);
 	end
+
+	ArenaMatch:SetMatchOutcome(arenaData, newArena.outcome);
 
 	-- Assign session
 	Sessions:AssignSession(arenaData);

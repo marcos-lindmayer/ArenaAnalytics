@@ -271,7 +271,7 @@ function Debug:ForceApplyRawArena()
     end
 
     if(API:IsInArena()) then
-        Debug:LogTemp("In arena")
+        Debug:LogTemp("ForceApplyRawArena skipped while in arena.");
         return;
     end
 

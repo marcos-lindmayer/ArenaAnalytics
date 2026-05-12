@@ -98,7 +98,7 @@ end
 local function CheckRequiredField(field)
 	local success = currentArena[field] and currentArena[field] == stateData[field];
 	if(not success) then
-		Debug:LogWarning("CheckRequiredField failing field:", field, currentArena[field], stateData[field]);
+		Debug:LogPurple("CheckRequiredField failing field:", field, currentArena[field], stateData[field]);
 	end
 	return success;
 end
@@ -107,7 +107,7 @@ end
 local function CheckOptionalField(field)
 	local success = not currentArena[field] or not stateData[field] or currentArena[field] == stateData[field];
 	if(not success) then
-		Debug:LogWarning("CheckOptionalField failing field:", field, currentArena[field], stateData[field]);
+		Debug:LogPurple("CheckOptionalField failing field:", field, currentArena[field], stateData[field]);
 	end
 	return success;
 end
@@ -125,6 +125,7 @@ function ArenaTracker:CompareExistingTracking()
 	if(currentArena.startTime) then
 		local timeDifference = (time() - currentArena.startTime);
 		if(timeDifference > MAX_TIMESTAMP_DIFFERENCE) then
+			Debug:LogPurple("CompareExistingTracking forcing reset: Exceeded time difference:", timeDifference);
 			return false;
 		end
 	end

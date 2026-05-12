@@ -9,6 +9,34 @@ local Colors = ArenaAnalytics.Colors;
 local Debug = ArenaAnalytics.Debug;
 
 -------------------------------------------------------------------------
+--- Secret Helpers
+
+-- Return non-secret or nil value
+function Helpers:SanitizeSecret(value)
+    if(not API.hasSecrets) then
+        return value;
+    end
+
+    return not API:IsSecretValue(value) and value or nil;
+end
+
+function Helpers:SanitizeSecretTable(tbl)
+    if(not API.hasSecrets) then
+        return;
+    end
+
+    if(API:IsSecretValue(tbl) or type(tbl) ~= "table") then
+        return nil;
+    end
+
+    for i=#tbl, 1, -1 do
+        if(API:IsSecretValue(tbl[i])) then
+            tbl[i] = nil;
+        end
+    end
+end
+
+-------------------------------------------------------------------------
 -- General Helpers
 
 function Helpers:ToSafeLower(value)

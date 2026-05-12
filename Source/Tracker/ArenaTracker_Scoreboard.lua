@@ -25,7 +25,11 @@ function ArenaTracker:InitializeSubmodule_Scoreboard()
 end
 
 local function ToNonZero(num)
-	return num ~= 0 and num or nil;
+	if(not API:IsValidValue(num) or num == 0) then
+		return nil;
+	end
+
+	return tonumber(num);
 end
 
 

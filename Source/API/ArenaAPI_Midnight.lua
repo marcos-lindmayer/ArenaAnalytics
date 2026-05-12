@@ -55,25 +55,6 @@ API.availableMaps = {
 };
 
 -------------------------------------------------------------------------
---- Secret Helpers
-
-local function SanitizeSecrets(...)
-
-end
-
-local function SanitizeSecretTable(tbl)
-    if(API:IsSecretValue(tbl) or type(tbl) ~= "table") then
-        return nil;
-    end
-
-    for i=#tbl, 1, -1 do
-        if(API:IsSecretValue(tbl[i])) then
-            tbl[i] = nil;
-        end
-    end
-end
-
--------------------------------------------------------------------------
 
 
 function API:IsRatedArena()
@@ -116,7 +97,7 @@ end
 
 function API:GetPlayerScore(index)
     local scoreInfo = C_PvP.GetScoreInfo(index);
-    SanitizeSecretTable(scoreInfo);
+    Helpers:SanitizeSecretTable(scoreInfo);
 
     local score = TablePool:Acquire();
     if(not scoreInfo or not scoreInfo.name) then

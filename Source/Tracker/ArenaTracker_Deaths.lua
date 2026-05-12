@@ -137,6 +137,8 @@ end
 -- Commits current deaths to player stats (May be overridden by scoreboard, if value is trusted for the expansion)
 function ArenaTracker:CommitDeaths()
 	local deathData = ArenaTracker:GetDeathData();
+	Helpers:SanitizeSecretTable(deathData);
+
 	for key,data in pairs(deathData) do
 		local player = ArenaTracker:GetPlayer(key);
 		if(player and data) then

@@ -181,6 +181,10 @@ end
 function Commands.HandleCommand_Test(...)
 	print(" ");
 	ArenaAnalytics:Print("============================= ");
+	
+	for i,match in ipairs(ArenaAnalyticsDB) do
+		ArenaMatch:ConvertShuffleOutcome(match);
+	end
 
 	ArenaAnalytics:Print("============================= ");
 end
