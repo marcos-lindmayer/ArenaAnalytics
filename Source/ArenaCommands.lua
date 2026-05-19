@@ -62,21 +62,19 @@ end
 function Commands.HandleCommand_Played()
 	local countedMatches = 0;
 
-	local totalDurationInArenas = 0;
-	local currentSeasonTotalPlayed = 0;
-	local longestDuration = 0;
+	local total = 0;
+	local seasonTotal = 0;
+	local longest = 0;
 	for i=1, ArenaAnalytics.filteredMatchCount do
 		local match = ArenaAnalytics:GetFilteredMatch(i);
 		local duration = ArenaMatch:GetDuration(match) or 0;
-		if(duration > 0) then
-			totalDurationInArenas = totalDurationInArenas + duration;
 
-			if(duration < 2760) then -- Only count valid duration (plus 60sec buffer)
-				longestDuration = max(longestDuration, duration);
-			end
+		if(duration > 0 and duration < 2760) then
+			total = total + duration;
+			longest = max(0, longest, duration);
 
 			if(ArenaMatch:GetSeason(match) == API:GetCurrentSeason()) then
-				currentSeasonTotalPlayed = currentSeasonTotalPlayed + duration;
+				seasonTotal = seasonTotal + duration;
 			end
 
 			countedMatches = countedMatches + 1;
@@ -93,14 +91,13 @@ function Commands.HandleCommand_Played()
 		ArenaAnalytics:PrintSystem(coloredText, coloredDuration);
 	end
 
-	local average = countedMatches > 0 and Round(totalDurationInArenas / countedMatches) or 0;
+	local average = countedMatches > 0 and Round(total / countedMatches) or 0;
 
-	-- TODO: Update coloring?
 	ArenaAnalytics:PrintSystem(Colors:ColorText("==== Arena Played Time ==========", Colors.infoColor));
-	PrintColored(" Total played: ", SecondsToTime(totalDurationInArenas));
-	PrintColored(" Current season: ", SecondsToTime(currentSeasonTotalPlayed));
-	PrintColored(" Average duration: ", SecondsToTime(average));
-	PrintColored(" Longest duration: ", SecondsToTime(Round(longestDuration)));
+	PrintColored(" Total: ", SecondsToTime(total));
+	--PrintColored(" Season Total: ", SecondsToTime(seasonTotal));
+	PrintColored(" Average: ", SecondsToTime(average));
+	PrintColored(" Longest: ", SecondsToTime(Round(longest)));
 	ArenaAnalytics:PrintSystem(Colors:ColorText("=============================", Colors.infoColor));
 end
 
@@ -108,19 +105,19 @@ end
 function Commands.HandleCommand_Queue()
 	local countedMatches = 0;
 
-	local totalQueueTimeInArenas = 0;
-	local currentSeasonTotalQueueTime = 0;
-	local longestQueueTime = 0;
+	local total = 0;
+	local seasonTotal = 0;
+	local longest = 0;
 	for i=1, ArenaAnalytics.filteredMatchCount do
 		local match = ArenaAnalytics:GetFilteredMatch(i);
 		local queueTime = ArenaMatch:GetQueueTime(match);
-		Debug:Log(queueTime);
+
 		if(queueTime) then
-			totalQueueTimeInArenas = totalQueueTimeInArenas + queueTime;
-			longestQueueTime = max(0, longestQueueTime, queueTime);
+			total = total + queueTime;
+			longest = max(0, longest, queueTime);
 
 			if(ArenaMatch:GetSeason(match) == API:GetCurrentSeason()) then
-				currentSeasonTotalQueueTime = currentSeasonTotalQueueTime + queueTime;
+				seasonTotal = seasonTotal + queueTime;
 			end
 
 			countedMatches = countedMatches + 1;
@@ -137,14 +134,13 @@ function Commands.HandleCommand_Queue()
 		ArenaAnalytics:PrintSystem(coloredText, coloredQueueTime);
 	end
 
-	local average = countedMatches > 0 and Round(totalQueueTimeInArenas / countedMatches) or 0;
+	local average = countedMatches > 0 and Round(total / countedMatches) or 0;
 
-	-- TODO: Update coloring?
-	ArenaAnalytics:PrintSystem(Colors:ColorText("==== Arena Played Time ==========", Colors.infoColor));
-	PrintColored(" Total queue time: ", SecondsToTime(totalQueueTimeInArenas));
-	PrintColored(" Current season: ", SecondsToTime(currentSeasonTotalQueueTime));
-	PrintColored(" Average queueTime: ", SecondsToTime(average));
-	PrintColored(" Longest queueTime: ", SecondsToTime(Round(longestQueueTime)));
+	ArenaAnalytics:PrintSystem(Colors:ColorText("==== Arena Queue Time ==========", Colors.infoColor));
+	PrintColored(" Total: ", SecondsToTime(total));
+	--PrintColored(" Season Total: ", SecondsToTime(seasonTotal));
+	PrintColored(" Average: ", SecondsToTime(average));
+	PrintColored(" Longest: ", SecondsToTime(Round(longest)));
 	ArenaAnalytics:PrintSystem(Colors:ColorText("=============================", Colors.infoColor));
 end
 
