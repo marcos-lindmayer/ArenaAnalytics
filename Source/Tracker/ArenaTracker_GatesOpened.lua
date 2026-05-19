@@ -28,18 +28,19 @@ end
 
 -- Check if a message indicates the match has started (0 seconds)
 local function CheckTimerMessage(msg)
-    if(API:IsSecretValue(msg)) then
+    if(not API:IsValidValue(msg)) then
         return;
     end
 
     local timeTillStart = msg and tonumber(Constants.arenaMessages[msg]);
     local isStart = (timeTillStart == 0);
 
+	Debug:Log("CheckTimerMessage:", msg, isStart, timeTillStart);
     return isStart, timeTillStart;
 end
 
 function ArenaTracker:HandleArenaMessages(msg)
-	if(msg and not API:IsSecretValue(msg)) then
+	if(not API:IsValidValue(msg)) then
 		return;
 	end
 
@@ -87,6 +88,8 @@ function ArenaTracker:HandleArenaGatesOpened()
 	if(not ArenaTracker:IsTrackingArena()) then
 		return;
 	end
+
+	Debug:LogGreen("GatesOpened: The Arena Has Begun!");
 
 	local isShuffle = ArenaTracker:IsTrackingShuffle();
 	if(not isShuffle and currentArena.hasRealStartTime or currentArena.round.hasStarted) then

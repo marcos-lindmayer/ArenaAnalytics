@@ -38,7 +38,7 @@ function ArenaTracker:HandleArenaStart(stateData)
 		return;
 	end
 
-	local status, bracket, teamSize, matchType = API:GetBattlefieldStatus(battlefieldId);
+	local status, bracket, teamSize, matchType, queueTime = API:GetBattlefieldStatus(battlefieldId);
 	local bracketIndex = ArenaAnalytics:GetAddonBracketIndex(bracket);
 
 	-- Bail out if it ended by now
@@ -53,12 +53,13 @@ function ArenaTracker:HandleArenaStart(stateData)
 
 	ArenaTracker:SetState("Starting");
 
-	Debug:LogGreen("HandleArenaStart:     ", stateData.bracket, stateData.matchType, stateData.seasonPlayed, stateData.seasonPlayedConfirmed);
+	Debug:LogGreen("HandleArenaStart:     ", stateData.bracket, stateData.matchType, "Queue:", queueTime);
 
 	-- DB and transient versions
 	currentArena.isTracking = true;
 	ArenaTracker.isTracking = true;
 
+	currentArena.queueTime = queueTime;
 	currentArena.battlefieldId = battlefieldId;
 
 	-- Update start time immediately, might be overridden by gates open if it hasn't happened yet.
@@ -85,9 +86,9 @@ function ArenaTracker:HandleArenaStart(stateData)
 	if (currentArena.playerName and not ArenaTracker:IsTrackingPlayer(currentArena.playerName)) then
 		-- Add player
 		local player = ArenaTracker:CreatePlayer(false, currentArena.playerName, "player", currentArena.mySpec);
-		table.insert(currentArena.players, player);
-
-		Debug:Log("Using MySpec:", player.spec, player.isFemale);
+		if(player) then
+			Debug:Log("Using MySpec:", player.spec, player.isFemale);
+		end
 	end
 
 	if(ArenaAnalytics.DataSync) then

@@ -35,6 +35,7 @@ function Commands.HandleCommand_Help()
 	ArenaAnalytics:PrintSystem("List of slash commands:");
 	PrintCommandHelp("/aa", "Togggles ArenaAnalytics main panel.");
 	PrintCommandHelp("/aa played", "Prints total duration of tracked arenas.");
+	PrintCommandHelp("/aa queue", "Prints queue time stats for filtered arenas.");
 	PrintCommandHelp("/aa version", "Prints the current ArenaAnalytics version.");
 	PrintCommandHelp("/aa total", "Prints total unfiltered matches.");
 	PrintCommandHelp("/aa purge", "Show dialog to permanently delete match history.");
@@ -60,6 +61,8 @@ end
 
 
 function Commands.HandleCommand_Played()
+	local countedMatches = 0;
+
 	local totalDurationInArenas = 0;
 	local currentSeasonTotalPlayed = 0;
 	local longestDuration = 0;
@@ -76,6 +79,8 @@ function Commands.HandleCommand_Played()
 			if(ArenaMatch:GetSeason(match) == API:GetCurrentSeason()) then
 				currentSeasonTotalPlayed = currentSeasonTotalPlayed + duration;
 			end
+
+			countedMatches = countedMatches + 1;
 		end
 	end
 
@@ -89,12 +94,58 @@ function Commands.HandleCommand_Played()
 		ArenaAnalytics:PrintSystem(coloredText, coloredDuration);
 	end
 
+	local average = countedMatches > 0 and Round(totalDurationInArenas / countedMatches) or 0;
+
 	-- TODO: Update coloring?
 	ArenaAnalytics:PrintSystem(Colors:ColorText("==== Arena Played Time ==========", Colors.infoColor));
 	PrintColored(" Total played: ", SecondsToTime(totalDurationInArenas));
-	PrintColored(" Current season: ", SecondsToTime(currentSeasonTotalPlayed) or "NaN");
-	PrintColored(" Average duration: ", SecondsToTime(math.floor(totalDurationInArenas / ArenaAnalytics.filteredMatchCount)));
-	PrintColored(" Longest duration: ", SecondsToTime(math.floor(longestDuration)));
+	PrintColored(" Current season: ", SecondsToTime(currentSeasonTotalPlayed));
+	PrintColored(" Average duration: ", SecondsToTime(average));
+	PrintColored(" Longest duration: ", SecondsToTime(Round(longestDuration)));
+	ArenaAnalytics:PrintSystem(Colors:ColorText("=============================", Colors.infoColor));
+end
+
+
+function Commands.HandleCommand_Queue()
+	local countedMatches = 0;
+
+	local totalQueueTimeInArenas = 0;
+	local currentSeasonTotalQueueTime = 0;
+	local longestQueueTime = 0;
+	for i=1, ArenaAnalytics.filteredMatchCount do
+		local match = ArenaAnalytics:GetFilteredMatch(i);
+		local queueTime = ArenaMatch:GetQueueTime(match);
+		Debug:Log(queueTime);
+		if(queueTime) then
+			totalQueueTimeInArenas = totalQueueTimeInArenas + queueTime;
+			longestQueueTime = max(0, longestQueueTime, queueTime);
+
+			if(ArenaMatch:GetSeason(match) == API:GetCurrentSeason()) then
+				currentSeasonTotalQueueTime = currentSeasonTotalQueueTime + queueTime;
+			end
+
+			countedMatches = countedMatches + 1;
+		end
+	end
+
+	local function PrintColored(text, queueTime)
+		if(queueTime == "") then
+			queueTime = "None";
+		end
+
+		local coloredText = Colors:ColorText(text, Colors.white);
+		local coloredQueueTime = Colors:ColorText(queueTime, Colors.statsColor);
+		ArenaAnalytics:PrintSystem(coloredText, coloredQueueTime);
+	end
+
+	local average = countedMatches > 0 and Round(totalQueueTimeInArenas / countedMatches) or 0;
+
+	-- TODO: Update coloring?
+	ArenaAnalytics:PrintSystem(Colors:ColorText("==== Arena Played Time ==========", Colors.infoColor));
+	PrintColored(" Total queue time: ", SecondsToTime(totalQueueTimeInArenas));
+	PrintColored(" Current season: ", SecondsToTime(currentSeasonTotalQueueTime));
+	PrintColored(" Average queueTime: ", SecondsToTime(average));
+	PrintColored(" Longest queueTime: ", SecondsToTime(Round(longestQueueTime)));
 	ArenaAnalytics:PrintSystem(Colors:ColorText("=============================", Colors.infoColor));
 end
 
@@ -172,7 +223,6 @@ function Commands.HandleCommand_Dump()
 		ArenaAnalytics:Print("IsArenaPreparation:", API:IsArenaPreparation());
 	end
 
-	Debug:LogTable(ArenaAnalyticsTransientDB.rawArena.shuffleWinsCache);
 	ArenaAnalytics:Print("============================= ");
 	print(" ");
 end
@@ -181,7 +231,7 @@ end
 function Commands.HandleCommand_Test(...)
 	print(" ");
 	ArenaAnalytics:Print("============================= ");
-	
+
 	for i,match in ipairs(ArenaAnalyticsDB) do
 		ArenaMatch:ConvertShuffleOutcome(match);
 	end
@@ -267,6 +317,8 @@ Commands.list = {
 	["version"] = Commands.HandleCommand_Version,
 	["total"] = Commands.HandleCommand_Total,
 	["played"] = Commands.HandleCommand_Played,
+	["queue"] = Commands.HandleCommand_Queue,
+	["que"] = Commands.HandleCommand_Queue,
 	["update"] = Commands.HandleCommand_Update,
 	["purge"] = Commands.HandleCommand_Purge,
 	["inspect"] = Commands.HandleCommand_Inspect,

@@ -20,19 +20,6 @@ local Interface = ArenaAnalytics.Interface;
 -- Responsible for saving the arena to the match history
 -------------------------------------------------------------------------
 
-function ArenaTracker:TrySave()
-	if(not ArenaTracker:IsTrackingArena()) then
-		return false;
-	end
-
-	-- Basic match comparison
-	if(ArenaTracker:IsSameArena()) then
-		return false;
-	end
-
-	return ArenaTracker:Save(ArenaAnalyticsTransientDB.currentArena);
-end
-
 -- Calculates arena duration, turns arena data into friendly strings, adds it to ArenaAnalyticsDB
 -- and triggers a layout refresh on ArenaAnalytics.AAtable
 function ArenaTracker:Save(newArena)
@@ -57,6 +44,7 @@ function ArenaTracker:Save(newArena)
 
 	-- Setup table data to insert into ArenaAnalyticsDB
 	local arenaData = { }
+	ArenaMatch:SetQueueTime(arenaData, newArena.queueTime);
 	ArenaMatch:SetDate(arenaData, newArena.startTime or time());
 	ArenaMatch:SetDuration(arenaData, newArena.duration);
 	ArenaMatch:SetMap(arenaData, newArena.mapId);
@@ -86,7 +74,6 @@ function ArenaTracker:Save(newArena)
 	ArenaMatch:AddPlayers(arenaData, newArena.players);
 
 	if(newArena.bracket == "shuffle") then
-		ArenaMatch:SetShuffleWins(arenaData, newArena.wins);
 		ArenaMatch:SetRounds(arenaData, newArena.committedRounds);
 	end
 

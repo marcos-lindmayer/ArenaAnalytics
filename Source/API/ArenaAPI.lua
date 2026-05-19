@@ -190,6 +190,19 @@ function API:CanInspect(unitToken)
     return unitToken ~= nil; --and CanInspect(unitToken);
 end
 
+local MAX_ALLOWED_QUEUE_TIME = 86400; -- 24 hours
+function API:GetQueueTime(battlefieldId)
+    if(not battlefieldId) then
+        return nil;
+    end
+
+    local queueTime = (tonumber(GetBattlefieldTimeWaited(battlefieldId)) or 0) / 1000;
+    if(queueTime < 0 or queueTime > MAX_ALLOWED_QUEUE_TIME) then
+        return nil;
+    end
+
+    return queueTime;
+end
 
 function API:GetActiveBattlefieldID()
     for index = 1, GetMaxBattlefieldID() do
@@ -198,6 +211,11 @@ function API:GetActiveBattlefieldID()
             return index;
         end
     end
+end
+
+function API:GetActiveBattlefieldQueueTime()
+    local activeBattlefieldId = API:GetActiveBattlefieldID();
+    return API:GetQueueTime(activeBattlefieldId);
 end
 
 

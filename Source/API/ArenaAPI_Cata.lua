@@ -40,11 +40,12 @@ function API:GetBattlefieldStatus(battlefieldId)
     end
 
     local status, _, _, _, _, teamSize, isRated = GetBattlefieldStatus(battlefieldId);
+    local queueTime = API:GetQueueTime(battlefieldId);
 
     local bracket = API:DetermineBracket(teamSize);
     local matchType = API:DetermineMatchType();
 
-    return status, bracket, teamSize, matchType;
+    return status, bracket, teamSize, matchType, queueTime;
 end
 
 function API:GetPersonalRatedInfo(bracketIndex)

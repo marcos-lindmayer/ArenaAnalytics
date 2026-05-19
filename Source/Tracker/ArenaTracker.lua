@@ -427,11 +427,7 @@ function ArenaTracker:FillMissingPlayers()
 				local name = API:GetUnitFullName(unitToken);
 				local player = ArenaTracker:GetPlayer(name);
 				if(name and not player) then
-					player = ArenaTracker:CreatePlayer(isEnemy, name, unitToken);
-
-					if(player) then
-						tinsert(currentArena.players, player);
-					end
+					ArenaTracker:CreatePlayer(isEnemy, name, unitToken);
 				end
 			end
 		end
@@ -448,33 +444,42 @@ end
 
 
 -- Returns a table with unit information to be placed inside arena.players
-function ArenaTracker:CreatePlayer(isEnemy, name, unitToken, spec_id)
-	if(not API:IsValidValue(name)) then
+function ArenaTracker:CreatePlayer(isEnemy, fullname, unitToken, spec_id)
+	if(not API:IsValidValue(fullname)) then
 		return nil;
 	end
 
 	if(not unitToken) then
-		unitToken = Helpers:GetUnitTokenByName(name);
+		unitToken = Helpers:GetUnitTokenByName(fullname);
 	end
 	unitToken = tostring(unitToken);
 
 	local newPlayer = {
 		isEnemy = isEnemy,
-		name = name,
+		name = fullname,
 		GUID = Helpers:UnitGUID(unitToken),
 		race = Helpers:GetUnitRace(unitToken),
 		isFemale = Helpers:IsUnitFemale(unitToken),
 		spec = spec_id or Helpers:GetUnitClass(unitToken),
 
-		isSelf = API:IsValidValue(currentArena.playerName) and name == currentArena.playerName or nil,
+		isSelf = API:IsValidValue(currentArena.playerName) and fullname == currentArena.playerName or nil,
 
 		-- Unsafe in shuffles:  (?)
 		unitToken = unitToken,
 		petToken = API:IsValidValue(unitToken) and unitToken.."pet",
 	};
 
-	local class, spec = ArenaAnalytics.Internal:GetClassAndSpec(newPlayer.spec);
-	Debug:LogGreen("CreatePlayer:", newPlayer.name, class, spec, newPlayer.spec);
+	if(not ArenaTracker:IsTrackingPlayer(newPlayer.name)) then
+		Debug:LogGreen("CreatePlayer:", newPlayer.name, newPlayer.spec, Internal:GetClassAndSpec(newPlayer.spec));
+		tinsert(currentArena.players, newPlayer);
+	else
+		Debug:LogWarning("Attempted to create duplicate player!", isEnemy, fullname, unitToken, spec_id);
+	end
+
+	if(Inspection.RequestSpec) then
+		Inspection:RequestSpec(unitToken);
+	end
+
 	return newPlayer;
 end
 

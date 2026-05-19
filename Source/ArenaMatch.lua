@@ -38,6 +38,7 @@ ArenaMatch.matchKeys = {
     rounds = -18,
     seasonPlayed = -19,
     isOffSeason = -20,
+    queueTime = -21,
 
     importIndex = -100,
     transient_requireRatingFix = -101,
@@ -689,6 +690,25 @@ function ArenaMatch:SetMatchOutcome(match, value)
         match[matchKeys.outcome] = ToNumericalOutcome(value, 2);
     end
 end
+
+-------------------------------------------------------------------------
+-- Queue Time
+
+function ArenaMatch:GetQueueTime(match)
+    if(not match) then
+        return nil;
+    end
+
+    return tonumber(match[matchKeys.queueTime]);
+end
+
+function ArenaMatch:SetQueueTime(match, value)
+    assert(match);
+    match[matchKeys.queueTime] = ToPositiveNumber(value, true);
+
+    Debug:LogPurple("Set Queue Time:", ToPositiveNumber(value, true));
+end
+
 
 -------------------------------------------------------------------------
 -- Team (17)

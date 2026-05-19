@@ -293,7 +293,7 @@ end
 
 
 function Helpers:IsFemaleIndex(genderIndex)
-    genderIndex = tonumber(genderIndex);
+    genderIndex = Helpers:ToValidNumber(genderIndex);
 
     if(genderIndex == 2) then
         -- Male
@@ -308,19 +308,20 @@ end
 
 
 function Helpers:GetClassID(spec_id)
-    spec_id = tonumber(spec_id);
+    spec_id = Helpers:ToValidNumber(spec_id);
     return spec_id and floor(spec_id / 10) * 10;
 end
 
 function Helpers:IsClassID(spec_id)
-    spec_id = tonumber(spec_id);
+    spec_id = Helpers:ToValidNumber(spec_id);
     return spec_id and (spec_id % 10 == 0);
 end
 
 function Helpers:IsSpecID(spec_id)
-    spec_id = tonumber(spec_id);
+    spec_id = Helpers:ToValidNumber(spec_id);
     return spec_id and (spec_id % 10 > 0);
 end
+
 
 function Helpers:ToValidValue(value)
     if(not API:IsValidValue(value)) then
@@ -328,6 +329,11 @@ function Helpers:ToValidValue(value)
     end
 
     return value;
+end
+
+function Helpers:ToValidNumber(value)
+    value = tonumber(value);
+    return Helpers:ToValidValue(value);
 end
 
 

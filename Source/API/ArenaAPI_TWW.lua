@@ -60,6 +60,7 @@ function API:GetBattlefieldStatus(battlefieldId)
     end
 
     local status, _, teamSize = GetBattlefieldStatus(battlefieldId);
+    local queueTime = API:GetQueueTime(battlefieldId);
 
     -- Shuffle team size
     if(API:IsSoloShuffle()) then
@@ -69,7 +70,7 @@ function API:GetBattlefieldStatus(battlefieldId)
     local bracket = API:DetermineBracket(teamSize);
     local matchType = API:DetermineMatchType();
 
-    return status, bracket, teamSize, matchType;
+    return status, bracket, teamSize, matchType, queueTime;
 end
 
 function API:GetPersonalRatedInfo(bracketIndex)

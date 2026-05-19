@@ -42,16 +42,23 @@ function ArenaTracker:FindOrAddPlayer(fullname)
 	if(not player) then
 		-- Use scoreboard info
 		player = ArenaTracker:CreatePlayer(nil, fullname);
-
-		if(player and player.name) then
-			Debug:LogGreen("Creating new player by scoreboard:", player.name, fullname, Internal:GetClassAndSpec(player.spec));
-			tinsert(currentArena.players, player);
-		end
 	end
 
 	return player;
 end
 
+-- Prioritize A over B, and spec ID over class ID
+local function PickBestSpec(specA, specB)
+	if(Helpers:IsSpecID(specA)) then
+		return specA;
+	end
+
+	if(Helpers:IsSpecID(specB)) then
+		return specB;
+	end
+
+	return tonumber(specA) or tonumber(specB);
+end
 
 -- Gets arena information when it ends and the scoreboard is shown
 -- Matches obtained info with previously collected player values
@@ -84,7 +91,7 @@ function ArenaTracker:UpdatePlayersFromScoreboard()
 
 			-- Fill missing data
 			player.teamIndex = score.team;
-			player.spec = Helpers:IsSpecID(player.spec) and player.spec or score.spec;
+			player.spec = PickBestSpec(score.spec, player.spec);
 			player.race = player.race or score.race;
 			player.kills = score.kills;
 			player.deaths = ToNonZero(score.deaths) or ToNonZero(player.deaths) or 0;

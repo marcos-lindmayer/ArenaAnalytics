@@ -61,7 +61,7 @@ local function getPartyUnitToken(GUID)
 end
 
 function Inspection:RequestSpec(unitToken)
-    if(not API.enableInspection or not unitToken or not API:IsInArena()) then
+    if(not API.enableInspection or not Helpers:IsValidUnitToken(unitToken) or not API:IsInArena()) then
         return;
     end
 

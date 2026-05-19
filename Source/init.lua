@@ -149,7 +149,11 @@ end
 
 function stages.Step4_EnteringWorld()
 	Initialization:InitiateStep(4);
-	LogStep(4, "isLogin:", Initialization.isLogin, "isReload:", Initialization.isReload);
+
+	local isOffSeason = API:IsOffSeason();
+	LogStep(4, "isLogin:", Initialization.isLogin, "isReload:", Initialization.isReload, "IsOffSeason", isOffSeason);
+
+	ArenaAnalytics:InitializeTransientDB(isOffSeason);
 
 	-- TODO: Implement to inform users of latest versions (Avoid false positives from development versions!)
 	-- Version Message (Unused)
@@ -161,6 +165,7 @@ function stages.Step4_EnteringWorld()
 	-- Don't wait for battlefield event outside of arena, let step 5 happen immediately
 	if(not API:IsInArena()) then
 		if(ArenaTracker:IsTrackingArena(true)) then
+			Debug:Log("Saving previous arena at init time.");
 			ArenaTracker:Save(ArenaAnalyticsTransientDB.currentArena);
 			ArenaTracker:Clear();
 		end
@@ -175,10 +180,7 @@ end
 function stages.Step5_InitiateTracking()
 	Initialization:InitiateStep(5);
 
-	local isOffSeason = API:IsOffSeason();
-	LogStep(5, "IsInArena:", API:IsInArena(), "IsOffSeason", isOffSeason);
-
-	ArenaAnalytics:InitializeTransientDB(isOffSeason);
+	LogStep(5, "IsInArena:", API:IsInArena());
 
 	-- Force a status update and set initial wasInArena
 	Events:CheckZoneChanged(true);
