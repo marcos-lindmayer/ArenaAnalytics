@@ -36,8 +36,8 @@ function Commands.HandleCommand_Help()
 	PrintCommandHelp("/aa", "Togggles ArenaAnalytics main panel.");
 	PrintCommandHelp("/aa version", "Prints ArenaAnalytics version.");
 	PrintCommandHelp("/aa undo", "Undo the latest import. (White * marked matches)");
-	PrintCommandHelp("/aa played", "Prints filtered duration stats.");
-	PrintCommandHelp("/aa que", "Prints filtered queue time stats.");
+	PrintCommandHelp("/aa played", "Prints filtered duration overview.");
+	PrintCommandHelp("/aa que", "Prints filtered queue time overview.");
 	PrintCommandHelp("/aa total", "Prints total unfiltered matches.");
 	PrintCommandHelp("/aa credits", "Print addon credits.");
 	ArenaAnalytics:PrintSystemSpacer();
