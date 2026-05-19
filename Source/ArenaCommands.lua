@@ -34,12 +34,11 @@ function Commands.HandleCommand_Help()
 	ArenaAnalytics:PrintSystemSpacer();
 	ArenaAnalytics:PrintSystem("List of slash commands:");
 	PrintCommandHelp("/aa", "Togggles ArenaAnalytics main panel.");
-	PrintCommandHelp("/aa played", "Prints total duration of tracked arenas.");
-	PrintCommandHelp("/aa queue", "Prints queue time stats for filtered arenas.");
-	PrintCommandHelp("/aa version", "Prints the current ArenaAnalytics version.");
-	PrintCommandHelp("/aa total", "Prints total unfiltered matches.");
-	PrintCommandHelp("/aa purge", "Show dialog to permanently delete match history.");
+	PrintCommandHelp("/aa version", "Prints ArenaAnalytics version.");
 	PrintCommandHelp("/aa undo", "Undo the latest import. (White * marked matches)");
+	PrintCommandHelp("/aa played", "Prints filtered duration stats.");
+	PrintCommandHelp("/aa que", "Prints filtered queue time stats.");
+	PrintCommandHelp("/aa total", "Prints total unfiltered matches.");
 	PrintCommandHelp("/aa credits", "Print addon credits.");
 	ArenaAnalytics:PrintSystemSpacer();
 end

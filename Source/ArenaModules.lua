@@ -47,6 +47,7 @@ ArenaAnalytics.Options = {};
 ArenaAnalytics.AAmatch = {};
 ArenaAnalytics.Events = {};
 ArenaAnalytics.ArenaRatedInfo = {};
+ArenaAnalytics.ArenaQueue = {};
 ArenaAnalytics.Sessions = {};
 ArenaAnalytics.ArenaMatch = {};
 ArenaAnalytics.GroupSorter = {};

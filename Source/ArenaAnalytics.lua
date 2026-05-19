@@ -7,7 +7,7 @@ local Selection = ArenaAnalytics.Selection;
 local Tooltips = ArenaAnalytics.Tooltips;
 local Bitmap = ArenaAnalytics.Bitmap;
 local Filters = ArenaAnalytics.Filters;
-local AAtable = ArenaAnalytics.AAtable;
+local ArenaQueue = ArenaAnalytics.ArenaQueue;
 local API = ArenaAnalytics.API;
 local Import = ArenaAnalytics.Import;
 local Options = ArenaAnalytics.Options;
@@ -109,6 +109,9 @@ function ArenaAnalytics:InitializeTransientDB(forceRatedReset)
 	ArenaAnalyticsTransientDB.currentArena = ArenaAnalyticsTransientDB.currentArena or {};
 
 	local currentSeason = API:GetCurrentSeason();
+
+	ArenaAnalyticsTransientDB.queueTimes = ArenaAnalyticsTransientDB.queueTimes or {};
+	ArenaQueue:UpdateQueueTimes();
 
 	if(forceRatedReset or ShouldResetRatedInfo(currentSeason)) then
 		ArenaAnalyticsTransientDB.ratedInfo = { season = currentSeason };
@@ -222,7 +225,7 @@ function ArenaAnalytics:GetNameIndex(name)
 	end
 
 	tinsert(ArenaAnalyticsDB.names, name);
-	Debug:Log("Cached new name:", name, "at index:", #ArenaAnalyticsDB.names);
+	--Debug:Log("Cached new name:", name, "at index:", #ArenaAnalyticsDB.names);
 	return #ArenaAnalyticsDB.names;
 end
 

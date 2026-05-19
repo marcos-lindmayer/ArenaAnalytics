@@ -92,7 +92,6 @@ end
 -- Handle a player's death, through death or kill credit message
 function ArenaTracker:HandlePlayerDeath(playerGUID, isKillCredit)
 	if(not API:IsValidValue(playerGUID)) then
-		Debug:LogWarning("HandlePlayerDeath called with invalid GUID.");
 		return;
 	end
 

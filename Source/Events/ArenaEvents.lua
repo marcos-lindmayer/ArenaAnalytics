@@ -8,6 +8,7 @@ local API = ArenaAnalytics.API;
 local Inspection = ArenaAnalytics.Inspection;
 local Options = ArenaAnalytics.Options;
 local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
+local ArenaQueue = ArenaAnalytics.ArenaQueue;
 local Debug = ArenaAnalytics.Debug;
 local Initialization = ArenaAnalytics.Initialization;
 
@@ -153,6 +154,7 @@ function Events:HandleGlobalEvent(event, ...)
 		Events:CheckZoneChanged();
 		ArenaTracker:HandlePreTrackingScoreEvent(...);
 	elseif(event == "UPDATE_BATTLEFIELD_STATUS") then
+		ArenaQueue:UpdateQueueTimes()
 		Events:CheckZoneChanged();
 
 		local battlefieldId = API:GetActiveBattlefieldID();

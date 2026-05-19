@@ -271,18 +271,18 @@ function Debug:ForceApplyRawArena()
     end
 
     if(API:IsInArena()) then
-        Debug:LogTemp("ForceApplyRawArena skipped while in arena.");
+        Debug:Log("ForceApplyRawArena skipped while in arena.");
         return;
     end
 
     local ArenaTracker = ArenaAnalytics.ArenaTracker;
     if(ArenaTracker:IsTrackingArena(true)) then
-        Debug:LogTemp("Already tracking")
+        Debug:Log("Already tracking")
         return;
     end
 
     if(type(ArenaAnalyticsTransientDB.rawArena) ~= "table") then
-        Debug:LogTemp("No raw arena", type(ArenaAnalyticsTransientDB.rawArena))
+        Debug:Log("No raw arena", type(ArenaAnalyticsTransientDB.rawArena))
         return;
     end
 

@@ -13,6 +13,7 @@ local Events = ArenaAnalytics.Events;
 local TablePool = ArenaAnalytics.TablePool;
 local Debug = ArenaAnalytics.Debug;
 local ArenaRatedInfo = ArenaAnalytics.ArenaRatedInfo;
+local ArenaQueue = ArenaAnalytics.ArenaQueue;
 
 -------------------------------------------------------------------------
 -- ArenaTracker subsection
@@ -38,7 +39,7 @@ function ArenaTracker:HandleArenaStart(stateData)
 		return;
 	end
 
-	local status, bracket, teamSize, matchType, queueTime = API:GetBattlefieldStatus(battlefieldId);
+	local status, bracket, teamSize, matchType = API:GetBattlefieldStatus(battlefieldId);
 	local bracketIndex = ArenaAnalytics:GetAddonBracketIndex(bracket);
 
 	-- Bail out if it ended by now
@@ -52,6 +53,9 @@ function ArenaTracker:HandleArenaStart(stateData)
 	end
 
 	ArenaTracker:SetState("Starting");
+
+	local queueTime = ArenaQueue:GetQueueTime(battlefieldId);
+	ArenaQueue:Clear(battlefieldId);
 
 	Debug:LogGreen("HandleArenaStart:     ", stateData.bracket, stateData.matchType, "Queue:", queueTime);
 

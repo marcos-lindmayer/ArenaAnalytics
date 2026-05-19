@@ -32,6 +32,7 @@ Source/Options/ArenaOptions.lua
 Source/ArenaGroupSorter.lua
 Source/ArenaMatch.lua
 Source/ArenaRatedInfo.lua
+Source/ArenaQueue.lua
 Source/ArenaSessions.lua
 Source/ArenaVersionManager.lua
 Source/ArenaTablePool.lua

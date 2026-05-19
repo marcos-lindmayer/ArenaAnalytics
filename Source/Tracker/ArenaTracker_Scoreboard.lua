@@ -84,11 +84,6 @@ function ArenaTracker:UpdatePlayersFromScoreboard()
 		local player = ArenaTracker:FindOrAddPlayer(score.name);
 
 		if(player) then
-			-- Testing:
-			local pClass, pSpec = Internal:GetClassAndSpec(player.spec);
-			local sClass, sSpec = Internal:GetClassAndSpec(score.spec);
-			Debug:LogTemp("Scoreboard test - Player:", player.name, pClass, pSpec, " to score:", sClass, sSpec);
-
 			-- Fill missing data
 			player.teamIndex = score.team;
 			player.spec = PickBestSpec(score.spec, player.spec);
