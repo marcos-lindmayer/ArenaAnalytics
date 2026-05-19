@@ -517,7 +517,7 @@ function Export:UpdateFormattedMatch(index)
     formattedMatch.duration = ArenaMatch:GetDuration(match) or "";
     formattedMatch.outcome = GetOutcome(ArenaMatch:GetMatchOutcome(match));
     formattedMatch.dampening = nil; -- NYI
-    formattedMatch.queueTime = nil; -- NYI
+    formattedMatch.queueTime = ArenaMatch:GetQueueTime(match) or "";
 
     -- Rated Info
     formattedMatch.ratedInfo = Export:GetFormattedRatedInfo(match);
