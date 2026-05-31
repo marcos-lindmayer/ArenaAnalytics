@@ -114,7 +114,7 @@ function Button:GetFrame()
 end
 
 function Button:GetName()
-    return self.name;
+    return self.name or "";
 end
 
 function Button:GetDropdownType()

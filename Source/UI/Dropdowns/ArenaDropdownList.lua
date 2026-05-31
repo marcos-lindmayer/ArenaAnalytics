@@ -194,7 +194,7 @@ function List:GetFrame()
 end
 
 function List:GetName()
-    return self.name;
+    return self.name or "";
 end
 
 function List:GetDropdownType()

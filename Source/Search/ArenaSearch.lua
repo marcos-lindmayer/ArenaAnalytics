@@ -120,7 +120,7 @@ end
 
 local function LogSearchData()
     Debug:LogSpacer();
-    Debug:Log("Committing Search..", #activeSearchData.segments, " (" .. activeSearchData.nonInversedCount .. ")");
+    Debug:Log("Committing Search..", activeSearchData.segments and #activeSearchData.segments, " (" .. (activeSearchData.nonInversedCount or "nil") .. ")");
 
     for i,segment in ipairs(activeSearchData.segments) do
         for j,token in ipairs(segment.tokens) do

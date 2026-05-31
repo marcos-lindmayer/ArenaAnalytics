@@ -104,7 +104,7 @@ end
 function Dropdown:Create(parent, dropdownType, frameName, config, width, height, entryHeight)
     local self = setmetatable({}, Dropdown);
     self.owner = parent;
-    self.name = frameName.."Dropdown";
+    self.name = (frameName or "Unknown").."Dropdown";
 
     self.width = width;
     self.height = height;
@@ -159,7 +159,7 @@ function Dropdown:GetFrame()
 end
 
 function Dropdown:GetName()
-    return self.name;
+    return self.name or "";
 end
 
 function Dropdown:GetDropdownType()

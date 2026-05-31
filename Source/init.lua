@@ -84,7 +84,7 @@ end
 
 
 function Initialization:InitiateStep(currentStep)
-	assert(tonumber(currentStep) and Initialization.lastStep < currentStep, ("Initialization:InitiateStep called twice for step: " .. currentStep .. " after step: " .. Initialization.lastStep));
+	assert(tonumber(currentStep) and Initialization.lastStep < currentStep, ("Initialization:InitiateStep called twice for step: " .. (currentStep or "nil") .. " after step: " .. (Initialization.lastStep or "nil")));
 	LogStep(currentStep);
 
 	Initialization.locked = true;

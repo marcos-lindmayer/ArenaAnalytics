@@ -66,7 +66,7 @@ function FilterTables.IsFilterActive(dropdownContext)
 end
 
 function FilterTables.ResetFilterValue(dropdownContext, btn)
-    assert(dropdownContext.key ~= nil, "Failed to get key for: " .. dropdownContext:GetName());
+    assert(dropdownContext ~= nil and dropdownContext.key ~= nil, "Failed to get key for: " .. (dropdownContext:GetName() or "nil"));
 
     if(btn == "RightButton") then
         Filters:Reset(dropdownContext.key, true);

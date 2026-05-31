@@ -192,7 +192,10 @@ end
 
 
 local function formatNumber(num)
-    assert(num ~= nil);
+    if(num == nil) then
+        return "-";
+    end
+
     local left,num,right = string.match(num,'^([^%d]*%d)(%d*)(.-)');
     return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right;
 end

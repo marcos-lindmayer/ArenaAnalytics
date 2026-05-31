@@ -211,7 +211,7 @@ function EntryFrame:GetFrame()
 end
 
 function EntryFrame:GetName()
-    return self.name;
+    return self.name or "";
 end
 
 function EntryFrame:GetDropdownType()

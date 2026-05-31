@@ -214,8 +214,8 @@ function AAtable:OnLoad()
     AAtable:CheckUnsavedWarningThreshold();
 
     -- Add esc to close frame
-    _G["ArenaAnalyticsScrollFrame"] = ArenaAnalyticsScrollFrame 
-    tinsert(UISpecialFrames, ArenaAnalyticsScrollFrame:GetName()) 
+    _G["ArenaAnalyticsScrollFrame"] = ArenaAnalyticsScrollFrame;
+    tinsert(UISpecialFrames, ArenaAnalyticsScrollFrame:GetName());
 
     -- Make frame draggable
     ArenaAnalyticsScrollFrame:SetMovable(true)
@@ -748,7 +748,7 @@ function AAtable:RefreshLayout()
     end
 
     if(ArenaAnalyticsScrollFrame.filterBtn_ClearFilters) then
-        local activeFilterCount = Filters:GetActiveFilterCount();
+        local activeFilterCount = Filters:GetActiveFilterCount() or 0;
         if(activeFilterCount > 0) then
             ArenaAnalyticsScrollFrame.activeFilterCountText:SetText("(" .. activeFilterCount .." active)");
             ArenaAnalyticsScrollFrame.filterBtn_ClearFilters:Enable();
@@ -814,7 +814,7 @@ function AAtable:RefreshLayout()
                 ratingText = "WAR GAME";
             end
 
-            button.Rating:SetText("|c" .. hex .. (ratingText or "") .."|r");
+            button.Rating:SetText(Colors:ColorText(ratingText, hex));
 
             -- Party MMR
             ArenaAnalytics:SetFrameText(button.MMR, (ArenaMatch:GetPartyMMR(match) or "-"), Colors.valueColor);

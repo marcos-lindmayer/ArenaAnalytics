@@ -12,6 +12,7 @@ local ArenaIcon = ArenaAnalytics.ArenaIcon;
 local TablePool = ArenaAnalytics.TablePool;
 local GroupSorter = ArenaAnalytics.GroupSorter;
 local Debug = ArenaAnalytics.Debug;
+local Colors = ArenaAnalytics.Colors;
 
 -------------------------------------------------------------------------
 
@@ -95,7 +96,7 @@ function Display:SetPadding(padding)
 end
 
 function Display:GetName()
-    return self.name;
+    return self.name or "";
 end
 
 function Display:GetWidth()
@@ -118,7 +119,7 @@ local function CreateText(parent, text, size, color)
 
     local fontString = parent:CreateFontString(nil, "OVERLAY");
     fontString:SetFont("Fonts\\FRIZQT__.TTF", size, "");
-    fontString:SetText("|cff" .. color .. text .. "|r");
+    fontString:SetText(Colors:ColorText(text, color));
     return fontString;
 end
 

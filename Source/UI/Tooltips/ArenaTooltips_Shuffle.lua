@@ -250,7 +250,7 @@ function ShuffleTooltip:SetMatch(match)
 
     local wins = ArenaMatch:GetShuffleOutcome(match) or 0;
     if(wins == 0) then
-        wins = selfPlayer and ArenaMatch:GetPlayerVariableStats(selfPlayer);
+        wins = selfPlayer and ArenaMatch:GetPlayerVariableStats(selfPlayer) or 0;
     end
 
     local currentRounds = ArenaMatch:GetRounds(match);
@@ -338,7 +338,7 @@ function ShuffleTooltip:SetMatch(match)
     end
 
     -- Set total wins text
-    ArenaAnalytics:SetFrameText(self.winsText, "Wins: " .. wins, hex);
+    ArenaAnalytics:SetFrameText(self.winsText, "Wins: " .. (wins or "-"), hex);
 
     newHeight = newHeight + #self.bottomStatTexts * 15 + 10;
 
