@@ -69,7 +69,7 @@ end
 
 
 function API:GetPlayerScore(index)
-    local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing = GetBattlefieldScore(index);
+    local name, kills, _, deaths, _, teamIndex, _, race, _, classToken, damage, healing, ratingChange, preMatchMMR = GetBattlefieldScore(index);
     name = API:ToFullName(name);
 
     -- Convert values
@@ -81,11 +81,18 @@ function API:GetPlayerScore(index)
         race = race_id,
         spec = class_id,
         team = teamIndex,
-        kills = kills,
-        deaths = deaths,
-        damage = damage,
-        healing = healing,
+        kills = tonumber(kills),
+        deaths = tonumber(deaths),
+        damage = tonumber(damage),
+        healing = tonumber(healing),
     };
+
+    if(API:IsRatedArena()) then
+        -- score.rating = tonumber(bgRating); -- Not available?
+        -- score.ratingDelta = tonumber(ratingChange); -- Not relevant without rating?
+        score.mmr = tonumber(preMatchMMR);
+        -- score.mmrDelta = tonumber(mmrChange); -- Not available?
+    end
 
     return score;
 end

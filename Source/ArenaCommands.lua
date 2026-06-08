@@ -208,7 +208,7 @@ function Commands.HandleCommand_Dump()
 	local interfaceVersion = select(4, GetBuildInfo());
 	ArenaAnalytics:Print("Interface Version:", interfaceVersion);
 
-	if(API and API.IsInArena()) then
+	if(API:IsInArena()) then
 		ArenaAnalytics:Print("Arena Map ID:", API:GetCurrentMapID(), GetZoneText());
 
 		if(API.hasDampening) then

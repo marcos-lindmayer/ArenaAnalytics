@@ -47,6 +47,7 @@ function ArenaTracker:FindOrAddPlayer(fullname)
 	return player;
 end
 
+
 -- Prioritize A over B, and spec ID over class ID
 local function PickBestSpec(specA, specB)
 	if(Helpers:IsSpecID(specA)) then
@@ -59,6 +60,53 @@ local function PickBestSpec(specA, specB)
 
 	return tonumber(specA) or tonumber(specB);
 end
+
+
+local function AssignMMR(isShuffle, myTeamIndex)
+	local averageTeamMMR, averageEnemyMMR = nil, nil;
+
+	if(not isShuffle) then
+		-- Computed Average MMRs
+		local totalTeamMMR, teamPlayerCount = 0,0;
+		local totalEnemyMMR, enemyPlayerCount = 0,0;
+
+		for _,player in ipairs(currentArena.players) do
+			if(player and player.teamIndex) then
+				-- Assign isEnemy value
+				player.isEnemy = (player.teamIndex ~= myTeamIndex);
+
+				if(player.mmr and player.mmr > 0) then
+					if(player.isEnemy) then
+						totalEnemyMMR = totalEnemyMMR + player.mmr;
+						enemyPlayerCount = enemyPlayerCount + 1;
+					else
+						totalTeamMMR = totalTeamMMR + player.mmr;
+						teamPlayerCount = teamPlayerCount + 1;
+					end
+				end
+			end
+		end
+
+		if(teamPlayerCount > 0) then
+			averageTeamMMR = Round(totalTeamMMR / teamPlayerCount);
+		end
+
+		if(enemyPlayerCount > 0) then
+			averageEnemyMMR = Round(totalEnemyMMR / enemyPlayerCount);
+		end
+	else
+		--ArenaTracker:UpdateRoundEnemyTeams();
+	end
+
+	-- Process ranked information
+	if (ArenaTracker:IsRated() and myTeamIndex) then
+		local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
+
+		currentArena.partyMMR = API:GetTeamMMR(myTeamIndex) or averageTeamMMR;
+		currentArena.enemyMMR = API:GetTeamMMR(otherTeamIndex) or averageEnemyMMR;
+	end
+end
+
 
 -- Gets arena information when it ends and the scoreboard is shown
 -- Matches obtained info with previously collected player values
@@ -105,7 +153,7 @@ function ArenaTracker:UpdatePlayersFromScoreboard()
 			end
 
 			if(player.name) then
-				if (currentArena.playerName and player.name == currentArena.playerName) then
+				if (player.name == currentArena.playerName) then
 					myTeamIndex = player.teamIndex;
 					player.isSelf = true;
 
@@ -123,25 +171,6 @@ function ArenaTracker:UpdatePlayersFromScoreboard()
 		TablePool:Release(score);
 	end
 
-	if(not isShuffle) then
-		-- Assign isEnemy value
-		for _,player in ipairs(currentArena.players) do
-			if(player and player.teamIndex) then
-				player.isEnemy = (player.teamIndex ~= myTeamIndex);
-			end
-		end
-	else
-		--ArenaTracker:UpdateRoundEnemyTeams();
-	end
-
-	-- Process ranked information
-	if (ArenaTracker:IsRated() and myTeamIndex) then
-		local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
-
-		currentArena.partyMMR = API:GetTeamMMR(myTeamIndex);
-		currentArena.enemyMMR = API:GetTeamMMR(otherTeamIndex);
-	end
-
-	-- @TEMP:
-	Debug:LogTemp("Updated from scoreboard:", #currentArena.players);
+	-- Update MMRs
+	AssignMMR(isShuffle, myTeamIndex);
 end

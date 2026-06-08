@@ -101,14 +101,6 @@ function ArenaTracker:HandleArenaEnd()
 		end
 	end
 
-	-- Process ranked information
-	if (ArenaTracker:IsRated() and myTeamIndex) then
-		local otherTeamIndex = (myTeamIndex == 0) and 1 or 0;
-
-		currentArena.partyMMR = API:GetTeamMMR(myTeamIndex);
-		currentArena.enemyMMR = API:GetTeamMMR(otherTeamIndex);
-	end
-
 	Debug:LogGreen("HandleArenaEnd completed:", #currentArena.players, currentArena.startTime, currentArena.endTime, API:GetNumBattlefieldScores());
 	ArenaTracker:SetState("Locked"); -- TODO: Convert to currentArena.locked?
 end

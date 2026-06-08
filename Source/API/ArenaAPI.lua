@@ -297,7 +297,7 @@ function API:GetTeamMMR(teamIndex)
     mmr = tonumber(mmr);
 
     -- Discard invalid MMR value
-    if(mmr <= 0) then
+    if(mmr == nil or mmr <= 0) then
         return nil;
     end
 
@@ -591,12 +591,12 @@ function API:GetCurrentDampening()
 end
 
 function API:IsArenaPreparation()
-    if(not API:IsInArena()) then
+    if(not API:IsInArena() or API.hasSecrets) then
         return nil;
     end
 
     local aura = API:FindAuraByID(API.explicitPreparationID or { 32727, 44521 }); -- 32727 confirmed for MoP
-    if(aura ~= nil) then
+    if(aura and API:IsValidValue(aura)) then
         return true, aura.name, aura.spellId;
     end
 
