@@ -1,8 +1,8 @@
-## Interface: 20506, 30404, 40402, 50503, 50504, 110207, 120007
+## Interface: 20506, 30404, 40402, 50503, 50504, 110207, 120100
 ## Title: Arena|cff00ccffAnalytics|r
 ## Notes: Arena log and statistics.
 ## Author: Lingo, Zeetrax
-## Version: 1.3.5
+## Version: 1.3.6
 ## IconTexture: Interface\Icons\achievement_arena_3v3_7
 ## DefaultState: enabled
 ## SavedVariables: ArenaAnalyticsSharedSettingsDB, ArenaAnalyticsDevData
